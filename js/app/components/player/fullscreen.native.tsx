@@ -1,8 +1,10 @@
-import Video from "./video.native";
-import Controls from "./controls";
 import { VideoView } from "expo-video";
 import { useRef } from "react";
+import Controls from "./controls";
+import PlayerLoading from "./player-loading";
 import { PlayerProps } from "./props";
+import Video from "./video.native";
+import VideoRetry from "./video-retry";
 
 export default function Fullscreen(props: PlayerProps) {
   const ref = useRef<VideoView>(null);
@@ -18,8 +20,11 @@ export default function Fullscreen(props: PlayerProps) {
   };
   return (
     <>
+      <PlayerLoading {...props}></PlayerLoading>
       <Controls {...props} setFullscreen={setFullscreen} />
-      <Video {...props} videoRef={ref} />
+      <VideoRetry {...props}>
+        <Video {...props} videoRef={ref} />
+      </VideoRetry>
     </>
   );
 }

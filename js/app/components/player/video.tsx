@@ -16,6 +16,7 @@ import useAquareumNode from "hooks/useAquareumNode";
 import Controls from "./controls";
 import {
   PlayerProps,
+  PlayerStatus,
   PROTOCOL_HLS,
   PROTOCOL_PROGRESSIVE_MP4,
   PROTOCOL_PROGRESSIVE_WEBM,
@@ -46,48 +47,20 @@ const updateEvents = {
 
 const VideoElement = forwardRef(
   (props: VideoProps, ref: ForwardedRef<HTMLVideoElement>) => {
-    const [whatDoing, setWhatDoing] = useState("start");
-    const [whatDid, setWhatDid] = useState<{ [key: string]: number }>({});
-    const [doingSince, setDoingSince] = useState(Date.now());
-    const [lastUpdated, setLastUpdated] = useState(0);
-    const updateWhatDid = (now: Date): { [key: string]: number } => {
-      const prev = whatDid[whatDoing] ?? 0;
-      const duration = now.getTime() - doingSince;
-      const ret = {
-        ...whatDid,
-        [whatDoing]: prev + duration,
-      };
-      return ret;
-    };
     const event = (evType) => (e) => {
       const now = new Date();
-      if (updateEvents[evType] && evType !== whatDoing) {
-        setWhatDid(updateWhatDid(now));
-        setWhatDoing(evType);
-        setDoingSince(now.getTime());
+      if (updateEvents[evType]) {
+        props.setStatus(evType);
       }
       props.playerEvent(now.toISOString(), evType, {});
     };
 
     useEffect(() => {
-      if (lastUpdated === 0) {
-        return;
-      }
-      const now = new Date();
-      const fullWhatDid = updateWhatDid(now);
-      setWhatDid({});
-      setDoingSince(now.getTime());
-      props.playerEvent(now.toISOString(), "aq-played", {
-        whatHappened: fullWhatDid,
-      });
-    }, [lastUpdated]);
-
-    useEffect(() => {
-      const interval = setInterval((_) => {
-        setLastUpdated(Date.now());
-      }, POLL_INTERVAL);
-      return () => clearInterval(interval);
+      return () => {
+        props.setStatus(PlayerStatus.START);
+      };
     }, []);
+
     return (
       <View
         backgroundColor="#111"
@@ -159,7 +132,13 @@ export function HLSPlayer(props: VideoProps) {
     if (Hls.isSupported()) {
       var hls = new Hls();
       hls.loadSource(props.url);
-      hls.attachMedia(videoRef.current);
+      try {
+        hls.attachMedia(videoRef.current);
+      } catch (e) {
+        console.error("error on attachMedia");
+        hls.stopLoad();
+        return;
+      }
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (!videoRef.current) {
           return;

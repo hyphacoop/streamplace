@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { useVideoPlayer, VideoView } from "expo-video";
+import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
 import useAquareumNode from "hooks/useAquareumNode";
 import {
   PlayerProps,
+  PlayerStatus,
   PROTOCOL_HLS,
   PROTOCOL_PROGRESSIVE_MP4,
   PROTOCOL_PROGRESSIVE_WEBM,
@@ -17,6 +18,11 @@ export default function NativeVideo(
   props: PlayerProps & { videoRef: React.RefObject<VideoView> },
 ) {
   const { url } = srcToUrl(props);
+  useEffect(() => {
+    return () => {
+      props.setStatus(PlayerStatus.START);
+    };
+  }, []);
   const player = useVideoPlayer(url, (player) => {
     player.loop = true;
     player.muted = props.muted;
@@ -28,12 +34,36 @@ export default function NativeVideo(
   }, [props.muted, player]);
 
   useEffect(() => {
-    const subscription = player.addListener("playingChange", (isPlaying) => {
-      // setIsPlaying(isPlaying);
+    const subs = (
+      [
+        "playToEnd",
+        "playbackRateChange",
+        "playingChange",
+        "sourceChange",
+        "statusChange",
+        "volumeChange",
+      ] as (keyof VideoPlayerEvents)[]
+    ).map((evType) => {
+      const now = new Date();
+      return player.addListener(evType, (...args) => {
+        props.playerEvent(now.toISOString(), evType, { args: args });
+      });
     });
 
+    subs.push(
+      player.addListener("playingChange", (newIsPlaying, oldIsPlaying) => {
+        if (newIsPlaying) {
+          props.setStatus(PlayerStatus.PLAYING);
+        } else {
+          props.setStatus(PlayerStatus.WAITING);
+        }
+      }),
+    );
+
     return () => {
-      subscription.remove();
+      for (const sub of subs) {
+        sub.remove();
+      }
     };
   }, [player]);
 

@@ -17,6 +17,7 @@ import (
 	"aquareum.tv/aquareum/pkg/config"
 	"aquareum.tv/aquareum/pkg/crypto/signers"
 	"aquareum.tv/aquareum/pkg/log"
+	"aquareum.tv/aquareum/pkg/model"
 	"aquareum.tv/aquareum/pkg/replication"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/google/uuid"
@@ -36,14 +37,21 @@ const SCHEMA_ORG_START_TIME = "http://schema.org/startTime"
 const SCHEMA_ORG_END_TIME = "http://schema.org/endTime"
 
 type MediaManager struct {
-	cli            *config.CLI
-	mp4subs        map[string][]chan string
-	mp4subsmut     sync.Mutex
-	replicator     replication.Replicator
-	hlsRunning     map[string]HLSStream
-	hlsRunningMut  sync.Mutex
-	httpPipes      map[string]io.Writer
-	httpPipesMutex sync.Mutex
+	cli                 *config.CLI
+	mp4subs             map[string][]chan string
+	mp4subsmut          sync.Mutex
+	replicator          replication.Replicator
+	hlsRunning          map[string]HLSStream
+	hlsRunningMut       sync.Mutex
+	httpPipes           map[string]io.Writer
+	httpPipesMutex      sync.Mutex
+	newSegmentSubs      []chan *NewSegmentNotification
+	newSegmentSubsMutex sync.RWMutex
+}
+
+type NewSegmentNotification struct {
+	Segment *model.Segment
+	Data    []byte
 }
 
 type HLSStream struct {
@@ -94,6 +102,15 @@ func (mm *MediaManager) GetHTTPPipeWriter(uu string) io.Writer {
 	mm.httpPipesMutex.Lock()
 	defer mm.httpPipesMutex.Unlock()
 	return mm.httpPipes[uu]
+}
+
+// register a handler for all new segments that come in
+func (mm *MediaManager) NewSegment() <-chan *NewSegmentNotification {
+	ch := make(chan *NewSegmentNotification)
+	mm.newSegmentSubsMutex.Lock()
+	defer mm.newSegmentSubsMutex.Unlock()
+	mm.newSegmentSubs = append(mm.newSegmentSubs, ch)
+	return ch
 }
 
 // subscribe to the latest segments from a given user for livestreaming purposes
@@ -370,6 +387,21 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	io.Copy(fd, r)
 	base := filepath.Base(fd.Name())
 	go mm.PublishSegment(ctx, pub.String(), base)
+	seg := &model.Segment{
+		ID:        *mani.Label,
+		User:      pub.String(),
+		StartTime: meta.StartTime.Time(),
+		EndTime:   meta.EndTime.Time(),
+	}
+	mm.newSegmentSubsMutex.RLock()
+	defer mm.newSegmentSubsMutex.RUnlock()
+	not := &NewSegmentNotification{
+		Segment: seg,
+		Data:    buf,
+	}
+	for _, ch := range mm.newSegmentSubs {
+		go func() { ch <- not }()
+	}
 	log.Log(ctx, "successfully ingested segment", "user", pub.String(), "timestamp", meta.StartTime)
 	return nil
 }

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { TamaguiElement, View } from "tamagui";
+import Controls from "./controls";
+import PlayerLoading from "./player-loading";
 import { PlayerProps } from "./props";
 import Video from "./video";
-import Controls from "./controls";
+import VideoRetry from "./video-retry";
 
 export default function Fullscreen(props: PlayerProps) {
   const ref = useRef<TamaguiElement>(null);
@@ -44,8 +46,11 @@ export default function Fullscreen(props: PlayerProps) {
 
   return (
     <View flex={1} ref={ref}>
+      <PlayerLoading {...props}></PlayerLoading>
       <Controls {...props} setFullscreen={setFullscreen} />
-      <Video {...props} />
+      <VideoRetry {...props}>
+        <Video {...props} />
+      </VideoRetry>
     </View>
   );
 }

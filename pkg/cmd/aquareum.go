@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"flag"
@@ -12,8 +13,10 @@ import (
 	"runtime/pprof"
 	"strconv"
 	"syscall"
+	"time"
 
 	"aquareum.tv/aquareum/pkg/aqhttp"
+	"aquareum.tv/aquareum/pkg/aqtime"
 	"aquareum.tv/aquareum/pkg/crypto/signers"
 	"aquareum.tv/aquareum/pkg/crypto/signers/eip712"
 	"aquareum.tv/aquareum/pkg/log"
@@ -257,6 +260,55 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	group.Go(func() error {
 		return a.ServeInternalHTTP(ctx)
+	})
+
+	group.Go(func() error {
+		newSeg := mm.NewSegment()
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case not := <-newSeg:
+				err := mod.CreateSegment(not.Segment)
+				if err != nil {
+					log.Error(ctx, "could not add segment to database", "error", err)
+				}
+				go func() {
+					err := func() error {
+						oldThumb, err := mod.LatestThumbnailForUser(not.Segment.User)
+						if err != nil {
+							return err
+						}
+						if oldThumb != nil && not.Segment.StartTime.Sub(oldThumb.Segment.StartTime) < time.Minute {
+							// we have a thumbnail <60sec old, skip generating a new one
+							return nil
+						}
+						r := bytes.NewReader(not.Data)
+						aqt := aqtime.FromTime(not.Segment.StartTime)
+						fd, err := cli.SegmentFileCreate(not.Segment.User, aqt, "jpg")
+						if err != nil {
+							return err
+						}
+						err = mm.Thumbnail(ctx, r, fd)
+						if err != nil {
+							return err
+						}
+						thumb := &model.Thumbnail{
+							Format:    "jpg",
+							SegmentID: not.Segment.ID,
+						}
+						err = mod.CreateThumbnail(thumb)
+						if err != nil {
+							return err
+						}
+						return nil
+					}()
+					if err != nil {
+						log.Error(ctx, "could not create thumbnail", "error", err)
+					}
+				}()
+			}
+		}
 	})
 
 	if cli.TestStream {

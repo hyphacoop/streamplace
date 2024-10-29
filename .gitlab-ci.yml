@@ -134,16 +134,21 @@ build-android:
 build-mac:
   stage: build
   interruptible: true
-  image: ghcr.io/cirruslabs/macos-runner:sonoma
+  image: ghcr.io/cirruslabs/macos-runner:sequoia
   tags:
     - tart-installed
   timeout: 2 hours
   script:
     - git fetch --unshallow || echo 'already unshallow'
     - brew install ninja go openssl@3 && go version
-    - sudo gem install --user-install xcpretty
+    - sudo gem uninstall xcodeproj -x --ignore-dependencies
+    - sudo gem install xcodeproj -v 1.25.1
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh && bash rustup.sh -y && rm rustup.sh
-    - export PATH="$PATH:$HOME/.cargo/bin:$(find $HOME/.gem/ruby -type d -name bin -maxdepth 2)"
+    - export PATH="$PATH:$HOME/.cargo/bin"
+    - echo $PATH
+    - 'echo "which xcodeproj: $(which xcodeproj)"'
+    - 'echo "xcodeproj --version: $(xcodeproj --version)"'
+    - "$(which xcodeproj) --version"
     - >
       brew install python@3.11
       && python3.11 -m pip install virtualenv
@@ -151,11 +156,11 @@ build-mac:
       && source ~/venv/bin/activate
       && pip3 install meson
       && make ci-macos -j16
+      && make selftest-macos
 
 windows-selftest:
   stage: build
   # for the moment...
-  allow_failure: true
   tags:
     - windows
   timeout: 2 hours

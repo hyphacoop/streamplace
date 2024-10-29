@@ -24,3 +24,14 @@ func TestNormalizeAudio(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, info.Size(), int64(0))
 }
+
+// func TestThumbnail(t *testing.T) {
+// 	mm := MediaManager{}
+// 	gst.Init(nil)
+// 	ifile, err := os.Open(getFixture("sample-segment.mp4"))
+// 	require.NoError(t, err)
+// 	buf := &bytes.Buffer{}
+// 	err = mm.Thumbnail(context.Background(), ifile, buf)
+// 	require.NoError(t, err)
+// 	require.Greater(t, len(buf.Bytes()), 0)
+// }

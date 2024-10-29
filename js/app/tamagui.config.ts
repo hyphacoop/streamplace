@@ -91,6 +91,13 @@ const aquareumConfig = {
     hoverNone: { hover: "none" },
     pointerCoarse: { pointer: "coarse" },
   },
+  themes: {
+    ...configBase.themes,
+    dark: {
+      ...configBase.themes.dark,
+      accentColor: "rgb(189 110 134)",
+    },
+  },
 };
 
 const config = createTamagui(aquareumConfig);
