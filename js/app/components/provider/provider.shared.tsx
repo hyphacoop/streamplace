@@ -1,31 +1,60 @@
+import {
+  DarkTheme,
+  LinkingOptions,
+  NavigationContainer,
+} from "@react-navigation/native";
 import { ToastProvider, ToastViewport } from "@tamagui/toast";
-import { CurrentToast } from "app/CurrentToast";
-import React from "react";
-import { TamaguiProvider, PortalProvider } from "tamagui";
-import config from "tamagui.config";
+import { useFonts } from "expo-font";
 import { AquareumProvider } from "hooks/useAquareumNode";
+import React from "react";
+import { PortalProvider, TamaguiProvider } from "tamagui";
+import config from "tamagui.config";
+import { CurrentToast } from "./CurrentToast";
 
-export default function Provider({ children }: { children: React.ReactNode }) {
+export default function Provider({
+  children,
+  linking,
+}: {
+  children: React.ReactNode;
+  linking: LinkingOptions<ReactNavigation.RootParamList>;
+}) {
   return (
-    <AquareumProvider>
-      <TamaguiProvider config={config} defaultTheme={"dark"}>
-        <PortalProvider>
-          <ToastProvider
-            swipeDirection="vertical"
-            duration={6000}
-            native={
-              [
-                /* uncomment the next line to do native toasts on mobile. NOTE: it'll require you making a dev build and won't work with Expo Go */
-                // 'mobile'
-              ]
-            }
-          >
-            {children}
-            <CurrentToast />
-            <ToastViewport name="default" top="$8" left={0} right={0} />
-          </ToastProvider>
-        </PortalProvider>
-      </TamaguiProvider>
-    </AquareumProvider>
+    <TamaguiProvider config={config} defaultTheme={"dark"}>
+      <NavigationContainer theme={DarkTheme} linking={linking}>
+        <AquareumProvider>
+          <PortalProvider>
+            <ToastProvider
+              swipeDirection="vertical"
+              duration={6000}
+              native={
+                [
+                  /* uncomment the next line to do native toasts on mobile. NOTE: it'll require you making a dev build and won't work with Expo Go */
+                  // 'mobile'
+                ]
+              }
+            >
+              <FontProvider>{children}</FontProvider>
+              <CurrentToast />
+              <ToastViewport name="default" top="$8" left={0} right={0} />
+            </ToastProvider>
+          </PortalProvider>
+        </AquareumProvider>
+      </NavigationContainer>
+    </TamaguiProvider>
   );
 }
+
+export const FontProvider = ({ children }: { children: React.ReactNode }) => {
+  const [fontLoaded, fontError] = useFonts({
+    "FiraCode-Light": require("../../assets/fonts/FiraCode-Light.ttf"),
+    "FiraCode-Medium": require("../../assets/fonts/FiraCode-Medium.ttf"),
+    "FiraCode-Bold": require("../../assets/fonts/FiraCode-Bold.ttf"),
+    "FiraSans-Medium": require("../../assets/fonts/FiraSans-Medium.ttf"),
+  });
+
+  if (!fontLoaded && !fontError) {
+    return null;
+  }
+
+  return <>{children}</>;
+};

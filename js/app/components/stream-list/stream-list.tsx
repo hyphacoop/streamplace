@@ -1,10 +1,12 @@
+import { Link, useNavigation } from "@react-navigation/native";
+import AQLink from "components/aqlink";
 import ErrorBox from "components/error/error";
 import Loading from "components/loading/loading";
-import { Link } from "expo-router";
+import { formatAddress } from "hooks/textUtils";
 import useAquareumNode from "hooks/useAquareumNode";
 import { useEffect, useState } from "react";
-import { Pressable } from "react-native";
-import { ScrollView, Text, Image, View, H2, H6 } from "tamagui";
+import { Pressable, RefreshControl } from "react-native";
+import { H6, Image, ScrollView, ScrollViewProps, View, YStack } from "tamagui";
 
 type Segment = {
   id: string;
@@ -13,12 +15,20 @@ type Segment = {
   endTime: string;
 };
 
-export default function StreamList() {
+export default function StreamList({
+  contentContainerStyle = {},
+}: {
+  contentContainerStyle?: Exclude<
+    ScrollViewProps["contentContainerStyle"],
+    string
+  >;
+}) {
   const [streams, setStreams] = useState<Segment[]>([]);
   const [error, setError] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [retryTime, setRetryTime] = useState<number>(Date.now());
   const { url } = useAquareumNode();
+  const navigation = useNavigation();
   useEffect(() => {
     setError(false);
     setLoading(true);
@@ -48,21 +58,36 @@ export default function StreamList() {
     return <ErrorBox onRetry={() => setRetryTime(Date.now())} />;
   }
   return (
-    <ScrollView contentContainerStyle={{ alignItems: "center" }}>
+    <ScrollView
+      contentContainerStyle={{
+        alignItems: "stretch",
+
+        ...contentContainerStyle,
+      }}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={() => setRetryTime(Date.now())}
+        />
+      }
+    >
       {streams.map((seg) => (
-        <Link asChild key={seg.user} href={`/stream/${seg.user}`}>
-          <Pressable>
-            <View key={seg.user}>
+        <View flex={1}>
+          <AQLink to={{ screen: "Stream", params: { user: seg.user } }}>
+            <YStack f={1} alignItems="center">
               <Image
-                height={200}
+                f={1}
+                aspectRatio={16 / 9}
+                maxWidth={400}
+                width="100%"
                 src={`${url}/api/playback/${seg.user}/stream.jpg`}
                 resizeMode="contain"
                 objectFit="contain"
               />
-              <H6>{seg.user}</H6>
-            </View>
-          </Pressable>
-        </Link>
+              <H6>{formatAddress(seg.user)}</H6>
+            </YStack>
+          </AQLink>
+        </View>
       ))}
     </ScrollView>
   );

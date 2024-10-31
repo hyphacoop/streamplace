@@ -1,8 +1,7 @@
 import {
   ConfigPlugin,
-  withXcodeProject,
-  IOSConfig,
   withEntitlementsPlist,
+  withXcodeProject,
 } from "expo/config-plugins";
 
 export const withNotificationsIOS: ConfigPlugin = (config) => {
@@ -61,7 +60,7 @@ export default function () {
       slug: name,
       version: pkg.version,
       // Only rev this to the current version when native dependencies change!
-      runtimeVersion: "0.2.2",
+      runtimeVersion: pkg.runtimeVersion,
       orientation: "default",
       icon: "./assets/images/icon.png",
       scheme: "myapp",
@@ -75,16 +74,18 @@ export default function () {
       ios: {
         supportsTablet: true,
         bundleIdentifier: bundle,
-        googleServicesFile: "./GoogleService-Info.plist",
-        entitlements: isProd
-          ? {
-              "aps-environment": "production",
-            }
-          : {},
         infoPlist: {
           UIBackgroundModes: ["fetch", "remote-notification"],
           LSMinimumSystemVersion: "12.0",
         },
+        ...(isProd
+          ? {
+              googleServicesFile: "./GoogleService-Info.plist",
+              entitlements: {
+                "aps-environment": "production",
+              },
+            }
+          : {}),
       },
       android: {
         adaptiveIcon: {
@@ -92,20 +93,23 @@ export default function () {
           backgroundColor: "#ffffff",
         },
         package: bundle,
-        googleServicesFile: "./google-services.json",
-        permissions: [
-          "android.permission.SCHEDULE_EXACT_ALARM",
-          "android.permission.POST_NOTIFICATIONS",
-        ],
         versionCode: versionCode(pkg.version),
+        ...(isProd
+          ? {
+              googleServicesFile: "./google-services.json",
+              permissions: [
+                "android.permission.SCHEDULE_EXACT_ALARM",
+                "android.permission.POST_NOTIFICATIONS",
+              ],
+            }
+          : {}),
       },
       web: {
         bundler: "metro",
-        output: "static",
+        output: "single",
         favicon: "./assets/images/favicon.png",
       },
       plugins: [
-        "expo-router",
         [
           "expo-font",
           {
@@ -137,8 +141,6 @@ export default function () {
             ],
           },
         ],
-        "@react-native-firebase/app",
-        "@react-native-firebase/messaging",
         [
           "expo-build-properties",
           {
@@ -158,7 +160,13 @@ export default function () {
           },
         ],
         [withConsistentVersionNumber, { version: pkg.version }],
-        ...(isProd ? [[withNotificationsIOS, {}]] : ["expo-dev-launcher"]),
+        ...(isProd
+          ? [
+              "@react-native-firebase/app",
+              "@react-native-firebase/messaging",
+              [withNotificationsIOS, {}],
+            ]
+          : ["expo-dev-launcher"]),
       ],
       experiments: {
         typedRoutes: true,
