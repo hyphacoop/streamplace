@@ -2,7 +2,7 @@
   "name": "aquareum",
   "main": "./src/entrypoint.tsx",
   "version": "0.2.2",
-  "runtimeVersion": "0.2.2",
+  "runtimeVersion": "0.2.3",
   "scripts": {
     "upgrade:tamagui": "yarn up '*tamagui*'@latest '@tamagui/*'@latest",
     "upgrade:tamagui:canary": "yarn up '*tamagui*'@canary '@tamagui/*'@canary",
