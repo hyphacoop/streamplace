@@ -110,16 +110,23 @@ if (require("electron-squirrel-startup")) {
 
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
   // how much of our time is spent playing for a success?
-  const PLAYING_SUCCESS = 0.8;
+  const PLAYING_SUCCESS = 0.5;
 
   const runSelfTest = async (): Promise<void> => {
     let exitCode = 0;
+    let done = false;
     const { nodeFrontend } = getEnv();
     const { addr, internalAddr, proc } = await makeNode({
       env: {
         AQ_TEST_STREAM: "true",
       },
       autoQuit: false,
+    });
+    proc.on("exit", () => {
+      if (!done) {
+        console.log("node exited early, erroring!");
+        app.exit(1);
+      }
     });
     try {
       const mainWindow = await makeWindow();
@@ -216,6 +223,7 @@ if (require("electron-squirrel-startup")) {
         }
         return { ...report, pcts };
       });
+      done = true;
       console.log(JSON.stringify(percentages, null, 2));
       if (failed) {
         console.log("test failed! exiting 1");

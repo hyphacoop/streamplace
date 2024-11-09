@@ -15,7 +15,8 @@ let ua;
 
 export default function usePlatform(): IsPlatform {
   if (!ua) {
-    ua = uaParser(navigator.userAgent);
+    const parser = uaParser.UAParser;
+    ua = parser(navigator.userAgent);
   }
   const electron = typeof window["AQ_ELECTRON"] !== "undefined";
   return {
@@ -27,7 +28,7 @@ export default function usePlatform(): IsPlatform {
     isWeb: true,
     isElectron: electron,
     isBrowser: !electron,
-    isSafari: ua.browser.name === "Safari",
+    isSafari: ua.browser.name.includes("Safari"),
     isFirefox: ua.browser.name === "Firefox",
     isChrome: ua.browser.name === "Chrome",
   };

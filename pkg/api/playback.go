@@ -2,12 +2,11 @@ package api
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -154,20 +153,17 @@ func (a *AquareumAPI) HandleHLSPlayback(ctx context.Context) httprouter.Handle {
 			errors.WriteHTTPBadRequest(w, "file required", nil)
 			return
 		}
-		getDir, err := a.MediaManager.SegmentToHLSOnce(ctx, user)
+		m3u8, err := a.MediaManager.SegmentToHLSOnce(ctx, user)
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "SegmentToHLSOnce failed", nil)
 			return
 		}
-		dir := getDir()
-		fullpath := filepath.Join(dir, file)
-		f, err := os.Open(fullpath)
+		buf, err := m3u8.GetSegment(file)
 		if err != nil {
-			errors.WriteHTTPInternalServerError(w, "could not open file", err)
+			errors.WriteHTTPNotFound(w, "segment not found", err)
 			return
 		}
-		defer f.Close()
-		http.ServeContent(w, r, file, time.Now(), f)
+		http.ServeContent(w, r, file, time.Now(), bytes.NewReader(buf))
 	})
 }
 
@@ -195,14 +191,5 @@ func (a *AquareumAPI) HandleThumbnailPlayback(ctx context.Context) httprouter.Ha
 			return
 		}
 		http.ServeFile(w, r, fpath)
-
-		// getDir, err := a.MediaManager.SegmentToHLSOnce(ctx, user)
-		// if err != nil {
-		// 	errors.WriteHTTPInternalServerError(w, "SegmentToHLSOnce failed", nil)
-		// 	return
-		// }
-		// dir := getDir()
-		// fullpath := filepath.Join(dir, file)
-		// http.ServeFile(w, r, fullpath)
 	}
 }

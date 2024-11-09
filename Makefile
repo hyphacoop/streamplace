@@ -17,6 +17,7 @@ endif
 ifeq ($(BUILDARCH),x86_64)
 		BUILDARCH=amd64
 endif
+BUILDDIR?=build-$(BUILDOS)-$(BUILDARCH)
 
 .PHONY: version
 version:
@@ -39,8 +40,7 @@ app: schema install
 .PHONY: node
 node: schema
 	$(MAKE) meson-setup
-	meson compile -C build aquareum
-	mv ./build/aquareum ./bin/aquareum
+	meson compile -C $(BUILDDIR) aquareum
 
 .PHONY: schema
 schema:
@@ -52,12 +52,33 @@ test:
 	meson test -C build go-tests
 
 # test to make sure we haven't added any more dynamic dependencies
-.PHONY: link-test
-link-test:
+LINUX_LINK_COUNT=5
+.PHONY: link-test-linux
+link-test-linux:
 	count=$(shell ldd ./build-linux-amd64/aquareum | wc -l) \
 	&& echo $$count \
-	&& if [ "$$count" != "6" ]; then echo "ldd reports new libaries linked! want 6 got $$count" \
-		&& ldd ./bin/aquareum \
+	&& if [ "$$count" != "$(LINUX_LINK_COUNT)" ]; then echo "ldd reports new libaries linked! want $(LINUX_LINK_COUNT) got $$count" \
+		&& ldd ./build-linux-amd64/aquareum \
+		&& exit 1; \
+	fi
+
+MACOS_LINK_COUNT=10
+.PHONY: link-test-macos
+link-test-macos:
+	count=$(shell otool -L ./build-darwin-arm64/aquareum | wc -l | xargs) \
+	&& echo $$count \
+	&& if [ "$$count" != "$(MACOS_LINK_COUNT)" ]; then echo "otool -L reports new libaries linked! want $(MACOS_LINK_COUNT) got $$count" \
+		&& otool -L ./build-darwin-arm64/aquareum \
+		&& exit 1; \
+	fi
+
+WINDOWS_LINK_COUNT=16
+.PHONY: link-test-windows
+link-test-windows:
+	count=$(shell x86_64-w64-mingw32-objdump -p ./build-windows-amd64/aquareum.exe | grep "DLL Name" | wc -l | xargs) \
+	&& echo $$count \
+	&& if [ "$$count" != "$(WINDOWS_LINK_COUNT)" ]; then echo "x86_64-w64-mingw32-objdump -p reports new libaries linked! want $(WINDOWS_LINK_COUNT) got $$count" \
+		&& x86_64-w64-mingw32-objdump -p ./build-windows-amd64/aquareum.exe | grep "DLL Name" \
 		&& exit 1; \
 	fi
 
@@ -130,7 +151,6 @@ OPTS = -D "gst-plugins-base:audioresample=enabled" \
 		-D "gst-plugins-good:matroska=enabled" \
 		-D "gst-plugins-good:multifile=enabled" \
 		-D "gst-plugins-bad:fdkaac=enabled" \
-		-D "gst-plugins-bad:hls=enabled" \
 		-D "gst-plugins-good:audioparsers=enabled" \
 		-D "gst-plugins-good:isomp4=enabled" \
 		-D "gst-plugins-good:png=enabled" \
@@ -143,27 +163,28 @@ OPTS = -D "gst-plugins-base:audioresample=enabled" \
 		-D "gst-plugins-ugly:gpl=enabled" \
 		-D "x264:asm=enabled" \
 		-D "gstreamer-full:gst-full=enabled" \
-		-D "gstreamer-full:gst-full-plugins=libgstaudioresample.a;libgstlibav.a;libgstmatroska.a;libgstmultifile.a;libgstjpeg.a;libgstaudiotestsrc.a;libgstaudioconvert.a;libgstaudioparsers.a;libgstfdkaac.a;libgstisomp4.a;libgstapp.a;libgstvideoconvertscale.a;libgstvideobox.a;libgstvideorate.a;libgstpng.a;libgstcompositor.a;libgsthls.a;libgstx264.a;libgstopus.a;libgstvideotestsrc.a;libgstvideoparsersbad.a;libgstaudioparsers.a;libgstmpegtsmux.a;libgstplayback.a;libgsttypefindfunctions.a" \
+		-D "gstreamer-full:gst-full-plugins=libgstaudioresample.a;libgstlibav.a;libgstmatroska.a;libgstmultifile.a;libgstjpeg.a;libgstaudiotestsrc.a;libgstaudioconvert.a;libgstaudioparsers.a;libgstfdkaac.a;libgstisomp4.a;libgstapp.a;libgstvideoconvertscale.a;libgstvideobox.a;libgstvideorate.a;libgstpng.a;libgstcompositor.a;libgstx264.a;libgstopus.a;libgstvideotestsrc.a;libgstvideoparsersbad.a;libgstaudioparsers.a;libgstmpegtsmux.a;libgstplayback.a;libgsttypefindfunctions.a" \
 		-D "gstreamer-full:gst-full-libraries=gstreamer-controller-1.0,gstreamer-plugins-base-1.0,gstreamer-pbutils-1.0" \
 		-D "gstreamer-full:gst-full-target-type=static_library" \
-		-D "gstreamer-full:gst-full-elements=coreelements:concat,filesrc,filesink,queue,queue2,typefind,tee,filesink,capsfilter,fakesink" \
+		-D "gstreamer-full:gst-full-elements=coreelements:concat,filesrc,queue,queue2,typefind,tee,capsfilter,fakesink" \
 		-D "gstreamer-full:bad=enabled" \
 		-D "gstreamer-full:tls=disabled" \
 		-D "gstreamer-full:libav=enabled" \
 		-D "gstreamer-full:ugly=enabled" \
 		-D "gstreamer-full:gpl=enabled" \
-		-D "gstreamer-full:gst-full-typefind-functions="
+		-D "gstreamer-full:gst-full-typefind-functions=" \
+		-D "pango:fontconfig=enabled"
 
 .PHONY: meson-setup
 meson-setup:
-	@meson setup build $(OPTS)
-	@meson configure build $(OPTS)
+	@meson setup $(BUILDDIR) $(OPTS)
+	@meson configure $(BUILDDIR) $(OPTS)
 
 .PHONY: node-all-platforms
 node-all-platforms: app
 	meson setup build-linux-amd64 $(OPTS) --buildtype debugoptimized
 	meson compile -C build-linux-amd64 archive
-	$(MAKE) link-test
+	$(MAKE) link-test-linux
 	$(MAKE) linux-arm64
 	$(MAKE) windows-amd64
 	$(MAKE) windows-amd64-startup-test
@@ -198,8 +219,13 @@ linux-arm64:
 .PHONY: windows-amd64
 windows-amd64:
 	rustup target add x86_64-pc-windows-gnu
-	meson setup --cross-file util/windows-amd64-gnu.ini --buildtype debugoptimized build-windows-amd64 $(OPTS)
+	$(MAKE) windows-amd64-meson-setup
 	meson compile -C build-windows-amd64 archive 2>&1 | grep -v drectve
+	$(MAKE) link-test-windows
+
+.PHONY: windows-amd64-meson-setup
+windows-amd64-meson-setup:
+	meson setup --cross-file util/windows-amd64-gnu.ini --buildtype debugoptimized build-windows-amd64 $(OPTS)
 
 # unbuffer here is a workaround for wine trying to pop up a terminal window and failing
 .PHONY: windows-amd64-startup-test
@@ -216,6 +242,7 @@ node-all-platforms-macos: app
 	&& cd -
 	./build-darwin-arm64/aquareum --version
 	./build-darwin-arm64/aquareum self-test
+	$(MAKE) link-test-macos
 	rustup target add x86_64-apple-darwin
 	meson setup --buildtype debugoptimized --cross-file util/darwin-amd64-apple.ini build-darwin-amd64 $(OPTS)
 	meson compile -C build-darwin-amd64
