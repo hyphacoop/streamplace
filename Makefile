@@ -49,7 +49,7 @@ schema:
 
 .PHONY: test
 test:
-	meson test -C build go-tests
+	meson test -C $(BUILDDIR) go-tests
 
 # test to make sure we haven't added any more dynamic dependencies
 LINUX_LINK_COUNT=5
@@ -96,8 +96,8 @@ ci-android: version install check android ci-upload-android
 
 .PHONY: ci-test
 ci-test: app
-	meson setup build $(OPTS)
-	meson test -C build go-tests
+	meson setup $(BUILDDIR) $(OPTS)
+	meson test -C $(BUILDDIR) go-tests
 
 .PHONY: android
 android: app .build/bundletool.jar
