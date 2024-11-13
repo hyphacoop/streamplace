@@ -172,8 +172,7 @@ OPTS = -D "gst-plugins-base:audioresample=enabled" \
 		-D "gstreamer-full:libav=enabled" \
 		-D "gstreamer-full:ugly=enabled" \
 		-D "gstreamer-full:gpl=enabled" \
-		-D "gstreamer-full:gst-full-typefind-functions=" \
-		-D "pango:fontconfig=enabled"
+		-D "gstreamer-full:gst-full-typefind-functions="
 
 .PHONY: meson-setup
 meson-setup:
