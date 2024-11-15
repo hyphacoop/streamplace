@@ -1,6 +1,6 @@
 module aquareum.tv/aquareum
 
-go 1.22.2
+go 1.22.4
 
 replace github.com/livepeer/lpms => github.com/aquareum-tv/lpms v0.0.0-20240828210246-5ac9b407751e
 
@@ -21,7 +21,6 @@ require (
 	github.com/golang/glog v1.2.0
 	github.com/google/uuid v1.6.0
 	github.com/johncgriffin/overflow v0.0.0-20211019200055-46fa312c352c
-	github.com/johnpili/go-text-to-image v0.0.0-20230820202620-720f6363352c
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/livepeer/lpms v0.0.0-20240812093642-b5181eb92cb2
 	github.com/lmittmann/tint v1.0.4
@@ -35,9 +34,9 @@ require (
 	gitlab.com/gitlab-org/release-cli v0.18.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/image v0.22.0
-	golang.org/x/net v0.27.0
+	golang.org/x/net v0.29.0
 	golang.org/x/sync v0.9.0
-	golang.org/x/term v0.22.0
+	golang.org/x/term v0.24.0
 	google.golang.org/api v0.189.0
 	gorm.io/datatypes v1.2.4
 	gorm.io/driver/sqlite v1.5.5
@@ -47,7 +46,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-isatty v0.0.20
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	gorm.io/gorm v1.25.11
 )
 
@@ -69,7 +68,7 @@ require (
 	cloud.google.com/go/storage v1.41.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
@@ -78,7 +77,7 @@ require (
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
@@ -122,16 +121,16 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
-	github.com/urfave/cli/v2 v2.25.7 // indirect
+	github.com/urfave/cli/v2 v2.27.5 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
-	golang.org/x/crypto v0.25.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
@@ -140,7 +139,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240722135656-d784300faade // indirect
 	google.golang.org/grpc v1.64.1 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect

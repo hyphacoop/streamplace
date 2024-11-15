@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -22,10 +23,12 @@ import (
 	"aquareum.tv/aquareum/pkg/log"
 	"aquareum.tv/aquareum/pkg/media"
 	"aquareum.tv/aquareum/pkg/notifications"
+	notificationpkg "aquareum.tv/aquareum/pkg/notifications"
 	"aquareum.tv/aquareum/pkg/replication"
 	"aquareum.tv/aquareum/pkg/replication/boring"
 	v0 "aquareum.tv/aquareum/pkg/schema/v0"
 	"golang.org/x/term"
+	"gorm.io/gorm"
 
 	"aquareum.tv/aquareum/pkg/api"
 	"aquareum.tv/aquareum/pkg/config"
@@ -147,7 +150,8 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		"buildTime", build.BuildTimeStr(),
 		"uuid", build.UUID,
 		"runtime.GOOS", runtime.GOOS,
-		"runtime.GOARCH", runtime.GOARCH)
+		"runtime.GOARCH", runtime.GOARCH,
+		"runtime.Version", runtime.Version())
 	if *version {
 		return nil
 	}
@@ -258,7 +262,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 	}
-	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
+	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer, mod)
 	if err != nil {
 		return err
 	}
@@ -298,6 +302,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			case <-ctx.Done():
 				return nil
 			case not := <-newSeg:
+				prevSeg, prevErr := mod.LatestSegmentForUser(not.Segment.User)
 				err := mod.CreateSegment(not.Segment)
 				if err != nil {
 					log.Error(ctx, "could not add segment to database", "error", err)
@@ -336,6 +341,41 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 						log.Error(ctx, "could not create thumbnail", "error", err)
 					}
 				}()
+				go func() {
+					err := func() error {
+						if prevErr != nil && !errors.Is(prevErr, gorm.ErrRecordNotFound) {
+							log.Error(ctx, "could not retreive previous segment", "error", prevErr)
+							return prevErr
+						}
+						if prevSeg != nil {
+							dur := not.Segment.StartTime.Sub(prevSeg.StartTime)
+							if prevSeg != nil && dur < (5*time.Minute) {
+								log.Debug(ctx, "skipping notification, less than 5 minutes since last segment", "user", not.Segment.User, "duration", dur)
+								// it's been less than 5 minutes since the last segment, skip notification
+								return nil
+							}
+						}
+
+						notifications, err := mod.ListNotifications()
+						if err != nil {
+							return err
+						}
+
+						nb := &notificationpkg.NotificationBlast{
+							Streamer: not.Metadata.Creator,
+							Title:    not.Metadata.Title,
+						}
+						if noter != nil {
+							noter.Blast(ctx, notifications, nb)
+						} else {
+							log.Log(ctx, "no notifier configured, skipping notifications", "user", not.Segment.User, "count", len(notifications), "content", nb)
+						}
+						return nil
+					}()
+					if err != nil {
+						log.Error(ctx, "could not send notification", "error", err)
+					}
+				}()
 			}
 		}
 	})
@@ -348,7 +388,15 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		if err != nil {
 			return err
 		}
-		testMediaSigner, err := media.MakeMediaSigner(ctx, &cli, "self-test-signer", testSigner)
+		testMediaSigner, err := media.MakeMediaSigner(ctx, &cli, "self-test-signer", testSigner, mod)
+		if err != nil {
+			return err
+		}
+		err = mod.UpdateSettings(&model.Settings{
+			ID:       testMediaSigner.Pub.String(),
+			Streamer: "stream-self-tester",
+			Title:    "test-stream",
+		})
 		if err != nil {
 			return err
 		}
