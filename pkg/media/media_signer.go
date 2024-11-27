@@ -65,16 +65,18 @@ func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, sign
 }
 
 func (ms *MediaSigner) SignMP4(ctx context.Context, input io.ReadSeeker, start int64) ([]byte, error) {
-	settings, err := ms.Model.GetSettings(ms.Pub.String())
+	ident, err := ms.Model.GetIdentity(ms.Pub.String())
 	if err != nil {
 		return nil, err
 	}
-	if settings.Title == "" {
-		return nil, fmt.Errorf("no title set for streamer %s", ms.Pub.String())
+	if ident.Handle == "" {
+		return nil, fmt.Errorf("no handle set for streamer %s", ms.Pub.String())
 	}
-	if settings.Streamer == "" {
-		return nil, fmt.Errorf("no streamer set for streamer %s", ms.Pub.String())
+	creator := []string{ident.Handle}
+	if ident.DID != "" {
+		creator = append(creator, ident.DID)
 	}
+	title := "livestream"
 	mani := obj{
 		"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
 		"assertions": []obj{
@@ -93,8 +95,8 @@ func (ms *MediaSigner) SignMP4(ctx context.Context, input io.ReadSeeker, start i
 					"@context": obj{
 						"dc": "http://purl.org/dc/elements/1.1/",
 					},
-					"dc:creator": []string{settings.Streamer},
-					"dc:title":   []string{settings.Title},
+					"dc:creator": creator,
+					"dc:title":   []string{title},
 					"dc:date":    []string{aqtime.FromMillis(start).String()},
 				},
 			},

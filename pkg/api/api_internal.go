@@ -70,7 +70,11 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		user = a.NormalizeUser(user)
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			return
+		}
 		w.Header().Set("content-type", "text/plain")
 		fmt.Fprintf(w, "ffconcat version 1.0\n")
 		// intermittent reports that you need two here to make things work properly? shouldn't matter.
@@ -85,7 +89,11 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		user = a.NormalizeUser(user)
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			return
+		}
 		file := <-a.MediaManager.SubscribeSegment(ctx, user)
 		w.Header().Set("Location", fmt.Sprintf("%s/playback/%s/segment/%s\n", a.CLI.OwnInternalURL(), user, file))
 		w.WriteHeader(301)
@@ -97,7 +105,11 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		user = a.NormalizeUser(user)
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			return
+		}
 		file := p.ByName("file")
 		if file == "" {
 			errors.WriteHTTPBadRequest(w, "file required", nil)
@@ -117,10 +129,14 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		user = a.NormalizeUser(user)
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			return
+		}
 		w.Header().Set("Content-Type", "video/x-matroska")
 		w.WriteHeader(200)
-		err := a.MediaManager.SegmentToMKVPlusOpus(ctx, user, w)
+		err = a.MediaManager.SegmentToMKVPlusOpus(ctx, user, w)
 		if err != nil {
 			log.Log(ctx, "stream.mkv error", "error", err)
 		}
@@ -132,7 +148,11 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		user = a.NormalizeUser(user)
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			return
+		}
 		var delayMS int64 = 1000
 		userDelay := r.URL.Query().Get("delayms")
 		if userDelay != "" {
@@ -246,13 +266,13 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 
 		id := a.Signer.Hex()
 
-		settings, err := a.Model.GetSettings(id)
+		ident, err := a.Model.GetIdentity(id)
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to get settings", err)
 			return
 		}
 
-		bs, err := json.Marshal(settings)
+		bs, err := json.Marshal(ident)
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
 			return
@@ -271,14 +291,14 @@ func (a *AquareumAPI) InternalHandler(ctx context.Context) (http.Handler, error)
 			return
 		}
 
-		var settings model.Settings
-		if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+		var ident model.Identity
+		if err := json.NewDecoder(r.Body).Decode(&ident); err != nil {
 			errors.WriteHTTPBadRequest(w, "invalid request body", err)
 			return
 		}
-		settings.ID = id
+		ident.ID = id
 
-		if err := a.Model.UpdateSettings(&settings); err != nil {
+		if err := a.Model.UpdateIdentity(&ident); err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to update settings", err)
 			return
 		}

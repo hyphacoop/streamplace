@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	sloghttp "github.com/samber/slog-http"
 
 	"aquareum.tv/aquareum/js/app"
+	"aquareum.tv/aquareum/pkg/atproto"
 	"aquareum.tv/aquareum/pkg/config"
 	"aquareum.tv/aquareum/pkg/crypto/signers/eip712"
 	apierrors "aquareum.tv/aquareum/pkg/errors"
@@ -89,10 +91,6 @@ func (fs AppHostingFS) Open(name string) (http.File, error) {
 }
 
 func (a *AquareumAPI) Handler(ctx context.Context) (http.Handler, error) {
-	files, err := app.Files()
-	if err != nil {
-		return nil, err
-	}
 	router := httprouter.New()
 	apiRouter := httprouter.New()
 	apiRouter.HandlerFunc("POST", "/api/notification", a.HandleNotification(ctx))
@@ -113,8 +111,10 @@ func (a *AquareumAPI) Handler(ctx context.Context) (http.Handler, error) {
 	apiRouter.GET("/api/playback/:user/stream.jpg", a.HandleThumbnailPlayback(ctx))
 	apiRouter.POST("/api/player-event", a.HandlePlayerEvent(ctx))
 	apiRouter.GET("/api/segment/recent", a.HandleRecentSegments(ctx))
-	apiRouter.GET("/api/settings", a.HandleSettingsGET(ctx))
-	apiRouter.PUT("/api/settings/:id", a.HandleSettingsPUT(ctx))
+	apiRouter.GET("/api/identity", a.HandleIdentityGET(ctx))
+	apiRouter.PUT("/api/identity/:id", a.HandleIdentityPUT(ctx))
+	apiRouter.GET("/api/bluesky/resolve/:handle", a.HandleBlueskyResolve(ctx))
+	apiRouter.GET("/api/atproto-oauth", a.HandleATProtoOAuth(ctx))
 	apiRouter.NotFound = a.HandleAPI404(ctx)
 	router.Handler("GET", "/api/*resource", apiRouter)
 	router.Handler("POST", "/api/*resource", apiRouter)
@@ -122,7 +122,25 @@ func (a *AquareumAPI) Handler(ctx context.Context) (http.Handler, error) {
 	router.Handler("PATCH", "/api/*resource", apiRouter)
 	router.Handler("DELETE", "/api/*resource", apiRouter)
 	router.GET("/dl/*params", a.HandleAppDownload(ctx))
-	router.NotFound = a.FileHandler(ctx, http.FileServer(AppHostingFS{http.FS(files)}))
+	if a.CLI.FrontendProxy != "" {
+		u, err := url.Parse(a.CLI.FrontendProxy)
+		if err != nil {
+			return nil, err
+		}
+		log.Warn(ctx, "using frontend proxy instead of bundled frontend", "destination", a.CLI.FrontendProxy)
+		router.NotFound = &httputil.ReverseProxy{
+			Rewrite: func(r *httputil.ProxyRequest) {
+				r.SetXForwarded()
+				r.SetURL(u)
+			},
+		}
+	} else {
+		files, err := app.Files()
+		if err != nil {
+			return nil, err
+		}
+		router.NotFound = a.FileHandler(ctx, http.FileServer(AppHostingFS{http.FS(files)}))
+	}
 	handler := sloghttp.Recovery(router)
 	handler = cors.AllowAll().Handler(handler)
 	handler = sloghttp.New(slog.Default())(handler)
@@ -230,7 +248,7 @@ func (a *AquareumAPI) HandleAPI404(ctx context.Context) http.HandlerFunc {
 	}
 }
 
-func (a *AquareumAPI) HandleSettingsPUT(ctx context.Context) httprouter.Handle {
+func (a *AquareumAPI) HandleIdentityPUT(ctx context.Context) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
 		if id == "" {
@@ -247,7 +265,7 @@ func (a *AquareumAPI) HandleSettingsPUT(ctx context.Context) httprouter.Handle {
 			apierrors.WriteHTTPBadRequest(w, "could not verify signature on payload", err)
 			return
 		}
-		golive, ok := signed.Data().(*v0.GoLive)
+		ident, ok := signed.Data().(*v0.Identity)
 		if !ok {
 			log.Log(ctx, "got signed payload but it wasn't a golive")
 			apierrors.WriteHTTPBadRequest(w, "not a golive", nil)
@@ -259,10 +277,10 @@ func (a *AquareumAPI) HandleSettingsPUT(ctx context.Context) httprouter.Handle {
 			return
 		}
 		log.Log(ctx, "got signed & verified payload", "payload", signed)
-		if err := a.Model.UpdateSettings(&model.Settings{
-			ID:       id,
-			Streamer: golive.Streamer,
-			Title:    golive.Title,
+		if err := a.Model.UpdateIdentity(&model.Identity{
+			ID:     id,
+			Handle: ident.Handle,
+			DID:    ident.DID,
 		}); err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "unable to update settings", err)
 			return
@@ -357,21 +375,50 @@ func (a *AquareumAPI) HandleRecentSegments(ctx context.Context) httprouter.Handl
 	}
 }
 
-func (a *AquareumAPI) HandleSettingsGET(ctx context.Context) httprouter.Handle {
+func (a *AquareumAPI) HandleIdentityGET(ctx context.Context) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id := a.MediaSigner.Pub.String()
 
-		settings, err := a.Model.GetSettings(id)
+		ident, err := a.Model.GetIdentity(id)
 		if err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "unable to get settings", err)
 			return
 		}
 
-		bs, err := json.Marshal(settings)
+		bs, err := json.Marshal(ident)
 		if err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
 			return
 		}
+		w.Write(bs)
+	}
+}
+
+func (a *AquareumAPI) HandleBlueskyResolve(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		log.Log(ctx, "got bluesky notification", "params", params)
+		key, err := atproto.SyncBlueskyRepo(ctx, params.ByName("handle"), a.Model)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not resolve aquareum key", err)
+			return
+		}
+		w.Write([]byte(key))
+	}
+}
+
+func (a *AquareumAPI) HandleATProtoOAuth(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		host, _, err := net.SplitHostPort(req.Host)
+		if err != nil {
+			host = req.Host
+		}
+		meta := atproto.GetMetadata(host)
+		bs, err := json.Marshal(meta)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal metadata", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(bs)
 	}
 }

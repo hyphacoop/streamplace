@@ -18,6 +18,9 @@ func (m *DBModel) CreateThumbnail(thumb *Thumbnail) error {
 	if err != nil {
 		return err
 	}
+	if thumb.SegmentID == "" {
+		return fmt.Errorf("segmentID is required")
+	}
 	thumb.ID = uu.String()
 	err = m.DB.Model(Thumbnail{}).Create(thumb).Error
 	if err != nil {
@@ -37,11 +40,12 @@ func (m *DBModel) LatestThumbnailForUser(user string) (*Thumbnail, error) {
 		Order("s.start_time DESC").
 		Limit(1).
 		Scan(&thumbnail)
-	if res.Error != nil {
-		return nil, res.Error
-	}
+
 	if res.RowsAffected == 0 {
 		return nil, nil
+	}
+	if res.Error != nil {
+		return nil, res.Error
 	}
 
 	var seg Segment

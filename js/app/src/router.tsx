@@ -10,20 +10,26 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   ArrowLeft,
   Home,
+  LogIn,
   Menu,
   Settings as SettingsIcon,
   Video,
+  User,
 } from "@tamagui/lucide-icons";
 import { Provider, Settings } from "components";
 import StreamList from "components/stream-list/stream-list";
 import usePlatform from "hooks/usePlatform";
 import { useEffect } from "react";
-import { Pressable } from "react-native";
+import { ImageBackground, ImageSourcePropType, Pressable } from "react-native";
 import { useTheme, View } from "tamagui";
 import MultiScreen from "./screens/multi";
 import StreamScreen from "./screens/stream";
 import SupportScreen from "./screens/support";
 import GoLiveScreen from "./screens/golive";
+import Login from "components/login/login";
+import { selectUserProfile } from "features/bluesky/blueskySlice";
+import { useAppSelector } from "store/hooks";
+import AQLink from "components/aqlink";
 
 function HomeScreen() {
   return (
@@ -43,7 +49,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
         screens: {
           StreamList: "",
           Stream: {
-            path: "stream/:user",
+            path: ":user",
           },
         },
       },
@@ -51,6 +57,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Support: "support",
       Settings: "settings",
       GoLive: "golive",
+      Login: "login",
     },
   },
 };
@@ -75,6 +82,36 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
   );
 };
 
+const AvatarButton = () => {
+  const navigation = useNavigation();
+  const userProfile = useAppSelector(selectUserProfile);
+  let source: ImageSourcePropType | undefined = undefined;
+  let opacity = 1;
+  if (userProfile) {
+    source = { uri: userProfile.avatar };
+    opacity = 0;
+  }
+  return (
+    <AQLink to={{ screen: "Login", params: {} }}>
+      <ImageBackground
+        source={source}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          overflow: "hidden",
+          marginRight: 10,
+          backgroundColor: "black",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <User opacity={opacity}></User>
+      </ImageBackground>
+    </AQLink>
+  );
+};
+
 export default function Router() {
   const { initPushNotifications, isWeb, isElectron } = usePlatform();
   useEffect(() => {
@@ -94,11 +131,23 @@ export function AquareumDrawer() {
   const theme = useTheme();
   const { isWeb, isElectron } = usePlatform();
   const navigation = useNavigation();
+  useEffect(() => {
+    // const params = new URLSearchParams(document.location.search);
+    // if (params.has("code")) {
+    //   navigation.dispatch(
+    //     CommonActions.reset({
+    //       index: 0,
+    //       routes: [{ name: "Login" }],
+    //     }),
+    //   );
+    // }
+  }, []);
   return (
     <Drawer.Navigator
       initialRouteName="Home"
       screenOptions={{
         headerLeft: () => <NavigationButton />,
+        headerRight: () => <AvatarButton />,
         drawerActiveTintColor: theme.accentColor.val,
         headerStyle: {},
       }}
@@ -152,6 +201,11 @@ export function AquareumDrawer() {
           drawerItemStyle: { display: "none" },
         }}
       />
+      <Drawer.Screen
+        name="Login"
+        component={Login}
+        options={{ drawerIcon: () => <LogIn /> }}
+      />
       {isElectron && (
         <Drawer.Screen
           name="GoLive"
@@ -174,6 +228,7 @@ const MainTab = () => {
         headerLeft: ({ canGoBack }) => (
           <NavigationButton canGoBack={canGoBack} />
         ),
+        headerRight: () => <AvatarButton />,
         headerShown: !isWeb,
       }}
     >
