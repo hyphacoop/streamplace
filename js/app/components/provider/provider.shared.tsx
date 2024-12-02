@@ -11,8 +11,8 @@ import { PortalProvider, TamaguiProvider } from "tamagui";
 import config from "tamagui.config";
 import { CurrentToast } from "./CurrentToast";
 import { Provider as ReduxProvider } from "react-redux";
-import { store } from "store/store";
 import BlueskyProvider from "features/bluesky/blueskyProvider";
+import { store } from "store/store";
 export default function Provider({
   children,
   linking,
@@ -24,8 +24,8 @@ export default function Provider({
     <TamaguiProvider config={config} defaultTheme={"dark"}>
       <NavigationContainer theme={DarkTheme} linking={linking}>
         <ReduxProvider store={store}>
-          <BlueskyProvider>
-            <AquareumProvider>
+          <AquareumProvider>
+            <BlueskyProvider>
               <PortalProvider>
                 <ToastProvider
                   swipeDirection="vertical"
@@ -42,8 +42,8 @@ export default function Provider({
                   <ToastViewport name="default" top="$8" left={0} right={0} />
                 </ToastProvider>
               </PortalProvider>
-            </AquareumProvider>
-          </BlueskyProvider>
+            </BlueskyProvider>
+          </AquareumProvider>
         </ReduxProvider>
       </NavigationContainer>
     </TamaguiProvider>
