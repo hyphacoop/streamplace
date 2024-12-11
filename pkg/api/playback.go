@@ -12,9 +12,12 @@ import (
 	"time"
 
 	"aquareum.tv/aquareum/pkg/aqtime"
+	"aquareum.tv/aquareum/pkg/aqwebrtc"
 	"aquareum.tv/aquareum/pkg/atproto"
 	"aquareum.tv/aquareum/pkg/errors"
+	"aquareum.tv/aquareum/pkg/log"
 	"github.com/julienschmidt/httprouter"
+	"github.com/pion/webrtc/v4"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -119,6 +122,42 @@ func (a *AquareumAPI) HandleMKVPlayback(ctx context.Context) httprouter.Handle {
 			return err
 		})
 		g.Wait()
+	}
+}
+
+func (a *AquareumAPI) HandleWebRTCPlayback(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		user := p.ByName("user")
+		if user == "" {
+			errors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+		_, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, "error reading body", err)
+			return
+		}
+		offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: string(body)}
+		pr, pw := io.Pipe()
+		answer, err := aqwebrtc.WebRTCPlayback(ctx, pr, &offer)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "error playing back", err)
+			return
+		}
+		go func() {
+			err := a.MediaManager.SegmentToMKV(ctx, user, pw)
+			if err != nil {
+				log.Log(ctx, "error writing segment to mkv", err)
+			}
+		}()
+		w.WriteHeader(201)
+		w.Header().Add("Location", r.URL.Path)
+		w.Write([]byte(answer.SDP))
 	}
 }
 

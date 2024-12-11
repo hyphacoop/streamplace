@@ -36,7 +36,7 @@ func SafePipe() (*os.File, *os.File, func(), error) {
 	}, nil
 }
 
-func readerNeedData(ctx context.Context, input io.Reader) func(self *app.Source, length uint) {
+func ReaderNeedData(ctx context.Context, input io.Reader) func(self *app.Source, length uint) {
 	return func(self *app.Source, length uint) {
 		bs := make([]byte, length)
 		read, err := input.Read(bs)
@@ -62,7 +62,7 @@ func readerNeedData(ctx context.Context, input io.Reader) func(self *app.Source,
 	}
 }
 
-func writerNewSample(ctx context.Context, output io.Writer) func(sink *app.Sink) gst.FlowReturn {
+func WriterNewSample(ctx context.Context, output io.Writer) func(sink *app.Sink) gst.FlowReturn {
 	return func(sink *app.Sink) gst.FlowReturn {
 		sample := sink.PullSample()
 		if sample == nil {
@@ -108,7 +108,7 @@ func AddOpusToMKV(ctx context.Context, input io.Reader, output io.Writer) error 
 
 	src := app.SrcFromElement(appsrc)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: readerNeedData(ctx, input),
+		NeedDataFunc: ReaderNeedData(ctx, input),
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -121,7 +121,7 @@ func AddOpusToMKV(ctx context.Context, input io.Reader, output io.Writer) error 
 
 	sink := app.SinkFromElement(appsink)
 	sink.SetCallbacks(&app.SinkCallbacks{
-		NewSampleFunc: writerNewSample(ctx, output),
+		NewSampleFunc: WriterNewSample(ctx, output),
 		EOSFunc: func(sink *app.Sink) {
 			cancel()
 		},
@@ -330,7 +330,7 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 		}
 		appsink := app.SinkFromElement(sinkEle)
 		appsink.SetCallbacks(&app.SinkCallbacks{
-			NewSampleFunc: writerNewSample(ctx, vf.Buf),
+			NewSampleFunc: WriterNewSample(ctx, vf.Buf),
 			EOSFunc: func(sink *app.Sink) {
 				m3u8.CloseSegment(ctx, vf)
 			},
@@ -344,7 +344,7 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 
 	src := app.SrcFromElement(appsrc)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: readerNeedData(ctx, input),
+		NeedDataFunc: ReaderNeedData(ctx, input),
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -430,7 +430,7 @@ func (mm *MediaManager) IngestStream(ctx context.Context, input io.Reader, ms *M
 	// defer runtime.KeepAlive(srcele)
 	src := app.SrcFromElement(srcele)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: readerNeedData(ctx, input),
+		NeedDataFunc: ReaderNeedData(ctx, input),
 	})
 	parseEle, err := pipeline.GetElementByName("parse")
 	if err != nil {
@@ -655,7 +655,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms *MediaSigner)
 			panic("appsink should not be nil")
 		}
 		appsink.SetCallbacks(&app.SinkCallbacks{
-			NewSampleFunc: writerNewSample(ctx, buf),
+			NewSampleFunc: WriterNewSample(ctx, buf),
 			EOSFunc: func(sink *app.Sink) {
 				bs, err := ms.SignMP4(ctx, bytes.NewReader(buf.Bytes()), time.Now().UnixMilli())
 				if err != nil {
@@ -693,7 +693,7 @@ func (mm *MediaManager) Thumbnail(ctx context.Context, r io.Reader, w io.Writer)
 
 	src := app.SrcFromElement(appsrc)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: readerNeedData(ctx, r),
+		NeedDataFunc: ReaderNeedData(ctx, r),
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -724,7 +724,7 @@ func (mm *MediaManager) Thumbnail(ctx context.Context, r io.Reader, w io.Writer)
 
 	sink := app.SinkFromElement(appsink)
 	sink.SetCallbacks(&app.SinkCallbacks{
-		NewSampleFunc: writerNewSample(ctx, w),
+		NewSampleFunc: WriterNewSample(ctx, w),
 		EOSFunc: func(sink *app.Sink) {
 			cancel()
 		},

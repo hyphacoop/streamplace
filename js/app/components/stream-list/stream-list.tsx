@@ -1,4 +1,3 @@
-import { useNavigation } from "@react-navigation/native";
 import AQLink from "components/aqlink";
 import ErrorBox from "components/error/error";
 import Loading from "components/loading/loading";
@@ -37,7 +36,6 @@ export default function StreamList({
   const [loading, setLoading] = useState<boolean>(false);
   const [retryTime, setRetryTime] = useState<number>(Date.now());
   const { url } = useAquareumNode();
-  const navigation = useNavigation();
   useEffect(() => {
     const interval = setInterval(() => {
       setRetryTime(Date.now());
@@ -90,7 +88,10 @@ export default function StreamList({
       {streams.map((segment, i) => (
         <View flex={1} key={i} alignItems="stretch">
           <AQLink
-            to={{ screen: "Stream", params: { user: segment.repo.handle } }}
+            to={{
+              screen: "Stream",
+              params: { user: segment.repo?.handle || segment.user },
+            }}
           >
             <View
               alignItems="center"
@@ -104,7 +105,7 @@ export default function StreamList({
                 f={1}
                 aspectRatio={16 / 9}
                 width="100%"
-                src={`${url}/api/playback/${segment.repo.aquareumKey}/stream.jpg`}
+                src={`${url}/api/playback/${segment.user}/stream.jpg`}
                 resizeMode="contain"
                 objectFit="contain"
               />
@@ -136,7 +137,11 @@ export default function StreamList({
                 </View>
                 <View bg="$red10" w={15} h={15} margin={5} borderRadius="$10" />
               </View>
-              <H6>@{segment.repo.handle}</H6>
+              <H6>
+                {segment.repo?.handle
+                  ? `@${segment.repo.handle}`
+                  : segment.user}
+              </H6>
             </View>
           </AQLink>
         </View>

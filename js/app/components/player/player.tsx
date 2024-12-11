@@ -9,8 +9,7 @@ import {
   PlayerProps,
   PlayerStatus,
   PlayerStatusTracker,
-  PROTOCOL_HLS,
-  PROTOCOL_PROGRESSIVE_MP4,
+  PROTOCOL_WEBRTC,
 } from "./props";
 
 const HIDE_CONTROLS_AFTER = 2000;
@@ -40,14 +39,18 @@ export function Player(props: Partial<PlayerProps>) {
     setTouchTime(Date.now());
     setShowControls(true);
   };
-  const plat = usePlatform();
-  let defProto = PROTOCOL_PROGRESSIVE_MP4;
-  if (plat.isIOS) {
-    defProto = PROTOCOL_HLS;
-  } else if (plat.isSafari) {
-    defProto = PROTOCOL_HLS;
-  } else if (plat.isFirefox) {
-    defProto = PROTOCOL_HLS;
+  // keeping this other logic for now in case we need a second-best choice
+  let defProto = PROTOCOL_WEBRTC;
+  // const plat = usePlatform();
+  // if (plat.isIOS) {
+  //   defProto = PROTOCOL_HLS;
+  // } else if (plat.isSafari) {
+  //   defProto = PROTOCOL_HLS;
+  // } else if (plat.isFirefox) {
+  //   defProto = PROTOCOL_HLS;
+  // }
+  if (props.forceProtocol) {
+    defProto = props.forceProtocol;
   }
   const { url } = useAquareumNode();
   const info = usePlatform();

@@ -1,13 +1,15 @@
 import {
+  Antenna,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
   Circle,
   Maximize,
   Minimize,
-  Moon,
   Settings,
+  Shell,
   Sparkle,
+  Squirrel,
   Star,
   Volume2,
   VolumeX,
@@ -20,6 +22,7 @@ import {
   Popover,
   Separator,
   Text,
+  useMedia,
   View,
   XStack,
   YGroup,
@@ -29,6 +32,7 @@ import {
   PROTOCOL_HLS,
   PROTOCOL_PROGRESSIVE_MP4,
   PROTOCOL_PROGRESSIVE_WEBM,
+  PROTOCOL_WEBRTC,
 } from "./props";
 
 const Bar = (props) => (
@@ -139,11 +143,12 @@ export default function Controls(props: PlayerProps) {
 
 export function PopoverMenu(props: PlayerProps) {
   const [open, setOpen] = useState(false);
+  const media = useMedia();
   useEffect(() => {
-    if (props.showControls === false) {
+    if (!media.sm && props.showControls === false) {
       setOpen(false);
     }
-  }, [props.showControls]);
+  }, [props.showControls, media.sm]);
   return (
     <Popover
       size="$5"
@@ -169,7 +174,7 @@ export function PopoverMenu(props: PlayerProps) {
       <Adapt when="sm" platform="touch">
         <Popover.Sheet modal dismissOnSnapToBottom snapPoints={[50]}>
           <Popover.Sheet.Frame padding="$2">
-            <Adapt.Contents />
+            <GearMenu {...props} />
           </Popover.Sheet.Frame>
           <Popover.Sheet.Overlay
             animation="lazy"
@@ -261,7 +266,7 @@ function GearMenu(props: PlayerProps) {
               pressTheme
               title="Progressive MP4"
               subTitle="MP4 but loooong"
-              icon={Moon}
+              icon={Shell}
               iconAfter={
                 props.protocol === PROTOCOL_PROGRESSIVE_MP4
                   ? CheckCircle
@@ -277,13 +282,27 @@ function GearMenu(props: PlayerProps) {
               pressTheme
               title="Progressive WebM"
               subTitle="WebM but loooong"
-              icon={Moon}
+              icon={Squirrel}
               iconAfter={
                 props.protocol === PROTOCOL_PROGRESSIVE_WEBM
                   ? CheckCircle
                   : Circle
               }
               onPress={() => props.setProtocol(PROTOCOL_PROGRESSIVE_WEBM)}
+            />
+          </YGroup.Item>
+          <Separator />
+          <YGroup.Item>
+            <ListItem
+              hoverTheme
+              pressTheme
+              title="WebRTC"
+              subTitle="Lowest latency, probably"
+              icon={Antenna}
+              iconAfter={
+                props.protocol === PROTOCOL_WEBRTC ? CheckCircle : Circle
+              }
+              onPress={() => props.setProtocol(PROTOCOL_WEBRTC)}
             />
           </YGroup.Item>
         </>

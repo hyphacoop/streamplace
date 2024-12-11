@@ -1,7 +1,11 @@
-import React, { useEffect } from "react";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
-import { PlayerProps, PlayerStatus } from "./props";
+import React, { useEffect } from "react";
+import { RTCView } from "react-native-webrtc";
+import { View } from "tamagui";
+import { PlayerProps, PlayerStatus, PROTOCOL_WEBRTC } from "./props";
 import { srcToUrl } from "./shared";
+import useWebRTC from "./use-webrtc";
+import { MediaStream } from "react-native-webrtc";
 
 // export function Player() {
 //   return <View f={1}></View>;
@@ -10,6 +14,9 @@ import { srcToUrl } from "./shared";
 export default function NativeVideo(
   props: PlayerProps & { videoRef: React.RefObject<VideoView> },
 ) {
+  if (props.protocol === PROTOCOL_WEBRTC) {
+    return <NativeWHEP {...props} />;
+  }
   const { url } = srcToUrl(props);
   useEffect(() => {
     return () => {
@@ -73,6 +80,45 @@ export default function NativeVideo(
       }}
       onFullscreenExit={() => {
         props.setFullscreen(false);
+      }}
+    />
+  );
+}
+
+export function NativeWHEP(props: PlayerProps) {
+  const { url } = srcToUrl(props);
+  const [stream] = useWebRTC(url);
+  const mediaStream = stream as unknown as MediaStream;
+  useEffect(() => {
+    if (!mediaStream) {
+      props.setStatus(PlayerStatus.WAITING);
+      return;
+    }
+    props.setStatus(PlayerStatus.PLAYING);
+  }, [mediaStream]);
+  useEffect(() => {
+    if (!mediaStream) {
+      return;
+    }
+    mediaStream.getTracks().forEach((track) => {
+      if (track.kind === "audio") {
+        track._setVolume(props.muted ? 0 : 1);
+      }
+    });
+  }, [mediaStream, props.muted]);
+  if (!mediaStream) {
+    return <View></View>;
+  }
+  return (
+    <RTCView
+      mirror={false}
+      objectFit={"contain"}
+      streamURL={mediaStream.toURL()}
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#111",
+        flex: 1,
       }}
     />
   );

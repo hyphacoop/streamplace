@@ -1,5 +1,12 @@
 import Hls from "hls.js";
-import { ForwardedRef, forwardRef, RefObject, useEffect } from "react";
+import {
+  ForwardedRef,
+  forwardRef,
+  RefObject,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { View } from "tamagui";
 import {
   PlayerProps,
@@ -7,8 +14,10 @@ import {
   PROTOCOL_HLS,
   PROTOCOL_PROGRESSIVE_MP4,
   PROTOCOL_PROGRESSIVE_WEBM,
+  PROTOCOL_WEBRTC,
 } from "./props";
 import { srcToUrl } from "./shared";
+import useWebRTC from "./use-webrtc";
 
 type VideoProps = PlayerProps & { url: string };
 
@@ -30,6 +39,8 @@ export default function WebVideo(
     return <ProgressiveWebMPlayer url={url} {...props} />;
   } else if (protocol === PROTOCOL_HLS) {
     return <HLSPlayer url={url} {...props} />;
+  } else if (protocol === PROTOCOL_WEBRTC) {
+    return <WebRTCPlayer url={url} {...props} />;
   } else {
     throw new Error(`unknown playback protocol ${props.protocol}`);
   }
@@ -41,6 +52,7 @@ const updateEvents = {
   waiting: true,
   stalled: true,
   pause: true,
+  suspend: true,
 };
 
 const VideoElement = forwardRef(
@@ -165,20 +177,27 @@ export function HLSPlayer(
   return <VideoElement {...props} ref={videoRef} />;
 }
 
-// export function WebRTCPlayer(props: { src: string }) {
-//   const videoRef = useRef<HTMLVideoElement | null>(null);
-//   const { url } = useAquareumNode();
-//   useEffect(() => {
-//     if (!videoRef.current) {
-//       return;
-//     }
-//     const client = new WHEPClient(
-//       `${url}/api/webrtc/${props.src}`,
-//       videoRef.current,
-//     );
-//     return () => {
-//       client.close();
-//     };
-//   }, [videoRef.current]);
-//   return <VideoElement ref={videoRef} />;
-// }
+export function WebRTCPlayer(
+  props: VideoProps & { videoRef: RefObject<HTMLVideoElement> },
+) {
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
+    null,
+  );
+
+  const handleRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node) {
+      setVideoElement(node);
+    }
+  }, []);
+
+  const [mediaStream] = useWebRTC(props.url);
+
+  useEffect(() => {
+    if (!videoElement) {
+      return;
+    }
+    videoElement.srcObject = mediaStream;
+  }, [videoElement, mediaStream]);
+
+  return <VideoElement {...props} ref={handleRef} />;
+}

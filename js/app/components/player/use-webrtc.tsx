@@ -1,85 +1,40 @@
-/**
- * Example implementation of a client that uses WHEP to playback video over WebRTC
- *
- * https://www.ietf.org/id/draft-murillo-whep-00.html
- */
-export default class WHEPClient {
-  endpoint: string;
-  videoElement: HTMLVideoElement;
-  peerConnection: RTCPeerConnection;
-  stream: MediaStream;
-  constructor(endpoint, videoElement) {
-    this.endpoint = endpoint;
-    this.videoElement = videoElement;
-    this.stream = new MediaStream();
-    /**
-     * Create a new WebRTC connection, using public STUN servers with ICE,
-     * allowing the client to disover its own IP address.
-     * https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Protocols#ice
-     */
-    this.peerConnection = new RTCPeerConnection({
-      // iceServers: [
-      //   {
-      //     urls: "stun:stun.cloudflare.com:3478",
-      //   },
-      // ],
+import { useEffect, useState } from "react";
+import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
+
+export default function useWebRTC(endpoint: string) {
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  useEffect(() => {
+    const peerConnection = new RTCPeerConnection({
       bundlePolicy: "max-bundle",
     });
-    /** https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTransceiver */
-    this.peerConnection.addTransceiver("video", {
+    peerConnection.addTransceiver("video", {
       direction: "recvonly",
     });
-    this.peerConnection.addTransceiver("audio", {
+    peerConnection.addTransceiver("audio", {
       direction: "recvonly",
     });
-    /**
-     * When new tracks are received in the connection, store local references,
-     * so that they can be added to a MediaStream, and to the <video> element.
-     *
-     * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/track_event
-     */
-    this.peerConnection.ontrack = (event) => {
+    peerConnection.addEventListener("track", (event) => {
       const track = event.track;
-      const currentTracks = this.stream.getTracks();
-      const streamAlreadyHasVideoTrack = currentTracks.some(
-        (track) => track.kind === "video",
-      );
-      const streamAlreadyHasAudioTrack = currentTracks.some(
-        (track) => track.kind === "audio",
-      );
-      switch (track.kind) {
-        case "video":
-          if (streamAlreadyHasVideoTrack) {
-            break;
-          }
-          this.stream.addTrack(track);
-          break;
-        case "audio":
-          if (streamAlreadyHasAudioTrack) {
-            break;
-          }
-          this.stream.addTrack(track);
-          break;
-        default:
-          console.log("got unknown track " + track);
-      }
-    };
-    this.peerConnection.addEventListener("connectionstatechange", (ev) => {
-      if (this.peerConnection.connectionState !== "connected") {
+      if (!track) {
         return;
       }
-      if (!this.videoElement.srcObject) {
-        this.videoElement.srcObject = this.stream;
+      setMediaStream(event.streams[0]);
+    });
+    peerConnection.addEventListener("connectionstatechange", (ev) => {
+      console.log("connection state change", peerConnection.connectionState);
+      if (peerConnection.connectionState !== "connected") {
+        return;
       }
     });
-    this.peerConnection.addEventListener("negotiationneeded", (ev) => {
-      negotiateConnectionWithClientOffer(this.peerConnection, this.endpoint);
+    peerConnection.addEventListener("negotiationneeded", (ev) => {
+      negotiateConnectionWithClientOffer(peerConnection, endpoint);
     });
-  }
 
-  close() {
-    this.peerConnection.close();
-  }
+    return () => {
+      peerConnection.close();
+    };
+  }, [endpoint]);
+  return [mediaStream];
 }
 
 /**
@@ -99,7 +54,10 @@ export async function negotiateConnectionWithClientOffer(
   endpoint: string,
 ) {
   /** https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer */
-  const offer = await peerConnection.createOffer();
+  const offer = await peerConnection.createOffer({
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true,
+  });
   /** https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/setLocalDescription */
   await peerConnection.setLocalDescription(offer);
 
@@ -119,6 +77,7 @@ export async function negotiateConnectionWithClientOffer(
        * This specifies how the client should communicate,
        * and what kind of media client and server have negotiated to exchange.
        */
+      console.log(`posting sdp offer: ${endpoint}`);
       let response = await postSDPOffer(endpoint, ofr.sdp);
       if (response.status === 201) {
         let answerSDP = await response.text();
@@ -135,7 +94,7 @@ export async function negotiateConnectionWithClientOffer(
         console.error(errorMessage);
       }
     } catch (e) {
-      console.error(e);
+      console.error(`posting sdp offer failed: ${e}`);
     }
 
     /** Limit reconnection attempts to at-most once every 5 seconds */
@@ -171,8 +130,10 @@ async function waitToCompleteICEGathering(peerConnection: RTCPeerConnection) {
       }
       resolve(peerConnection.localDescription);
     }, 1000);
-    peerConnection.onicegatheringstatechange = (ev) =>
-      peerConnection.iceGatheringState === "complete" &&
-      resolve(peerConnection.localDescription);
+    peerConnection.addEventListener("icegatheringstatechange", (ev) => {
+      if (peerConnection.iceGatheringState === "complete") {
+        resolve(peerConnection.localDescription);
+      }
+    });
   });
 }
