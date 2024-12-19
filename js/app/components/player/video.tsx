@@ -17,7 +17,10 @@ import {
   PROTOCOL_WEBRTC,
 } from "./props";
 import { srcToUrl } from "./shared";
-import useWebRTC from "./use-webrtc";
+import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
+import useAquareumNode from "hooks/useAquareumNode";
+import { selectPlayer } from "features/player/playerSlice";
+import { useAppSelector } from "store/hooks";
 
 type VideoProps = PlayerProps & { url: string };
 
@@ -33,6 +36,10 @@ export default function WebVideo(
       props.videoRef.current.play();
     }
   }, [props.playTime]);
+  if (props.ingest) {
+    return <WebcamIngestPlayer url={url} {...props} />;
+  }
+  console.log("protocol", protocol);
   if (protocol === PROTOCOL_PROGRESSIVE_MP4) {
     return <ProgressiveMP4Player url={url} {...props} />;
   } else if (protocol === PROTOCOL_PROGRESSIVE_WEBM) {
@@ -67,7 +74,6 @@ const VideoElement = forwardRef(
     };
 
     useEffect(() => {
-      console.log("video mounted");
       return () => {
         props.setStatus(PlayerStatus.START);
       };
@@ -85,7 +91,7 @@ const VideoElement = forwardRef(
           playsInline={true}
           ref={ref}
           controls={false}
-          src={props.url}
+          src={props.ingest ? undefined : props.url}
           muted={props.muted}
           crossOrigin="anonymous"
           onMouseMove={props.userInteraction}
@@ -118,6 +124,7 @@ const VideoElement = forwardRef(
             backgroundColor: "transparent",
             width: "100%",
             height: "100%",
+            // transform: props.ingest ? "scaleX(-1)" : undefined,
           }}
         />
       </View>
@@ -198,6 +205,65 @@ export function WebRTCPlayer(
     }
     videoElement.srcObject = mediaStream;
   }, [videoElement, mediaStream]);
+
+  return <VideoElement {...props} ref={handleRef} />;
+}
+
+export function WebcamIngestPlayer(
+  props: VideoProps & { videoRef: RefObject<HTMLVideoElement> },
+) {
+  const player = useAppSelector(selectPlayer);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
+    null,
+  );
+  const handleRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node) {
+      setVideoElement(node);
+    }
+  }, []);
+
+  const { url } = useAquareumNode();
+  const [localMediaStream, setLocalMediaStream] = useState<MediaStream | null>(
+    null,
+  );
+  const [remoteMediaStream, setRemoteMediaStream] = useWebRTCIngest(
+    `${url}/api/ingest/webrtc`,
+  );
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: true,
+        video: {
+          width: { min: 200, ideal: 1920, max: 3840 },
+          height: { min: 200, ideal: 1080, max: 2160 },
+        },
+      })
+      .then((stream) => {
+        setLocalMediaStream(stream);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!player.ingestStarting) {
+      setRemoteMediaStream(null);
+      return;
+    }
+    if (!localMediaStream) {
+      return;
+    }
+    setRemoteMediaStream(localMediaStream);
+  }, [localMediaStream, player.ingestStarting]);
+
+  useEffect(() => {
+    if (!videoElement) {
+      return;
+    }
+    if (!localMediaStream) {
+      return;
+    }
+    videoElement.srcObject = localMediaStream;
+  }, [videoElement, localMediaStream]);
 
   return <VideoElement {...props} ref={handleRef} />;
 }

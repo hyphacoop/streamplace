@@ -30,13 +30,14 @@ import {
   StatusBar,
 } from "react-native";
 import { useAppSelector } from "store/hooks";
-import { useTheme, View } from "tamagui";
+import { Text, useTheme, View } from "tamagui";
 import AppReturnScreen from "./screens/app-return";
 import GoLiveScreen from "./screens/golive";
+import LiveScreen from "./screens/live";
 import MultiScreen from "./screens/multi";
 import StreamScreen from "./screens/stream";
 import SupportScreen from "./screens/support";
-
+import WebcamScreen from "./screens/webcam";
 function HomeScreen() {
   return (
     <View f={1}>
@@ -44,7 +45,6 @@ function HomeScreen() {
     </View>
   );
 }
-
 const Stack = createNativeStackNavigator();
 
 const linking: LinkingOptions<ReactNavigation.RootParamList> = {
@@ -63,6 +63,8 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Support: "support",
       Settings: "settings",
       GoLive: "golive",
+      Live: "live",
+      Webcam: "live/webcam",
       Login: "login",
       AppReturn: "app-return/:scheme",
     },
@@ -211,8 +213,24 @@ export function AquareumDrawer() {
           }}
         />
         <Drawer.Screen
+          name="Live"
+          component={LiveScreen}
+          options={{
+            drawerLabel: () => <Text>Go Live</Text>,
+            drawerIcon: () => <Video />,
+          }}
+        />
+        <Drawer.Screen
           name="AppReturn"
           component={AppReturnScreen}
+          options={{
+            drawerLabel: () => null,
+            drawerItemStyle: { display: "none" },
+          }}
+        />
+        <Drawer.Screen
+          name="Webcam"
+          component={WebcamScreen}
           options={{
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },

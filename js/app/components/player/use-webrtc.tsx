@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
+import { usePlayerActions } from "features/player/playerSlice";
+import { useAppDispatch } from "store/hooks";
 
 export default function useWebRTC(endpoint: string) {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
@@ -136,4 +138,39 @@ async function waitToCompleteICEGathering(peerConnection: RTCPeerConnection) {
       }
     });
   });
+}
+
+export function useWebRTCIngest(
+  endpoint: string,
+): [MediaStream | null, (MediaStream) => void] {
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const { ingestConnectionState } = usePlayerActions();
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    if (!mediaStream) {
+      return;
+    }
+    console.log("creating peer connection");
+    const peerConnection = new RTCPeerConnection({
+      bundlePolicy: "max-bundle",
+    });
+    for (const track of mediaStream.getTracks()) {
+      peerConnection.addTrack(track, mediaStream);
+    }
+    peerConnection.addEventListener("connectionstatechange", (ev) => {
+      dispatch(ingestConnectionState(peerConnection.connectionState));
+      console.log("connection state change", peerConnection.connectionState);
+      if (peerConnection.connectionState !== "connected") {
+        return;
+      }
+    });
+    peerConnection.addEventListener("negotiationneeded", (ev) => {
+      negotiateConnectionWithClientOffer(peerConnection, endpoint);
+    });
+
+    return () => {
+      peerConnection.close();
+    };
+  }, [endpoint, mediaStream]);
+  return [mediaStream, setMediaStream];
 }
