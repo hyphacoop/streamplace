@@ -6,6 +6,11 @@ import { openLoginLink } from "features/platform/platformSlice";
 import Storage from "storage";
 import { createAppSlice } from "../../hooks/createSlice";
 import createOAuthClient, { AquareumOAuthClient } from "./oauthClient";
+import { Secp256k1Keypair, bytesToMultibase } from "@atproto/crypto";
+import { privateKeyToAccount } from "viem/accounts";
+import { StreamKey } from "features/base/baseSlice";
+import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
+
 export interface BlueskyState {
   status: "start" | "loggedIn" | "loggedOut";
   oauthState: null | string;
@@ -22,6 +27,8 @@ export interface BlueskyState {
     loading: boolean;
     error: null | string;
   };
+  newKey: null | StreamKey;
+  storedKey: null | StreamKey;
 }
 
 const initialState: BlueskyState = {
@@ -40,11 +47,21 @@ const initialState: BlueskyState = {
     loading: false,
     error: null,
   },
+  newKey: null,
+  storedKey: null,
 };
 
 export const blueskySlice = createAppSlice({
   name: "bluesky",
   initialState,
+  extraReducers: (builder) => {
+    builder.addCase(hydrate.fulfilled, (state, action) => {
+      return {
+        ...state,
+        storedKey: action.payload.storedKey,
+      };
+    });
+  },
   reducers: (create) => ({
     loadOAuthClient: create.asyncThunk(
       async (_, { getState }) => {
@@ -313,6 +330,78 @@ export const blueskySlice = createAppSlice({
         },
       },
     ),
+
+    createStreamKeyRecord: create.asyncThunk(
+      async ({ store }: { store: boolean }, thunkAPI) => {
+        const { bluesky } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const profile = bluesky.profiles[did];
+        if (!profile) {
+          throw new Error("No profile");
+        }
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const keypair = await Secp256k1Keypair.create({ exportable: true });
+        const exportedKey = await keypair.export();
+        const didBytes = new TextEncoder().encode(did);
+        const combinedKey = new Uint8Array([...exportedKey, ...didBytes]);
+        const multibaseKey = bytesToMultibase(combinedKey, "base58btc");
+        const hexKey = Array.from(exportedKey)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        const account = await privateKeyToAccount(`0x${hexKey}`);
+        const newKey = {
+          privateKey: multibaseKey,
+          did: keypair.did(),
+          address: account.address.toLowerCase(),
+        };
+        const record = {
+          signingKey: keypair.did(),
+        };
+        await bluesky.pdsAgent.com.atproto.repo.createRecord({
+          repo: did,
+          collection: "place.stream.key",
+          record,
+        });
+        if (store) {
+          await Storage.setItem(STORED_KEY_KEY, JSON.stringify(newKey));
+        }
+        return newKey;
+      },
+      {
+        pending: (state) => {
+          console.log("golivePost pending");
+        },
+        fulfilled: (state, action) => {
+          return {
+            ...state,
+            newKey: action.payload,
+            storedKey: action.meta.arg.store ? action.payload : null,
+          };
+        },
+        rejected: (state, action) => {
+          console.error("getProfile rejected", action.error);
+          // state.status = "failed";
+        },
+      },
+    ),
+
+    clearStreamKeyRecord: create.reducer((state) => {
+      return {
+        ...state,
+        newKey: null,
+      };
+    }),
+
     setPDS: create.asyncThunk(
       async (pds: string, thunkAPI) => {
         await Storage.setItem("pdsURL", pds);
@@ -361,10 +450,26 @@ export const blueskySlice = createAppSlice({
     selectPDS: (bluesky) => bluesky.pds,
     selectLogin: (bluesky) => bluesky.login,
     selectProfiles: (bluesky) => bluesky.profiles,
+    selectStoredKey: (bluesky) => bluesky.storedKey,
     selectUserProfile: (bluesky) => {
       const did = bluesky.oauthSession?.did;
       if (!did) return null;
       return bluesky.profiles[did];
+    },
+    selectIsReady: (bluesky) => {
+      if (bluesky.status === "start") {
+        return false;
+      } else if (bluesky.status === "loggedOut") {
+        return true;
+      }
+      if (!bluesky.oauthSession) {
+        return false;
+      }
+      const profile = blueskySlice.selectors.selectUserProfile({ bluesky });
+      if (!profile) {
+        return false;
+      }
+      return true;
     },
   },
 });
@@ -378,6 +483,8 @@ export const {
   golivePost,
   oauthCallback,
   setPDS,
+  createStreamKeyRecord,
+  clearStreamKeyRecord,
 } = blueskySlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
@@ -387,4 +494,5 @@ export const {
   selectUserProfile,
   selectPDS,
   selectLogin,
+  selectStoredKey,
 } = blueskySlice.selectors;

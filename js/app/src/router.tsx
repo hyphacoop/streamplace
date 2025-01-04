@@ -29,15 +29,16 @@ import {
   Pressable,
   StatusBar,
 } from "react-native";
-import { useAppSelector } from "store/hooks";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Text, useTheme, View } from "tamagui";
 import AppReturnScreen from "./screens/app-return";
-import GoLiveScreen from "./screens/golive";
 import LiveScreen from "./screens/live";
 import MultiScreen from "./screens/multi";
 import StreamScreen from "./screens/stream";
 import SupportScreen from "./screens/support";
 import WebcamScreen from "./screens/webcam";
+import StreamKeyScreen from "./screens/stream-key";
+import { hydrate, selectHydrated } from "features/base/baseSlice";
 function HomeScreen() {
   return (
     <View f={1}>
@@ -65,6 +66,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       GoLive: "golive",
       Live: "live",
       Webcam: "live/webcam",
+      StreamKey: "live/stream-key",
       Login: "login",
       AppReturn: "app-return/:scheme",
     },
@@ -141,7 +143,9 @@ export function AquareumDrawer() {
   const theme = useTheme();
   const { isWeb, isElectron } = usePlatform();
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   useEffect(() => {
+    dispatch(hydrate());
     // const params = new URLSearchParams(document.location.search);
     // if (params.has("code")) {
     //   navigation.dispatch(
@@ -152,6 +156,10 @@ export function AquareumDrawer() {
     //   );
     // }
   }, []);
+  const hydrated = useAppSelector(selectHydrated);
+  if (!hydrated) {
+    return <View />;
+  }
   return (
     <>
       <StatusBar backgroundColor={theme.background.val} />
@@ -161,6 +169,7 @@ export function AquareumDrawer() {
           headerLeft: () => <NavigationButton />,
           headerRight: () => <AvatarButton />,
           drawerActiveTintColor: theme.accentColor.val,
+          unmountOnBlur: true,
         }}
       >
         <Drawer.Screen
@@ -168,6 +177,7 @@ export function AquareumDrawer() {
           component={MainTab}
           options={{
             drawerIcon: () => <Home />,
+            drawerLabel: () => <Text>Home</Text>,
             headerTitle: "Aquareum",
             headerShown: isWeb,
             title: "Aquareum",
@@ -194,7 +204,10 @@ export function AquareumDrawer() {
         <Drawer.Screen
           name="Settings"
           component={Settings}
-          options={{ drawerIcon: () => <SettingsIcon /> }}
+          options={{
+            drawerIcon: () => <SettingsIcon />,
+            drawerLabel: () => <Text>Settings</Text>,
+          }}
         />
         <Drawer.Screen
           name="Multi"
@@ -208,7 +221,7 @@ export function AquareumDrawer() {
           name="Support"
           component={SupportScreen}
           options={{
-            drawerLabel: () => null,
+            drawerLabel: () => <Text>Support</Text>,
             drawerItemStyle: { display: "none" },
           }}
         />
@@ -237,17 +250,21 @@ export function AquareumDrawer() {
           }}
         />
         <Drawer.Screen
+          name="StreamKey"
+          component={StreamKeyScreen}
+          options={{
+            drawerLabel: () => null,
+            drawerItemStyle: { display: "none" },
+          }}
+        />
+        <Drawer.Screen
           name="Login"
           component={Login}
-          options={{ drawerIcon: () => <LogIn /> }}
+          options={{
+            drawerIcon: () => <LogIn />,
+            drawerLabel: () => <Text>Login</Text>,
+          }}
         />
-        {isElectron && (
-          <Drawer.Screen
-            name="GoLive"
-            component={GoLiveScreen}
-            options={{ headerTitle: "Go Live", drawerIcon: () => <Video /> }}
-          />
-        )}
       </Drawer.Navigator>
     </>
   );

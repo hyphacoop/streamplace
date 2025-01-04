@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"aquareum.tv/aquareum/pkg/aqhttp"
+	"aquareum.tv/aquareum/pkg/crypto/aqpub"
 	"aquareum.tv/aquareum/pkg/log"
 	"aquareum.tv/aquareum/pkg/model"
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/repo"
@@ -21,7 +24,11 @@ import (
 )
 
 var SyncGetRepo = comatproto.SyncGetRepo
-var AQUAREUM_KEY = "tv.aquareum.key"
+var STREAMPLACE_COLLECTION = "place.stream.key"
+var STREAMPLACE_SIGNING_KEY = "signingKey"
+
+const DID_KEY_PREFIX = "did:key"
+const ADDRESS_KEY_PREFIX = "0x"
 
 // handleLocks provides per-handle synchronization
 var handleLocks = struct {
@@ -51,7 +58,7 @@ func SyncBlueskyRepoCached(ctx context.Context, handle string, mod model.Model) 
 		return "", fmt.Errorf("failed to get repo for %s: %w", handle, err)
 	}
 	if repo != nil {
-		return repo.AquareumKey, nil
+		return repo.SigningKey, nil
 	}
 	return SyncBlueskyRepo(ctx, handle, mod)
 }
@@ -115,7 +122,7 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 		}
 		if oldRoot.Equals(root) {
 			log.Log(ctx, "no changes to repo", "root", root)
-			return oldRepo.AquareumKey, nil
+			return oldRepo.SigningKey, nil
 		}
 	}
 
@@ -137,7 +144,7 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 	processed := 0
 	var key string
 	if oldRepo != nil {
-		key = oldRepo.AquareumKey
+		key = oldRepo.SigningKey
 	}
 	bs = r.Blockstore()
 	cst := util.CborStore(bs)
@@ -157,11 +164,11 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 		if !ok {
 			continue
 		}
-		if typ != "app.bsky.feed.post" {
+		if typ != STREAMPLACE_COLLECTION {
 			continue
 		}
 		processed += 1
-		aquareumKeyAny, ok := rec[AQUAREUM_KEY]
+		aquareumKeyAny, ok := rec[STREAMPLACE_SIGNING_KEY]
 		if !ok {
 			continue
 		}
@@ -172,20 +179,43 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 		key = aquareumKey
 	}
 	log.Log(ctx, "processed new posts", "postCount", processed)
+
+	var aqk aqpub.Pub
+	if strings.HasPrefix(key, DID_KEY_PREFIX) {
+		pubKey, err := atcrypto.ParsePublicDIDKey(key)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse multibase key %s: %w", key, err)
+		}
+		aqk, err = aqpub.FromBytes(pubKey.UncompressedBytes())
+		if err != nil {
+			return "", fmt.Errorf("failed to parse public key for %s: %w", handle, err)
+		}
+	} else if strings.HasPrefix(key, ADDRESS_KEY_PREFIX) {
+		aqk, err = aqpub.FromHexString(key)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse public key for %s: %w", handle, err)
+		}
+	} else {
+		return "", fmt.Errorf("invalid key format for %s: %s", handle, key)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to parse public key for %s: %w", handle, err)
+	}
+	addr := aqk.String()
 	newRepo := model.Repo{
-		DID:         ident.DID.String(),
-		PDS:         ident.PDSEndpoint(),
-		Version:     sc.Rev,
-		AquareumKey: key,
-		RootCID:     root.String(),
-		Handle:      handle,
+		DID:        ident.DID.String(),
+		PDS:        ident.PDSEndpoint(),
+		Version:    sc.Rev,
+		SigningKey: addr,
+		RootCID:    root.String(),
+		Handle:     handle,
 	}
 	err = mod.UpdateRepo(&newRepo)
 	if err != nil {
 		return "", fmt.Errorf("failed to update DID record for %s: %w", sc.Did, err)
 	}
 
-	return key, nil
+	return addr, nil
 }
 
 var ResolveIdent = resolveIdent

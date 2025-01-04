@@ -7,12 +7,12 @@ import (
 )
 
 type Repo struct {
-	DID         string `gorm:"primaryKey;column:did" json:"did"`
-	Handle      string `gorm:"index" json:"handle"`
-	PDS         string `json:"pds"`
-	Version     string `json:"version"`
-	AquareumKey string `gorm:"index" json:"aquareumKey"`
-	RootCID     string `json:"rootCid"`
+	DID        string `gorm:"primaryKey;column:did" json:"did"`
+	Handle     string `gorm:"index" json:"handle"`
+	PDS        string `json:"pds"`
+	Version    string `json:"version"`
+	SigningKey string `gorm:"index" json:"signingKey"`
+	RootCID    string `json:"rootCid"`
 }
 
 func (Repo) TableName() string {
@@ -43,9 +43,9 @@ func (m *DBModel) GetRepoByHandle(handle string) (*Repo, error) {
 	return &repoModel, nil
 }
 
-func (m *DBModel) GetRepoByAquareumKey(aquareumKey string) (*Repo, error) {
+func (m *DBModel) GetRepoBySigningKey(signingKey string) (*Repo, error) {
 	var repoModel Repo
-	res := m.DB.Where("aquareum_key = ?", aquareumKey).First(&repoModel)
+	res := m.DB.Where("signing_key = ?", signingKey).First(&repoModel)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
