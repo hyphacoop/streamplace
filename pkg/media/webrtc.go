@@ -3,7 +3,6 @@ package media
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -18,8 +17,13 @@ import (
 	"github.com/pion/webrtc/v4/pkg/media"
 )
 
+// we have a bug that prevents us from correctly probing video durations
+// a lot of the time. so when we don't have them we use the last duration
+// that we had, and when we don't have that we use a default duration
+var DEFAULT_DURATION = time.Duration(32 * time.Millisecond)
+
 // This function remains in scope for the duration of a single users' playback
-func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error) {
+func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error) {
 	uu, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -30,13 +34,8 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 	ctx = log.WithLogValues(ctx, "mediafunc", "WebRTCPlayback")
 
 	pipelineSlice := []string{
-		"appsrc name=appsrc ! matroskademux name=demux",
-		"multiqueue name=queue",
-		"demux.video_0 ! queue.sink_0",
-		"demux.audio_0 ! queue.sink_1",
-		"multiqueue name=outqueue",
-		"queue.src_0 ! h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink name=videoappsink",
-		"queue.src_1 ! opusparse ! appsink name=audioappsink",
+		"h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink name=videoappsink",
+		"opusparse name=audioparse ! appsink name=audioappsink",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -44,9 +43,8 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err)
 	}
 
-	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
+	ok := pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
 		switch msg.Type() {
-
 		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
 			log.Log(ctx, "got gst.MessageEOS, exiting")
 			cancel()
@@ -62,21 +60,48 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 		}
 		return true
 	})
-
-	appsrc, err := pipeline.GetElementByName("appsrc")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get appsrc element from pipeline: %w", err)
+	if !ok {
+		return nil, fmt.Errorf("failed to add watch to pipeline bus")
 	}
 
-	src := app.SrcFromElement(appsrc)
-	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: ReaderNeedData(ctx, input),
-	})
-
+	outputQueue, done, err := ConcatStream(ctx, pipeline, user, mm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get output queue: %w", err)
+	}
 	go func() {
-		<-ctx.Done()
-		pipeline.BlockSetState(gst.StateNull)
+		select {
+		case <-ctx.Done():
+			return
+		case <-done:
+			cancel()
+		}
 	}()
+	// queuePadVideo := outputQueue.GetRequestPad("src_%u")
+	// if queuePadVideo == nil {
+	// 	return nil, fmt.Errorf("failed to get queue video pad")
+	// }
+	// queuePadAudio := outputQueue.GetRequestPad("src_%u")
+	// if queuePadAudio == nil {
+	// 	return nil, fmt.Errorf("failed to get queue audio pad")
+	// }
+
+	videoParse, err := pipeline.GetElementByName("videoparse")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get video sink element from pipeline: %w", err)
+	}
+	err = outputQueue.Link(videoParse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to link output queue to video parse: %w", err)
+	}
+
+	audioParse, err := pipeline.GetElementByName("audioparse")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get audio parse element from pipeline: %w", err)
+	}
+	err = outputQueue.Link(audioParse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to link output queue to audio parse: %w", err)
+	}
 
 	videoappsinkele, err := pipeline.GetElementByName("videoappsink")
 	if err != nil {
@@ -146,6 +171,26 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 	// Setup complete! Now we boot up streaming in the background while returning the SDP offer to the user.
 
 	go func() {
+		<-ctx.Done()
+		pipeline.BlockSetState(gst.StateNull)
+	}()
+
+	go func() {
+		ticker := time.NewTicker(time.Second * 1)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				state := pipeline.GetCurrentState()
+				log.Debug(ctx, "pipeline state", "state", state)
+			}
+		}
+	}()
+
+	var lastVideoDuration = &DEFAULT_DURATION
+
+	go func() {
 
 		videoappsink := app.SinkFromElement(videoappsinkele)
 		videoappsink.SetCallbacks(&app.SinkCallbacks{
@@ -162,8 +207,21 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 
 				samples := buffer.Map(gst.MapRead).Bytes()
 				defer buffer.Unmap()
+				clockTime := buffer.Duration()
+				dur := clockTime.AsDuration()
+				mediaSample := media.Sample{Data: samples}
+				if dur != nil {
+					mediaSample.Duration = *dur
+					lastVideoDuration = dur
+				} else if lastVideoDuration != nil {
+					mediaSample.Duration = *lastVideoDuration
+				} else {
+					log.Log(ctx, "no video duration", "samples", len(samples))
+					// cancel()
+					return gst.FlowOK
+				}
 
-				if err := videoTrack.WriteSample(media.Sample{Data: samples, Duration: *buffer.Duration().AsDuration()}); err != nil {
+				if err := videoTrack.WriteSample(mediaSample); err != nil {
 					log.Log(ctx, "failed to write video sample", "error", err)
 					cancel()
 				}
@@ -171,6 +229,7 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 				return gst.FlowOK
 			},
 			EOSFunc: func(sink *app.Sink) {
+				log.Warn(ctx, "videoappsink EOSFunc")
 				cancel()
 			},
 		})
@@ -197,7 +256,7 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 				if dur != nil {
 					mediaSample.Duration = *dur
 				} else {
-					log.Log(ctx, "no duration", "samples", len(samples))
+					log.Log(ctx, "no audio duration", "samples", len(samples))
 					// cancel()
 					return gst.FlowOK
 				}
@@ -209,6 +268,7 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 				return gst.FlowOK
 			},
 			EOSFunc: func(sink *app.Sink) {
+				log.Warn(ctx, "audioappsink EOSFunc")
 				cancel()
 			},
 		})
@@ -258,6 +318,7 @@ func WebRTCPlayback(ctx context.Context, input io.Reader, offer *webrtc.SessionD
 		})
 
 		<-ctx.Done()
+		log.Warn(ctx, "!!!!!!!!!!!!!!!!!!!!!!! ctx done")
 	}()
 	select {
 	case <-gatherComplete:
@@ -342,7 +403,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 
 	pipelineSlice := []string{
 		"multiqueue name=queue",
-		"appsrc format=time is-live=true do-timestamp=true name=videosrc ! capsfilter caps=application/x-rtp ! rtph264depay ! capsfilter caps=video/x-h264,stream-format=byte-stream,alignment=nal ! h264parse ! h264timestamper ! queue.sink_0",
+		"appsrc format=time is-live=true do-timestamp=true name=videosrc ! capsfilter caps=application/x-rtp ! rtph264depay ! capsfilter caps=video/x-h264,stream-format=byte-stream,alignment=nal ! h264parse ! h264timestamper ! identity ! queue.sink_0",
 		"appsrc format=time is-live=true do-timestamp=true name=audiosrc ! capsfilter caps=application/x-rtp,media=audio,encoding-name=OPUS,payload=111 ! rtpopusdepay ! queue.sink_1",
 	}
 
@@ -355,17 +416,17 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 		switch msg.Type() {
 
 		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			log.Log(ctx, "got gst.MessageEOS, exiting")
+			log.Debug(ctx, "got gst.MessageEOS, exiting")
 			cancel()
 		case gst.MessageError: // Error messages are always fatal
 			err := msg.ParseError()
 			log.Error(ctx, "gstreamer error", "error", err.Error())
 			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
+				log.Debug(ctx, "gstreamer debug", "message", debug)
 			}
 			cancel()
 		default:
-			log.Log(ctx, msg.String())
+			log.Debug(ctx, msg.String())
 		}
 		return true
 	})
@@ -461,7 +522,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 				return
 			case <-ticker.C:
 				state := pipeline.GetCurrentState()
-				log.Log(ctx, "pipeline state", "state", state)
+				log.Debug(ctx, "pipeline state", "state", state)
 			}
 		}
 	}()
@@ -580,6 +641,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 		})
 
 		<-ctx.Done()
+		log.Warn(ctx, "!!!!!!!!! context done, exiting")
 	}()
 	select {
 	case <-gatherComplete:

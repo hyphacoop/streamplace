@@ -136,7 +136,7 @@ func (a *AquareumAPI) HandleWebRTCPlayback(ctx context.Context) httprouter.Handl
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		_, err := a.NormalizeUser(ctx, user)
+		user, err := a.NormalizeUser(ctx, user)
 		if err != nil {
 			errors.WriteHTTPBadRequest(w, "invalid user", err)
 			return
@@ -147,18 +147,11 @@ func (a *AquareumAPI) HandleWebRTCPlayback(ctx context.Context) httprouter.Handl
 			return
 		}
 		offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: string(body)}
-		pr, pw := io.Pipe()
-		answer, err := media.WebRTCPlayback(ctx, pr, &offer)
+		answer, err := a.MediaManager.WebRTCPlayback(ctx, user, &offer)
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "error playing back", err)
 			return
 		}
-		go func() {
-			err := a.MediaManager.SegmentToMKV(ctx, user, pw)
-			if err != nil {
-				log.Log(ctx, "error writing segment to mkv", err)
-			}
-		}()
 		w.WriteHeader(201)
 		w.Header().Add("Location", r.URL.Path)
 		w.Write([]byte(answer.SDP))
@@ -213,10 +206,12 @@ func (a *AquareumAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Handle 
 			return
 		}
 
-		_, err = atproto.SyncBlueskyRepo(ctx, did, a.Model)
-		if err != nil {
-			apierrors.WriteHTTPInternalServerError(w, "could not resolve aquareum key", err)
-			return
+		if did != "" {
+			_, err = atproto.SyncBlueskyRepo(ctx, did, a.Model)
+			if err != nil {
+				apierrors.WriteHTTPInternalServerError(w, "could not resolve aquareum key", err)
+				return
+			}
 		}
 
 		// user := p.ByName("user")
