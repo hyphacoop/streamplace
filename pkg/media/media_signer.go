@@ -10,14 +10,14 @@ import (
 	"io"
 	"path/filepath"
 
-	"aquareum.tv/aquareum/pkg/aqio"
-	"aquareum.tv/aquareum/pkg/aqtime"
-	"aquareum.tv/aquareum/pkg/config"
-	"aquareum.tv/aquareum/pkg/crypto/aqpub"
-	"aquareum.tv/aquareum/pkg/crypto/signers"
-	"aquareum.tv/aquareum/pkg/log"
-	"aquareum.tv/aquareum/pkg/model"
-	"git.aquareum.tv/aquareum-tv/c2pa-go/pkg/c2pa"
+	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa"
+	"stream.place/streamplace/pkg/aqio"
+	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/config"
+	"stream.place/streamplace/pkg/crypto/aqpub"
+	"stream.place/streamplace/pkg/crypto/signers"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 )
 
 type MediaSigner struct {
@@ -79,7 +79,7 @@ func (ms *MediaSigner) SignMP4(ctx context.Context, input io.ReadSeeker, start i
 				},
 			},
 			{
-				"label": "tv.aquareum.metadata",
+				"label": STREAMPLACE_METADATA,
 				"data": obj{
 					"@context": obj{
 						"dc": "http://purl.org/dc/elements/1.1/",
