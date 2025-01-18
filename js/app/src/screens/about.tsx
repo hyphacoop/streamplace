@@ -50,8 +50,8 @@ export default function AboutScreen() {
 
       <H4>Want to get involved?</H4>
       <P>
-        Join our <Anchor href="https://di/livepeer">Discord</Anchor> to learn
-        more about Streamplace and how you can get involved.
+        Join our <Anchor href="https://discord.stream.place">Discord</Anchor> to
+        learn more about Streamplace and how you can get involved.
       </P>
     </View>
   );
