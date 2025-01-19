@@ -7,8 +7,13 @@ import {
   selectStoredKey,
 } from "features/bluesky/blueskySlice";
 
-export default function useWebRTC(endpoint: string) {
+export default function useWebRTC(
+  endpoint: string,
+): [MediaStream | null, boolean] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [frames, setFrames] = useState<number>(0);
+  const [stuck, setStuck] = useState<boolean>(false);
+
   useEffect(() => {
     const peerConnection = new RTCPeerConnection({
       bundlePolicy: "max-bundle",
@@ -36,11 +41,28 @@ export default function useWebRTC(endpoint: string) {
       negotiateConnectionWithClientOffer(peerConnection, endpoint);
     });
 
+    const handle = setInterval(async () => {
+      const stats = await peerConnection.getStats();
+      stats.forEach((stat, k) => {
+        if (stat.type === "inbound-rtp" && stat.mediaType === "video") {
+          setFrames((oldFrames) => {
+            if (oldFrames === stat.framesReceived) {
+              setStuck(true);
+            } else {
+              setStuck(false);
+            }
+            return stat.framesReceived;
+          });
+        }
+      });
+    }, 1000);
+
     return () => {
+      clearInterval(handle);
       peerConnection.close();
     };
   }, [endpoint]);
-  return [mediaStream];
+  return [mediaStream, stuck];
 }
 
 /**

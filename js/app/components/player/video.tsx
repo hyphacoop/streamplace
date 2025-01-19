@@ -64,6 +64,7 @@ const updateEvents = {
   stalled: true,
   pause: true,
   suspend: true,
+  mute: true,
 };
 
 const VideoElement = forwardRef(
@@ -201,7 +202,50 @@ export function WebRTCPlayer(
     }
   }, []);
 
-  const [mediaStream] = useWebRTC(props.url);
+  const [mediaStream, stuck] = useWebRTC(props.url);
+
+  useEffect(() => {
+    if (stuck) {
+      console.log("webrtc stuck");
+      props.setStatus(PlayerStatus.STALLED);
+    } else {
+      props.setStatus(PlayerStatus.PLAYING);
+    }
+  }, [stuck]);
+
+  useEffect(() => {
+    if (!mediaStream) {
+      return;
+    }
+    const evt = (evType) => (e) => {
+      console.log("webrtc event", evType);
+      props.playerEvent(new Date().toISOString(), evType, {});
+    };
+    const active = evt("active");
+    const inactive = evt("inactive");
+    const ended = evt("ended");
+    const mute = evt("mute");
+    const unmute = evt("playing"); // playing has resumed yay
+
+    mediaStream.addEventListener("active", active);
+    mediaStream.addEventListener("inactive", inactive);
+    mediaStream.addEventListener("ended", ended);
+    for (const track of mediaStream.getTracks()) {
+      track.addEventListener("ended", ended);
+      track.addEventListener("mute", mute);
+      track.addEventListener("unmute", unmute);
+    }
+    return () => {
+      for (const track of mediaStream.getTracks()) {
+        track.removeEventListener("ended", ended);
+        track.removeEventListener("mute", mute);
+        track.removeEventListener("unmute", unmute);
+      }
+      mediaStream.removeEventListener("active", active);
+      mediaStream.removeEventListener("inactive", inactive);
+      mediaStream.removeEventListener("ended", ended);
+    };
+  }, [mediaStream]);
 
   useEffect(() => {
     if (!props.avSyncTest) {
