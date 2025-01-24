@@ -19,7 +19,7 @@ export default function AVSyncScreen() {
         });
         interval = setInterval(() => {
           transmitter.transmit(str2ab(`${Date.now()}`));
-        }, 1000);
+        }, 500);
       });
     }
     initQuiet();

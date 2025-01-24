@@ -23,7 +23,7 @@ export default async function runTests(
   tests: string[],
   duration: string,
   privateKey: `0x${string}`,
-): Promise<void> {
+): Promise<boolean> {
   const testFuncs = [];
   for (const test of tests) {
     if (!allTests[test]) {
@@ -88,11 +88,11 @@ export default async function runTests(
     const failures = results.filter((r) => r !== null);
     if (failures.length > 0) {
       console.error("tests failed", failures.join(", "));
-      process.exit(1);
+      return false;
     }
-    process.exit(0);
+    return true;
   } catch (e) {
     console.error("error running tests", e.message);
-    process.exit(1);
+    return false;
   }
 }

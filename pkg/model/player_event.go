@@ -72,7 +72,12 @@ func (m *DBModel) PlayerReport(playerId string) (map[string]any, error) {
 		return nil, err
 	}
 	whatHappenedReport := map[string]float64{}
+	retries := 0
 	for _, e := range events {
+		if e.EventType == "retry" {
+			retries++
+			continue
+		}
 		if e.EventType != "aq-played" {
 			continue
 		}
@@ -146,6 +151,8 @@ func (m *DBModel) PlayerReport(playerId string) (map[string]any, error) {
 			"avg": avg,
 		}
 	}
+
+	report["retries"] = retries
 
 	return report, nil
 }

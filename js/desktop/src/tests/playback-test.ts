@@ -52,9 +52,9 @@ export const playbackTest: E2ETest = {
 
     let foundThumbnail = false;
     const interval = setInterval(async () => {
-      const res = await fetch(
-        `${testEnv.addr}/api/playback/self-test/stream.jpg`,
-      );
+      const thumb = `${testEnv.addr}/api/playback/self-test/stream.jpg`;
+      console.log(`fetching thumbnail at ${thumb}`);
+      const res = await fetch(thumb);
       if (res.status === 404) {
         console.log("no thumbnail found");
         return;
@@ -84,7 +84,7 @@ export const playbackTest: E2ETest = {
           `${testEnv.internalAddr}/player-report/${t.playerId}`,
         );
         const data = (await res.json()) as PlayerReport;
-        return { ...t, data: data.whatHappened };
+        return { ...t, data: data.whatHappened, retries: data.retries };
       }),
     );
     let failed = false;
@@ -93,6 +93,13 @@ export const playbackTest: E2ETest = {
       failed = true;
     }
     const percentages = reports.map((report) => {
+      if (typeof report.retries === "number" && report.retries > 0) {
+        console.log(`${report.name} had ${report.retries} retries`);
+        // we only care about webrtc failures right now
+        if (report.name === "webrtc") {
+          failed = true;
+        }
+      }
       let total = 0;
       for (const [state, ms] of Object.entries(report.data)) {
         total += ms;

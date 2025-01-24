@@ -51,29 +51,34 @@ if (require("electron-squirrel-startup")) {
       AQ_ADMIN_ACCOUNT: account.address.toLowerCase(),
       AQ_ALLOWED_STREAMS: account.address.toLowerCase(),
     };
-    try {
-      if (args["self-test"]) {
-        await runTests(
-          args["tests-to-run"].split(","),
-          args["self-test-duration"],
-          privateKey,
-        );
+    if (args["self-test"]) {
+      const success = await runTests(
+        args["tests-to-run"].split(","),
+        args["self-test-duration"],
+        privateKey,
+      );
+      if (!success) {
+        app.exit(1);
       } else {
-        await start(env);
+        app.exit(0);
       }
-    } catch (e) {
-      console.error(e);
-      const dialogOpts: Electron.MessageBoxOptions = {
-        type: "info",
-        buttons: ["Quit Streamplace"],
-        title: "Error on Bootup",
-        message:
-          "Please report to the Streamplace developers at git.aquareum.tv!",
-        detail: e.message + "\n" + e.stack,
-      };
+    } else {
+      try {
+        await start(env);
+      } catch (e) {
+        console.error(e);
+        const dialogOpts: Electron.MessageBoxOptions = {
+          type: "info",
+          buttons: ["Quit Streamplace"],
+          title: "Error on Bootup",
+          message:
+            "Please report to the Streamplace developers at git.aquareum.tv!",
+          detail: e.message + "\n" + e.stack,
+        };
 
-      await dialog.showMessageBox(dialogOpts);
-      app.quit();
+        await dialog.showMessageBox(dialogOpts);
+        app.quit();
+      }
     }
   });
 

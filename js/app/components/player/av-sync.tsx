@@ -23,11 +23,13 @@ export async function quietReceiver(
   };
 
   const gotVideo = (time: number) => {
+    console.log("video", time);
     videoTime = time;
     // diff(audioTime, videoTime);
   };
 
   const gotAudio = (time: number) => {
+    console.log("audio", time);
     audioTime = time;
     diff(audioTime, videoTime);
   };
@@ -39,6 +41,7 @@ export async function quietReceiver(
     const getUserMedia = nav.getUserMedia;
     nav.getUserMedia = async (constraints, cb) => {
       cb(mediaStream);
+      console.log("quiet got user media");
       // we're done, unmonkeypatch
       nav.getUserMedia = getUserMedia;
     };

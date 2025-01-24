@@ -22,6 +22,9 @@ export default function VideoRetry(
       // console.log(`retrying (attempt ${retryCount + 1}, delay: ${delay}ms)`);
       setResetTime(Date.now());
       setRetryCount((prev) => prev + 1);
+      props.playerEvent(new Date().toISOString(), "retry", {
+        delay,
+      });
     }, delay);
 
     return () => clearTimeout(handle);

@@ -12,17 +12,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/decred/dcrd/dcrec/secp256k1"
+	"github.com/julienschmidt/httprouter"
+	"github.com/mr-tron/base58"
+	"github.com/pion/webrtc/v4"
+	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/errors"
 	apierrors "stream.place/streamplace/pkg/errors"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
-	"github.com/decred/dcrd/dcrec/secp256k1"
-	"github.com/julienschmidt/httprouter"
-	"github.com/mr-tron/base58"
-	"github.com/pion/webrtc/v4"
-	"golang.org/x/sync/errgroup"
 )
 
 func (a *StreamplaceAPI) NormalizeUser(ctx context.Context, user string) (string, error) {
@@ -327,7 +327,7 @@ func (a *StreamplaceAPI) HandleThumbnailPlayback(ctx context.Context) httprouter
 		}
 		user, err := a.NormalizeUser(ctx, user)
 		if err != nil {
-			errors.WriteHTTPBadRequest(w, "invalid user", err)
+			errors.WriteHTTPNotFound(w, "user not found", err)
 			return
 		}
 		thumb, err := a.Model.LatestThumbnailForUser(user)

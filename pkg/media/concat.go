@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"stream.place/streamplace/pkg/log"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/log"
 )
 
 type ConcatStreamer interface {
@@ -165,7 +165,12 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, stre
 					return
 				}
 				defer f.Close()
-				io.Copy(pw, f)
+				_, err = io.Copy(pw, f)
+				if err != nil {
+					log.Error(ctx, "failed to copy segment file", "error", err, "file", fullpath)
+					cancel()
+					return
+				}
 				return
 			}
 		}()
@@ -193,7 +198,7 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, stre
 
 		mu := sync.Mutex{}
 		count := 0
-		demux.Connect("pad-added", func(self *gst.Element, pad *gst.Pad) {
+		_, err = demux.Connect("pad-added", func(self *gst.Element, pad *gst.Pad) {
 			mu.Lock()
 			count += 1
 			mu.Unlock()
@@ -235,6 +240,11 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, stre
 				})
 			}
 		})
+		if err != nil {
+			log.Error(ctx, "failed to connect demux pad-added", "error", err)
+			cancel()
+			return
+		}
 
 		appsrc, err := gst.NewElementWithProperties("appsrc", map[string]any{
 			"is-live": true,
@@ -244,15 +254,6 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, stre
 			cancel()
 			return
 		}
-		err = pipeline.Add(appsrc)
-		if err != nil {
-			log.Error(ctx, "failed to add appsrc to pipeline", "error", err)
-			cancel()
-			return
-		}
-
-		demux.SetState(gst.StatePlaying)
-		appsrc.SetState(gst.StatePlaying)
 
 		src := app.SrcFromElement(appsrc)
 
@@ -317,10 +318,29 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, stre
 				}
 			},
 		})
+		err = pipeline.Add(appsrc)
+		if err != nil {
+			log.Error(ctx, "failed to add appsrc to pipeline", "error", err)
+			cancel()
+			return
+		}
 
 		ret := appSrcPad.Link(demuxSinkPad)
 		if ret != gst.PadLinkOK {
 			log.Error(ctx, "failed to link appsrc to demux", "error", ret)
+			cancel()
+			return
+		}
+
+		err = demux.SetState(gst.StatePlaying)
+		if err != nil {
+			log.Error(ctx, "failed to set demux state", "error", err)
+			cancel()
+			return
+		}
+		err = appsrc.SetState(gst.StatePlaying)
+		if err != nil {
+			log.Error(ctx, "failed to set appsrc state", "error", err)
 			cancel()
 			return
 		}

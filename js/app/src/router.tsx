@@ -258,6 +258,14 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
+          name="Multi"
+          component={MultiScreen}
+          options={{
+            drawerLabel: () => null,
+            drawerItemStyle: { display: "none" },
+          }}
+        />
+        <Drawer.Screen
           name="Webcam"
           component={WebcamScreen}
           options={{

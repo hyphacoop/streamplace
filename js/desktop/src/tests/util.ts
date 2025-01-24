@@ -7,4 +7,5 @@ export type PlayerReport = {
     max: number;
     avg: number;
   };
+  retries?: number;
 };
