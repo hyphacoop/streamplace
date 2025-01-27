@@ -414,7 +414,17 @@ func (a *StreamplaceAPI) HandleBlueskyResolve(ctx context.Context) httprouter.Ha
 			apierrors.WriteHTTPInternalServerError(w, "could not resolve streamplace key", err)
 			return
 		}
-		w.Write([]byte(key))
+		signingKeys, err := a.Model.GetSigningKeysForRepo(key.DID)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not get signing keys", err)
+			return
+		}
+		bs, err := json.Marshal(signingKeys)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal signing keys", err)
+			return
+		}
+		w.Write(bs)
 	}
 }
 

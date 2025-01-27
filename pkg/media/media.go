@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/go-gst/go-gst/gst"
@@ -15,6 +16,7 @@ import (
 	"github.com/livepeer/lpms/ffmpeg"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/log"
@@ -334,36 +336,50 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
-	var repo *model.Repo
-	if mm.model != nil {
-		repo, err = mm.model.GetRepoBySigningKey(pub.String())
+	meta, err := ParseSegmentAssertions(mani)
+	if err != nil {
+		return err
+	}
+	// special case for test signers that are only signed with a key
+	var repoDID string
+	var signingKeyDID string
+	var isDIDKey bool
+	if strings.HasPrefix(meta.Creator, atproto.DID_KEY_PREFIX) {
+		signingKeyDID = meta.Creator
+		repoDID = meta.Creator
+		isDIDKey = true
+	} else {
+		repo, err := atproto.SyncBlueskyRepoCached(ctx, meta.Creator, mm.model)
 		if err != nil {
 			return err
 		}
+		signingKey, err := mm.model.GetSigningKey(pub.DIDKey(), repo.DID)
+		if err != nil {
+			return err
+		}
+		if signingKey == nil {
+			return fmt.Errorf("no signing key found for %s", pub.DIDKey())
+		}
+		repoDID = repo.DID
+		signingKeyDID = signingKey.DID
+		isDIDKey = false
 	}
+
 	found := false
-	if len(mm.cli.AllowedStreams) == 0 {
+	if !isDIDKey && (len(mm.cli.AllowedStreams) == 0 || (mm.cli.TestStream && len(mm.cli.AllowedStreams) == 1)) {
 		found = true
 	} else {
 		for _, a := range mm.cli.AllowedStreams {
-			if a == pub.String() {
-				found = true
-				break
-			}
-			if repo != nil && repo.DID == a {
+			if a == repoDID {
 				found = true
 				break
 			}
 		}
 	}
 	if !found {
-		return fmt.Errorf("got valid segment, but address is not allowed: %s", pub.String())
+		return fmt.Errorf("got valid segment, but user is not allowed: %s", repoDID)
 	}
-	meta, err := ParseSegmentAssertions(mani)
-	if err != nil {
-		return err
-	}
-	fd, err := mm.cli.SegmentFileCreate(pub.String(), meta.StartTime, "mp4")
+	fd, err := mm.cli.SegmentFileCreate(repoDID, meta.StartTime, "mp4")
 	if err != nil {
 		return err
 	}
@@ -371,12 +387,13 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	go mm.replicator.NewSegment(ctx, buf)
 	r = bytes.NewReader(buf)
 	io.Copy(fd, r)
-	go mm.PublishSegment(ctx, pub.String(), fd.Name())
+	go mm.PublishSegment(ctx, repoDID, fd.Name())
 	seg := &model.Segment{
-		ID:        *mani.Label,
-		User:      pub.String(),
-		StartTime: meta.StartTime.Time(),
-		Title:     meta.Title,
+		ID:            *mani.Label,
+		SigningKeyDID: signingKeyDID,
+		RepoDID:       repoDID,
+		StartTime:     meta.StartTime.Time(),
+		Title:         meta.Title,
 	}
 	mm.newSegmentSubsMutex.RLock()
 	defer mm.newSegmentSubsMutex.RUnlock()
@@ -388,6 +405,6 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	for _, ch := range mm.newSegmentSubs {
 		go func() { ch <- not }()
 	}
-	log.Log(ctx, "successfully ingested segment", "user", pub.String(), "timestamp", meta.StartTime, "segmentID", *mani.Label)
+	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", meta.StartTime, "segmentID", *mani.Label)
 	return nil
 }

@@ -36,7 +36,7 @@ func (m *DBModel) LatestThumbnailForUser(user string) (*Thumbnail, error) {
 	res := m.DB.Table("thumbnails AS t").
 		Select("t.*").
 		Joins("JOIN segments AS s ON t.segment_id = s.id").
-		Where("s.user = ?", user).
+		Where("s.repo_did = ?", user).
 		Order("s.start_time DESC").
 		Limit(1).
 		Scan(&thumbnail)

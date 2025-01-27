@@ -14,11 +14,10 @@ import (
 	"math/big"
 	"time"
 
-	"stream.place/streamplace/pkg/crypto/aqpub"
 	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa"
+	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
 // uses Go code to generate a es256p cert, then rewrites and resigns it into an es256k cert
@@ -131,7 +130,7 @@ func GenerateES256KCert(signer gocrypto.Signer) ([]byte, error) {
 	return bs, nil
 }
 
-func ParseES256KCert(pembs []byte) (aqpub.Pub, error) {
+func ParseES256KCert(pembs []byte) (*atcrypto.PublicKeyK256, error) {
 	// todo: there may be a chain here
 	block, _ := pem.Decode(pembs)
 
@@ -145,12 +144,7 @@ func ParseES256KCert(pembs []byte) (aqpub.Pub, error) {
 		return nil, err
 	}
 
-	x, y := secp256k1.S256().Unmarshal(k256cert.TBSCertificate.PublicKey.PublicKey.Bytes)
-	if x == nil {
-		return nil, fmt.Errorf("unable to unmarshal k256 public key")
-	}
-
-	pub, err := aqpub.FromPoints(x, y)
+	pub, err := atcrypto.ParsePublicUncompressedBytesK256(k256cert.TBSCertificate.PublicKey.PublicKey.Bytes)
 	if err != nil {
 		return nil, err
 	}

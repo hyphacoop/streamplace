@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"errors"
 	"flag"
 	"fmt"
@@ -16,6 +18,8 @@ import (
 	"syscall"
 	"time"
 
+	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/term"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/aqhttp"
@@ -313,14 +317,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			case <-ctx.Done():
 				return nil
 			case not := <-newSeg:
-				prevSeg, prevErr := mod.LatestSegmentForUser(not.Segment.User)
+				prevSeg, prevErr := mod.LatestSegmentForUser(not.Segment.RepoDID)
 				err := mod.CreateSegment(not.Segment)
 				if err != nil {
 					log.Error(ctx, "could not add segment to database", "error", err)
 				}
 				go func() {
 					err := func() error {
-						oldThumb, err := mod.LatestThumbnailForUser(not.Segment.User)
+						oldThumb, err := mod.LatestThumbnailForUser(not.Segment.RepoDID)
 						if err != nil {
 							return err
 						}
@@ -330,7 +334,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 						}
 						r := bytes.NewReader(not.Data)
 						aqt := aqtime.FromTime(not.Segment.StartTime)
-						fd, err := cli.SegmentFileCreate(not.Segment.User, aqt, "jpg")
+						fd, err := cli.SegmentFileCreate(not.Segment.RepoDID, aqt, "jpg")
 						if err != nil {
 							return err
 						}
@@ -361,7 +365,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 						if prevSeg != nil {
 							dur := not.Segment.StartTime.Sub(prevSeg.StartTime)
 							if prevSeg != nil && dur < (5*time.Minute) {
-								log.Debug(ctx, "skipping notification, less than 5 minutes since last segment", "user", not.Segment.User, "duration", dur)
+								log.Debug(ctx, "skipping notification, less than 5 minutes since last segment", "user", not.Segment.RepoDID, "duration", dur)
 								// it's been less than 5 minutes since the last segment, skip notification
 								return nil
 							}
@@ -379,7 +383,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 						if noter != nil {
 							noter.Blast(ctx, notifications, nb)
 						} else {
-							log.Log(ctx, "no notifier configured, skipping notifications", "user", not.Segment.User, "count", len(notifications), "content", nb)
+							log.Log(ctx, "no notifier configured, skipping notifications", "user", not.Segment.RepoDID, "count", len(notifications), "content", nb)
 						}
 						return nil
 					}()
@@ -399,7 +403,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		if err != nil {
 			return err
 		}
-		testMediaSigner, err := media.MakeMediaSigner(ctx, &cli, "self-test-signer", testSigner, mod)
+		pub := signer.Public().(*ecdsa.PublicKey)
+		publicKeyBytes := elliptic.Marshal(ethcrypto.S256(), pub.X, pub.Y)
+		atkey, err := atcrypto.ParsePublicUncompressedBytesK256(publicKeyBytes)
+		if err != nil {
+			return err
+		}
+		did := atkey.DIDKey()
+		testMediaSigner, err := media.MakeMediaSigner(ctx, &cli, did, testSigner, mod)
 		if err != nil {
 			return err
 		}
@@ -411,8 +422,8 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		if err != nil {
 			return err
 		}
-		cli.AllowedStreams = append(cli.AllowedStreams, testMediaSigner.Pub.String())
-		a.Aliases["self-test"] = testMediaSigner.Pub.String()
+		cli.AllowedStreams = append(cli.AllowedStreams, did)
+		a.Aliases["self-test"] = did
 		group.Go(func() error {
 			return mm.TestSource(ctx, testMediaSigner)
 		})

@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"stream.place/streamplace/pkg/log"
 	"github.com/lmittmann/tint"
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"stream.place/streamplace/pkg/log"
 )
 
 type DBModel struct {
@@ -39,10 +39,15 @@ type Model interface {
 
 	GetRepo(did string) (*Repo, error)
 	GetRepoByHandle(handle string) (*Repo, error)
+	GetRepoByHandleOrDID(arg string) (*Repo, error)
 	GetRepoBySigningKey(signingKey string) (*Repo, error)
 	UpdateRepo(repo *Repo) error
 
 	GetLiveUsers() ([]Segment, error)
+
+	UpdateSigningKey(key *SigningKey) error
+	GetSigningKey(did, repoDID string) (*SigningKey, error)
+	GetSigningKeysForRepo(repoDID string) ([]SigningKey, error)
 }
 
 func MakeDB(dbURL string) (Model, error) {
@@ -73,7 +78,7 @@ func MakeDB(dbURL string) (Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error starting database: %w", err)
 	}
-	for _, model := range []any{Notification{}, PlayerEvent{}, Segment{}, Thumbnail{}, Identity{}, Repo{}} {
+	for _, model := range []any{Notification{}, PlayerEvent{}, Segment{}, Thumbnail{}, Identity{}, Repo{}, SigningKey{}} {
 		err = db.AutoMigrate(model)
 		if err != nil {
 			return nil, err

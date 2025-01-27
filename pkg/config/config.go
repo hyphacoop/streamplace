@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"stream.place/streamplace/pkg/aqtime"
-	"stream.place/streamplace/pkg/crypto/aqpub"
 	"github.com/peterbourgon/ff/v3"
 	"golang.org/x/exp/rand"
+	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/crypto/aqpub"
 )
 
 const AQ_DATA_DIR = "$AQ_DATA_DIR"
@@ -149,7 +149,12 @@ func (cli *CLI) dataFilePath(fpath []string) string {
 	if cli.DataDir == "" {
 		panic("no data dir configured")
 	}
-	fpath = append([]string{cli.DataDir}, fpath...)
+	// windows does not like colons
+	safe := []string{}
+	for _, p := range fpath {
+		safe = append(safe, strings.ReplaceAll(p, ":", "-"))
+	}
+	fpath = append([]string{cli.DataDir}, safe...)
 	fdpath := filepath.Join(fpath...)
 	return fdpath
 }

@@ -149,7 +149,7 @@ export default function Router() {
 
 export function StreamplaceDrawer() {
   const theme = useTheme();
-  const { isWeb, isElectron } = usePlatform();
+  const { isWeb, isElectron, isNative, isBrowser } = usePlatform();
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
   useEffect(() => {
@@ -215,6 +215,7 @@ export function StreamplaceDrawer() {
           options={{
             drawerLabel: () => <Text>What's Streamplace?</Text>,
             drawerIcon: () => <ShieldQuestion />,
+            drawerItemStyle: isNative ? { display: "none" } : undefined,
           }}
         />
         <Drawer.Screen
@@ -223,6 +224,7 @@ export function StreamplaceDrawer() {
           options={{
             drawerLabel: () => <Text>Download</Text>,
             drawerIcon: () => <Download />,
+            drawerItemStyle: isBrowser ? undefined : { display: "none" },
           }}
         />
         <Drawer.Screen
@@ -247,6 +249,7 @@ export function StreamplaceDrawer() {
           options={{
             drawerLabel: () => <Text>Go Live</Text>,
             drawerIcon: () => <Video />,
+            drawerItemStyle: isNative ? { display: "none" } : undefined,
           }}
         />
         <Drawer.Screen

@@ -30,17 +30,16 @@ func (a *StreamplaceAPI) NormalizeUser(ctx context.Context, user string) (string
 	if ok {
 		user = alias
 	}
-	user = strings.ToLower(user)
-	// streamplace signing key
-	if strings.HasPrefix(user, "0x") {
+	// did:key, pass through unaltered
+	if strings.HasPrefix(user, atproto.DID_KEY_PREFIX) {
 		return user, nil
 	}
-	// assume bluesky handle
-	key, err := atproto.SyncBlueskyRepoCached(ctx, user, a.Model)
+	// only other allowed case is a bluesky handle
+	repo, err := atproto.SyncBlueskyRepoCached(ctx, user, a.Model)
 	if err != nil {
 		return "", err
 	}
-	return key, nil
+	return repo.DID, nil
 }
 
 func (a *StreamplaceAPI) HandleMP4Playback(ctx context.Context) httprouter.Handle {
@@ -198,9 +197,8 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 		var signer crypto.Signer = key.ToECDSA()
 
 		did := string(didBytes)
-		fmt.Println("did", did)
 
-		mediaSigner, err := media.MakeMediaSigner(ctx, a.CLI, "fixme-media-signer", signer, a.Model)
+		mediaSigner, err := media.MakeMediaSigner(ctx, a.CLI, did, signer, a.Model)
 		if err != nil {
 			errors.WriteHTTPUnauthorized(w, "invalid authorization key (not valid secp256k1)", err)
 			return

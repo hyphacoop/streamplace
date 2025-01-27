@@ -1,6 +1,12 @@
 import { Camera, FerrisWheel } from "@tamagui/lucide-icons";
-import AQLink from "components/aqlink";
+import AQLink, { Redirect } from "components/aqlink";
+import Loading from "components/loading/loading";
+import {
+  selectIsReady,
+  selectUserProfile,
+} from "features/bluesky/blueskySlice";
 import React from "react";
+import { useAppSelector } from "store/hooks";
 import { H6, Text, View } from "tamagui";
 const elems = [
   {
@@ -16,6 +22,14 @@ const elems = [
 ];
 
 export default function StreamScreen({ route }) {
+  const isReady = useAppSelector(selectIsReady);
+  if (!isReady) {
+    return <Loading />;
+  }
+  const userProfile = useAppSelector(selectUserProfile);
+  if (!userProfile) {
+    return <Redirect to={{ screen: "Login" }} />;
+  }
   return (
     <View f={1} jc="space-around" ai="stretch" padding="$3" flexDirection="row">
       <View f={1} maxWidth={250} alignItems="stretch" justifyContent="center">

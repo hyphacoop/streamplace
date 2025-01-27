@@ -7,12 +7,11 @@ import (
 )
 
 type Repo struct {
-	DID        string `gorm:"primaryKey;column:did" json:"did"`
-	Handle     string `gorm:"index" json:"handle"`
-	PDS        string `json:"pds"`
-	Version    string `json:"version"`
-	SigningKey string `gorm:"index" json:"signingKey"`
-	RootCID    string `json:"rootCid"`
+	DID     string `gorm:"primaryKey;column:did" json:"did"`
+	Handle  string `gorm:"index" json:"handle"`
+	PDS     string `json:"pds"`
+	Version string `json:"version"`
+	RootCID string `json:"rootCid"`
 }
 
 func (Repo) TableName() string {
@@ -53,6 +52,17 @@ func (m *DBModel) GetRepoBySigningKey(signingKey string) (*Repo, error) {
 		return nil, res.Error
 	}
 	return &repoModel, nil
+}
+
+func (m *DBModel) GetRepoByHandleOrDID(arg string) (*Repo, error) {
+	repo, err := m.GetRepoByHandle(arg)
+	if err != nil {
+		return nil, err
+	}
+	if repo != nil {
+		return repo, nil
+	}
+	return m.GetRepo(arg)
 }
 
 func (m *DBModel) UpdateRepo(repo *Repo) error {

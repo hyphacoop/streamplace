@@ -10,6 +10,7 @@ import { Secp256k1Keypair, bytesToMultibase } from "@atproto/crypto";
 import { privateKeyToAccount } from "viem/accounts";
 import { StreamKey } from "features/base/baseSlice";
 import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
+import { isWeb } from "tamagui";
 
 export interface BlueskyState {
   status: "start" | "loggedIn" | "loggedOut";
@@ -49,6 +50,23 @@ const initialState: BlueskyState = {
   },
   newKey: null,
   storedKey: null,
+};
+
+// clear atproto login query params from url
+const clearQueryParams = () => {
+  if (!isWeb) {
+    return;
+  }
+  const u = new URL(document.location.href);
+  const params = new URLSearchParams(u.search);
+  if (u.search === "") {
+    return;
+  }
+  params.delete("iss");
+  params.delete("state");
+  params.delete("code");
+  u.search = params.toString();
+  window.history.replaceState(null, "", u.toString());
 };
 
 export const blueskySlice = createAppSlice({
@@ -91,6 +109,7 @@ export const blueskySlice = createAppSlice({
           }
           return {
             ...state,
+            status: "loggedOut",
             client: client,
           };
         },
@@ -197,8 +216,10 @@ export const blueskySlice = createAppSlice({
           // state.status = "loading";
         },
         fulfilled: (state, action) => {
+          clearQueryParams();
           return {
             ...state,
+            status: "loggedIn",
             profiles: {
               ...state.profiles,
               [action.meta.arg]: action.payload.data,
@@ -206,6 +227,7 @@ export const blueskySlice = createAppSlice({
           };
         },
         rejected: (state, action) => {
+          clearQueryParams();
           console.error("getProfile rejected", action.error);
           // state.status = "failed";
         },
@@ -366,6 +388,7 @@ export const blueskySlice = createAppSlice({
         };
         const record = {
           signingKey: keypair.did(),
+          createdAt: new Date().toISOString(),
         };
         await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,
@@ -495,4 +518,5 @@ export const {
   selectPDS,
   selectLogin,
   selectStoredKey,
+  selectIsReady,
 } = blueskySlice.selectors;

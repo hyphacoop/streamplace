@@ -8,9 +8,9 @@ import { H6, Image, ScrollView, ScrollViewProps, Text, View } from "tamagui";
 
 type Segment = {
   id: string;
-  user: string;
+  repoDID: string;
+  signingKeyDID: string;
   startTime: string;
-  endTime: string;
   repo: Repo;
 };
 
@@ -19,7 +19,6 @@ type Repo = {
   handle: string;
   pds: string;
   version: string;
-  streamplaceKey: string;
   rootCid: string;
 };
 
@@ -85,67 +84,77 @@ export default function StreamList({
         />
       }
     >
-      {streams.map((segment, i) => (
-        <View flex={1} key={i} alignItems="stretch">
-          <AQLink
-            to={{
-              screen: "Stream",
-              params: { user: segment.repo?.handle || segment.user },
-            }}
-          >
-            <View
-              alignItems="center"
-              display="flex"
-              position="relative"
-              maxWidth={400}
-              flexBasis="100%"
-              marginHorizontal="auto"
+      {streams.map((segment, i) => {
+        const user =
+          segment.repo?.handle || segment.repoDID || segment.signingKeyDID;
+        return (
+          <View flex={1} key={i} alignItems="stretch">
+            <AQLink
+              to={{
+                screen: "Stream",
+                params: {
+                  user: user,
+                },
+              }}
             >
-              <Image
-                f={1}
-                aspectRatio={16 / 9}
-                width="100%"
-                src={`${url}/api/playback/${segment.user}/stream.jpg`}
-                resizeMode="contain"
-                objectFit="contain"
-              />
               <View
-                position="absolute"
-                top={0}
-                right={0}
-                flexDirection="row"
-                justifyContent="center"
                 alignItems="center"
-                overflow="visible"
+                display="flex"
+                position="relative"
+                maxWidth={400}
+                flexBasis="100%"
+                marginHorizontal="auto"
               >
-                <View position="relative">
-                  <Text
-                    textShadowColor="black"
-                    textShadowOffset={{ width: -1, height: 1 }}
-                    textShadowRadius={3}
-                  >
-                    LIVE
-                  </Text>
-                  <Text
-                    textShadowColor="black"
-                    textShadowOffset={{ width: 1, height: -1 }}
-                    textShadowRadius={3}
-                    position="absolute"
-                  >
-                    LIVE
-                  </Text>
+                <Image
+                  f={1}
+                  aspectRatio={16 / 9}
+                  width="100%"
+                  src={`${url}/api/playback/${user}/stream.jpg`}
+                  resizeMode="contain"
+                  objectFit="contain"
+                />
+                <View
+                  position="absolute"
+                  top={0}
+                  right={0}
+                  flexDirection="row"
+                  justifyContent="center"
+                  alignItems="center"
+                  overflow="visible"
+                >
+                  <View position="relative">
+                    <Text
+                      textShadowColor="black"
+                      textShadowOffset={{ width: -1, height: 1 }}
+                      textShadowRadius={3}
+                    >
+                      LIVE
+                    </Text>
+                    <Text
+                      textShadowColor="black"
+                      textShadowOffset={{ width: 1, height: -1 }}
+                      textShadowRadius={3}
+                      position="absolute"
+                    >
+                      LIVE
+                    </Text>
+                  </View>
+                  <View
+                    bg="$red10"
+                    w={15}
+                    h={15}
+                    margin={5}
+                    borderRadius="$10"
+                  />
                 </View>
-                <View bg="$red10" w={15} h={15} margin={5} borderRadius="$10" />
+                <H6>
+                  {segment.repo?.handle ? `@${segment.repo.handle}` : user}
+                </H6>
               </View>
-              <H6>
-                {segment.repo?.handle
-                  ? `@${segment.repo.handle}`
-                  : segment.user}
-              </H6>
-            </View>
-          </AQLink>
-        </View>
-      ))}
+            </AQLink>
+          </View>
+        );
+      })}
       <View f={1} justifyContent="center" alignItems="center">
         {streams.length === 0 && <H6>No one is streaming right now 😭</H6>}
       </View>

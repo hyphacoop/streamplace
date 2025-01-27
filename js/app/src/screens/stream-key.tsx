@@ -4,11 +4,12 @@ import {
   clearStreamKeyRecord,
   createStreamKeyRecord,
   selectUserProfile,
+  selectIsReady,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { View, Paragraph, Button, Text } from "tamagui";
-
+import { Redirect } from "components/aqlink";
 const Row = ({ children }: { children: React.ReactNode }) => {
   return (
     <View w="100%" f={1} fd="row" padding="$4">
@@ -34,7 +35,14 @@ const Right = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function StreamKeyScreen() {
+  const isReady = useAppSelector(selectIsReady);
+  if (!isReady) {
+    return <Loading />;
+  }
   const userProfile = useAppSelector(selectUserProfile);
+  if (!userProfile) {
+    return <Redirect to={{ screen: "Login" }} />;
+  }
   const url = useAppSelector((state) => state.streamplace.url);
 
   if (!userProfile) {

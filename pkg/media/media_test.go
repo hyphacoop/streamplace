@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/config"
 	ct "stream.place/streamplace/pkg/config/configtesting"
-	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/crypto/signers/eip712/eip712test"
 	_ "stream.place/streamplace/pkg/media/mediatesting"
+	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/replication/boring"
 )
 
@@ -24,19 +24,25 @@ func getFixture(name string) string {
 }
 
 func getStaticTestMediaManager(t *testing.T) (*MediaManager, *MediaSigner) {
+	dir, err := os.MkdirTemp("", "atproto-test-*")
+	require.NoError(t, err)
+	// defer os.RemoveAll(dir)
+
+	fname := filepath.Join(dir, "db.sqlite")
+	mod, err := model.MakeDB(fname)
+	require.NoError(t, err)
 	signer, err := c2pa.MakeStaticSigner(eip712test.KeyBytes)
 	require.NoError(t, err)
-	pub, err := aqpub.FromHexString("0x16e4f04bc3c9d12fde3d238f60662161d0b87cce")
 	if err != nil {
 		panic(err)
 	}
 	cli := ct.CLI(t, &config.CLI{
 		TAURL:          "http://timestamp.digicert.com",
-		AllowedStreams: []string{pub.String()},
+		AllowedStreams: []string{},
 	})
-	mm, err := MakeMediaManager(context.Background(), cli, signer, &boring.BoringReplicator{}, nil)
+	mm, err := MakeMediaManager(context.Background(), cli, signer, &boring.BoringReplicator{}, mod)
 	require.NoError(t, err)
-	ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer, nil)
+	ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer, mod)
 	return mm, ms
 }
 
@@ -116,9 +122,6 @@ func getStaticTestMediaManager(t *testing.T) (*MediaManager, *MediaSigner) {
 // }
 
 func TestVerifyMP4(t *testing.T) {
-	oldStreamplaceMetadata := STREAMPLACE_METADATA
-	STREAMPLACE_METADATA = "tv.aquareum.metadata"
-	defer func() { STREAMPLACE_METADATA = oldStreamplaceMetadata }()
 	f, err := os.Open(getFixture("sample-segment.mp4"))
 	require.NoError(t, err)
 	mm, _ := getStaticTestMediaManager(t)

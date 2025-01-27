@@ -7,11 +7,13 @@ import (
 )
 
 type Segment struct {
-	ID        string    `json:"id"        gorm:"primaryKey"`
-	User      string    `json:"user"      gorm:"index:latest_segments"`
-	StartTime time.Time `json:"startTime" gorm:"index:latest_segments"`
-	Title     string    `json:"title"`
-	Repo      *Repo     `json:"repo,omitempty" gorm:"foreignKey:User;references:SigningKey"`
+	ID            string      `json:"id"                   gorm:"primaryKey"`
+	SigningKeyDID string      `json:"signingKeyDID"        gorm:"column:signing_key_did"`
+	SigningKey    *SigningKey `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
+	StartTime     time.Time   `json:"startTime"            gorm:"index:latest_segments"`
+	RepoDID       string      `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
+	Repo          *Repo       `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
+	Title         string      `json:"title"`
 }
 
 func (m *DBModel) CreateSegment(seg *Segment) error {
@@ -28,7 +30,7 @@ func (m *DBModel) MostRecentSegments() ([]Segment, error) {
 
 	err := m.DB.Table("segments AS s1").
 		Select("s1.*").
-		Where("start_time = (SELECT MAX(start_time) FROM segments AS s2 WHERE s2.user = s1.user)").
+		Where("start_time = (SELECT MAX(start_time) FROM segments AS s2 WHERE s2.repo_did = s1.repo_did)").
 		Order("start_time DESC").
 		Scan(&segments).Error
 
@@ -44,7 +46,7 @@ func (m *DBModel) MostRecentSegments() ([]Segment, error) {
 
 func (m *DBModel) LatestSegmentForUser(user string) (*Segment, error) {
 	var seg Segment
-	err := m.DB.Model(Segment{}).Where("user = ?", user).Order("start_time DESC").First(&seg).Error
+	err := m.DB.Model(Segment{}).Where("repo_did = ?", user).Order("start_time DESC").First(&seg).Error
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +60,7 @@ func (m *DBModel) GetLiveUsers() ([]Segment, error) {
 	err := m.DB.Model(&Segment{}).
 		Preload("Repo").
 		Where("start_time >= ?", thirtySecondsAgo).
-		Where("start_time = (SELECT MAX(start_time) FROM segments s2 WHERE s2.user = segments.user)").
+		Where("start_time = (SELECT MAX(start_time) FROM segments s2 WHERE s2.repo_did = segments.repo_did)").
 		Order("start_time DESC").
 		Find(&liveUsers).Error
 

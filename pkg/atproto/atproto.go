@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
-	"stream.place/streamplace/pkg/aqhttp"
-	"stream.place/streamplace/pkg/crypto/aqpub"
-	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/model"
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/bluesky-social/indigo/atproto/identity"
@@ -21,6 +18,9 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
+	"stream.place/streamplace/pkg/aqhttp"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 )
 
 var SyncGetRepo = comatproto.SyncGetRepo
@@ -52,32 +52,34 @@ func getHandleLock(handle string) *sync.Mutex {
 	return lock
 }
 
-func SyncBlueskyRepoCached(ctx context.Context, handle string, mod model.Model) (string, error) {
-	repo, err := mod.GetRepoByHandle(handle)
+func SyncBlueskyRepoCached(ctx context.Context, handle string, mod model.Model) (*model.Repo, error) {
+	repo, err := mod.GetRepoByHandleOrDID(handle)
 	if err != nil {
-		return "", fmt.Errorf("failed to get repo for %s: %w", handle, err)
+		return nil, fmt.Errorf("failed to get repo for %s: %w", handle, err)
 	}
 	if repo != nil {
-		return repo.SigningKey, nil
+		return repo, nil
 	}
 	return SyncBlueskyRepo(ctx, handle, mod)
 }
 
-func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (string, error) {
+func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*model.Repo, error) {
+	ctx = log.WithLogValues(ctx, "func", "SyncBlueskyRepo")
 	// Get handle-specific lock and ensure synchronized access
-	handleLock := getHandleLock(handle)
-	handleLock.Lock()
-	defer handleLock.Unlock()
 
 	ident, err := ResolveIdent(ctx, handle)
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve Bluesky handle %s: %w", handle, err)
+		return nil, fmt.Errorf("failed to resolve Bluesky handle %s: %w", handle, err)
 	}
+
+	handleLock := getHandleLock(ident.DID.String())
+	handleLock.Lock()
+	defer handleLock.Unlock()
 
 	rev := ""
 	oldRepo, err := mod.GetRepo(ident.DID.String())
 	if err != nil {
-		return "", fmt.Errorf("failed to get DID record for %s: %w", ident.DID.String(), err)
+		return nil, fmt.Errorf("failed to get DID record for %s: %w", ident.DID.String(), err)
 	}
 	if oldRepo != nil {
 		log.Log(ctx, "found existing DID record", "did", oldRepo.DID, "version", oldRepo.Version)
@@ -90,11 +92,11 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 		Client: &aqhttp.Client,
 	}
 	if xrpcc.Host == "" {
-		return "", fmt.Errorf("no PDS endpoint found for Bluesky identity %s", handle)
+		return nil, fmt.Errorf("no PDS endpoint found for Bluesky identity %s", handle)
 	}
 	repoBytes, err := SyncGetRepo(ctx, &xrpcc, ident.DID.String(), rev)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch repo for %s from PDS %s: %w", ident.DID.String(), xrpcc.Host, err)
+		return nil, fmt.Errorf("failed to fetch repo for %s from PDS %s: %w", ident.DID.String(), xrpcc.Host, err)
 	}
 
 	// uncomment for saving new test cases:
@@ -104,7 +106,7 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 	// encodedBytes := base64.URLEncoding.EncodeToString(repoBytes)
 	// err = os.WriteFile(filename, []byte(encodedBytes), 0644)
 	// if err != nil {
-	// 	return "", fmt.Errorf("failed to write encoded repo bytes to file: %w", err)
+	// 	return nil, fmt.Errorf("failed to write encoded repo bytes to file: %w", err)
 	// }
 
 	log.Log(ctx, "got diff", "bytes", len(repoBytes))
@@ -112,54 +114,51 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 	bs := blockstore.NewBlockstore(datastore.NewMapDatastore())
 	root, err := repo.IngestRepo(ctx, bs, bytes.NewReader(repoBytes))
 	if err != nil {
-		return "", fmt.Errorf("failed to ingest repo for %s: %w", ident.DID.String(), err)
+		return nil, fmt.Errorf("failed to ingest repo for %s: %w", ident.DID.String(), err)
 	}
 	log.Log(ctx, "ingested repo", "root", root)
 	if oldRepo != nil {
 		oldRoot, err := cid.Decode(oldRepo.RootCID)
 		if err != nil {
-			return "", fmt.Errorf("failed to decode old root CID for %s: %w", ident.DID.String(), err)
+			return nil, fmt.Errorf("failed to decode old root CID for %s: %w", ident.DID.String(), err)
 		}
 		if oldRoot.Equals(root) {
 			log.Log(ctx, "no changes to repo", "root", root)
-			return oldRepo.SigningKey, nil
+			return oldRepo, nil
 		}
 	}
 
 	r, err := repo.ReadRepoFromCar(ctx, bytes.NewReader(repoBytes))
 	if err != nil {
-		return "", fmt.Errorf("failed to parse repo CAR data for %s: %w", ident.DID.String(), err)
+		return nil, fmt.Errorf("failed to parse repo CAR data for %s: %w", ident.DID.String(), err)
 	}
 
 	// extract DID from repo commit
 	sc := r.SignedCommit()
 	signerDID, err := syntax.ParseDID(sc.Did)
 	if err != nil {
-		return "", fmt.Errorf("invalid DID in repo commit for %s: %w", ident.DID.String(), err)
+		return nil, fmt.Errorf("invalid DID in repo commit for %s: %w", ident.DID.String(), err)
 	}
 	if signerDID != ident.DID {
-		return "", fmt.Errorf("signer DID %s does not match identity %s", signerDID, ident.DID.String())
+		return nil, fmt.Errorf("signer DID %s does not match identity %s", signerDID, ident.DID.String())
 	}
 
 	processed := 0
-	var key string
-	if oldRepo != nil {
-		key = oldRepo.SigningKey
-	}
 	bs = r.Blockstore()
 	cst := util.CborStore(bs)
 	allKeys, err := bs.AllKeysChan(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get all keys: %w", err)
+		return nil, fmt.Errorf("failed to get all keys: %w", err)
 	}
+	signingKeys := []string{}
 	for k := range allKeys {
-		log.Log(ctx, "processing key", "key", k)
+		log.Debug(ctx, "processing key", "key", k)
 		rec := map[string]any{}
 		err := cst.Get(ctx, k, &rec)
 		if err != nil {
-			return "", fmt.Errorf("failed to get block for key %s: %w", k, err)
+			return nil, fmt.Errorf("failed to get block for key %s: %w", k, err)
 		}
-		log.Log(ctx, "got block", "key", k, "size", len(rec))
+		log.Debug(ctx, "got block", "key", k, "size", len(rec), "record", rec)
 		typ, ok := rec["$type"]
 		if !ok {
 			continue
@@ -176,46 +175,50 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (strin
 		if !ok {
 			continue
 		}
-		key = streamplaceKey
+		signingKeys = append(signingKeys, streamplaceKey)
 	}
-	log.Log(ctx, "processed new posts", "postCount", processed)
+	log.Log(ctx, "processed new posts", "postCount", processed, "signingKeys", signingKeys)
 
-	var aqk aqpub.Pub
-	if strings.HasPrefix(key, DID_KEY_PREFIX) {
-		pubKey, err := atcrypto.ParsePublicDIDKey(key)
+	for _, key := range signingKeys {
+		err := parseSigningKey(ctx, key)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse multibase key %s: %w", key, err)
+			log.Warn(ctx, "ignoring non-DID key", "key", key, "error", err)
+			continue
 		}
-		aqk, err = aqpub.FromBytes(pubKey.UncompressedBytes())
+		err = mod.UpdateSigningKey(&model.SigningKey{
+			DID:       key,
+			CreatedAt: time.Now(),
+			RepoDID:   ident.DID.String(),
+		})
 		if err != nil {
-			return "", fmt.Errorf("failed to parse public key for %s: %w", handle, err)
+			return nil, fmt.Errorf("failed to create signing key for %s: %w", key, err)
 		}
-	} else if strings.HasPrefix(key, ADDRESS_KEY_PREFIX) {
-		aqk, err = aqpub.FromHexString(key)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse public key for %s: %w", handle, err)
-		}
-	} else {
-		return "", fmt.Errorf("invalid key format for %s: %s", handle, key)
 	}
-	if err != nil {
-		return "", fmt.Errorf("failed to parse public key for %s: %w", handle, err)
-	}
-	addr := aqk.String()
+
 	newRepo := model.Repo{
-		DID:        ident.DID.String(),
-		PDS:        ident.PDSEndpoint(),
-		Version:    sc.Rev,
-		SigningKey: addr,
-		RootCID:    root.String(),
-		Handle:     handle,
+		DID:     ident.DID.String(),
+		PDS:     ident.PDSEndpoint(),
+		Version: sc.Rev,
+		RootCID: root.String(),
+		Handle:  ident.Handle.String(),
 	}
 	err = mod.UpdateRepo(&newRepo)
 	if err != nil {
-		return "", fmt.Errorf("failed to update DID record for %s: %w", sc.Did, err)
+		return nil, fmt.Errorf("failed to update DID record for %s: %w", sc.Did, err)
 	}
 
-	return addr, nil
+	return &newRepo, nil
+}
+
+func parseSigningKey(ctx context.Context, key string) error {
+	if !strings.HasPrefix(key, DID_KEY_PREFIX) {
+		return fmt.Errorf("invalid key format for DID key: %s", key)
+	}
+	_, err := atcrypto.ParsePublicDIDKey(key)
+	if err != nil {
+		return fmt.Errorf("failed to parse multibase key %s: %w", key, err)
+	}
+	return nil
 }
 
 var ResolveIdent = resolveIdent
