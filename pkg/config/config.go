@@ -19,6 +19,7 @@ import (
 	"github.com/peterbourgon/ff/v3"
 	"golang.org/x/exp/rand"
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/crypto/aqpub"
 )
 
@@ -327,4 +328,20 @@ func (cli *CLI) DebugFlag(fs *flag.FlagSet, dest *map[string]map[string]int, nam
 
 		return nil
 	})
+}
+
+func (cli *CLI) StreamIsAllowed(did string) error {
+	// if the user set no test streams, anyone can stream
+	openServer := len(cli.AllowedStreams) == 0 || (cli.TestStream && len(cli.AllowedStreams) == 1)
+	// but only valid atproto accounts! did:key is only allowed for our local test stream
+	isDIDKey := strings.HasPrefix(did, atproto.DID_KEY_PREFIX)
+	if openServer && !isDIDKey {
+		return nil
+	}
+	for _, a := range cli.AllowedStreams {
+		if a == did {
+			return nil
+		}
+	}
+	return fmt.Errorf("user is not allowed to stream")
 }

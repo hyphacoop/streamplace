@@ -343,11 +343,9 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	// special case for test signers that are only signed with a key
 	var repoDID string
 	var signingKeyDID string
-	var isDIDKey bool
 	if strings.HasPrefix(meta.Creator, atproto.DID_KEY_PREFIX) {
 		signingKeyDID = meta.Creator
 		repoDID = meta.Creator
-		isDIDKey = true
 	} else {
 		repo, err := atproto.SyncBlueskyRepoCached(ctx, meta.Creator, mm.model)
 		if err != nil {
@@ -362,22 +360,11 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		}
 		repoDID = repo.DID
 		signingKeyDID = signingKey.DID
-		isDIDKey = false
 	}
 
-	found := false
-	if !isDIDKey && (len(mm.cli.AllowedStreams) == 0 || (mm.cli.TestStream && len(mm.cli.AllowedStreams) == 1)) {
-		found = true
-	} else {
-		for _, a := range mm.cli.AllowedStreams {
-			if a == repoDID {
-				found = true
-				break
-			}
-		}
-	}
-	if !found {
-		return fmt.Errorf("got valid segment, but user is not allowed: %s", repoDID)
+	err = mm.cli.StreamIsAllowed(repoDID)
+	if err != nil {
+		return fmt.Errorf("got valid segment, but user %s is not allowed: %w", repoDID, err)
 	}
 	fd, err := mm.cli.SegmentFileCreate(repoDID, meta.StartTime, "mp4")
 	if err != nil {

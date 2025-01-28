@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,12 +16,11 @@ import (
 	"syscall"
 	"time"
 
-	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/term"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/crypto/signers/eip712"
 	"stream.place/streamplace/pkg/log"
@@ -403,9 +400,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		if err != nil {
 			return err
 		}
-		pub := signer.Public().(*ecdsa.PublicKey)
-		publicKeyBytes := elliptic.Marshal(ethcrypto.S256(), pub.X, pub.Y)
-		atkey, err := atcrypto.ParsePublicUncompressedBytesK256(publicKeyBytes)
+		atkey, err := atproto.ParsePubKey(signer.Public())
 		if err != nil {
 			return err
 		}

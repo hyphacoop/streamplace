@@ -42,7 +42,6 @@ export default function StreamList({
     return () => clearInterval(interval);
   }, []);
   useEffect(() => {
-    setError(false);
     setLoading(true);
     (async () => {
       try {
@@ -54,6 +53,7 @@ export default function StreamList({
         if (!Array.isArray(data)) {
           throw new Error("got non-array back from /api/live-users");
         }
+        setError(false);
         setStreams(data);
       } catch (e) {
         console.error(e);
@@ -64,7 +64,14 @@ export default function StreamList({
     })();
   }, [url, retryTime]);
   if (error) {
-    return <ErrorBox onRetry={() => setRetryTime(Date.now())} />;
+    return (
+      <ErrorBox
+        onRetry={() => {
+          setError(false);
+          setRetryTime(Date.now());
+        }}
+      />
+    );
   }
   if (loading && streams.length === 0) {
     return <Loading></Loading>;

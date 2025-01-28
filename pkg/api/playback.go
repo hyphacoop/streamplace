@@ -177,6 +177,8 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 			return
 		}
 		encoded := auth[len(BEARER_PREFIX):]
+		// it's easy to copy-paste a trailing or leading space, so clear those out
+		encoded = strings.TrimSpace(encoded)
 		if len(encoded) < 2 || encoded[0] != 'z' {
 			errors.WriteHTTPUnauthorized(w, "invalid authorization key (not a multibase base58btc string)", nil)
 			return
@@ -205,23 +207,30 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 		}
 
 		if did != "" {
-			_, err = atproto.SyncBlueskyRepo(ctx, did, a.Model)
+			repo, err := atproto.SyncBlueskyRepo(ctx, did, a.Model)
 			if err != nil {
 				apierrors.WriteHTTPInternalServerError(w, "could not resolve streamplace key", err)
 				return
 			}
+			err = a.CLI.StreamIsAllowed(repo.DID)
+			if err != nil {
+				apierrors.WriteHTTPUnauthorized(w, "user is not allowed to stream", err)
+				return
+			}
+		} else {
+			atkey, err := atproto.ParsePubKey(signer.Public())
+			if err != nil {
+				apierrors.WriteHTTPUnauthorized(w, "invalid authorization key (not valid secp256k1)", err)
+				return
+			}
+			did = atkey.DIDKey()
+			err = a.CLI.StreamIsAllowed(did)
+			if err != nil {
+				apierrors.WriteHTTPUnauthorized(w, "user is not allowed to stream", err)
+				return
+			}
 		}
 
-		// user := p.ByName("user")
-		// if user == "" {
-		// 	errors.WriteHTTPBadRequest(w, "user required", nil)
-		// 	return
-		// }
-		// _, err := a.NormalizeUser(ctx, user)
-		// if err != nil {
-		// 	errors.WriteHTTPBadRequest(w, "invalid user", err)
-		// 	return
-		// }
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			errors.WriteHTTPBadRequest(w, "error reading body", err)
