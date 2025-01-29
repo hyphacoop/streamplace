@@ -1,4 +1,4 @@
 [wrap-git]
-url = https://git.aquareum.tv/streamplace/mistserver.git
+url = https://git.stream.place/streamplace/mistserver.git
 revision = streamplace
 depth = 1

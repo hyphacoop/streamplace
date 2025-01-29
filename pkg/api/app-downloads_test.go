@@ -9,10 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"stream.place/streamplace/pkg/config"
-	"stream.place/streamplace/pkg/model"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/config"
+	"stream.place/streamplace/pkg/model"
 )
 
 func TestRegexStreamplace(t *testing.T) {
@@ -212,15 +212,15 @@ var packageRes = []byte(`
 				"status": "running",
 				"updated_at": "2024-09-19T20:08:45.699Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -245,15 +245,15 @@ var packageRes = []byte(`
 				"status": "success",
 				"updated_at": "2024-09-19T00:11:36.764Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/571"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/571"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -278,15 +278,15 @@ var packageRes = []byte(`
 				"status": "success",
 				"updated_at": "2024-09-17T21:05:57.420Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/567"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/567"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -311,15 +311,15 @@ var packageRes = []byte(`
 				"status": "success",
 				"updated_at": "2024-09-17T04:57:57.731Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/2/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/2/avatar.png",
 					"id": 2,
 					"locked": false,
 					"name": "Eli Mallon",
 					"state": "active",
 					"username": "iameli",
-					"web_url": "https://git.aquareum.tv/iameli"
+					"web_url": "https://git.stream.place/iameli"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/566"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/566"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -344,15 +344,15 @@ var packageRes = []byte(`
 				"status": "canceled",
 				"updated_at": "2024-09-17T03:50:51.613Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/565"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/565"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -377,15 +377,15 @@ var packageRes = []byte(`
 				"status": "failed",
 				"updated_at": "2024-09-17T00:22:35.717Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/564"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/564"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -410,15 +410,15 @@ var packageRes = []byte(`
 				"status": "failed",
 				"updated_at": "2024-09-16T23:32:25.977Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/563"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/563"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -443,15 +443,15 @@ var packageRes = []byte(`
 				"status": "success",
 				"updated_at": "2024-09-16T21:28:12.814Z",
 				"user": {
-					"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+					"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 					"id": 5,
 					"locked": false,
 					"name": "Eli Streams",
 					"state": "active",
 					"username": "iameli-streams",
-					"web_url": "https://git.aquareum.tv/iameli-streams"
+					"web_url": "https://git.stream.place/iameli-streams"
 				},
-				"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/561"
+				"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/561"
 			},
 			"pipelines": [],
 			"status": "default",
@@ -483,15 +483,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 44092840
@@ -516,15 +516,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 77485100
@@ -549,15 +549,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 35380619
@@ -582,15 +582,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 165891665
@@ -615,15 +615,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 138530555
@@ -648,15 +648,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 39472720
@@ -681,15 +681,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 54428823
@@ -714,15 +714,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 137738479
@@ -747,15 +747,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 34455283
@@ -780,15 +780,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 132833884
@@ -813,15 +813,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 131923036
@@ -846,15 +846,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 101700182
@@ -879,15 +879,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 210871488
@@ -912,15 +912,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 97621477
@@ -945,15 +945,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 207205568
@@ -978,15 +978,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 67260033
@@ -1011,15 +1011,15 @@ var fileRes = []byte(`
 					"status": "running",
 					"updated_at": "2024-09-19T20:08:45.699Z",
 					"user": {
-						"avatar_url": "https://git.aquareum.tv/uploads/-/system/user/avatar/5/avatar.png",
+						"avatar_url": "https://git.stream.place/uploads/-/system/user/avatar/5/avatar.png",
 						"id": 5,
 						"locked": false,
 						"name": "Eli Streams",
 						"state": "active",
 						"username": "iameli-streams",
-						"web_url": "https://git.aquareum.tv/iameli-streams"
+						"web_url": "https://git.stream.place/iameli-streams"
 					},
-					"web_url": "https://git.aquareum.tv/streamplace/streamplace/-/pipelines/572"
+					"web_url": "https://git.stream.place/streamplace/streamplace/-/pipelines/572"
 				}
 			],
 			"size": 175016960

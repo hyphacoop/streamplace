@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"stream.place/streamplace/pkg/log"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"github.com/google/uuid"
@@ -15,6 +14,7 @@ import (
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
+	"stream.place/streamplace/pkg/log"
 )
 
 // we have a bug that prevents us from correctly probing video durations

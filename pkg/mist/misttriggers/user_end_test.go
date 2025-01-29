@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"stream.place/streamplace/pkg/config"
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/config"
 )
 
 var userEndPayload = MistTriggerBody(`

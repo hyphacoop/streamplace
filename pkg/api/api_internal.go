@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
+	sloghttp "github.com/samber/slog-http"
+	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/errors"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/mist/mistconfig"
 	"stream.place/streamplace/pkg/mist/misttriggers"
 	"stream.place/streamplace/pkg/model"
 	v0 "stream.place/streamplace/pkg/schema/v0"
-	"github.com/julienschmidt/httprouter"
-	sloghttp "github.com/samber/slog-http"
-	"golang.org/x/sync/errgroup"
 )
 
 func (a *StreamplaceAPI) ServeInternalHTTP(ctx context.Context) error {

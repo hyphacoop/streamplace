@@ -16,9 +16,10 @@ export default function AboutScreen() {
       <Anchor
         fontSize={20}
         textAlign="center"
-        href="https://git.aquareum.tv/streamplace/streamplace/-/releases"
+        href="https://git.stream.place/streamplace/streamplace/-/releases"
       >
-        Get the latest releases for Windows, Mac, and Linux from git.aquareum.tv
+        Get the latest releases for Windows, Mac, and Linux from
+        git.stream.place
       </Anchor>
     </View>
   );

@@ -12,15 +12,15 @@ import (
 	"strings"
 	"time"
 
-	"stream.place/streamplace/pkg/log"
-	_ "stream.place/streamplace/pkg/media/mediatesting"
-	"stream.place/streamplace/pkg/schema"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"stream.place/streamplace/pkg/log"
+	_ "stream.place/streamplace/pkg/media/mediatesting"
+	"stream.place/streamplace/pkg/schema"
 )
 
 // type Signer interface {
@@ -147,7 +147,7 @@ type SignedMessage interface {
 type StreamplaceEIP712 struct {
 	PrimaryType string                    `json:"primaryType"`
 	Domain      *apitypes.TypedDataDomain `json:"domain"`
-	Message     StreamplaceEIP712Message     `json:"message"`
+	Message     StreamplaceEIP712Message  `json:"message"`
 	Signature   string                    `json:"signature"`
 }
 

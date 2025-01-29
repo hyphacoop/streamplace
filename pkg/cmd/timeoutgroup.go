@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"stream.place/streamplace/pkg/log"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/log"
 )
 
 func TimeoutGroupWithContext(ctx context.Context) (*TimeoutGroup, context.Context) {

@@ -7,6 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/julienschmidt/httprouter"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/signers/eip712"
 	"stream.place/streamplace/pkg/crypto/signers/eip712/eip712test"
@@ -14,9 +17,6 @@ import (
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/notifications"
 	v0 "stream.place/streamplace/pkg/schema/v0"
-	"github.com/julienschmidt/httprouter"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRedirectHandler(t *testing.T) {

@@ -303,18 +303,18 @@ docker-build: docker-build-builder docker-build-in-container
 .PHONY: docker-build-builder
 docker-build-builder:
 	cd docker \
-	&& docker build --target=builder --os=linux --arch=amd64 -f build.Dockerfile -t aqrm.io/streamplace/streamplace:builder .
+	&& docker build --target=builder --os=linux --arch=amd64 -f build.Dockerfile -t dist.stream.place/streamplace/streamplace:builder .
 
 .PHONY: docker-build-builder
 docker-build-in-container:
-	docker run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it aqrm.io/streamplace/streamplace:builder make app-and-node
+	docker run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it dist.stream.place/streamplace/streamplace:builder make app-and-node
 
 .PHONY: docker-release
 docker-release:
 	cd docker \
 	&& docker build -f release.Dockerfile \
 	  --build-arg TARGETARCH=$(BUILDARCH) \
-		-t aqrm.io/streamplace/streamplace \
+		-t dist.stream.place/streamplace/streamplace \
 		.
 
 .PHONY: ci-upload
@@ -388,10 +388,12 @@ ci-release:
 .PHONY: check
 check: install
 	yarn run check
+	if [ "`gofmt -l . | wc -l`" -gt 0 ]; then echo 'gofmt failed, run make fix'; exit 1; fi
 
 .PHONY: fix
 fix:
 	yarn run fix
+	gofmt -w .
 
 .PHONY: precommit
 precommit: dockerfile-hash-precommit

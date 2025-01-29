@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"stream.place/streamplace/pkg/config"
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/config"
 )
 
 // Note to anyone adding tests here: the "init" body can contain backticks,

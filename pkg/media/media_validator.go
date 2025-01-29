@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"stream.place/streamplace/pkg/log"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"github.com/pion/webrtc/v4/pkg/media"
+	"stream.place/streamplace/pkg/log"
 )
 
 type MediaValidator struct {

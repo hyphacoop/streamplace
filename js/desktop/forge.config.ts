@@ -90,7 +90,7 @@ export default async function () {
     makers: [
       new MakerSquirrel({
         iconUrl:
-          "https://git.aquareum.tv/-/project/1/uploads/2e5899ffd2b4799ce661cf9b8675e610/streamplace-logo-256.ico",
+          "https://git.stream.place/-/project/1/uploads/2e5899ffd2b4799ce661cf9b8675e610/streamplace-logo-256.ico",
         setupIcon: "./assets/images/streamplace-logo.ico",
       }),
       new MakerDMG(

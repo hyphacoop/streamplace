@@ -12,15 +12,15 @@ import (
 	"strings"
 	"time"
 
-	"stream.place/streamplace/pkg/aqtime"
-	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/test"
 	"github.com/go-gst/go-glib/glib"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"github.com/google/uuid"
 	"github.com/skip2/go-qrcode"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/test"
 )
 
 const HLS_PLAYLIST = "stream.m3u8"

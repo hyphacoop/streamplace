@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"stream.place/streamplace/pkg/errors"
 	"github.com/golang/glog"
+	"stream.place/streamplace/pkg/errors"
 )
 
 // This trigger is run whenever the live buffer state of a stream changes. It is

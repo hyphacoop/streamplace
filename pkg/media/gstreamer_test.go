@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	_ "stream.place/streamplace/pkg/media/mediatesting"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/stretchr/testify/require"
+	_ "stream.place/streamplace/pkg/media/mediatesting"
 )
 
 func TestNormalizeAudio(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"stream.place/streamplace/pkg/config"
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/config"
 )
 
 func CLI(t *testing.T, cli *config.CLI) *config.CLI {

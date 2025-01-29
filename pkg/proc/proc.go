@@ -10,10 +10,10 @@ import (
 	"os/exec"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/mist/mistconfig"
-	"golang.org/x/sync/errgroup"
 )
 
 func RunMistServer(ctx context.Context, cli *config.CLI) error {

@@ -10,7 +10,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa"
+	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"stream.place/streamplace/pkg/aqio"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/config"

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/model"
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 )
 
 type FirebaseNotifier interface {

@@ -67,7 +67,7 @@ FROM builder AS cached-builder
 ARG CI_COMMIT_BRANCH=next
 ENV CI_COMMIT_BRANCH $CI_COMMIT_BRANCH
 WORKDIR /cached-build
-RUN git clone https://git.aquareum.tv/streamplace/streamplace \
+RUN git clone https://git.stream.place/streamplace/streamplace \
   && cd streamplace \
   && make version install check app android -j$(nproc) \
   && make node \

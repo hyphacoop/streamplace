@@ -9,9 +9,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/julienschmidt/httprouter"
 	apierrors "stream.place/streamplace/pkg/errors"
 	"stream.place/streamplace/pkg/log"
-	"github.com/julienschmidt/httprouter"
 )
 
 var (

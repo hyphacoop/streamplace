@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"stream.place/streamplace/pkg/log"
 	"github.com/golang/glog"
+	"stream.place/streamplace/pkg/log"
 )
 
 type UserNewPayload struct {

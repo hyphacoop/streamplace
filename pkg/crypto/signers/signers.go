@@ -14,7 +14,7 @@ import (
 	"math/big"
 	"time"
 
-	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa"
+	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"

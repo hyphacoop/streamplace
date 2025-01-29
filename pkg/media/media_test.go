@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa"
+	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/config"
 	ct "stream.place/streamplace/pkg/config/configtesting"

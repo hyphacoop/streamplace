@@ -23,8 +23,8 @@ import (
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/replication"
 
-	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa"
-	"git.aquareum.tv/streamplace/c2pa-go/pkg/c2pa/generated/manifeststore"
+	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
+	"git.stream.place/streamplace/c2pa-go/pkg/c2pa/generated/manifeststore"
 	"github.com/piprate/json-gold/ld"
 )
 

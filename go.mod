@@ -8,6 +8,7 @@ replace github.com/ThalesGroup/crypto11 => github.com/aquareum-tv/crypto11 v0.0.
 
 require (
 	firebase.google.com/go/v4 v4.14.1
+	git.stream.place/streamplace/c2pa-go v0.0.0-20250129011218-a26b6bf7d3b0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/ThalesGroup/crypto11 v0.0.0-00010101000000-000000000000
 	github.com/bluesky-social/indigo v0.0.0-20241119234843-9198b7903723
@@ -75,7 +76,6 @@ require (
 	cloud.google.com/go/storage v1.41.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	git.aquareum.tv/streamplace/c2pa-go v0.0.0-20250116060241-2931a03e9814
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
