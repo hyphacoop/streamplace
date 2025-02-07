@@ -2,14 +2,15 @@ import { Play } from "@tamagui/lucide-icons";
 import { Spinner } from "components/loading/loading";
 import { useTheme, View } from "tamagui";
 import { PlayerProps, PlayerStatus } from "./props";
+import KeepAwake from "components/keep-awake";
 
 export default function PlayerLoading(props: PlayerProps) {
+  const theme = useTheme();
   if (props.status === PlayerStatus.PLAYING) {
-    return <></>;
+    return <KeepAwake />;
   }
   let spinner = <Spinner></Spinner>;
   if (props.status === PlayerStatus.PAUSE) {
-    const theme = useTheme();
     spinner = <Play size="$12" color={theme.accentColor.val} />;
   }
   return (

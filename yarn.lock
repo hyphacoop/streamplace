@@ -15485,6 +15485,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-keep-awake@npm:~14.0.2":
+  version: 14.0.2
+  resolution: "expo-keep-awake@npm:14.0.2"
+  peerDependencies:
+    expo: "*"
+    react: "*"
+  checksum: 10/e6d4843f966e81a97463f7abb0c461dd301ee216df38b613243799464f265efc021b6cc792ed283822b86d143c29dcac5c24905082ca539fb3fca0a3c043a0ff
+  languageName: node
+  linkType: hard
+
 "expo-linking@npm:~7.0.3":
   version: 7.0.3
   resolution: "expo-linking@npm:7.0.3"
@@ -25683,6 +25693,7 @@ __metadata:
     expo-dev-client: "npm:~5.0.3"
     expo-file-system: "npm:~18.0.4"
     expo-font: "npm:~13.0.1"
+    expo-keep-awake: "npm:~14.0.2"
     expo-linking: "npm:~7.0.3"
     expo-notifications: "npm:~0.29.8"
     expo-splash-screen: "npm:~0.29.11"
