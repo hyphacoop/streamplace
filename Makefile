@@ -117,10 +117,12 @@ ci-test: app
 	meson test -C $(BUILDDIR) go-tests
 
 .PHONY: android
-android: android-release android-debug
+android: app .build/bundletool.jar
+	$(MAKE) android-release
+	$(MAKE) android-debug
 
 .PHONY: android-release
-android-release: app .build/bundletool.jar
+android-release:
 	export NODE_ENV=production \
 	&& cd ./js/app/android \
 	&& ./gradlew :app:bundleRelease \
@@ -131,7 +133,7 @@ android-release: app .build/bundletool.jar
 	&& unzip streamplace-$(VERSION)-android-release.apks && mv universal.apk streamplace-$(VERSION)-android-release.apk && rm toc.pb
 
 .PHONY: android-debug
-android-debug: app .build/bundletool.jar
+android-debug:
 	export NODE_ENV=production \
 	&& cd ./js/app/android \
 	&& ./gradlew :app:bundleDebug \
