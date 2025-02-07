@@ -250,7 +250,8 @@ func (a *StreamplaceAPI) RedirectHandler(ctx context.Context) (http.Handler, err
 }
 
 type NotificationPayload struct {
-	Token string `json:"token"`
+	Token   string `json:"token"`
+	RepoDID string `json:"repoDID"`
 }
 
 func (a *StreamplaceAPI) HandleAPI404(ctx context.Context) http.HandlerFunc {
@@ -316,7 +317,7 @@ func (a *StreamplaceAPI) HandleNotification(ctx context.Context) http.HandlerFun
 			w.WriteHeader(400)
 			return
 		}
-		err = a.Model.CreateNotification(n.Token)
+		err = a.Model.CreateNotification(n.Token, n.RepoDID)
 		if err != nil {
 			log.Log(ctx, "error creating notification", "error", err)
 			w.WriteHeader(400)
@@ -324,6 +325,14 @@ func (a *StreamplaceAPI) HandleNotification(ctx context.Context) http.HandlerFun
 		}
 		log.Log(ctx, "successfully created notification", "token", n.Token)
 		w.WriteHeader(200)
+		if n.RepoDID != "" {
+			go func() {
+				_, err := atproto.SyncBlueskyRepo(ctx, n.RepoDID, a.Model)
+				if err != nil {
+					log.Error(ctx, "error syncing bluesky repo after notification creation", "error", err)
+				}
+			}()
+		}
 	}
 }
 

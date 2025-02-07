@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -17,7 +16,6 @@ import (
 	"time"
 
 	"golang.org/x/term"
-	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
@@ -26,7 +24,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
-	notificationpkg "stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/replication/boring"
 	v0 "stream.place/streamplace/pkg/schema/v0"
@@ -125,7 +122,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	fs.BoolVar(&cli.TestStream, "test-stream", false, "run a built-in test stream on boot")
 	doValidate := fs.Bool("validate", false, "validate media")
 	verbosity := fs.String("v", "3", "log verbosity level")
-
+	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
 
 	version := fs.Bool("version", false, "print version and exit")
@@ -308,13 +305,16 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	})
 
 	group.Go(func() error {
+		return atproto.StartFirehose(ctx, &cli, mod, noter)
+	})
+
+	group.Go(func() error {
 		newSeg := mm.NewSegment()
 		for {
 			select {
 			case <-ctx.Done():
 				return nil
 			case not := <-newSeg:
-				prevSeg, prevErr := mod.LatestSegmentForUser(not.Segment.RepoDID)
 				err := mod.CreateSegment(not.Segment)
 				if err != nil {
 					log.Error(ctx, "could not add segment to database", "error", err)
@@ -351,41 +351,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 					}()
 					if err != nil {
 						log.Error(ctx, "could not create thumbnail", "error", err)
-					}
-				}()
-				go func() {
-					err := func() error {
-						if prevErr != nil && !errors.Is(prevErr, gorm.ErrRecordNotFound) {
-							log.Error(ctx, "could not retreive previous segment", "error", prevErr)
-							return prevErr
-						}
-						if prevSeg != nil {
-							dur := not.Segment.StartTime.Sub(prevSeg.StartTime)
-							if prevSeg != nil && dur < (5*time.Minute) {
-								log.Debug(ctx, "skipping notification, less than 5 minutes since last segment", "user", not.Segment.RepoDID, "duration", dur)
-								// it's been less than 5 minutes since the last segment, skip notification
-								return nil
-							}
-						}
-
-						notifications, err := mod.ListNotifications()
-						if err != nil {
-							return err
-						}
-
-						nb := &notificationpkg.NotificationBlast{
-							Streamer: not.Metadata.Creator,
-							Title:    not.Metadata.Title,
-						}
-						if noter != nil {
-							noter.Blast(ctx, notifications, nb)
-						} else {
-							log.Log(ctx, "no notifier configured, skipping notifications", "user", not.Segment.RepoDID, "count", len(notifications), "content", nb)
-						}
-						return nil
-					}()
-					if err != nil {
-						log.Error(ctx, "could not send notification", "error", err)
 					}
 				}()
 			}

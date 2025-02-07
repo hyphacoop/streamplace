@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
-	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	"github.com/bluesky-social/indigo/api/bsky"
+	_ "github.com/bluesky-social/indigo/api/bsky"
 	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
+	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/repo"
 	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
@@ -19,16 +22,14 @@ import (
 	"github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	"stream.place/streamplace/pkg/aqhttp"
+	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/streamplace"
 )
 
 var SyncGetRepo = comatproto.SyncGetRepo
-var STREAMPLACE_COLLECTION = "place.stream.key"
-var STREAMPLACE_SIGNING_KEY = "signingKey"
-
-const DID_KEY_PREFIX = "did:key"
-const ADDRESS_KEY_PREFIX = "0x"
 
 // handleLocks provides per-handle synchronization
 var handleLocks = struct {
@@ -84,6 +85,20 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*mode
 	if oldRepo != nil {
 		log.Log(ctx, "found existing DID record", "did", oldRepo.DID, "version", oldRepo.Version)
 		rev = oldRepo.Version
+	} else {
+		// create an empty repo while we sync. this is useful because we'll start monitoring the firehose for
+		// any new follows and such from this user while we're syncing, which can take a long time
+		newRepo := model.Repo{
+			DID:     ident.DID.String(),
+			PDS:     ident.PDSEndpoint(),
+			Version: "",
+			RootCID: "",
+			Handle:  ident.Handle.String(),
+		}
+		err = mod.UpdateRepo(&newRepo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create empty DID record for %s: %w", ident.DID.String(), err)
+		}
 	}
 
 	log.Log(ctx, "resolved bluesky identity", "did", ident.DID, "handle", ident.Handle, "pds", ident.PDSEndpoint())
@@ -133,6 +148,19 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*mode
 		return nil, fmt.Errorf("failed to parse repo CAR data for %s: %w", ident.DID.String(), err)
 	}
 
+	mstNodes := map[string]string{}
+	r.ForEach(ctx, "", func(k string, v cid.Cid) error {
+		nsid, rkey, err := syntax.ParseRepoPath(k)
+		if err != nil {
+			log.Warn(ctx, "failed to parse repo path", "k", k, "err", err)
+			return err
+		}
+		hash := v.Hash().HexString()
+		log.Debug(ctx, "got mst node", "cid", v, "rkey", rkey, "nsid", nsid, "hash", hash)
+		mstNodes[hash] = rkey.String()
+		return nil
+	})
+
 	// extract DID from repo commit
 	sc := r.SignedCommit()
 	signerDID, err := syntax.ParseDID(sc.Did)
@@ -143,55 +171,66 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*mode
 		return nil, fmt.Errorf("signer DID %s does not match identity %s", signerDID, ident.DID.String())
 	}
 
-	processed := 0
 	bs = r.Blockstore()
 	cst := util.CborStore(bs)
 	allKeys, err := bs.AllKeysChan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all keys: %w", err)
 	}
-	signingKeys := []string{}
 	for k := range allKeys {
-		log.Debug(ctx, "processing key", "key", k)
-		rec := map[string]any{}
-		err := cst.Get(ctx, k, &rec)
+		blk, err := bs.Get(ctx, k)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get block for key %s: %w", k, err)
 		}
-		log.Debug(ctx, "got block", "key", k, "size", len(rec), "record", rec)
+		rec := map[string]any{}
+		err = cst.Get(ctx, k, &rec)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get block for key %s: %w", k, err)
+		}
 		typ, ok := rec["$type"]
 		if !ok {
+			log.Debug(ctx, "record type not found", "key", k)
 			continue
 		}
-		if typ != STREAMPLACE_COLLECTION {
-			continue
+		log.Debug(ctx, "record type", "key", k, "type", typ)
+		cb, err := lexutil.CborDecodeValue(blk.RawData())
+		log.Debug(ctx, "processing key", "key", k, "cbor", cb)
+		switch rec := cb.(type) {
+		case *bsky.GraphFollow:
+			rec.UnmarshalCBOR(bytes.NewReader(blk.RawData()))
+			log.Debug(ctx, "creating follow", "follow", rec)
+			hash := k.Hash().HexString()
+			rkey, ok := mstNodes[hash]
+			if !ok {
+				log.Warn(ctx, "no mst node found for follow", "key", k, "hash", hash)
+				continue
+			}
+			err := mod.CreateFollow(ctx, signerDID.String(), rkey, rec)
+			if err != nil {
+				log.Error(ctx, "failed to create follow", "err", err)
+			}
+		case *streamplace.Key:
+			log.Debug(ctx, "creating key", "key", rec)
+			time, err := aqtime.FromString(rec.CreatedAt)
+			if err != nil {
+				log.Error(ctx, "failed to parse createdAt", "err", err)
+				continue
+			}
+			key := model.SigningKey{
+				DID:       rec.SigningKey,
+				CreatedAt: time.Time(),
+				RepoDID:   ident.DID.String(),
+			}
+			err = mod.UpdateSigningKey(&key)
+			if err != nil {
+				log.Error(ctx, "failed to create signing key", "err", err)
+			}
+		default:
+			log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))
 		}
-		processed += 1
-		streamplaceKeyAny, ok := rec[STREAMPLACE_SIGNING_KEY]
-		if !ok {
-			continue
-		}
-		streamplaceKey, ok := streamplaceKeyAny.(string)
-		if !ok {
-			continue
-		}
-		signingKeys = append(signingKeys, streamplaceKey)
-	}
-	log.Log(ctx, "processed new posts", "postCount", processed, "signingKeys", signingKeys)
-
-	for _, key := range signingKeys {
-		err := parseSigningKey(ctx, key)
 		if err != nil {
-			log.Warn(ctx, "ignoring non-DID key", "key", key, "error", err)
+			log.Debug(ctx, "failed to decode block for key", "key", k, "error", err)
 			continue
-		}
-		err = mod.UpdateSigningKey(&model.SigningKey{
-			DID:       key,
-			CreatedAt: time.Now(),
-			RepoDID:   ident.DID.String(),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create signing key for %s: %w", key, err)
 		}
 	}
 
@@ -211,7 +250,7 @@ func SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*mode
 }
 
 func parseSigningKey(ctx context.Context, key string) error {
-	if !strings.HasPrefix(key, DID_KEY_PREFIX) {
+	if !strings.HasPrefix(key, constants.DID_KEY_PREFIX) {
 		return fmt.Errorf("invalid key format for DID key: %s", key)
 	}
 	_, err := atcrypto.ParsePublicDIDKey(key)

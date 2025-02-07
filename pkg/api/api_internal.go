@@ -26,6 +26,7 @@ import (
 	"stream.place/streamplace/pkg/mist/mistconfig"
 	"stream.place/streamplace/pkg/mist/misttriggers"
 	"stream.place/streamplace/pkg/model"
+	notificationpkg "stream.place/streamplace/pkg/notifications"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 )
 
@@ -292,6 +293,87 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			return
 		}
 		w.Write(bs)
+	})
+
+	router.GET("/followers/:user", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		user := p.ByName("user")
+		if user == "" {
+			errors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+
+		followers, err := a.Model.GetUserFollowers(ctx, user)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to get followers", err)
+			return
+		}
+		bs, err := json.Marshal(followers)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
+			return
+		}
+		w.Write(bs)
+	})
+
+	router.GET("/following/:user", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		user := p.ByName("user")
+		if user == "" {
+			errors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+
+		followers, err := a.Model.GetUserFollowing(ctx, user)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to get followers", err)
+			return
+		}
+		bs, err := json.Marshal(followers)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
+			return
+		}
+		w.Write(bs)
+	})
+
+	router.GET("/notifications", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		notifications, err := a.Model.ListNotifications()
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to get notifications", err)
+			return
+		}
+		bs, err := json.Marshal(notifications)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
+			return
+		}
+		w.Write(bs)
+	})
+
+	router.POST("/notification-blast", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		var payload notificationpkg.NotificationBlast
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			errors.WriteHTTPBadRequest(w, "invalid request body", err)
+			return
+		}
+		notifications, err := a.Model.ListNotifications()
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to get notifications", err)
+			return
+		}
+		if a.FirebaseNotifier == nil {
+			errors.WriteHTTPInternalServerError(w, "firebase notifier not initialized", nil)
+			return
+		}
+		tokens := []string{}
+		for _, not := range notifications {
+			tokens = append(tokens, not.Token)
+		}
+		err = a.FirebaseNotifier.Blast(ctx, tokens, &payload)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to blast notifications", err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 
 	router.PUT("/settings/:id", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

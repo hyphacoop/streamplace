@@ -4,6 +4,8 @@ import {
   CommonActions,
   DrawerActions,
   LinkingOptions,
+  NavigatorScreenParams,
+  useLinkTo,
   useNavigation,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -14,9 +16,10 @@ import {
   Menu,
   Settings as SettingsIcon,
   User,
-  Video,
   ShieldQuestion,
   Download,
+  X,
+  Video,
 } from "@tamagui/lucide-icons";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
@@ -24,7 +27,7 @@ import Login from "components/login/login";
 import StreamList from "components/stream-list/stream-list";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import usePlatform from "hooks/usePlatform";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ImageBackground,
   ImageSourcePropType,
@@ -32,18 +35,26 @@ import {
   StatusBar,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Text, useTheme, View } from "tamagui";
+import { useTheme, Text, View, H3, Button } from "tamagui";
 import AppReturnScreen from "./screens/app-return";
-import LiveScreen from "./screens/live";
 import MultiScreen from "./screens/multi";
 import StreamScreen from "./screens/stream";
 import SupportScreen from "./screens/support";
-import WebcamScreen from "./screens/webcam";
-import StreamKeyScreen from "./screens/stream-key";
 import AboutScreen from "./screens/about";
 import DownloadScreen from "./screens/download";
 import { hydrate, selectHydrated } from "features/base/baseSlice";
 import AVSyncScreen from "./screens/av-sync";
+import {
+  clearNotification,
+  initPushNotifications,
+  registerNotificationToken,
+  selectNotificationDestination,
+  selectNotificationToken,
+} from "features/platform/platformSlice.native";
+import { pollSegments } from "features/streamplace/streamplaceSlice";
+import { useLiveUser } from "hooks/useLiveUser";
+import { useToastController } from "@tamagui/toast";
+import LiveDashboard from "./screens/live-dashboard";
 function HomeScreen() {
   return (
     <View f={1}>
@@ -52,6 +63,31 @@ function HomeScreen() {
   );
 }
 const Stack = createNativeStackNavigator();
+
+type HomeStackParamList = {
+  StreamList: undefined;
+  Stream: { user: string };
+};
+
+type RootStackParamList = {
+  Home: NavigatorScreenParams<HomeStackParamList>;
+  Multi: { config: string };
+  Support: undefined;
+  Settings: undefined;
+  GoLive: undefined;
+  LiveDashboard: undefined;
+  Login: undefined;
+  AVSync: undefined;
+  AppReturn: { scheme: string };
+  About: undefined;
+  Download: undefined;
+};
+
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}
 
 const linking: LinkingOptions<ReactNavigation.RootParamList> = {
   prefixes: ["place.stream://", "place.stream.dev://"],
@@ -69,9 +105,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Support: "support",
       Settings: "settings",
       GoLive: "golive",
-      Live: "live",
-      Webcam: "live/webcam",
-      StreamKey: "live/stream-key",
+      LiveDashboard: "live",
       Login: "login",
       AVSync: "sync-test",
       AppReturn: "app-return/:scheme",
@@ -133,13 +167,12 @@ const AvatarButton = () => {
 };
 
 export default function Router() {
-  const { initPushNotifications, isWeb, isElectron } = usePlatform();
+  const { isWeb, isElectron } = usePlatform();
   useEffect(() => {
-    initPushNotifications();
+    if (isWeb && !isElectron) {
+      linking.prefixes.push(document.location.origin);
+    }
   }, []);
-  if (isWeb && !isElectron) {
-    linking.prefixes.push(document.location.origin);
-  }
   return (
     <Provider linking={linking}>
       <StreamplaceDrawer />
@@ -152,19 +185,53 @@ export function StreamplaceDrawer() {
   const { isWeb, isElectron, isNative, isBrowser } = usePlatform();
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
+  const [poppedUp, setPoppedUp] = useState(false);
+  const [livePopup, setLivePopup] = useState(false);
+
+  // Top-level stuff to handle push notification registration
   useEffect(() => {
     dispatch(hydrate());
-    // const params = new URLSearchParams(document.location.search);
-    // if (params.has("code")) {
-    //   navigation.dispatch(
-    //     CommonActions.reset({
-    //       index: 0,
-    //       routes: [{ name: "Login" }],
-    //     }),
-    //   );
-    // }
+    dispatch(initPushNotifications());
   }, []);
+  const notificationToken = useAppSelector(selectNotificationToken);
+  const userProfile = useAppSelector(selectUserProfile);
   const hydrated = useAppSelector(selectHydrated);
+  useEffect(() => {
+    if (notificationToken) {
+      dispatch(registerNotificationToken());
+    }
+  }, [notificationToken, userProfile]);
+
+  // Stuff to handle incoming push notification routing
+  const notificationDestination = useAppSelector(selectNotificationDestination);
+  const linkTo = useLinkTo();
+
+  useEffect(() => {
+    if (notificationDestination) {
+      linkTo(notificationDestination);
+      dispatch(clearNotification());
+    }
+  }, [notificationDestination]);
+
+  // Top-level stuff to handle polling for live streamers
+  useEffect(() => {
+    dispatch(pollSegments());
+    const interval = setInterval(() => {
+      dispatch(pollSegments());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const userIsLive = useLiveUser();
+  const toast = useToastController();
+
+  useEffect(() => {
+    if (userIsLive && !poppedUp) {
+      setPoppedUp(true);
+      setLivePopup(true);
+    }
+  }, [userIsLive, poppedUp]);
+
   if (!hydrated) {
     return <View />;
   }
@@ -244,10 +311,10 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
-          name="Live"
-          component={LiveScreen}
+          name="LiveDashboard"
+          component={LiveDashboard}
           options={{
-            drawerLabel: () => <Text>Go Live</Text>,
+            drawerLabel: () => <Text>Live Dashboard</Text>,
             drawerIcon: () => <Video />,
             drawerItemStyle: isNative ? { display: "none" } : undefined,
           }}
@@ -263,22 +330,6 @@ export function StreamplaceDrawer() {
         <Drawer.Screen
           name="Multi"
           component={MultiScreen}
-          options={{
-            drawerLabel: () => null,
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-        <Drawer.Screen
-          name="Webcam"
-          component={WebcamScreen}
-          options={{
-            drawerLabel: () => null,
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-        <Drawer.Screen
-          name="StreamKey"
-          component={StreamKeyScreen}
           options={{
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
@@ -302,6 +353,48 @@ export function StreamplaceDrawer() {
           }}
         />
       </Drawer.Navigator>
+      {livePopup && (
+        <View
+          position="absolute"
+          bottom="$8"
+          f={1}
+          alignItems="center"
+          width="100%"
+        >
+          <View
+            backgroundColor="#cc0000"
+            f={1}
+            alignItems="center"
+            padding="$4"
+            borderRadius="$4"
+            cursor="pointer"
+            onPress={() => {
+              navigation.navigate("LiveDashboard");
+              setLivePopup(false);
+            }}
+            position="relative"
+          >
+            <H3>✨YOU ARE LIVE!!!✨</H3>
+            <Button
+              position="absolute"
+              top="$0"
+              right="$0"
+              onPress={(e) => {
+                e.stopPropagation();
+                setLivePopup(false);
+              }}
+              marginRight={-15}
+              marginTop={-5}
+              backgroundColor="transparent"
+            >
+              <X />
+            </Button>
+            <Text>
+              {isNative ? "Tap" : "Click"} here to go to the live dashboard
+            </Text>
+          </View>
+        </View>
+      )}
     </>
   );
 }

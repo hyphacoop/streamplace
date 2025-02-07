@@ -1,36 +1,15 @@
 import { Agent } from "@atproto/api";
-import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
-import { OAuthSession } from "@atproto/oauth-client";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import Storage from "storage";
 import { createAppSlice } from "../../hooks/createSlice";
-import createOAuthClient, { StreamplaceOAuthClient } from "./oauthClient";
+import createOAuthClient from "./oauthClient";
 import { Secp256k1Keypair, bytesToMultibase } from "@atproto/crypto";
 import { privateKeyToAccount } from "viem/accounts";
-import { StreamKey } from "features/base/baseSlice";
 import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { isWeb } from "tamagui";
-
-export interface BlueskyState {
-  status: "start" | "loggedIn" | "loggedOut";
-  oauthState: null | string;
-  oauthSession: null | OAuthSession;
-  pdsAgent: null | Agent;
-  profiles: { [key: string]: ProfileViewDetailed };
-  client: null | StreamplaceOAuthClient;
-  login: {
-    loading: boolean;
-    error: null | string;
-  };
-  pds: {
-    url: string;
-    loading: boolean;
-    error: null | string;
-  };
-  newKey: null | StreamKey;
-  storedKey: null | StreamKey;
-}
+import { PlaceStreamKey, PlaceStreamLivestream } from "lexicons";
+import { BlueskyState } from "./blueskyTypes";
 
 const initialState: BlueskyState = {
   status: "start",
@@ -50,6 +29,7 @@ const initialState: BlueskyState = {
   },
   newKey: null,
   storedKey: null,
+  newLivestream: null,
 };
 
 // clear atproto login query params from url
@@ -113,9 +93,11 @@ export const blueskySlice = createAppSlice({
             client: client,
           };
         },
-        rejected: (_, { error }) => {
-          console.error("loadOAuthClient rejected", error);
-          // state.status = "failed";
+        rejected: (state, { error }) => {
+          return {
+            ...state,
+            status: "loggedOut",
+          };
         },
       },
     ),
@@ -173,6 +155,7 @@ export const blueskySlice = createAppSlice({
     logout: create.asyncThunk(
       async (_, thunkAPI) => {
         await Storage.removeItem("did");
+        await Storage.removeItem(STORED_KEY_KEY);
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
@@ -284,16 +267,10 @@ export const blueskySlice = createAppSlice({
     ),
 
     golivePost: create.asyncThunk(
-      async (
-        {
-          nodeUrl,
-          signingKey,
-          text,
-        }: { nodeUrl: string; signingKey: string; text: string },
-        thunkAPI,
-      ) => {
-        const { bluesky } = thunkAPI.getState() as {
+      async ({ text }: { text: string }, thunkAPI) => {
+        const { bluesky, streamplace } = thunkAPI.getState() as {
           bluesky: BlueskyState;
+          streamplace: StreamplaceState;
         };
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
@@ -306,9 +283,8 @@ export const blueskySlice = createAppSlice({
         if (!profile) {
           throw new Error("No profile");
         }
-        const u = new URL(nodeUrl);
+        const u = new URL(streamplace.url);
         const params = new URLSearchParams({
-          key: signingKey,
           did: did,
           time: new Date().toISOString(),
         });
@@ -334,7 +310,6 @@ export const blueskySlice = createAppSlice({
         ];
         const record = {
           text: content,
-          "place.stream.key": signingKey,
           facets,
         };
         return await bluesky.pdsAgent.post(record);
@@ -347,7 +322,7 @@ export const blueskySlice = createAppSlice({
           console.log("golivePost fulfilled", action.payload);
         },
         rejected: (state, action) => {
-          console.error("getProfile rejected", action.error);
+          console.error("golivePost rejected", action.error);
           // state.status = "failed";
         },
       },
@@ -386,7 +361,7 @@ export const blueskySlice = createAppSlice({
           did: keypair.did(),
           address: account.address.toLowerCase(),
         };
-        const record = {
+        const record: PlaceStreamKey.Record = {
           signingKey: keypair.did(),
           createdAt: new Date().toISOString(),
         };
@@ -464,6 +439,73 @@ export const blueskySlice = createAppSlice({
         },
       },
     ),
+
+    createLivestreamRecord: create.asyncThunk(
+      async ({ title }: { title }, thunkAPI) => {
+        const { bluesky, streamplace } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+          streamplace: StreamplaceState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const profile = bluesky.profiles[did];
+        if (!profile) {
+          throw new Error("No profile");
+        }
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const record: PlaceStreamLivestream.Record = {
+          title: title,
+          url: streamplace.url,
+          createdAt: new Date().toISOString(),
+        };
+        await bluesky.pdsAgent.com.atproto.repo.createRecord({
+          repo: did,
+          collection: "place.stream.livestream",
+          record,
+        });
+        return record;
+      },
+      {
+        pending: (state) => {
+          return {
+            ...state,
+            newLivestream: {
+              loading: true,
+              error: null,
+              record: null,
+            },
+          };
+        },
+        fulfilled: (state, action) => {
+          return {
+            ...state,
+            newLivestream: {
+              loading: false,
+              error: null,
+              record: action.payload,
+            },
+          };
+        },
+        rejected: (state, action) => {
+          console.error("getProfile rejected", action.error);
+          return {
+            ...state,
+            newLivestream: {
+              loading: false,
+              error: action.error?.message ?? null,
+              record: null,
+            },
+          };
+        },
+      },
+    ),
   }),
 
   // You can define your selectors here. These selectors receive the slice
@@ -492,8 +534,10 @@ export const blueskySlice = createAppSlice({
       if (!profile) {
         return false;
       }
+
       return true;
     },
+    selectNewLivestream: (bluesky) => bluesky.newLivestream,
   },
 });
 
@@ -508,6 +552,7 @@ export const {
   setPDS,
   createStreamKeyRecord,
   clearStreamKeyRecord,
+  createLivestreamRecord,
 } = blueskySlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
@@ -519,4 +564,5 @@ export const {
   selectLogin,
   selectStoredKey,
   selectIsReady,
+  selectNewLivestream,
 } = blueskySlice.selectors;

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/lmittmann/tint"
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/sqlite"
@@ -20,7 +21,7 @@ type DBModel struct {
 }
 
 type Model interface {
-	CreateNotification(token string) error
+	CreateNotification(token, repoDID string) error
 	ListNotifications() ([]Notification, error)
 
 	CreatePlayerEvent(event PlayerEventAPI) error
@@ -48,6 +49,12 @@ type Model interface {
 	UpdateSigningKey(key *SigningKey) error
 	GetSigningKey(did, repoDID string) (*SigningKey, error)
 	GetSigningKeysForRepo(repoDID string) ([]SigningKey, error)
+
+	CreateFollow(ctx context.Context, userDID, rev string, follow *bsky.GraphFollow) error
+	GetUserFollowing(ctx context.Context, userDID string) ([]Follow, error)
+	GetUserFollowers(ctx context.Context, userDID string) ([]Follow, error)
+	DeleteFollow(ctx context.Context, userDID, rev string) error
+	GetFollowersNotificationTokens(userDID string) ([]string, error)
 }
 
 func MakeDB(dbURL string) (Model, error) {
@@ -78,7 +85,11 @@ func MakeDB(dbURL string) (Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error starting database: %w", err)
 	}
-	for _, model := range []any{Notification{}, PlayerEvent{}, Segment{}, Thumbnail{}, Identity{}, Repo{}, SigningKey{}} {
+	err = db.Exec("PRAGMA journal_mode=WAL;").Error
+	if err != nil {
+		return nil, fmt.Errorf("error setting journal mode: %w", err)
+	}
+	for _, model := range []any{Notification{}, PlayerEvent{}, Segment{}, Thumbnail{}, Identity{}, Repo{}, SigningKey{}, Follow{}} {
 		err = db.AutoMigrate(model)
 		if err != nil {
 			return nil, err

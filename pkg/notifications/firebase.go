@@ -10,11 +10,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/model"
 )
 
 type FirebaseNotifier interface {
-	Blast(ctx context.Context, nots []model.Notification, golive *NotificationBlast) error
+	Blast(ctx context.Context, tokens []string, golive *NotificationBlast) error
 }
 
 type FirebaseNotifierS struct {
@@ -26,20 +25,9 @@ type GoogleCredential struct {
 }
 
 type NotificationBlast struct {
-	Title    string
-	Streamer string
-}
-
-func (nb *NotificationBlast) String() string {
-	return fmt.Sprintf("%s %s", nb.PrintTitle(), nb.PrintBody())
-}
-
-func (nb *NotificationBlast) PrintTitle() string {
-	return fmt.Sprintf("🔴 %s is LIVE!", nb.Streamer)
-}
-
-func (nb *NotificationBlast) PrintBody() string {
-	return nb.Title
+	Title string            `json:"title"`
+	Body  string            `json:"body"`
+	Data  map[string]string `json:"data"`
 }
 
 func MakeFirebaseNotifier(ctx context.Context, serviceAccountJSONb64 string) (FirebaseNotifier, error) {
@@ -67,21 +55,18 @@ func MakeFirebaseNotifier(ctx context.Context, serviceAccountJSONb64 string) (Fi
 }
 
 // refactor me when we have >500 users
-func (f *FirebaseNotifierS) Blast(ctx context.Context, nots []model.Notification, blast *NotificationBlast) error {
+func (f *FirebaseNotifierS) Blast(ctx context.Context, tokens []string, blast *NotificationBlast) error {
 	client, err := f.app.Messaging(ctx)
 	if err != nil {
 		return err
 	}
-	var tokens []string
-	for _, n := range nots {
-		tokens = append(tokens, n.Token)
-	}
 
 	notification := &messaging.MulticastMessage{
 		Tokens: tokens,
+		Data:   blast.Data,
 		Notification: &messaging.Notification{
-			Title: blast.PrintTitle(),
-			Body:  blast.PrintBody(),
+			Title: blast.Title,
+			Body:  blast.Body,
 		},
 		Android: &messaging.AndroidConfig{
 			Priority: "high",

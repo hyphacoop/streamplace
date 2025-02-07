@@ -1,9 +1,14 @@
 import AQLink from "components/aqlink";
 import ErrorBox from "components/error/error";
 import Loading from "components/loading/loading";
+import {
+  pollSegments,
+  selectRecentSegments,
+} from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { RefreshControl } from "react-native";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import { H6, Image, ScrollView, ScrollViewProps, Text, View } from "tamagui";
 
 type Segment = {
@@ -30,51 +35,29 @@ export default function StreamList({
     string
   >;
 }) {
-  const [streams, setStreams] = useState<Segment[]>([]);
-  const [error, setError] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [retryTime, setRetryTime] = useState<number>(Date.now());
   const { url } = useStreamplaceNode();
+  const { segments, error, loading } = useAppSelector(selectRecentSegments);
+  const dispatch = useAppDispatch();
+  const [manualRefresh, setManualRefresh] = useState(false);
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRetryTime(Date.now());
-    }, 10000);
-    return () => clearInterval(interval);
+    dispatch(pollSegments());
   }, []);
   useEffect(() => {
-    setLoading(true);
-    (async () => {
-      try {
-        const res = await fetch(`${url}/api/live-users`);
-        if (!res.ok) {
-          return;
-        }
-        const data = await res.json();
-        if (!Array.isArray(data)) {
-          throw new Error("got non-array back from /api/live-users");
-        }
-        setError(false);
-        setStreams(data);
-      } catch (e) {
-        console.error(e);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [url, retryTime]);
+    if (!loading) {
+      setManualRefresh(false);
+    }
+  }, [loading]);
   if (error) {
+    if (loading) {
+      return <Loading />;
+    }
     return (
       <ErrorBox
         onRetry={() => {
-          setError(false);
-          setRetryTime(Date.now());
+          dispatch(pollSegments());
         }}
       />
     );
-  }
-  if (loading && streams.length === 0) {
-    return <Loading></Loading>;
   }
   return (
     <ScrollView
@@ -86,12 +69,15 @@ export default function StreamList({
       }}
       refreshControl={
         <RefreshControl
-          refreshing={loading}
-          onRefresh={() => setRetryTime(Date.now())}
+          refreshing={manualRefresh}
+          onRefresh={() => {
+            dispatch(pollSegments());
+            setManualRefresh(true);
+          }}
         />
       }
     >
-      {streams.map((segment, i) => {
+      {segments.map((segment, i) => {
         const user =
           segment.repo?.handle || segment.repoDID || segment.signingKeyDID;
         return (
@@ -163,7 +149,11 @@ export default function StreamList({
         );
       })}
       <View f={1} justifyContent="center" alignItems="center">
-        {streams.length === 0 && <H6>No one is streaming right now 😭</H6>}
+        {segments.length === 0 && (
+          <>
+            <H6>No one is streaming right now 😭</H6>
+          </>
+        )}
       </View>
     </ScrollView>
   );
