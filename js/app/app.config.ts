@@ -1,6 +1,7 @@
 import {
   ConfigPlugin,
   withEntitlementsPlist,
+  withMainApplication,
   withXcodeProject,
 } from "expo/config-plugins";
 
@@ -40,6 +41,49 @@ const withConsistentVersionNumber = (
     return config;
   });
   return config;
+};
+
+// https://github.com/react-native-webrtc/react-native-webrtc/blob/19ca31d4b77d149a659ee037fae54861a2d90a73/Documentation/AndroidInstallation.md#set-audio-category-output-to-media
+// look, i'm as upset about this as you are
+const androidApplicationReplacements = [
+  {
+    from: "class MainApplication : Application(), ReactApplication {",
+    to: `
+import com.oney.WebRTCModule.WebRTCModuleOptions
+import android.media.AudioAttributes
+import org.webrtc.audio.JavaAudioDeviceModule
+
+class MainApplication : Application(), ReactApplication {`,
+  },
+  {
+    from: "override fun onCreate() {",
+    to: `
+  override fun onCreate() {
+    // append this before WebRTCModule initializes
+    val options = WebRTCModuleOptions.getInstance()
+    val audioAttributes = AudioAttributes.Builder()
+      .setUsage(AudioAttributes.USAGE_MEDIA)
+      .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+      .build()
+    options.audioDeviceModule = JavaAudioDeviceModule.builder(this)
+      .setAudioAttributes(audioAttributes)
+      .createAudioDeviceModule()
+`,
+  },
+];
+
+export const withWorkingAndroidWebRTCAudio: ConfigPlugin = (configOuter) => {
+  return withMainApplication(configOuter, (config) => {
+    let stringContents: string = config.modResults.contents;
+
+    for (const { from, to } of androidApplicationReplacements) {
+      stringContents = stringContents.replace(from, to);
+    }
+
+    config.modResults.contents = stringContents;
+
+    return config;
+  });
 };
 
 // turn a semver string into a always-increasing integer for google
@@ -111,6 +155,7 @@ export default function () {
         favicon: "./assets/images/favicon.png",
       },
       plugins: [
+        withWorkingAndroidWebRTCAudio,
         "@config-plugins/react-native-webrtc",
         ["expo-sqlite", { useSQLCipher: true }],
         "expo-file-system",
