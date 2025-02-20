@@ -13,12 +13,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	rtpprof "runtime/pprof"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	sloghttp "github.com/samber/slog-http"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/errors"
@@ -77,6 +79,13 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 	router.Handler("GET", "/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handler("GET", "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handler("GET", "/debug/pprof/block", pprof.Handler("block"))
+
+	router.POST("/gc", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		runtime.GC()
+		w.WriteHeader(204)
+	})
+
+	router.Handler("GET", "/metrics", promhttp.Handler())
 
 	router.GET("/playback/:user/concat", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
