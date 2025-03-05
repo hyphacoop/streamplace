@@ -32,6 +32,7 @@ import (
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/notifications"
 	v0 "stream.place/streamplace/pkg/schema/v0"
+	"stream.place/streamplace/pkg/spmetrics"
 )
 
 type StreamplaceAPI struct {
@@ -120,6 +121,7 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	apiRouter.GET("/api/bluesky/resolve/:handle", a.HandleBlueskyResolve(ctx))
 	apiRouter.GET("/api/atproto-oauth/:platform", a.HandleATProtoOAuth(ctx))
 	apiRouter.GET("/api/live-users", a.HandleLiveUsers(ctx))
+	apiRouter.GET("/api/view-count/:user", a.HandleViewCount(ctx))
 	apiRouter.NotFound = a.HandleAPI404(ctx)
 	router.Handler("GET", "/api/*resource", apiRouter)
 	router.Handler("POST", "/api/*resource", apiRouter)
@@ -381,6 +383,11 @@ func (a *StreamplaceAPI) HandleRecentSegments(ctx context.Context) httprouter.Ha
 	}
 }
 
+type LiveUsersResponse struct {
+	model.Segment
+	Viewers int `json:"viewers"`
+}
+
 func (a *StreamplaceAPI) HandleLiveUsers(ctx context.Context) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		repos, err := a.Model.GetLiveUsers()
@@ -388,9 +395,43 @@ func (a *StreamplaceAPI) HandleLiveUsers(ctx context.Context) httprouter.Handle 
 			apierrors.WriteHTTPInternalServerError(w, "could not get live users", err)
 			return
 		}
-		bs, err := json.Marshal(repos)
+		liveUsers := []LiveUsersResponse{}
+		for _, repo := range repos {
+			viewers := spmetrics.GetViewCount(repo.RepoDID)
+			liveUsers = append(liveUsers, LiveUsersResponse{
+				Segment: repo,
+				Viewers: viewers,
+			})
+		}
+		bs, err := json.Marshal(liveUsers)
 		if err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "could not marshal live users", err)
+			return
+		}
+		w.Write(bs)
+	}
+}
+
+type ViewCountResponse struct {
+	Count int `json:"count"`
+}
+
+func (a *StreamplaceAPI) HandleViewCount(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		user := params.ByName("user")
+		if user == "" {
+			apierrors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			apierrors.WriteHTTPNotFound(w, "user not found", err)
+			return
+		}
+		count := spmetrics.GetViewCount(user)
+		bs, err := json.Marshal(ViewCountResponse{Count: count})
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal view count", err)
 			return
 		}
 		w.Write(bs)

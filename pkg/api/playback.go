@@ -24,6 +24,7 @@ import (
 	apierrors "stream.place/streamplace/pkg/errors"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
+	"stream.place/streamplace/pkg/spmetrics"
 )
 
 func (a *StreamplaceAPI) NormalizeUser(ctx context.Context, user string) (string, error) {
@@ -69,6 +70,8 @@ func (a *StreamplaceAPI) HandleMP4Playback(ctx context.Context) httprouter.Handl
 				return
 			}
 		}
+		spmetrics.ViewerInc(user)
+		defer spmetrics.ViewerDec(user)
 		w.Header().Set("Content-Type", "video/mp4")
 		w.WriteHeader(200)
 		g, ctx := errgroup.WithContext(ctx)
@@ -112,6 +115,8 @@ func (a *StreamplaceAPI) HandleMKVPlayback(ctx context.Context) httprouter.Handl
 				return
 			}
 		}
+		spmetrics.ViewerInc(user)
+		defer spmetrics.ViewerDec(user)
 		w.Header().Set("Content-Type", "video/webm")
 		w.WriteHeader(200)
 		g, ctx := errgroup.WithContext(ctx)
@@ -317,11 +322,22 @@ func (a *StreamplaceAPI) HandleHLSPlayback(ctx context.Context) httprouter.Handl
 			errors.WriteHTTPInternalServerError(w, "SegmentToHLSOnce failed", nil)
 			return
 		}
-		buf, err := m3u8.GetSegment(file)
+		session := r.URL.Query().Get("session")
+		buf, err := m3u8.GetSegment(file, session)
 		if err != nil {
 			errors.WriteHTTPNotFound(w, "segment not found", err)
 			return
 		}
+
+		if strings.HasSuffix(file, ".m3u8") {
+			w.Header().Set("Content-Type", "application/x-mpegURL")
+		} else {
+			if session != "" {
+				spmetrics.SessionSeen(user, session)
+			}
+			w.Header().Set("Content-Type", "video/MP2T")
+		}
+
 		http.ServeContent(w, r, file, time.Now(), bytes.NewReader(buf))
 	})
 }

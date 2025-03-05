@@ -1,6 +1,7 @@
 import AQLink from "components/aqlink";
 import ErrorBox from "components/error/error";
 import Loading from "components/loading/loading";
+import Viewers from "components/viewers";
 import {
   pollSegments,
   selectRecentSegments,
@@ -9,7 +10,7 @@ import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { RefreshControl } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { H6, Image, ScrollView, ScrollViewProps, Text, View } from "tamagui";
+import { H6, Image, ScrollView, ScrollViewProps, View } from "tamagui";
 
 type Segment = {
   id: string;
@@ -115,30 +116,15 @@ export default function StreamList({
                   alignItems="center"
                   overflow="visible"
                 >
-                  <View position="relative">
-                    <Text
-                      textShadowColor="black"
-                      textShadowOffset={{ width: -1, height: 1 }}
-                      textShadowRadius={3}
-                    >
-                      LIVE
-                    </Text>
-                    <Text
-                      textShadowColor="black"
-                      textShadowOffset={{ width: 1, height: -1 }}
-                      textShadowRadius={3}
-                      position="absolute"
-                    >
-                      LIVE
-                    </Text>
-                  </View>
                   <View
-                    bg="$red10"
-                    w={15}
-                    h={15}
-                    margin={5}
+                    position="relative"
+                    backgroundColor="rgb(0,0,0,0.8)"
                     borderRadius="$10"
-                  />
+                    marginRight="$2"
+                    marginTop="$2"
+                  >
+                    <Viewers viewers={segment.viewers} />
+                  </View>
                 </View>
                 <H6>
                   {segment.repo?.handle ? `@${segment.repo.handle}` : user}

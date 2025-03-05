@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"stream.place/streamplace/pkg/log"
 )
 
@@ -34,6 +35,9 @@ type M3U8 struct {
 	segments        []*Segment
 	pendingSegments []*Segment
 	waits           []chan struct{}
+	Bitrate         uint64
+	Width           uint64
+	Height          uint64
 }
 
 func NewM3U8() *M3U8 {
@@ -83,6 +87,10 @@ func (m *M3U8) FragmentClosed(ctx context.Context, t uint64) error {
 	for _, seg := range m.pendingSegments {
 		if seg.EndTime == nil {
 			seg.EndTime = &t
+			if m.Bitrate == 0 {
+				dur := seg.Duration()
+				m.Bitrate = uint64(float64(seg.Buf.Len())/dur.Seconds()) * 8
+			}
 			break
 		}
 	}
@@ -113,13 +121,17 @@ func (m *M3U8) checkSegments(ctx context.Context) {
 	}
 }
 
-func (m *M3U8) GetPlaylist() []byte {
+func (m *M3U8) waitForStart() {
 	if len(m.segments) == 0 {
 		// todo: fix concurrent access here
 		wait := make(chan struct{})
 		m.waits = append(m.waits, wait)
 		<-wait
 	}
+}
+
+func (m *M3U8) GetPlaylist(session string) []byte {
+	m.waitForStart()
 	lines := []string{}
 	lines = append(lines, "#EXTM3U")
 	lines = append(lines, "#EXT-X-VERSION:3")
@@ -137,16 +149,32 @@ func (m *M3U8) GetPlaylist() []byte {
 	for _, seg := range lastSegments {
 		dur := seg.Duration()
 		lines = append(lines, fmt.Sprintf("#EXTINF:%f,", dur.Seconds()))
-		lines = append(lines, fmt.Sprintf("segment%05d.ts", seg.MSN))
+		lines = append(lines, fmt.Sprintf("segment%05d.ts?session=%s", seg.MSN, session))
 	}
 	lines = append(lines, "")
 	return []byte(strings.Join(lines, "\n"))
 }
 
+func (m *M3U8) GetMultivariantPlaylist() []byte {
+	uu, err := uuid.NewV7()
+	if err != nil {
+		panic(err)
+	}
+	m.waitForStart()
+	lines := []string{}
+	lines = append(lines, "#EXTM3U")
+	lines = append(lines, fmt.Sprintf("#EXT-X-STREAM-INF:BANDWIDTH=%d,RESOLUTION=%dx%d", m.Bitrate, m.Width, m.Height))
+	lines = append(lines, fmt.Sprintf("media.m3u8?session=%s", uu.String()))
+	return []byte(strings.Join(lines, "\n"))
+}
+
 // takes segment00015.ts and returns the corresponding segment
-func (m *M3U8) GetSegment(str string) ([]byte, error) {
+func (m *M3U8) GetSegment(str string, session string) ([]byte, error) {
 	if str == "stream.m3u8" {
-		return m.GetPlaylist(), nil
+		return m.GetMultivariantPlaylist(), nil
+	}
+	if str == "media.m3u8" {
+		return m.GetPlaylist(session), nil
 	}
 	for _, seg := range m.segments {
 		if fmt.Sprintf("segment%05d.ts", seg.MSN) == str {
@@ -155,19 +183,3 @@ func (m *M3U8) GetSegment(str string) ([]byte, error) {
 	}
 	return nil, fmt.Errorf("segment not found")
 }
-
-// #EXTM3U
-// #EXT-X-VERSION:3
-// #EXT-X-MEDIA-SEQUENCE:15
-// #EXT-X-TARGETDURATION:1
-
-// #EXTINF:1,
-// segment00015.ts
-// #EXTINF:1.0089999437332153,
-// segment00016.ts
-// #EXTINF:1,
-// segment00017.ts
-// #EXTINF:1.0060000419616699,
-// segment00018.ts
-// #EXTINF:1,
-// segment00019.ts

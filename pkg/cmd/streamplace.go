@@ -27,6 +27,7 @@ import (
 	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/replication/boring"
 	v0 "stream.place/streamplace/pkg/schema/v0"
+	"stream.place/streamplace/pkg/spmetrics"
 
 	"github.com/ThalesGroup/crypto11"
 	_ "github.com/go-gst/go-glib/glib"
@@ -311,6 +312,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return atproto.StartFirehose(ctx, &cli, mod, noter)
 		})
 	}
+
+	group.Go(func() error {
+		return spmetrics.ExpireSessions(ctx)
+	})
 
 	group.Go(func() error {
 		newSeg := mm.NewSegment()

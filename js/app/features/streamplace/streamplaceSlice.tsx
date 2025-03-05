@@ -18,6 +18,7 @@ export type Segment = {
   signingKeyDID: string;
   startTime: string;
   repo: Repo;
+  viewers: number;
 };
 
 export type Repo = {

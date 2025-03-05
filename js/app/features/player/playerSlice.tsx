@@ -2,6 +2,7 @@ import { createAction } from "@reduxjs/toolkit";
 import { createAppSlice } from "../../hooks/createSlice";
 import { uuidv7 } from "hooks/uuid";
 import { createContext, useContext } from "react";
+import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 
 export interface PlayerContextType {
   playerId: string | null;
@@ -15,6 +16,7 @@ export interface PlayerState {
   ingestStarted: number | null;
   ingestStarting: boolean;
   ingestConnectionState: RTCPeerConnectionState | null;
+  viewers: number | null;
 }
 
 export interface PlayersState {
@@ -47,6 +49,7 @@ export const playerSlice = createAppSlice({
         ingestStarted: null,
         ingestStarting: false,
         ingestConnectionState: null,
+        viewers: null,
       };
     });
   },
@@ -91,6 +94,38 @@ export const playerSlice = createAppSlice({
           };
         },
       ),
+
+      pollViewers: create.asyncThunk(
+        async (
+          { playerId, user }: { playerId: string; user: string },
+          { getState },
+        ) => {
+          const { streamplace } = getState() as {
+            streamplace: StreamplaceState;
+          };
+          const res = await fetch(`${streamplace.url}/api/view-count/${user}`);
+          const data = await res.json();
+          return { playerId, count: data.count };
+        },
+        {
+          pending: (state) => {
+            // state.status = "loading";
+          },
+          fulfilled: (state, result) => {
+            return {
+              ...state,
+              [result.payload.playerId]: {
+                ...state[result.payload.playerId],
+                viewers: result.payload.count,
+              },
+            };
+          },
+          rejected: (state, error) => {
+            console.error("pollViewers rejected", error);
+            return state;
+          },
+        },
+      ),
     };
   },
 
@@ -113,6 +148,8 @@ export const usePlayerActions = () => {
         ingestConnectionState,
       });
     },
+    pollViewers: (user: string) =>
+      playerSlice.actions.pollViewers({ playerId, user }),
   };
 };
 

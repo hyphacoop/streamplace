@@ -39,6 +39,7 @@ import {
 import { usePlayer, usePlayerActions } from "features/player/playerSlice";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import Loading from "components/loading/loading";
+import Viewers from "components/viewers";
 
 const Bar = (props) => (
   <XStack
@@ -81,6 +82,19 @@ export default function Controls(props: PlayerProps) {
     props.setPlayTime(Date.now());
   };
 
+  const dispatch = useAppDispatch();
+  const { pollViewers } = usePlayerActions();
+  useEffect(() => {
+    const poll = async () => {
+      const result = await dispatch(pollViewers(props.src));
+    };
+    poll();
+    const handle = setInterval(poll, 3000);
+    return () => clearInterval(handle);
+  }, [props.src]);
+
+  const player = useAppSelector(usePlayer());
+
   return (
     <View
       position="absolute"
@@ -112,7 +126,9 @@ export default function Controls(props: PlayerProps) {
             <Text>{props.name}</Text>
           </View>
         </Part>
-        <Part>{/* <Text>Top Right</Text> */}</Part>
+        <Part>
+          <Viewers viewers={player.viewers} />
+        </Part>
       </Bar>
       {props.ingest && <LiveBubble />}
       <Bar opacity={props.showControls ? 1 : 0}>

@@ -15,6 +15,7 @@ import (
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/spmetrics"
 )
 
 // we have a bug that prevents us from correctly probing video durations
@@ -275,6 +276,8 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, offer *
 
 		// Start the pipeline
 		pipeline.SetState(gst.StatePlaying)
+		spmetrics.ViewerInc(user)
+		defer spmetrics.ViewerDec(user)
 
 		go func() {
 			rtcpBuf := make([]byte, 1500)

@@ -293,7 +293,7 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 	pipelineSlice := []string{
 		"appsrc name=appsrc ! matroskademux name=demux",
 		"demux.video_0 ! queue ! h264parse name=videoparse",
-		"demux.audio_0 ! queue ! opusparse name=audioparse",
+		"demux.audio_0 ! queue ! opusdec use-inband-fec=true ! audioresample ! fdkaacenc name=audioenc",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -315,13 +315,13 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 		return fmt.Errorf("error linking videoparse to splitmuxsink: %w", err)
 	}
 
-	audioparse, err := pipeline.GetElementByName("audioparse")
+	audioenc, err := pipeline.GetElementByName("audioenc")
 	if err != nil {
-		return fmt.Errorf("error getting audioparse from ToHLS pipeline: %w", err)
+		return fmt.Errorf("error getting audioenc from ToHLS pipeline: %w", err)
 	}
-	err = audioparse.Link(splitmuxsink)
+	err = audioenc.Link(splitmuxsink)
 	if err != nil {
-		return fmt.Errorf("error linking audioparse to splitmuxsink: %w", err)
+		return fmt.Errorf("error linking audioenc to splitmuxsink: %w", err)
 	}
 
 	splitmuxsink.Connect("sink-added", func(split, sinkEle *gst.Element) {
@@ -348,6 +348,83 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 		NeedDataFunc: ReaderNeedData(ctx, input),
 	})
 
+	onPadAdded := func(element *gst.Element, pad *gst.Pad) {
+		caps := pad.GetCurrentCaps()
+		if caps == nil {
+			fmt.Println("Unable to get pad caps")
+			return
+		}
+		defer caps.Unref()
+
+		fmt.Printf("New pad added: %s\n", pad.GetName())
+		fmt.Printf("Caps: %s\n", caps.String())
+
+		structure := caps.GetStructureAt(0)
+		if structure == nil {
+			fmt.Println("Unable to get structure from caps")
+			return
+		}
+
+		name := structure.Name()
+		fmt.Printf("Structure Name: %s\n", name)
+
+		if name[:5] == "video" {
+			// Get some common video properties
+			widthVal, _ := structure.GetValue("width")
+			heightVal, _ := structure.GetValue("height")
+
+			width, ok := widthVal.(int)
+			if ok {
+				m3u8.Width = uint64(width)
+			}
+			height, ok := heightVal.(int)
+			if ok {
+				m3u8.Height = uint64(height)
+			}
+			// framerate, ok := framerateVal.(string)
+			// if ok {
+			// 	fmt.Printf("  Framerate: %s\n", framerate)
+			// }
+			// pixelAspectRatio, ok := pixelAspectRatioVal.(string)
+			// if ok {
+			// 	fmt.Printf("  Pixel Aspect Ratio: %s\n", pixelAspectRatio)
+			// }
+			// if codecVal != nil {
+			// 	fmt.Printf("  Has codec data: true\n")
+			// }
+		}
+
+		// if name[:5] == "audio" {
+		// 	// Get some common audio properties
+		// 	rateVal, _ := structure.GetValue("rate")
+		// 	channelsVal, _ := structure.GetValue("channels")
+		// 	formatVal, err := structure.GetValue("format")
+		// 	mpegversion, _ := structure.GetValue("mpegversion")
+		// 	log.Log(ctx, "format error", "error", err, "mpegversion", mpegversion)
+
+		// 	fmt.Printf("  Structure: %s\n", structure.String())
+		// 	rate, ok := rateVal.(int)
+		// 	if ok {
+		// 		fmt.Printf("  Rate: %d\n", rate)
+		// 	}
+		// 	channels, ok := channelsVal.(int)
+		// 	if ok {
+		// 		fmt.Printf("  Channels: %d\n", channels)
+		// 	}
+		// 	format, ok := formatVal.(int)
+		// 	if ok {
+		// 		fmt.Printf("  Format: %d\n", format)
+		// 	}
+
+		// }
+	}
+
+	demux, err := pipeline.GetElementByName("demux")
+	if err != nil {
+		return err
+	}
+	demux.Connect("pad-added", onPadAdded)
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
@@ -356,7 +433,6 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 		mainLoop.Quit()
 	}()
 
-	// Add a message handler to the pipeline bus, printing interesting information to the console.
 	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
 		switch msg.Type() {
 
