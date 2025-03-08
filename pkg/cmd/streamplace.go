@@ -83,6 +83,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return Sign(context.Background())
 	}
 
+	if len(os.Args) > 1 && os.Args[1] == "whip" {
+		return WHIP()
+	}
+
 	if len(os.Args) > 1 && os.Args[1] == "self-test" {
 		err := media.RunSelfTest(context.Background())
 		if err != nil {
@@ -122,12 +126,12 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	fs.StringVar(&cli.AppBundleID, "app-bundle-id", "", "bundle id of an app that we facilitate oauth login for")
 	fs.StringVar(&cli.StreamerName, "streamer-name", "", "name of the person streaming from this streamplace node")
 	fs.StringVar(&cli.FrontendProxy, "dev-frontend-proxy", "", "(FOR DEVELOPMENT ONLY) proxy frontend requests to this address instead of using the bundled frontend")
+	fs.BoolVar(&cli.WideOpen, "wide-open", false, "allow ALL streams to be uploaded to this node (not recommended for production)")
 	cli.StringSliceFlag(fs, &cli.AllowedStreams, "allowed-streams", "", "if set, only allow these addresses or atproto DIDs to upload to this node")
 	cli.StringSliceFlag(fs, &cli.Peers, "peers", "", "other streamplace nodes to replicate to")
 	cli.DebugFlag(fs, &cli.Debug, "debug", "", "modified log verbosity for specific functions or files in form func=ToHLS:3,file=gstreamer.go:4")
 	fs.BoolVar(&cli.TestStream, "test-stream", false, "run a built-in test stream on boot")
 	fs.BoolVar(&cli.NoFirehose, "no-firehose", false, "disable the bluesky firehose")
-	doValidate := fs.Bool("validate", false, "validate media")
 	verbosity := fs.String("v", "3", "log verbosity level")
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
@@ -166,10 +170,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		"runtime.Version", runtime.Version())
 	if *version {
 		return nil
-	}
-
-	if *doValidate {
-		return media.ValidateMedia(ctx)
 	}
 
 	aqhttp.UserAgent = fmt.Sprintf("streamplace/%s", build.Version)

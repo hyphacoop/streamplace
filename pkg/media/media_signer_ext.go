@@ -68,6 +68,9 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 		"--streamer", ms.streamer,
 		"--start-time", fmt.Sprintf("%d", start))
 
+	// overwrite so that our subprocesses don't do their own leak checking
+	cmd.Env = append(os.Environ(), "LD_PRELOAD=")
+
 	// Set up pipes for stdin and stdout
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -87,7 +90,7 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 	// Copy input to stdin
 	_, err = io.Copy(stdin, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to write to stdin: %w", err)
+		return nil, fmt.Errorf("failed to write to stdin: %w stderr=%s", err, stderr.String())
 	}
 	stdin.Close()
 

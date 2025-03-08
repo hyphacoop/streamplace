@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/decred/dcrd/dcrec/secp256k1"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mr-tron/base58"
@@ -191,17 +192,30 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 			// it's easy to copy-paste a trailing or leading space, so clear those out
 			encoded = strings.TrimSpace(encoded)
 		}
+
 		if len(encoded) < 2 || encoded[0] != 'z' {
 			errors.WriteHTTPUnauthorized(w, "invalid authorization key (not a multibase base58btc string)", nil)
 			return
 		}
-		data, err := base58.Decode(encoded[1:])
-		if err != nil {
-			errors.WriteHTTPUnauthorized(w, "invalid authorization key (not a multibase base58btc string)", nil)
-			return
+
+		var addrBytes []byte
+		var didBytes []byte
+		priv, err := atcrypto.ParsePrivateMultibase(encoded)
+		if err == nil {
+			if err != nil {
+				errors.WriteHTTPUnauthorized(w, "invalid authorization key (not valid secp256k1)", nil)
+				return
+			}
+			addrBytes = priv.Bytes()
+		} else {
+			decoded, err := base58.Decode(encoded[1:])
+			if err != nil {
+				errors.WriteHTTPUnauthorized(w, "invalid authorization key (not a base58btc string)", nil)
+				return
+			}
+			addrBytes = decoded[:32]
+			didBytes = decoded[32:]
 		}
-		addrBytes := data[:32]
-		didBytes := data[32:]
 
 		key, _ := secp256k1.PrivKeyFromBytes(addrBytes)
 		if key == nil {
@@ -211,12 +225,6 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 		var signer crypto.Signer = key.ToECDSA()
 
 		did := string(didBytes)
-
-		mediaSigner, err := media.MakeMediaSignerExt(ctx, a.CLI, did, addrBytes)
-		if err != nil {
-			errors.WriteHTTPUnauthorized(w, "invalid authorization key (not valid secp256k1)", err)
-			return
-		}
 
 		if did != "" {
 			repo, err := atproto.SyncBlueskyRepo(ctx, did, a.Model)
@@ -241,6 +249,13 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 				apierrors.WriteHTTPUnauthorized(w, "user is not allowed to stream", err)
 				return
 			}
+		}
+
+		mediaSigner, err := media.MakeMediaSignerExt(ctx, a.CLI, did, addrBytes)
+		// mediaSigner, err := media.MakeMediaSigner(ctx, a.CLI, did, signer)
+		if err != nil {
+			errors.WriteHTTPUnauthorized(w, "invalid authorization key (not valid secp256k1)", err)
+			return
 		}
 
 		body, err := io.ReadAll(r.Body)
