@@ -311,6 +311,9 @@ export const blueskySlice = createAppSlice({
         ];
         const record = {
           text: content,
+          "place.stream.livestream": {
+            url: linkUrl,
+          },
           facets,
         };
         return await bluesky.pdsAgent.post(record);
