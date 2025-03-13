@@ -39,6 +39,9 @@ func SafePipe() (*os.File, *os.File, func(), error) {
 
 func ReaderNeedData(ctx context.Context, input io.Reader) func(self *app.Source, length uint) {
 	return func(self *app.Source, length uint) {
+		if ctx.Err() != nil {
+			return
+		}
 		bs := make([]byte, length)
 		read, err := input.Read(bs)
 		if err != nil {
@@ -70,7 +73,6 @@ func WriterNewSample(ctx context.Context, output io.Writer) func(sink *app.Sink)
 		if sample == nil {
 			return gst.FlowOK
 		}
-		// defer sample.Unref()
 
 		// Retrieve the buffer from the sample.
 		buffer := sample.GetBuffer()
@@ -86,9 +88,6 @@ func WriterNewSample(ctx context.Context, output io.Writer) func(sink *app.Sink)
 }
 
 func AddOpusToMKV(ctx context.Context, input io.Reader, output io.Writer) error {
-
-	mainLoop := glib.NewMainLoop(glib.MainContextDefault(), false)
-
 	pipelineSlice := []string{
 		"appsrc name=appsrc ! matroskademux name=demux",
 		"matroskamux name=mux ! appsink name=appsink",
@@ -130,36 +129,16 @@ func AddOpusToMKV(ctx context.Context, input io.Reader, output io.Writer) error 
 	})
 
 	go func() {
-		<-ctx.Done()
-		pipeline.BlockSetState(gst.StateNull)
-		mainLoop.Quit()
+		HandleBusMessages(ctx, pipeline)
+		cancel()
 	}()
-
-	// Add a message handler to the pipeline bus, printing interesting information to the console.
-	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			log.Debug(ctx, "got EOS")
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Error(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
 
 	// Start the pipeline
 	pipeline.SetState(gst.StatePlaying)
 
-	mainLoop.Run()
-	log.Log(ctx, "main loop complete")
+	<-ctx.Done()
+
+	pipeline.BlockSetState(gst.StateNull)
 	return nil
 }
 
@@ -269,7 +248,6 @@ func SelfTest(ctx context.Context) error {
 // #EXT-X-ENDLIST
 
 func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) error {
-	mainLoop := glib.NewMainLoop(glib.MainContextDefault(), false)
 	ctx = log.WithLogValues(ctx, "GStreamerFunc", "ToHLS")
 
 	splitmuxsink, err := gst.NewElementWithProperties("splitmuxsink", map[string]any{
@@ -430,68 +408,55 @@ func (mm *MediaManager) ToHLS(ctx context.Context, input io.Reader, m3u8 *M3U8) 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
-		<-ctx.Done()
-		pipeline.BlockSetState(gst.StateNull)
-		mainLoop.Quit()
+		HandleBusMessagesCustom(ctx, pipeline, func(msg *gst.Message) {
+			switch msg.Type() {
+			case gst.MessageElement:
+				structure := msg.GetStructure()
+				name := structure.Name()
+				if name == "splitmuxsink-fragment-opened" {
+					runningTime, err := structure.GetValue("running-time")
+					if err != nil {
+						log.Warn(ctx, "splitmuxsink-fragment-opened error", "error", err)
+						cancel()
+					}
+					runningTimeInt, ok := runningTime.(uint64)
+					if !ok {
+						log.Warn(ctx, "splitmuxsink-fragment-opened not a uint64")
+						cancel()
+					}
+					m3u8.FragmentOpened(ctx, runningTimeInt)
+				}
+				if name == "splitmuxsink-fragment-closed" {
+					runningTime, err := structure.GetValue("running-time")
+					if err != nil {
+						log.Warn(ctx, "splitmuxsink-fragment-closed error", "error", err)
+						cancel()
+					}
+					runningTimeInt, ok := runningTime.(uint64)
+					if !ok {
+						log.Warn(ctx, "splitmuxsink-fragment-closed not a uint64")
+						cancel()
+					}
+					m3u8.FragmentClosed(ctx, runningTimeInt)
+				}
+			}
+		})
+		cancel()
 	}()
-
-	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Error(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Debug(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		case gst.MessageElement:
-			structure := msg.GetStructure()
-			name := structure.Name()
-			if name == "splitmuxsink-fragment-opened" {
-				runningTime, err := structure.GetValue("running-time")
-				if err != nil {
-					log.Warn(ctx, "splitmuxsink-fragment-opened error", "error", err)
-					return true
-				}
-				runningTimeInt, ok := runningTime.(uint64)
-				if !ok {
-					log.Warn(ctx, "splitmuxsink-fragment-opened not a uint64")
-					return true
-				}
-				m3u8.FragmentOpened(ctx, runningTimeInt)
-			}
-			if name == "splitmuxsink-fragment-closed" {
-				runningTime, err := structure.GetValue("running-time")
-				if err != nil {
-					log.Warn(ctx, "splitmuxsink-fragment-closed error", "error", err)
-					return true
-				}
-				runningTimeInt, ok := runningTime.(uint64)
-				if !ok {
-					log.Warn(ctx, "splitmuxsink-fragment-closed not a uint64")
-					return true
-				}
-				m3u8.FragmentClosed(ctx, runningTimeInt)
-			}
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
 
 	// Start the pipeline
 	pipeline.SetState(gst.StatePlaying)
 
-	mainLoop.Run()
-	log.Log(ctx, "main loop complete")
+	<-ctx.Done()
+
+	pipeline.BlockSetState(gst.StateNull)
 
 	return nil
 }
 
 func (mm *MediaManager) IngestStream(ctx context.Context, input io.Reader, ms MediaSigner) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	pipelineSlice := []string{
 		"appsrc name=streamsrc ! matroskademux name=demux",
 		"demux. ! queue ! h264parse name=parse",
@@ -538,32 +503,17 @@ func (mm *MediaManager) IngestStream(ctx context.Context, input io.Reader, ms Me
 		return err
 	}
 
-	mainLoop := glib.NewMainLoop(glib.MainContextDefault(), false)
-
-	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			mainLoop.Quit()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Error(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			mainLoop.Quit()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
+	go func() {
+		HandleBusMessages(ctx, pipeline)
+		cancel()
+	}()
 
 	err = pipeline.SetState(gst.StatePlaying)
 	if err != nil {
 		return err
 	}
 
-	mainLoop.Run()
+	<-ctx.Done()
 
 	return nil
 }
@@ -674,23 +624,10 @@ func (mm *MediaManager) TestSource(ctx context.Context, ms MediaSigner) error {
 		mainLoop.Quit()
 	}()
 
-	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Log(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
+	go func() {
+		HandleBusMessages(ctx, pipeline)
+		cancel()
+	}()
 
 	// Start the pipeline
 	pipeline.SetState(gst.StatePlaying)
@@ -729,6 +666,23 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 		return nil, fmt.Errorf("failed to get audio pad")
 	}
 
+	resetTimer := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-resetTimer:
+				continue
+			case <-time.After(time.Second * 10):
+				log.Warn(ctx, "no new segment for 10 seconds")
+				elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "No new segment for 10 seconds", "No new segment for 10 seconds (debug)")
+				return
+			}
+		}
+	}()
+
 	elem.Connect("sink-added", func(split, sinkEle *gst.Element) {
 		buf := &bytes.Buffer{}
 		appsink := app.SinkFromElement(sinkEle)
@@ -738,6 +692,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 		appsink.SetCallbacks(&app.SinkCallbacks{
 			NewSampleFunc: WriterNewSample(ctx, buf),
 			EOSFunc: func(sink *app.Sink) {
+				resetTimer <- struct{}{}
 				bs, err := ms.SignMP4(ctx, bytes.NewReader(buf.Bytes()), time.Now().UnixMilli())
 				if err != nil {
 					log.Error(ctx, "error signing segment", "error", err)
@@ -757,15 +712,16 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 
 func (mm *MediaManager) Thumbnail(ctx context.Context, r io.Reader, w io.Writer) error {
 	ctx = log.WithLogValues(ctx, "function", "Thumbnail")
-	mainLoop := glib.NewMainLoop(glib.MainContextDefault(), false)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	pipelineSlice := []string{
-		"appsrc name=appsrc ! qtdemux ! decodebin ! videoconvert ! videoscale ! video/x-raw,width=[1,200],height=[1,200],pixel-aspect-ratio=1/1 ! pngenc ! appsink name=appsink",
+		"appsrc name=appsrc ! qtdemux ! decodebin ! videoconvert ! videoscale ! video/x-raw,width=[1,720],height=[1,720],pixel-aspect-ratio=1/1 ! pngenc snapshot=true ! appsink name=appsink",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
 	if err != nil {
-		return fmt.Errorf("error creating TestSource pipeline: %w", err)
+		return fmt.Errorf("error creating Thumbnail pipeline: %w", err)
 	}
 	appsrc, err := pipeline.GetElementByName("appsrc")
 	if err != nil {
@@ -777,31 +733,15 @@ func (mm *MediaManager) Thumbnail(ctx context.Context, r io.Reader, w io.Writer)
 		NeedDataFunc: ReaderNeedData(ctx, r),
 	})
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	appsink, err := pipeline.GetElementByName("appsink")
 	if err != nil {
 		return err
 	}
 
-	pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Log(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
+	go func() {
+		HandleBusMessages(ctx, pipeline)
+		cancel()
+	}()
 
 	sink := app.SinkFromElement(appsink)
 	sink.SetCallbacks(&app.SinkCallbacks{
@@ -813,13 +753,9 @@ func (mm *MediaManager) Thumbnail(ctx context.Context, r io.Reader, w io.Writer)
 
 	pipeline.SetState(gst.StatePlaying)
 
-	go func() {
-		<-ctx.Done()
-		pipeline.BlockSetState(gst.StateNull)
-		mainLoop.Quit()
-	}()
+	<-ctx.Done()
 
-	mainLoop.Run()
+	pipeline.BlockSetState(gst.StateNull)
 
 	return nil
 }
@@ -845,26 +781,10 @@ func (mm *MediaManager) MP4Playback(ctx context.Context, user string, w io.Write
 		return fmt.Errorf("failed to create GStreamer pipeline: %w", err)
 	}
 
-	ok := pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			log.Log(ctx, "got gst.MessageEOS, exiting")
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Error(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
-	if !ok {
-		return fmt.Errorf("failed to add watch to pipeline bus")
-	}
+	go func() {
+		HandleBusMessages(ctx, pipeline)
+		cancel()
+	}()
 
 	outputQueue, done, err := ConcatStream(ctx, pipeline, user, mm)
 	if err != nil {
@@ -896,11 +816,6 @@ func (mm *MediaManager) MP4Playback(ctx context.Context, user string, w io.Write
 	if err != nil {
 		return fmt.Errorf("failed to link output queue to audio parse: %w", err)
 	}
-
-	go func() {
-		<-ctx.Done()
-		pipeline.BlockSetState(gst.StateNull)
-	}()
 
 	go func() {
 		ticker := time.NewTicker(time.Second * 1)
@@ -931,6 +846,9 @@ func (mm *MediaManager) MP4Playback(ctx context.Context, user string, w io.Write
 	pipeline.SetState(gst.StatePlaying)
 
 	<-ctx.Done()
+
+	pipeline.BlockSetState(gst.StateNull)
+
 	return nil
 }
 
@@ -955,26 +873,10 @@ func (mm *MediaManager) MKVPlayback(ctx context.Context, user string, w io.Write
 		return fmt.Errorf("failed to create GStreamer pipeline: %w", err)
 	}
 
-	ok := pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			log.Log(ctx, "got gst.MessageEOS, exiting")
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Error(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
-	if !ok {
-		return fmt.Errorf("failed to add watch to pipeline bus")
-	}
+	go func() {
+		HandleBusMessages(ctx, pipeline)
+		cancel()
+	}()
 
 	outputQueue, done, err := ConcatStream(ctx, pipeline, user, mm)
 	if err != nil {
@@ -1008,11 +910,6 @@ func (mm *MediaManager) MKVPlayback(ctx context.Context, user string, w io.Write
 	}
 
 	go func() {
-		<-ctx.Done()
-		pipeline.BlockSetState(gst.StateNull)
-	}()
-
-	go func() {
 		ticker := time.NewTicker(time.Second * 1)
 		for {
 			select {
@@ -1041,5 +938,8 @@ func (mm *MediaManager) MKVPlayback(ctx context.Context, user string, w io.Write
 	pipeline.SetState(gst.StatePlaying)
 
 	<-ctx.Done()
+
+	pipeline.BlockSetState(gst.StateNull)
+
 	return nil
 }

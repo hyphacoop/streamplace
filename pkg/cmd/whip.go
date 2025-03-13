@@ -14,9 +14,10 @@ import (
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"github.com/pion/webrtc/v4"
-	"github.com/pion/webrtc/v4/pkg/media"
+	pionmedia "github.com/pion/webrtc/v4/pkg/media"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/media"
 )
 
 func WHIP() error {
@@ -26,6 +27,7 @@ func WHIP() error {
 	duration := fs.Duration("duration", 0, "duration of the stream")
 	file := fs.String("file", "", "file to stream (needs to be an MP4 containing H264 video and Opus audio)")
 	endpoint := fs.String("endpoint", "http://127.0.0.1:38080", "endpoint to send the WHIP request to")
+	freezeAfter := fs.Duration("freeze-after", 0, "freeze the stream after the given duration")
 	err := fs.Parse(os.Args[2:])
 	if *file == "" {
 		return fmt.Errorf("file is required")
@@ -42,20 +44,22 @@ func WHIP() error {
 	}
 
 	w := &WHIPClient{
-		StreamKey: *streamKey,
-		File:      *file,
-		Endpoint:  *endpoint,
-		Count:     *count,
+		StreamKey:   *streamKey,
+		File:        *file,
+		Endpoint:    *endpoint,
+		Count:       *count,
+		FreezeAfter: *freezeAfter,
 	}
 
 	return w.WHIP(ctx)
 }
 
 type WHIPClient struct {
-	StreamKey string
-	File      string
-	Endpoint  string
-	Count     int
+	StreamKey   string
+	File        string
+	Endpoint    string
+	Count       int
+	FreezeAfter time.Duration
 }
 
 var failureStates = []webrtc.ICEConnectionState{
@@ -316,18 +320,20 @@ func (w *WHIPClient) WHIP(ctx context.Context) error {
 
 					accumulators[i] += duration
 
-					for _, conn := range conns {
-						if trackType == "video" {
-							if err := conn.videoTrack.WriteSample(media.Sample{Data: samples, Duration: duration}); err != nil {
-								log.Log(ctx, "error writing video sample", "error", err)
-								errCh <- err
-								return gst.FlowError
-							}
-						} else {
-							if err := conn.audioTrack.WriteSample(media.Sample{Data: samples, Duration: duration}); err != nil {
-								log.Log(ctx, "error writing video sample", "error", err)
-								errCh <- err
-								return gst.FlowError
+					if w.FreezeAfter == 0 || time.Since(startTime) < w.FreezeAfter {
+						for _, conn := range conns {
+							if trackType == "video" {
+								if err := conn.videoTrack.WriteSample(pionmedia.Sample{Data: samples, Duration: duration}); err != nil {
+									log.Log(ctx, "error writing video sample", "error", err)
+									errCh <- err
+									return gst.FlowError
+								}
+							} else {
+								if err := conn.audioTrack.WriteSample(pionmedia.Sample{Data: samples, Duration: duration}); err != nil {
+									log.Log(ctx, "error writing video sample", "error", err)
+									errCh <- err
+									return gst.FlowError
+								}
 							}
 						}
 					}
@@ -338,26 +344,10 @@ func (w *WHIPClient) WHIP(ctx context.Context) error {
 		}(i)
 	}
 
-	ok := pipeline.GetPipelineBus().AddWatch(func(msg *gst.Message) bool {
-		switch msg.Type() {
-		case gst.MessageEOS: // When end-of-stream is received flush the pipeling and stop the main loop
-			log.Log(ctx, "got gst.MessageEOS, exiting")
-			cancel()
-		case gst.MessageError: // Error messages are always fatal
-			err := msg.ParseError()
-			log.Error(ctx, "gstreamer error", "error", err.Error())
-			if debug := err.DebugString(); debug != "" {
-				log.Log(ctx, "gstreamer debug", "message", debug)
-			}
-			cancel()
-		default:
-			log.Debug(ctx, msg.String())
-		}
-		return true
-	})
-	if !ok {
-		return fmt.Errorf("failed to add watch to pipeline bus")
-	}
+	go func() {
+		media.HandleBusMessages(ctx, pipeline)
+		cancel()
+	}()
 
 	if err = pipeline.SetState(gst.StatePlaying); err != nil {
 		return err
