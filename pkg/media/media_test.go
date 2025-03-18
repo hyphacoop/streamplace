@@ -9,6 +9,8 @@ import (
 
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/atproto"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	ct "stream.place/streamplace/pkg/config/configtesting"
 	"stream.place/streamplace/pkg/crypto/signers/eip712/eip712test"
@@ -40,7 +42,12 @@ func getStaticTestMediaManager(t *testing.T) (*MediaManager, MediaSigner) {
 		TAURL:          "http://timestamp.digicert.com",
 		AllowedStreams: []string{},
 	})
-	mm, err := MakeMediaManager(context.Background(), cli, signer, &boring.BoringReplicator{}, mod)
+	atsync := &atproto.ATProtoSynchronizer{
+		CLI:   cli,
+		Model: mod,
+		Bus:   bus.NewBus(),
+	}
+	mm, err := MakeMediaManager(context.Background(), cli, signer, &boring.BoringReplicator{}, mod, bus.NewBus(), atsync)
 	require.NoError(t, err)
 	ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer)
 	require.NoError(t, err)

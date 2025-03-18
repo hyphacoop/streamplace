@@ -19,6 +19,7 @@ import (
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/crypto/signers/eip712"
 	"stream.place/streamplace/pkg/log"
@@ -133,9 +134,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	cli.DebugFlag(fs, &cli.Debug, "debug", "", "modified log verbosity for specific functions or files in form func=ToHLS:3,file=gstreamer.go:4")
 	fs.BoolVar(&cli.TestStream, "test-stream", false, "run a built-in test stream on boot")
 	fs.BoolVar(&cli.NoFirehose, "no-firehose", false, "disable the bluesky firehose")
+	fs.BoolVar(&cli.PrintChat, "print-chat", false, "print chat messages to stdout")
 	verbosity := fs.String("v", "3", "log verbosity level")
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
+	fs.StringVar(&cli.Color, "color", "", "'true' to enable colorized logging, 'false' to disable")
 
 	version := fs.Bool("version", false, "print version and exit")
 
@@ -157,7 +160,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 	vFlag.Value.Set(*verbosity)
-
+	log.SetColorLogger(cli.Color)
 	ctx := context.Background()
 	ctx = log.WithDebugValue(ctx, cli.Debug)
 
@@ -268,10 +271,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
-	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod)
-	if err != nil {
-		return err
-	}
 	var noter notifications.FirebaseNotifier
 	if cli.FirebaseServiceAccount != "" {
 		noter, err = notifications.MakeFirebaseNotifier(ctx, cli.FirebaseServiceAccount)
@@ -279,11 +278,24 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 	}
+	b := bus.NewBus()
+	atsync := &atproto.ATProtoSynchronizer{
+		CLI:   &cli,
+		Model: mod,
+		Noter: noter,
+		Bus:   b,
+	}
+	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod, b, atsync)
+	if err != nil {
+		return err
+	}
+
 	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
 	if err != nil {
 		return err
 	}
-	a, err := api.MakeStreamplaceAPI(&cli, mod, eip712signer, noter, mm, ms)
+
+	a, err := api.MakeStreamplaceAPI(&cli, mod, eip712signer, noter, mm, ms, b, atsync)
 	if err != nil {
 		return err
 	}
@@ -314,7 +326,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	if !cli.NoFirehose {
 		group.Go(func() error {
-			return atproto.StartFirehose(ctx, &cli, mod, noter)
+			return atsync.StartFirehose(ctx)
 		})
 	}
 
@@ -333,6 +345,8 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 				if err != nil {
 					log.Error(ctx, "could not add segment to database", "error", err)
 				}
+				spseg := not.Segment.ToStreamplaceSegment()
+				b.Publish(spseg.Creator, spseg)
 				go func() {
 					err := func() error {
 						lock := thumbnail.GetThumbnailLock(not.Segment.RepoDID)

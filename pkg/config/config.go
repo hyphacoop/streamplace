@@ -81,6 +81,8 @@ type CLI struct {
 	FrontendProxy          string
 	AppBundleID            string
 	NoFirehose             bool
+	PrintChat              bool
+	Color                  string
 
 	dataDirFlags []*string
 }

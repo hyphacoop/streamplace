@@ -38,7 +38,7 @@ app: schema install
 	yarn run build
 
 .PHONY: node
-node: schema
+node: schema .build/subprojects2.tar.gz
 	$(MAKE) meson-setup
 	meson compile -C $(BUILDDIR) streamplace
 
@@ -47,22 +47,42 @@ schema:
 	mkdir -p js/app/generated \
 	&& go run pkg/crypto/signers/eip712/export-schema/export-schema.go > js/app/generated/eip712-schema.json
 
+.PHONY: lexicons
+lexicons:
+	$(MAKE) go-lexicons \
+	&& $(MAKE) js-lexicons
+
 .PHONY: go-lexicons
 go-lexicons:
 	rm -rf ./pkg/streamplace \
 	&& mkdir -p ./pkg/streamplace \
+	&& rm -rf ./pkg/streamplace/cbor_gen.go \
 	&& $(MAKE) lexgen \
 	&& sed -i.bak 's/\tutil/\/\/\tutil/' $$(find ./pkg/streamplace -type f) \
-	&& sed -i.bak -E 's/^(.+)github(.+)//' $$(find ./pkg/streamplace -type f) \
+	&& go run golang.org/x/tools/cmd/goimports@latest -w $$(find ./pkg/streamplace -type f) \
 	&& go run ./pkg/gen/gen.go \
 	&& $(MAKE) lexgen \
-	&& rm -rf ./pkg/streamplace/*.bak
+	&& rm -rf ./pkg/streamplace/*.bak \
+	&& rm -rf api
+
+.PHONY: js-lexicons
+js-lexicons:
+	node_modules/.bin/lex gen-api ./js/app/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
+		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/app/lexicons/index.ts \
+		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/app/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/app/lexicons/types/place/stream -type f) \
+		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
+		&& rm -rf ./js/app/lexicons/types/place/stream/*.bak
 
 .PHONY: lexgen
 lexgen:
 	go run github.com/bluesky-social/indigo/cmd/lexgen --package streamplace \
-		--types-import place.stream:stream.place/streamplace/pkg/streamplace --outdir ./pkg/streamplace --prefix place.stream --build \
-		'[{"package": "streamplace","prefix": "place.stream","outdir": "./pkg/streamplace","import":"stream.place/streamplace"}]' lexicons/place/stream
+		--types-import place.stream:stream.place/streamplace/pkg/streamplace \
+		-outdir ./pkg/streamplace \
+		--prefix place.stream \
+		--build-file util/lexgen-build.json \
+		lexicons/place/stream \
+		../atproto/lexicons
 
 .PHONY: test
 test:
@@ -103,16 +123,16 @@ link-test-windows:
 all: version install check app test node-all-platforms android
 
 .PHONY: ci
-ci: version install check app node-all-platforms ci-upload-node
+ci: version install check app node-all-platforms ci-upload-node .build/subprojects2.tar.gz
 
 .PHONY: ci-macos
-ci-macos: version install check app node-all-platforms-macos ci-upload-node-macos ios ci-upload-ios
+ci-macos: version install check app node-all-platforms-macos ci-upload-node-macos ios ci-upload-ios .build/subprojects2.tar.gz
 
 .PHONY: ci-macos
-ci-android: version install check android ci-upload-android
+ci-android: version install check android ci-upload-android .build/subprojects2.tar.gz
 
 .PHONY: ci-test
-ci-test: app
+ci-test: app .build/subprojects2.tar.gz
 	meson setup $(BUILDDIR) $(OPTS)
 	meson test -C $(BUILDDIR) go-tests
 
@@ -212,7 +232,7 @@ meson-setup:
 	@meson configure $(BUILDDIR) $(OPTS)
 
 .PHONY: node-all-platforms
-node-all-platforms: app
+node-all-platforms: app .build/subprojects2.tar.gz
 	meson setup build-linux-amd64 $(OPTS) --buildtype debugoptimized
 	meson compile -C build-linux-amd64 archive
 	$(MAKE) link-test-linux
@@ -264,7 +284,7 @@ windows-amd64-startup-test:
 	bash -c 'set -euo pipefail && unbuffer wine64 ./build-windows-amd64/streamplace.exe self-test | cat'
 
 .PHONY: node-all-platforms-macos
-node-all-platforms-macos: app
+node-all-platforms-macos: app .build/subprojects2.tar.gz
 	meson setup --buildtype debugoptimized build-darwin-arm64 $(OPTS)
 	meson compile -C build-darwin-arm64
 	./util/mac-codesign.sh ./build-darwin-arm64/streamplace
@@ -431,3 +451,8 @@ precommit: dockerfile-hash-precommit
 dockerfile-hash-precommit:
 	@bash -c 'printf "variables:\n  DOCKERFILE_HASH: `git hash-object docker/build.Dockerfile`" > .ci/dockerfile-hash.yaml' \
 	&& git add .ci/dockerfile-hash.yaml
+
+.build/subprojects2.tar.gz:
+	mkdir -p .build \
+	&& curl -L https://storage.googleapis.com/aquareum-crap/subprojects2.tar.gz -o .build/subprojects2.tar.gz \
+	&& tar -xzvf .build/subprojects2.tar.gz

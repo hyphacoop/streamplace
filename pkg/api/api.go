@@ -17,12 +17,15 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/bluesky-social/indigo/api/bsky"
+	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	sloghttp "github.com/samber/slog-http"
 
 	"stream.place/streamplace/js/app"
 	"stream.place/streamplace/pkg/atproto"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/signers/eip712"
 	apierrors "stream.place/streamplace/pkg/errors"
@@ -32,6 +35,7 @@ import (
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/spmetrics"
+	"stream.place/streamplace/pkg/streamplace"
 )
 
 type StreamplaceAPI struct {
@@ -45,9 +49,11 @@ type StreamplaceAPI struct {
 	MediaSigner      media.MediaSigner
 	// not thread-safe yet
 	Aliases map[string]string
+	Bus     *bus.Bus
+	ATSync  *atproto.ATProtoSynchronizer
 }
 
-func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712Signer, noter notifications.FirebaseNotifier, mm *media.MediaManager, ms media.MediaSigner) (*StreamplaceAPI, error) {
+func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712Signer, noter notifications.FirebaseNotifier, mm *media.MediaManager, ms media.MediaSigner, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer) (*StreamplaceAPI, error) {
 	updater, err := PrepareUpdater(cli)
 	if err != nil {
 		return nil, err
@@ -60,6 +66,8 @@ func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712S
 		MediaManager:     mm,
 		MediaSigner:      ms,
 		Aliases:          map[string]string{},
+		Bus:              bus,
+		ATSync:           atsync,
 	}
 	a.Mimes, err = updater.GetMimes()
 	if err != nil {
@@ -115,7 +123,11 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	apiRouter.POST("/api/ingest/webrtc", a.HandleWebRTCIngest(ctx))
 	apiRouter.POST("/api/ingest/webrtc/:key", a.HandleWebRTCIngest(ctx))
 	apiRouter.POST("/api/player-event", a.HandlePlayerEvent(ctx))
+	apiRouter.GET("/api/chat/:repoDID", a.HandleChat(ctx))
+	apiRouter.GET("/api/websocket/:repoDID", a.HandleWebsocket(ctx))
+	apiRouter.GET("/api/livestream/:repoDID", a.HandleLivestream(ctx))
 	apiRouter.GET("/api/segment/recent", a.HandleRecentSegments(ctx))
+	apiRouter.GET("/api/segment/recent/:repoDID", a.HandleUserRecentSegments(ctx))
 	apiRouter.GET("/api/bluesky/resolve/:handle", a.HandleBlueskyResolve(ctx))
 	apiRouter.GET("/api/atproto-oauth/:platform", a.HandleATProtoOAuth(ctx))
 	apiRouter.GET("/api/live-users", a.HandleLiveUsers(ctx))
@@ -286,7 +298,7 @@ func (a *StreamplaceAPI) HandleNotification(ctx context.Context) http.HandlerFun
 		w.WriteHeader(200)
 		if n.RepoDID != "" {
 			go func() {
-				_, err := atproto.SyncBlueskyRepo(ctx, n.RepoDID, a.Model)
+				_, err := a.ATSync.SyncBlueskyRepo(ctx, n.RepoDID, a.Model)
 				if err != nil {
 					log.Error(ctx, "error syncing bluesky repo after notification creation", "error", err)
 				}
@@ -339,6 +351,34 @@ func (a *StreamplaceAPI) HandleRecentSegments(ctx context.Context) httprouter.Ha
 	}
 }
 
+func (a *StreamplaceAPI) HandleUserRecentSegments(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		user := params.ByName("repoDID")
+		if user == "" {
+			apierrors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+		user, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			apierrors.WriteHTTPNotFound(w, "user not found", err)
+			return
+		}
+		seg, err := a.Model.LatestSegmentForUser(user)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not get segments", err)
+			return
+		}
+		streamplaceSeg := seg.ToStreamplaceSegment()
+		bs, err := json.Marshal(streamplaceSeg)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal segments", err)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(bs)
+	}
+}
+
 type LiveUsersResponse struct {
 	model.Segment
 	Viewers int `json:"viewers"`
@@ -368,10 +408,6 @@ func (a *StreamplaceAPI) HandleLiveUsers(ctx context.Context) httprouter.Handle 
 	}
 }
 
-type ViewCountResponse struct {
-	Count int `json:"count"`
-}
-
 func (a *StreamplaceAPI) HandleViewCount(ctx context.Context) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		user := params.ByName("user")
@@ -385,7 +421,7 @@ func (a *StreamplaceAPI) HandleViewCount(ctx context.Context) httprouter.Handle 
 			return
 		}
 		count := spmetrics.GetViewCount(user)
-		bs, err := json.Marshal(ViewCountResponse{Count: count})
+		bs, err := json.Marshal(streamplace.Livestream_ViewerCount{Count: int64(count), LexiconTypeID: "place.stream.livestream#viewerCount"})
 		if err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "could not marshal view count", err)
 			return
@@ -397,7 +433,7 @@ func (a *StreamplaceAPI) HandleViewCount(ctx context.Context) httprouter.Handle 
 func (a *StreamplaceAPI) HandleBlueskyResolve(ctx context.Context) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		log.Log(ctx, "got bluesky notification", "params", params)
-		key, err := atproto.SyncBlueskyRepo(ctx, params.ByName("handle"), a.Model)
+		key, err := a.ATSync.SyncBlueskyRepo(ctx, params.ByName("handle"), a.Model)
 		if err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "could not resolve streamplace key", err)
 			return
@@ -436,6 +472,202 @@ func (a *StreamplaceAPI) HandleATProtoOAuth(ctx context.Context) httprouter.Hand
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(bs)
+	}
+}
+
+type ChatResponse struct {
+	Post *bsky.FeedPost `json:"post"`
+	Repo *model.Repo    `json:"repo"`
+	CID  string         `json:"cid"`
+}
+
+func (a *StreamplaceAPI) HandleChat(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		user := params.ByName("repoDID")
+		if user == "" {
+			apierrors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+		repoDID, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			apierrors.WriteHTTPNotFound(w, "user not found", err)
+			return
+		}
+		replies, err := a.Model.GetReplies(repoDID)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not get replies", err)
+			return
+		}
+		bs, err := json.Marshal(replies)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal replies", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(bs)
+	}
+}
+
+func (a *StreamplaceAPI) HandleLivestream(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		user := params.ByName("repoDID")
+		if user == "" {
+			apierrors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+		repoDID, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			apierrors.WriteHTTPNotFound(w, "user not found", err)
+			return
+		}
+		livestream, err := a.Model.GetLatestLivestreamForRepo(repoDID)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not get livestream", err)
+			return
+		}
+
+		doc, err := livestream.ToLivestreamView()
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal livestream", err)
+			return
+		}
+
+		if livestream == nil {
+			apierrors.WriteHTTPNotFound(w, "no livestream found", nil)
+			return
+		}
+
+		bs, err := json.Marshal(doc)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not marshal livestream", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(bs)
+	}
+}
+
+// todo: does this mean a whole message has to fit within the buffer?
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		user := params.ByName("repoDID")
+		if user == "" {
+			apierrors.WriteHTTPBadRequest(w, "user required", nil)
+			return
+		}
+		repoDID, err := a.NormalizeUser(ctx, user)
+		if err != nil {
+			apierrors.WriteHTTPNotFound(w, "user not found", err)
+			return
+		}
+		conn, err := upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not upgrade to websocket", err)
+			return
+		}
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		defer conn.Close()
+		initialBurst := make(chan any, 200)
+		go func() {
+
+			ch := a.Bus.Subscribe(repoDID)
+			defer a.Bus.Unsubscribe(repoDID, ch)
+			// Create a ticker that fires every 3 seconds
+			ticker := time.NewTicker(3 * time.Second)
+			defer ticker.Stop()
+
+			send := func(msg any) {
+				bs, err := json.Marshal(msg)
+				if err != nil {
+					log.Error(ctx, "could not marshal message", "error", err)
+					return
+				}
+				log.Debug(ctx, "sending message", "message", string(bs))
+				err = conn.WriteMessage(websocket.TextMessage, bs)
+				if err != nil {
+					log.Error(ctx, "could not write message", "error", err)
+					return
+				}
+			}
+
+			for {
+				select {
+				case msg := <-ch:
+					send(msg)
+				case msg := <-initialBurst:
+					send(msg)
+				case <-ticker.C:
+					count := spmetrics.GetViewCount(repoDID)
+					bs, err := json.Marshal(streamplace.Livestream_ViewerCount{Count: int64(count), LexiconTypeID: "place.stream.livestream#viewerCount"})
+					if err != nil {
+						log.Error(ctx, "could not marshal view count", "error", err)
+						continue
+					}
+					err = conn.WriteMessage(websocket.TextMessage, bs)
+					if err != nil {
+						log.Error(ctx, "could not write ping message", "error", err)
+						return
+					}
+				case <-ctx.Done():
+					log.Debug(ctx, "context done, stopping websocket sender")
+					return
+				}
+			}
+		}()
+
+		go func() {
+			seg, err := a.Model.LatestSegmentForUser(repoDID)
+			if err != nil {
+				log.Error(ctx, "could not get replies", "error", err)
+				return
+			}
+			initialBurst <- seg.ToStreamplaceSegment()
+		}()
+
+		go func() {
+			ls, err := a.Model.GetLatestLivestreamForRepo(repoDID)
+			if err != nil {
+				log.Error(ctx, "could not get latest livestream", "error", err)
+				return
+			}
+			lsv, err := ls.ToLivestreamView()
+			if err != nil {
+				log.Error(ctx, "could not marshal livestream", "error", err)
+				return
+			}
+			initialBurst <- lsv
+		}()
+
+		go func() {
+			count := spmetrics.GetViewCount(repoDID)
+			initialBurst <- streamplace.Livestream_ViewerCount{Count: int64(count), LexiconTypeID: "place.stream.livestream#viewerCount"}
+		}()
+
+		go func() {
+			replies, err := a.Model.GetReplies(repoDID)
+			if err != nil {
+				log.Error(ctx, "could not get replies", "error", err)
+				return
+			}
+			for _, reply := range replies {
+				initialBurst <- reply
+			}
+		}()
+
+		for {
+			messageType, message, err := conn.ReadMessage()
+			if err != nil {
+				log.Error(ctx, "error reading message", "error", err)
+				break
+			}
+			log.Log(ctx, "received message", "messageType", messageType, "message", string(message))
+		}
 	}
 }
 

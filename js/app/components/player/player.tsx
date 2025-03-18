@@ -12,31 +12,19 @@ import {
   PlayerStatusTracker,
   PROTOCOL_WEBRTC,
 } from "./props";
-import { newPlayer, PlayerContext } from "features/player/playerSlice";
-import { useAppDispatch } from "store/hooks";
+import PlayerProvider from "./provider";
+import { selectUserMuted } from "features/streamplace/streamplaceSlice";
+import { useAppSelector } from "store/hooks";
+import { usePlayerSegment } from "features/player/playerSlice";
 
 const HIDE_CONTROLS_AFTER = 2000;
+const OFFLINE_THRESHOLD = 10000;
 
-// basically PlayerProvider that sets up our magic context,
-// PlayerInner starts doing player stuff
 export function Player(props: Partial<PlayerProps>) {
-  const dispatch = useAppDispatch();
-  const [playerId, setPlayerId] = useState<string | null>(null);
-  useEffect(() => {
-    const newPlayerAction = newPlayer();
-    if (props.playerId) {
-      newPlayerAction.payload.playerId = props.playerId;
-    }
-    setPlayerId(newPlayerAction.payload.playerId);
-    dispatch(newPlayerAction);
-  }, []);
-  if (!playerId) {
-    return <></>;
-  }
   return (
-    <PlayerContext.Provider value={{ playerId }}>
+    <PlayerProvider {...props}>
       <PlayerInner {...props} />
-    </PlayerContext.Provider>
+    </PlayerProvider>
   );
 }
 
@@ -48,8 +36,10 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       </View>
     );
   }
+  const userMuted = useAppSelector(selectUserMuted);
   const playerId = useMemo(() => props.playerId ?? uuidv7(), [props.playerId]);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(userMuted ?? false);
+
   const [showControls, setShowControls] = useState(true);
   const [touchTime, setTouchTime] = useState(0);
   useEffect(() => {
@@ -110,6 +100,38 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   const [playTime, setPlayTime] = useState(0);
   const [protocol, setProtocol] = useState(defProto);
   const [fullscreen, setFullscreen] = useState(false);
+
+  const [offline, setOffline] = useState(true);
+  const playing = status === PlayerStatus.PLAYING;
+
+  const segment = useAppSelector(usePlayerSegment());
+  const [lastCheck, setLastCheck] = useState(0);
+
+  useEffect(() => {
+    if (playing) {
+      setOffline(false);
+      return;
+    }
+    if (!segment) {
+      setOffline(false);
+      return;
+    }
+    const startTime = Date.parse(segment.startTime);
+    if (!startTime) {
+      console.error("startTime is not a number", segment.startTime);
+      return;
+    }
+    const timeSinceStart = Date.now() - startTime;
+    if (timeSinceStart > OFFLINE_THRESHOLD) {
+      setOffline(true);
+      return;
+    }
+    const handle = setTimeout(() => {
+      setLastCheck(Date.now());
+    }, 1000);
+    return () => clearTimeout(handle);
+  }, [segment, playing, lastCheck]);
+
   const childProps: PlayerProps = {
     playerId: playerId,
     ingest: props.ingest,
@@ -120,6 +142,7 @@ export function PlayerInner(props: Partial<PlayerProps>) {
     setMuted: setMuted,
     setFullscreen: setFullscreen,
     fullscreen: fullscreen,
+    offline: offline,
     protocol: protocol,
     setProtocol: setProtocol,
     showControls: props.showControls ?? showControls,

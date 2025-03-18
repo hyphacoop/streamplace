@@ -46,6 +46,7 @@ export interface StreamplaceState {
     firstRequest: boolean;
   };
   telemetry: boolean | null;
+  userMuted: boolean | null;
 }
 
 const initialState: StreamplaceState = {
@@ -59,7 +60,12 @@ const initialState: StreamplaceState = {
     firstRequest: true,
   },
   telemetry: null,
+  userMuted: null,
 };
+
+const USER_MUTED_KEY = "streamplaceUserMuted";
+const TELEMETRY_KEY = "streamplaceTelemetry";
+const URL_KEY = "streamplaceUrl";
 
 export const streamplaceSlice = createAppSlice({
   name: "streamplace",
@@ -67,9 +73,10 @@ export const streamplaceSlice = createAppSlice({
   reducers: (create) => ({
     initialize: create.asyncThunk(
       async (_, { getState }) => {
-        let [url, telemetryStr] = await Promise.all([
-          Storage.getItem("streamplaceUrl"),
-          Storage.getItem("streamplaceTelemetry"),
+        let [url, telemetryStr, userMutedStr] = await Promise.all([
+          Storage.getItem(URL_KEY),
+          Storage.getItem(TELEMETRY_KEY),
+          Storage.getItem(USER_MUTED_KEY),
         ]);
         if (!url) {
           url = DEFAULT_URL;
@@ -80,18 +87,26 @@ export const streamplaceSlice = createAppSlice({
         } else {
           telemetry = null;
         }
-        return { url, telemetry };
+        let userMuted: boolean | null = null;
+        console.log("userMutedStr", userMutedStr);
+        if (typeof userMutedStr === "string") {
+          userMuted = userMutedStr === "true";
+        } else {
+          userMuted = null;
+        }
+        return { url, telemetry, userMuted };
       },
       {
         pending: (state) => {
           // state.status = "loading";
         },
         fulfilled: (state, action) => {
-          const { url, telemetry } = action.payload;
+          const { url, telemetry, userMuted } = action.payload;
           return {
             ...state,
             url,
             telemetry,
+            userMuted,
             initialized: true,
           };
         },
@@ -102,7 +117,7 @@ export const streamplaceSlice = createAppSlice({
     ),
 
     setURL: create.reducer((state, action: { payload: string }) => {
-      Storage.setItem("streamplaceUrl", action.payload).catch((err) => {
+      Storage.setItem(URL_KEY, action.payload).catch((err) => {
         console.error("setURL error", err);
       });
       return {
@@ -112,15 +127,26 @@ export const streamplaceSlice = createAppSlice({
     }),
 
     telemetryOpt: create.reducer((state, action: { payload: boolean }) => {
-      Storage.setItem(
-        "streamplaceTelemetry",
-        JSON.stringify(action.payload),
-      ).catch((err) => {
-        console.error("telemetryOpt error", err);
-      });
+      Storage.setItem(TELEMETRY_KEY, JSON.stringify(action.payload)).catch(
+        (err) => {
+          console.error("telemetryOpt error", err);
+        },
+      );
       return {
         ...state,
         telemetry: action.payload,
+      };
+    }),
+
+    userMute: create.reducer((state, action: { payload: boolean }) => {
+      Storage.setItem(USER_MUTED_KEY, JSON.stringify(action.payload)).catch(
+        (err) => {
+          console.error("userMute error", err);
+        },
+      );
+      return {
+        ...state,
+        userMuted: action.payload,
       };
     }),
 
@@ -204,13 +230,26 @@ export const streamplaceSlice = createAppSlice({
 
   selectors: {
     selectStreamplace: (streamplace) => streamplace,
+    selectUrl: (streamplace) => streamplace.url,
     selectRecentSegments: (streamplace) => streamplace.recentSegments,
     selectTelemetry: (streamplace) => streamplace.telemetry,
+    selectUserMuted: (streamplace) => streamplace.userMuted,
   },
 });
 
 // Action creators are generated for each case reducer function.
-export const { getIdentity, setURL, initialize, pollSegments, telemetryOpt } =
-  streamplaceSlice.actions;
-export const { selectStreamplace, selectRecentSegments, selectTelemetry } =
-  streamplaceSlice.selectors;
+export const {
+  getIdentity,
+  setURL,
+  initialize,
+  pollSegments,
+  telemetryOpt,
+  userMute,
+} = streamplaceSlice.actions;
+export const {
+  selectStreamplace,
+  selectRecentSegments,
+  selectTelemetry,
+  selectUserMuted,
+  selectUrl,
+} = streamplaceSlice.selectors;

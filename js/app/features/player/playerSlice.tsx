@@ -3,20 +3,58 @@ import { createAppSlice } from "../../hooks/createSlice";
 import { uuidv7 } from "hooks/uuid";
 import { createContext, useContext } from "react";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
-
+import { AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
+import {
+  isLivestreamView,
+  isViewerCount,
+} from "../../lexicons/types/place/stream/livestream";
+import { BlockView, isBlockView } from "../../lexicons/types/place/stream/defs";
+import * as Segment from "../../lexicons/types/place/stream/segment";
+import {
+  LivestreamView,
+  Record as LivestreamRecord,
+  ViewerCount,
+} from "../../lexicons/types/place/stream/livestream";
 export interface PlayerContextType {
   playerId: string | null;
+}
+
+export interface LivestreamViewHydrated extends LivestreamView {
+  record: LivestreamRecord;
+}
+export interface PostViewHydrated extends AppBskyFeedDefs.PostView {
+  record: AppBskyFeedPost.Record;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({
   playerId: null,
 });
 
+interface SegmentMediadataVideo {
+  width: number;
+  height: number;
+  framerate: string;
+}
+
+interface SegmentMediadataAudio {
+  rate: number;
+  channels: number;
+}
+
+interface SegmentMediaData {
+  video: SegmentMediadataVideo[];
+  audio: SegmentMediadataAudio[];
+}
+
 export interface PlayerState {
   ingestStarted: number | null;
   ingestStarting: boolean;
   ingestConnectionState: RTCPeerConnectionState | null;
   viewers: number | null;
+  chat: { [key: string]: PostViewHydrated };
+  chatList: PostViewHydrated[];
+  livestream: LivestreamViewHydrated | null;
+  segment: Segment.Record | null;
 }
 
 export interface PlayersState {
@@ -39,6 +77,51 @@ const usePlayerId = () => {
   return playerId;
 };
 
+const reduceChat = (
+  state: PlayerState,
+  messages: PostViewHydrated[],
+  blocks: BlockView[],
+): PlayerState => {
+  state = { ...state } as PlayerState;
+  const newChat: { [key: string]: PostViewHydrated } = { ...state.chat };
+  for (const message of messages) {
+    const date = new Date(message.record.createdAt);
+    const key = `${date.getTime()}-${message.cid}`;
+    newChat[key] = message;
+  }
+
+  for (const block of blocks) {
+    for (const [k, v] of Object.entries(newChat)) {
+      if (v.author.did === block.record.subject) {
+        console.log(
+          "deleting message",
+          v.cid,
+          v.author.did,
+          block.record.subject,
+        );
+        delete newChat[k];
+      } else {
+        console.log(
+          "keeping message",
+          v.cid,
+          v.author.did,
+          block.record.subject,
+        );
+      }
+    }
+  }
+
+  const newChatList = Object.keys(newChat)
+    .sort((a, b) => (a > b ? 1 : -1))
+    .map((key) => newChat[key]);
+
+  return {
+    ...state,
+    chat: newChat,
+    chatList: newChatList,
+  };
+};
+
 export const playerSlice = createAppSlice({
   name: "player",
   initialState,
@@ -50,6 +133,10 @@ export const playerSlice = createAppSlice({
         ingestStarting: false,
         ingestConnectionState: null,
         viewers: null,
+        chat: {},
+        chatList: [],
+        livestream: null,
+        segment: null,
       };
     });
   },
@@ -95,6 +182,64 @@ export const playerSlice = createAppSlice({
         },
       ),
 
+      handleWebSocketMessages: create.reducer(
+        (
+          state,
+          action: {
+            payload: { playerId: string; messages: any[] };
+            type: string;
+          },
+        ) => {
+          for (const message of action.payload.messages) {
+            if (isLivestreamView(message)) {
+              state = {
+                ...state,
+                [action.payload.playerId]: {
+                  ...state[action.payload.playerId],
+                  livestream: message as LivestreamViewHydrated,
+                },
+              };
+            } else if (isViewerCount(message)) {
+              state = {
+                ...state,
+                [action.payload.playerId]: {
+                  ...state[action.payload.playerId],
+                  viewers: message.count,
+                },
+              };
+            } else if (AppBskyFeedDefs.isPostView(message)) {
+              state = {
+                ...state,
+                [action.payload.playerId]: reduceChat(
+                  state[action.payload.playerId] as PlayerState,
+                  [message as PostViewHydrated],
+                  [],
+                ),
+              };
+            } else if (Segment.isRecord(message)) {
+              state = {
+                ...state,
+                [action.payload.playerId]: {
+                  ...state[action.payload.playerId],
+                  segment: message as Segment.Record,
+                },
+              };
+            } else if (isBlockView(message)) {
+              const block = message as BlockView;
+              state = {
+                ...state,
+                [action.payload.playerId]: reduceChat(
+                  state[action.payload.playerId] as PlayerState,
+                  [],
+                  [block],
+                ),
+              };
+            }
+          }
+          return state;
+        },
+      ),
+
       pollViewers: create.asyncThunk(
         async (
           { playerId, user }: { playerId: string; user: string },
@@ -104,7 +249,7 @@ export const playerSlice = createAppSlice({
             streamplace: StreamplaceState;
           };
           const res = await fetch(`${streamplace.url}/api/view-count/${user}`);
-          const data = await res.json();
+          const data = (await res.json()) as ViewerCount;
           return { playerId, count: data.count };
         },
         {
@@ -126,12 +271,120 @@ export const playerSlice = createAppSlice({
           },
         },
       ),
+
+      pollChat: create.asyncThunk(
+        async (
+          { playerId, user }: { playerId: string; user: string },
+          { getState },
+        ) => {
+          const { streamplace } = getState() as {
+            streamplace: StreamplaceState;
+          };
+          const res = await fetch(`${streamplace.url}/api/chat/${user}`);
+          const data = (await res.json()) as PostViewHydrated[];
+          return { playerId, chat: data };
+        },
+        {
+          pending: (state) => {
+            // state.status = "loading";
+          },
+          fulfilled: (state, result) => {
+            return {
+              ...state,
+              [result.payload.playerId]: reduceChat(
+                state[result.payload.playerId] as PlayerState,
+                result.payload.chat,
+                [],
+              ),
+            };
+          },
+          rejected: (state, error) => {
+            console.error("pollViewers rejected", error);
+            return state;
+          },
+        },
+      ),
+
+      pollLivestream: create.asyncThunk(
+        async (
+          { playerId, user }: { playerId: string; user: string },
+          { getState },
+        ) => {
+          const { streamplace } = getState() as {
+            streamplace: StreamplaceState;
+          };
+          const res = await fetch(`${streamplace.url}/api/livestream/${user}`);
+          const data = (await res.json()) as LivestreamViewHydrated;
+          return { playerId, livestream: data };
+        },
+        {
+          pending: (state) => {
+            // state.status = "loading";
+          },
+          fulfilled: (state, result) => {
+            return {
+              ...state,
+              [result.payload.playerId]: {
+                ...state[result.payload.playerId],
+                livestream: result.payload.livestream,
+              },
+            };
+          },
+          rejected: (state, error) => {
+            console.error("pollViewers rejected", error);
+            return state;
+          },
+        },
+      ),
+
+      pollSegment: create.asyncThunk(
+        async (
+          { playerId, user }: { playerId: string; user: string },
+          { getState },
+        ) => {
+          const { streamplace } = getState() as {
+            streamplace: StreamplaceState;
+          };
+          const res = await fetch(
+            `${streamplace.url}/api/segment/recent/${user}`,
+          );
+          const data = (await res.json()) as Segment.Record;
+          return { playerId, segment: data };
+        },
+        {
+          pending: (state) => {
+            // state.status = "loading";
+          },
+          fulfilled: (state, result) => {
+            return {
+              ...state,
+              [result.payload.playerId]: {
+                ...state[result.payload.playerId],
+                segment: result.payload.segment,
+              },
+            };
+          },
+          rejected: (state, error) => {
+            console.error("pollViewers rejected", error);
+            return state;
+          },
+        },
+      ),
     };
   },
 
   selectors: {
     selectPlayer: (state, playerId: string) => {
       return state[playerId];
+    },
+    selectChat: (state, playerId: string) => {
+      return state[playerId].chat;
+    },
+    selectLivestream: (state, playerId: string) => {
+      return state[playerId].livestream;
+    },
+    selectSegment: (state, playerId: string) => {
+      return state[playerId].segment;
     },
   },
 });
@@ -150,12 +403,41 @@ export const usePlayerActions = () => {
     },
     pollViewers: (user: string) =>
       playerSlice.actions.pollViewers({ playerId, user }),
+    pollChat: (user: string) =>
+      playerSlice.actions.pollChat({ playerId, user }),
+    pollLivestream: (user: string) =>
+      playerSlice.actions.pollLivestream({ playerId, user }),
+    pollSegment: (user: string) =>
+      playerSlice.actions.pollSegment({ playerId, user }),
+    handleWebSocketMessages: (messages: any[]) =>
+      playerSlice.actions.handleWebSocketMessages({ playerId, messages }),
   };
 };
 
 // Action creators are generated for each case reducer function.
-export const { selectPlayer } = playerSlice.selectors;
-export const usePlayer = () => {
+export const { selectPlayer, selectChat, selectLivestream, selectSegment } =
+  playerSlice.selectors;
+export const usePlayer = (): ((state: {
+  player: PlayersState;
+}) => PlayerState) => {
   const playerId = usePlayerId();
   return (state) => state.player[playerId];
+};
+export const useChat = (): ((state: {
+  player: PlayersState;
+}) => PostViewHydrated[] | null) => {
+  const playerId = usePlayerId();
+  return (state) => state.player[playerId].chatList;
+};
+export const usePlayerLivestream = (): ((state: {
+  player: PlayersState;
+}) => LivestreamViewHydrated | null) => {
+  const playerId = usePlayerId();
+  return (state) => state.player[playerId].livestream;
+};
+export const usePlayerSegment = (): ((state: {
+  player: PlayersState;
+}) => Segment.Record | null) => {
+  const playerId = usePlayerId();
+  return (state) => state.player[playerId].segment;
 };

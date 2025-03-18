@@ -1,4 +1,4 @@
-import { Agent } from "@atproto/api";
+import { Agent, AppBskyFeedPost } from "@atproto/api";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import Storage from "storage";
@@ -10,6 +10,7 @@ import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { isWeb } from "tamagui";
 import { PlaceStreamKey, PlaceStreamLivestream } from "lexicons";
 import { BlueskyState } from "./blueskyTypes";
+import { LivestreamViewHydrated } from "features/player/playerSlice";
 
 const initialState: BlueskyState = {
   status: "start",
@@ -268,7 +269,13 @@ export const blueskySlice = createAppSlice({
     ),
 
     golivePost: create.asyncThunk(
-      async ({ text }: { text: string }, thunkAPI) => {
+      async (
+        { text, now }: { text: string; now: Date },
+        thunkAPI,
+      ): Promise<{
+        uri: string;
+        cid: string;
+      }> => {
         const { bluesky, streamplace } = thunkAPI.getState() as {
           bluesky: BlueskyState;
           streamplace: StreamplaceState;
@@ -309,12 +316,14 @@ export const blueskySlice = createAppSlice({
             ],
           },
         ];
-        const record = {
+        const record: AppBskyFeedPost.Record = {
           text: content,
           "place.stream.livestream": {
             url: linkUrl,
+            title: text,
           },
           facets,
+          createdAt: now.toISOString(),
         };
         return await bluesky.pdsAgent.post(record);
       },
@@ -327,6 +336,62 @@ export const blueskySlice = createAppSlice({
         },
         rejected: (state, action) => {
           console.error("golivePost rejected", action.error);
+          // state.status = "failed";
+        },
+      },
+    ),
+
+    chatPost: create.asyncThunk(
+      async (
+        {
+          text,
+          livestream,
+        }: { text: string; livestream: LivestreamViewHydrated },
+        thunkAPI,
+      ) => {
+        const { bluesky, streamplace } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+          streamplace: StreamplaceState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const profile = bluesky.profiles[did];
+        if (!profile) {
+          throw new Error("No profile");
+        }
+        if (!livestream.record.post) {
+          throw new Error("No post");
+        }
+        const record: AppBskyFeedPost.Record = {
+          text: text,
+          createdAt: new Date().toISOString(),
+          reply: {
+            root: {
+              cid: livestream.record.post.cid,
+              uri: livestream.record.post.uri,
+            },
+            parent: {
+              cid: livestream.record.post.cid,
+              uri: livestream.record.post.uri,
+            },
+          },
+        };
+        return await bluesky.pdsAgent.post(record);
+      },
+      {
+        pending: (state) => {
+          console.log("chatPost pending");
+        },
+        fulfilled: (state, action) => {
+          console.log("chatPost fulfilled", action.payload);
+        },
+        rejected: (state, action) => {
+          console.error("chatPost rejected", action.error);
           // state.status = "failed";
         },
       },
@@ -446,6 +511,7 @@ export const blueskySlice = createAppSlice({
 
     createLivestreamRecord: create.asyncThunk(
       async ({ title }: { title }, thunkAPI) => {
+        const now = new Date();
         const { bluesky, streamplace } = thunkAPI.getState() as {
           bluesky: BlueskyState;
           streamplace: StreamplaceState;
@@ -464,10 +530,17 @@ export const blueskySlice = createAppSlice({
         if (!did) {
           throw new Error("No DID");
         }
+        const newPost = (await thunkAPI.dispatch(
+          golivePost({ text: title, now }),
+        )) as { payload: { uri: string; cid: string } };
         const record: PlaceStreamLivestream.Record = {
           title: title,
           url: streamplace.url,
           createdAt: new Date().toISOString(),
+          post: {
+            uri: newPost.payload.uri,
+            cid: newPost.payload.cid,
+          },
         };
         await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,
@@ -557,6 +630,7 @@ export const {
   createStreamKeyRecord,
   clearStreamKeyRecord,
   createLivestreamRecord,
+  chatPost,
 } = blueskySlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.

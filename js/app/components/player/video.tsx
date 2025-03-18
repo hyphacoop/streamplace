@@ -44,7 +44,6 @@ export default function WebVideo(
   if (props.ingest) {
     return <WebcamIngestPlayer url={url} {...props} />;
   }
-  console.log("protocol", protocol);
   if (protocol === PROTOCOL_PROGRESSIVE_MP4) {
     return <ProgressiveMP4Player url={url} {...props} />;
   } else if (protocol === PROTOCOL_PROGRESSIVE_WEBM) {
@@ -79,7 +78,6 @@ const VideoElement = forwardRef(
       props.playerEvent(now.toISOString(), evType, {});
     };
     const [firstAttempt, setFirstAttempt] = useState(true);
-    const [mutedAttempt, setMutedAttempt] = useState(false);
 
     const localVideoRef = useRef<HTMLVideoElement | null>(null);
     const canPlayThrough = (e) => {
@@ -116,8 +114,6 @@ const VideoElement = forwardRef(
 
       // Additional initialization can be done here when the video element is first mounted
       if (videoElement) {
-        console.log("Video element mounted");
-        // You can add additional setup logic here if needed
         localVideoRef.current = videoElement;
       }
     };
@@ -243,12 +239,10 @@ export function WebRTCPlayer(
   const [mediaStream, stuck] = useWebRTC(props.url);
 
   useEffect(() => {
-    if (stuck) {
+    if (stuck && props.status === PlayerStatus.PLAYING) {
       props.setStatus(PlayerStatus.STALLED);
-    } else {
-      props.setStatus(PlayerStatus.PLAYING);
     }
-  }, [stuck]);
+  }, [stuck, props.status]);
 
   useEffect(() => {
     if (!mediaStream) {

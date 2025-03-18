@@ -1,19 +1,84 @@
 package model
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/streamplace"
 )
 
+type SegmentMediadataVideo struct {
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	Framerate string `json:"framerate"`
+}
+
+type SegmentMediadataAudio struct {
+	Rate     int `json:"rate"`
+	Channels int `json:"channels"`
+}
+
+type SegmentMediaData struct {
+	Video []*SegmentMediadataVideo `json:"video"`
+	Audio []*SegmentMediadataAudio `json:"audio"`
+}
+
+// Scan scan value into Jsonb, implements sql.Scanner interface
+func (j *SegmentMediaData) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+	}
+
+	result := SegmentMediaData{}
+	err := json.Unmarshal(bytes, &result)
+	*j = SegmentMediaData(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (j SegmentMediaData) Value() (driver.Value, error) {
+	return json.Marshal(j)
+}
+
 type Segment struct {
-	ID            string      `json:"id"                   gorm:"primaryKey"`
-	SigningKeyDID string      `json:"signingKeyDID"        gorm:"column:signing_key_did"`
-	SigningKey    *SigningKey `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
-	StartTime     time.Time   `json:"startTime"            gorm:"index:latest_segments"`
-	RepoDID       string      `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
-	Repo          *Repo       `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
-	Title         string      `json:"title"`
+	ID            string            `json:"id"                   gorm:"primaryKey"`
+	SigningKeyDID string            `json:"signingKeyDID"        gorm:"column:signing_key_did"`
+	SigningKey    *SigningKey       `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
+	StartTime     time.Time         `json:"startTime"            gorm:"index:latest_segments"`
+	RepoDID       string            `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
+	Repo          *Repo             `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
+	Title         string            `json:"title"`
+	MediaData     *SegmentMediaData `json:"mediaData,omitempty"`
+}
+
+func (s *Segment) ToStreamplaceSegment() *streamplace.Segment {
+	aqt := aqtime.FromTime(s.StartTime)
+	return &streamplace.Segment{
+		LexiconTypeID: "place.stream.segment",
+		Creator:       s.RepoDID,
+		Id:            s.ID,
+		SigningKey:    s.SigningKeyDID,
+		StartTime:     string(aqt),
+		Video: []*streamplace.Segment_Video{
+			{
+				Codec:  "h264",
+				Width:  int64(s.MediaData.Video[0].Width),
+				Height: int64(s.MediaData.Video[0].Height),
+			},
+		},
+		Audio: []*streamplace.Segment_Audio{
+			{
+				Codec:    "opus",
+				Rate:     int64(s.MediaData.Audio[0].Rate),
+				Channels: int64(s.MediaData.Audio[0].Channels),
+			},
+		},
+	}
 }
 
 func (m *DBModel) CreateSegment(seg *Segment) error {
@@ -28,9 +93,15 @@ func (m *DBModel) CreateSegment(seg *Segment) error {
 func (m *DBModel) MostRecentSegments() ([]Segment, error) {
 	var segments []Segment
 
-	err := m.DB.Table("segments AS s1").
-		Select("s1.*").
-		Where("start_time = (SELECT MAX(start_time) FROM segments AS s2 WHERE s2.repo_did = s1.repo_did)").
+	err := m.DB.Table("segments").
+		Select("*").
+		Where("id IN (?)",
+			m.DB.Table("segments").
+				Select("id").
+				Where("(repo_did, start_time) IN (?)",
+					m.DB.Table("segments").
+						Select("repo_did, MAX(start_time)").
+						Group("repo_did"))).
 		Order("start_time DESC").
 		Scan(&segments).Error
 

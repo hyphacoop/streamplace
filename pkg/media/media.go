@@ -17,11 +17,13 @@ import (
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
+
 	"stream.place/streamplace/pkg/replication"
 
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
@@ -46,6 +48,8 @@ type MediaManager struct {
 	newSegmentSubs      []chan *NewSegmentNotification
 	newSegmentSubsMutex sync.RWMutex
 	model               model.Model
+	bus                 *bus.Bus
+	atsync              *atproto.ATProtoSynchronizer
 }
 
 type NewSegmentNotification struct {
@@ -59,7 +63,7 @@ func RunSelfTest(ctx context.Context) error {
 	return SelfTest(ctx)
 }
 
-func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer, rep replication.Replicator, mod model.Model) (*MediaManager, error) {
+func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer, rep replication.Replicator, mod model.Model, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer) (*MediaManager, error) {
 	gst.Init(nil)
 	err := SelfTest(ctx)
 	if err != nil {
@@ -72,6 +76,8 @@ func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer
 		hlsRunning: map[string]*M3U8{},
 		httpPipes:  map[string]io.Writer{},
 		model:      mod,
+		bus:        bus,
+		atsync:     atsync,
 	}, nil
 }
 
@@ -357,6 +363,10 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
+	mediaData, err := mm.ParseSegmentMediaData(ctx, buf)
+	if err != nil {
+		return err
+	}
 	// special case for test signers that are only signed with a key
 	var repoDID string
 	var signingKeyDID string
@@ -364,7 +374,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		signingKeyDID = meta.Creator
 		repoDID = meta.Creator
 	} else {
-		repo, err := atproto.SyncBlueskyRepoCached(ctx, meta.Creator, mm.model)
+		repo, err := mm.atsync.SyncBlueskyRepoCached(ctx, meta.Creator, mm.model)
 		if err != nil {
 			return err
 		}
@@ -398,6 +408,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		RepoDID:       repoDID,
 		StartTime:     meta.StartTime.Time(),
 		Title:         meta.Title,
+		MediaData:     mediaData,
 	}
 	mm.newSegmentSubsMutex.RLock()
 	defer mm.newSegmentSubsMutex.RUnlock()
