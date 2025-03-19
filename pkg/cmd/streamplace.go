@@ -345,7 +345,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 				if err != nil {
 					log.Error(ctx, "could not add segment to database", "error", err)
 				}
-				spseg := not.Segment.ToStreamplaceSegment()
+				spseg, err := not.Segment.ToStreamplaceSegment()
+				if err != nil {
+					log.Error(ctx, "could not convert segment to streamplace segment", "error", err)
+					continue
+				}
 				b.Publish(spseg.Creator, spseg)
 				go func() {
 					err := func() error {

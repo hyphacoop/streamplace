@@ -368,7 +368,11 @@ func (a *StreamplaceAPI) HandleUserRecentSegments(ctx context.Context) httproute
 			apierrors.WriteHTTPInternalServerError(w, "could not get segments", err)
 			return
 		}
-		streamplaceSeg := seg.ToStreamplaceSegment()
+		streamplaceSeg, err := seg.ToStreamplaceSegment()
+		if err != nil {
+			apierrors.WriteHTTPInternalServerError(w, "could not convert segment to streamplace segment", err)
+			return
+		}
 		bs, err := json.Marshal(streamplaceSeg)
 		if err != nil {
 			apierrors.WriteHTTPInternalServerError(w, "could not marshal segments", err)
@@ -627,7 +631,12 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 				log.Error(ctx, "could not get replies", "error", err)
 				return
 			}
-			initialBurst <- seg.ToStreamplaceSegment()
+			spSeg, err := seg.ToStreamplaceSegment()
+			if err != nil {
+				log.Error(ctx, "could not convert segment to streamplace segment", "error", err)
+				return
+			}
+			initialBurst <- spSeg
 		}()
 
 		go func() {
