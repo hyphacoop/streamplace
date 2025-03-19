@@ -22,7 +22,7 @@ func NewBus() *Bus {
 func (b *Bus) Subscribe(user string) <-chan Message {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	ch := make(chan Message)
+	ch := make(chan Message, 100)
 	b.clients[user] = append(b.clients[user], ch)
 	return ch
 }
@@ -52,11 +52,7 @@ func (b *Bus) Publish(user string, msg Message) {
 	defer b.mu.Unlock()
 	for _, sub := range b.clients[user] {
 		go func(sub Subscription) {
-			select {
-			case sub <- msg:
-			default:
-				close(sub)
-			}
+			sub <- msg
 		}(sub)
 	}
 }
