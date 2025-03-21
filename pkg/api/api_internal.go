@@ -274,6 +274,34 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		w.Write(bs)
 	})
 
+	router.GET("/segment/:id", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		id := p.ByName("id")
+		if id == "" {
+			errors.WriteHTTPBadRequest(w, "id required", nil)
+			return
+		}
+		segment, err := a.Model.GetSegment(id)
+		if err != nil {
+			errors.WriteHTTPBadRequest(w, err.Error(), err)
+			return
+		}
+		if segment == nil {
+			errors.WriteHTTPNotFound(w, "segment not found", nil)
+			return
+		}
+		spSeg, err := segment.ToStreamplaceSegment()
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to convert segment to streamplace segment", err)
+			return
+		}
+		bs, err := json.Marshal(spSeg)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to marhsal json", err)
+			return
+		}
+		w.Write(bs)
+	})
+
 	router.DELETE("/player-events", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		err := a.Model.ClearPlayerEvents()
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/streamplace"
 )
@@ -61,10 +62,10 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	if s.MediaData == nil {
 		return nil, fmt.Errorf("media data is nil")
 	}
-	if len(s.MediaData.Video) == 0 {
+	if len(s.MediaData.Video) == 0 || s.MediaData.Video[0] == nil {
 		return nil, fmt.Errorf("video data is nil")
 	}
-	if len(s.MediaData.Audio) == 0 {
+	if len(s.MediaData.Audio) == 0 || s.MediaData.Audio[0] == nil {
 		return nil, fmt.Errorf("audio data is nil")
 	}
 	return &streamplace.Segment{
@@ -163,4 +164,22 @@ func (m *DBModel) GetLiveUsers() ([]Segment, error) {
 	}
 
 	return liveUsers, nil
+}
+
+func (m *DBModel) GetSegment(id string) (*Segment, error) {
+	var seg Segment
+
+	err := m.DB.Model(&Segment{}).
+		Preload("Repo").
+		Where("id = ?", id).
+		First(&seg).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &seg, nil
 }

@@ -34,6 +34,7 @@ type Model interface {
 	LatestSegmentForUser(user string) (*Segment, error)
 	CreateThumbnail(thumb *Thumbnail) error
 	LatestThumbnailForUser(user string) (*Thumbnail, error)
+	GetSegment(id string) (*Segment, error)
 
 	GetIdentity(id string) (*Identity, error)
 	UpdateIdentity(ident *Identity) error
