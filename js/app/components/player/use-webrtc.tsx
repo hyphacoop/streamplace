@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
-import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
-import { usePlayerActions } from "features/player/playerSlice";
-import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   createStreamKeyRecord,
   selectStoredKey,
 } from "features/bluesky/blueskySlice";
+import { usePlayerActions } from "features/player/playerSlice";
+import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "store/hooks";
+import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
 
 export default function useWebRTC(
   endpoint: string,
 ): [MediaStream | null, boolean] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [frames, setFrames] = useState<number>(0);
+  const [audioFrames, setAudioFrames] = useState<number>(0);
   const [stuck, setStuck] = useState<boolean>(false);
 
   useEffect(() => {
@@ -48,17 +49,28 @@ export default function useWebRTC(
       const stats = await peerConnection.getStats();
       stats.forEach((stat, k) => {
         const mediaType = stat.mediaType /* web */ ?? stat.kind; /* native */
-        if (stat.type === "inbound-rtp" && mediaType === "video") {
-          const framesReceived = stat.framesReceived; // stat becomes inacessible after this call
-          setFrames((oldFrames) => {
-            if (oldFrames === framesReceived) {
+        if (stat.type === "inbound-rtp" && mediaType === "audio") {
+          const audioFramesReceived = stat.lastPacketReceivedTimestamp; // stat becomes inacessible after this call
+          setAudioFrames((oldAudioFrames: number) => {
+            if (oldAudioFrames === audioFramesReceived) {
               setStuck(true);
             } else {
               setStuck(false);
             }
-            return framesReceived;
+            return audioFramesReceived;
           });
         }
+        // if (stat.type === "inbound-rtp" && mediaType === "video") {
+        //   const framesReceived = stat.framesReceived; // stat becomes inacessible after this call
+        //   setFrames((oldFrames) => {
+        //     if (oldFrames === framesReceived) {
+        //       setStuck(true);
+        //     } else {
+        //       setStuck(false);
+        //     }
+        //     return framesReceived;
+        //   });
+        // }
       });
     }, 1000);
 
