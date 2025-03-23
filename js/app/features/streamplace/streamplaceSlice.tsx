@@ -1,5 +1,5 @@
-import { createAppSlice } from "../../hooks/createSlice";
 import { isWeb } from "tamagui";
+import { createAppSlice } from "../../hooks/createSlice";
 import Storage from "../../storage";
 
 let DEFAULT_URL = process.env.EXPO_PUBLIC_STREAMPLACE_URL as string;
@@ -47,6 +47,7 @@ export interface StreamplaceState {
   };
   telemetry: boolean | null;
   userMuted: boolean | null;
+  chatWarned: boolean;
 }
 
 const initialState: StreamplaceState = {
@@ -61,11 +62,13 @@ const initialState: StreamplaceState = {
   },
   telemetry: null,
   userMuted: null,
+  chatWarned: false,
 };
 
 const USER_MUTED_KEY = "streamplaceUserMuted";
 const TELEMETRY_KEY = "streamplaceTelemetry";
 const URL_KEY = "streamplaceUrl";
+const CHAT_WARNING_KEY = "streamplaceChatWarning";
 
 export const streamplaceSlice = createAppSlice({
   name: "streamplace",
@@ -73,11 +76,13 @@ export const streamplaceSlice = createAppSlice({
   reducers: (create) => ({
     initialize: create.asyncThunk(
       async (_, { getState }) => {
-        let [url, telemetryStr, userMutedStr] = await Promise.all([
-          Storage.getItem(URL_KEY),
-          Storage.getItem(TELEMETRY_KEY),
-          Storage.getItem(USER_MUTED_KEY),
-        ]);
+        let [url, telemetryStr, userMutedStr, chatWarningStr] =
+          await Promise.all([
+            Storage.getItem(URL_KEY),
+            Storage.getItem(TELEMETRY_KEY),
+            Storage.getItem(USER_MUTED_KEY),
+            Storage.getItem(CHAT_WARNING_KEY),
+          ]);
         if (!url) {
           url = DEFAULT_URL;
         }
@@ -94,20 +99,25 @@ export const streamplaceSlice = createAppSlice({
         } else {
           userMuted = null;
         }
-        return { url, telemetry, userMuted };
+        let chatWarned: boolean = false;
+        if (typeof chatWarningStr === "string") {
+          chatWarned = chatWarningStr === "true";
+        }
+        return { url, telemetry, userMuted, chatWarned };
       },
       {
         pending: (state) => {
           // state.status = "loading";
         },
         fulfilled: (state, action) => {
-          const { url, telemetry, userMuted } = action.payload;
+          const { url, telemetry, userMuted, chatWarned } = action.payload;
           return {
             ...state,
             url,
             telemetry,
             userMuted,
             initialized: true,
+            chatWarned,
           };
         },
         rejected: (_, { error }) => {
@@ -147,6 +157,18 @@ export const streamplaceSlice = createAppSlice({
       return {
         ...state,
         userMuted: action.payload,
+      };
+    }),
+
+    chatWarn: create.reducer((state, action: { payload: boolean }) => {
+      Storage.setItem(CHAT_WARNING_KEY, JSON.stringify(action.payload)).catch(
+        (err) => {
+          console.error("chatWarn error", err);
+        },
+      );
+      return {
+        ...state,
+        chatWarned: action.payload,
       };
     }),
 
@@ -234,6 +256,7 @@ export const streamplaceSlice = createAppSlice({
     selectRecentSegments: (streamplace) => streamplace.recentSegments,
     selectTelemetry: (streamplace) => streamplace.telemetry,
     selectUserMuted: (streamplace) => streamplace.userMuted,
+    selectChatWarned: (streamplace) => streamplace.chatWarned,
   },
 });
 
@@ -245,11 +268,13 @@ export const {
   pollSegments,
   telemetryOpt,
   userMute,
+  chatWarn,
 } = streamplaceSlice.actions;
 export const {
   selectStreamplace,
   selectRecentSegments,
   selectTelemetry,
   selectUserMuted,
+  selectChatWarned,
   selectUrl,
 } = streamplaceSlice.selectors;

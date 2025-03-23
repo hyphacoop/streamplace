@@ -1,11 +1,16 @@
 import { useNavigation } from "@react-navigation/native";
 import { Send } from "@tamagui/lucide-icons";
+import { useToastController } from "@tamagui/toast";
 import {
   chatPost,
   selectIsReady,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { usePlayerLivestream } from "features/player/playerSlice";
+import {
+  chatWarn,
+  selectChatWarned,
+} from "features/streamplace/streamplaceSlice";
 import { useRef, useState } from "react";
 import { Keyboard } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
@@ -15,6 +20,7 @@ export default function ChatBox() {
   const [message, setMessage] = useState("");
   const isReady = useAppSelector(selectIsReady);
   const userProfile = useAppSelector(selectUserProfile);
+  const chatWarned = useAppSelector(selectChatWarned);
   const loggedOut = isReady && !userProfile;
   const livestream = useAppSelector(usePlayerLivestream());
   const textAreaRef = useRef<Input>(null);
@@ -39,6 +45,8 @@ export default function ChatBox() {
     }
   };
 
+  const toast = useToastController();
+
   return (
     <View position="relative">
       {loggedOut && <Login />}
@@ -61,6 +69,14 @@ export default function ChatBox() {
             keyboardType="default"
             disabled={loggedOut}
             rows={1}
+            onPress={() => {
+              if (!chatWarned) {
+                dispatch(chatWarn(true));
+                toast.show("Heads up!", {
+                  message: `Streamplace chat presently works by making Bluesky replies to the streamer's account. This won't be true forever.`,
+                });
+              }
+            }}
             onChangeText={(text) => {
               const newMessage = text.replaceAll("\n", "");
               if (newMessage.length > 300) {
