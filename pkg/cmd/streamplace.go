@@ -134,6 +134,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	fs.BoolVar(&cli.WideOpen, "wide-open", false, "allow ALL streams to be uploaded to this node (not recommended for production)")
 	cli.StringSliceFlag(fs, &cli.AllowedStreams, "allowed-streams", "", "if set, only allow these addresses or atproto DIDs to upload to this node")
 	cli.StringSliceFlag(fs, &cli.Peers, "peers", "", "other streamplace nodes to replicate to")
+	cli.StringSliceFlag(fs, &cli.Redirects, "redirects", "", "http 302s /path/one:/path/two,/path/three:/path/four")
 	cli.DebugFlag(fs, &cli.Debug, "debug", "", "modified log verbosity for specific functions or files in form func=ToHLS:3,file=gstreamer.go:4")
 	fs.BoolVar(&cli.TestStream, "test-stream", false, "run a built-in test stream on boot")
 	fs.BoolVar(&cli.NoFirehose, "no-firehose", false, "disable the bluesky firehose")

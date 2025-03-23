@@ -77,6 +77,7 @@ type CLI struct {
 	AllowedStreams         []string
 	WideOpen               bool
 	Peers                  []string
+	Redirects              []string
 	TestStream             bool
 	FrontendProxy          string
 	AppBundleID            string

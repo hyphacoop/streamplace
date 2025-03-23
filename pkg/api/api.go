@@ -140,6 +140,16 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	router.Handler("DELETE", "/api/*resource", apiRouter)
 	router.GET("/dl/*params", a.HandleAppDownload(ctx))
 	router.POST("/", a.HandleWebRTCIngest(ctx))
+	for _, redirect := range a.CLI.Redirects {
+		parts := strings.Split(redirect, ":")
+		if len(parts) != 2 {
+			log.Error(ctx, "invalid redirect", "redirect", redirect)
+			return nil, fmt.Errorf("invalid redirect: %s", redirect)
+		}
+		router.Handle("GET", parts[0], func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+			http.Redirect(w, r, parts[1], http.StatusTemporaryRedirect)
+		})
+	}
 	if a.CLI.FrontendProxy != "" {
 		u, err := url.Parse(a.CLI.FrontendProxy)
 		if err != nil {
