@@ -3,7 +3,7 @@ import {
   selectStoredKey,
 } from "features/bluesky/blueskySlice";
 import { usePlayerActions } from "features/player/playerSlice";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
 
@@ -14,6 +14,8 @@ export default function useWebRTC(
   const [frames, setFrames] = useState<number>(0);
   const [audioFrames, setAudioFrames] = useState<number>(0);
   const [stuck, setStuck] = useState<boolean>(false);
+
+  const lastChange = useRef<number>(0);
 
   useEffect(() => {
     const peerConnection = new RTCPeerConnection({
@@ -52,27 +54,28 @@ export default function useWebRTC(
         if (stat.type === "inbound-rtp" && mediaType === "audio") {
           const audioFramesReceived = stat.lastPacketReceivedTimestamp; // stat becomes inacessible after this call
           setAudioFrames((oldAudioFrames: number) => {
-            if (oldAudioFrames === audioFramesReceived) {
-              setStuck(true);
-            } else {
+            if (oldAudioFrames !== audioFramesReceived) {
+              lastChange.current = Date.now();
               setStuck(false);
             }
             return audioFramesReceived;
           });
         }
-        // if (stat.type === "inbound-rtp" && mediaType === "video") {
-        //   const framesReceived = stat.framesReceived; // stat becomes inacessible after this call
-        //   setFrames((oldFrames) => {
-        //     if (oldFrames === framesReceived) {
-        //       setStuck(true);
-        //     } else {
-        //       setStuck(false);
-        //     }
-        //     return framesReceived;
-        //   });
-        // }
+        if (stat.type === "inbound-rtp" && mediaType === "video") {
+          const framesReceived = stat.framesReceived; // stat becomes inacessible after this call
+          setFrames((oldFrames) => {
+            if (oldFrames !== framesReceived) {
+              lastChange.current = Date.now();
+              setStuck(false);
+            }
+            return framesReceived;
+          });
+        }
       });
-    }, 1000);
+      if (Date.now() - lastChange.current > 2000) {
+        setStuck(true);
+      }
+    }, 200);
 
     return () => {
       clearInterval(handle);
