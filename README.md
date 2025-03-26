@@ -2,7 +2,8 @@
 
 ## The Video Layer for Everything
 
-You'll need Node, Yarn, Meson, Ninja, and Go.
+You'll need Node, Yarn, Meson, Ninja, and Go 1.23.
+([We're blocked on going to Go 1.24](https://github.com/NordSecurity/uniffi-bindgen-go/issues/66).)
 
 **Single-command build:**
 
