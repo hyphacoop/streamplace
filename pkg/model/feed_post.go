@@ -57,6 +57,23 @@ func (m *DBModel) ListFeedPosts() ([]FeedPost, error) {
 	}
 	return posts, nil
 }
+func (m *DBModel) ListFeedPostsByType(feedType string, limit int, after int64) ([]FeedPost, error) {
+	if after == 0 {
+		after = time.Now().Add(48 * time.Hour).UnixMilli()
+	}
+	time := time.UnixMilli(after)
+	posts := []FeedPost{}
+	// exclude scumb.ag for now (so my dev streams don't show up)
+	err := m.DB.Where("type = ? AND created_at < ? AND repo_did != ?", feedType, time.UTC(), "did:plc:dkh4rwafdcda4ko7lewe43ml").
+		Order("created_at DESC").
+		Group("uri").
+		Limit(limit).
+		Find(&posts).Error
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving feed posts: %w", err)
+	}
+	return posts, nil
+}
 
 func (m *DBModel) GetFeedPost(cid string) (*FeedPost, error) {
 	post := FeedPost{}

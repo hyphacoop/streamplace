@@ -589,6 +589,7 @@ export const blueskySlice = createAppSlice({
             cid: newPost.payload.cid,
           },
         };
+
         await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,
           collection: "place.stream.livestream",
