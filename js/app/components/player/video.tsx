@@ -1,14 +1,20 @@
+import streamKey from "components/live-dashboard/stream-key";
+import { selectStoredKey } from "features/bluesky/blueskySlice";
+import { usePlayer } from "features/player/playerSlice";
 import Hls from "hls.js";
+import useStreamplaceNode from "hooks/useStreamplaceNode";
 import {
   ForwardedRef,
   forwardRef,
   RefObject,
-  useEffect,
-  useState,
   useCallback,
+  useEffect,
   useRef,
+  useState,
 } from "react";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import { View } from "tamagui";
+import { quietReceiver } from "./av-sync";
 import {
   IngestMediaSource,
   PlayerProps,
@@ -20,12 +26,6 @@ import {
 } from "./props";
 import { srcToUrl } from "./shared";
 import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { useAppDispatch, useAppSelector } from "store/hooks";
-import { selectStoredKey } from "features/bluesky/blueskySlice";
-import { usePlayer } from "features/player/playerSlice";
-import streamKey from "components/live-dashboard/stream-key";
-import { quietReceiver } from "./av-sync";
 
 type VideoProps = PlayerProps & { url: string };
 
@@ -241,6 +241,9 @@ export function WebRTCPlayer(
   useEffect(() => {
     if (stuck && props.status === PlayerStatus.PLAYING) {
       props.setStatus(PlayerStatus.STALLED);
+    }
+    if (!stuck) {
+      props.setStatus(PlayerStatus.PLAYING);
     }
   }, [stuck, props.status]);
 
