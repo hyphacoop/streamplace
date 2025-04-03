@@ -116,7 +116,12 @@ func (atsync *ATProtoSynchronizer) StartFirehoseRetry(ctx context.Context) error
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		return events.HandleRepoStream(ctx, con, scheduler, nil)
+		err := events.HandleRepoStream(ctx, con, scheduler, nil)
+		if err != nil {
+			log.Error(ctx, "firehose error", "err", err)
+			return err
+		}
+		return nil
 	})
 
 	g.Go(func() error {
