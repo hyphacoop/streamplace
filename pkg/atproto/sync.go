@@ -40,6 +40,10 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 	}
 	switch rec := cb.(type) {
 	case *bsky.GraphFollow:
+		if r == nil {
+			// someone we don't know about
+			return nil
+		}
 		log.Debug(ctx, "creating follow", "userDID", userDID, "subjectDID", rec.Subject)
 		err := atsync.Model.CreateFollow(ctx, userDID, rkey.String(), rec)
 		if err != nil {
