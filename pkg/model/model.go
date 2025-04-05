@@ -14,6 +14,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/streamplace"
 )
 
 type DBModel struct {
@@ -69,6 +70,13 @@ type Model interface {
 	GetBlock(ctx context.Context, rkey string) (*Block, error)
 	GetUserBlock(ctx context.Context, userDID, subjectDID string) (*Block, error)
 	DeleteBlock(ctx context.Context, rkey string) error
+
+	CreateChatMessage(ctx context.Context, message *ChatMessage) error
+	MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDefs_MessageView, error)
+	GetChatMessage(cid string) (*ChatMessage, error)
+
+	CreateChatProfile(ctx context.Context, profile *ChatProfile) error
+	GetChatProfile(ctx context.Context, repoDID string) (*ChatProfile, error)
 }
 
 func MakeDB(dbURL string) (Model, error) {
@@ -115,6 +123,8 @@ func MakeDB(dbURL string) (Model, error) {
 		FeedPost{},
 		Livestream{},
 		Block{},
+		ChatMessage{},
+		ChatProfile{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

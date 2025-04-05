@@ -77,6 +77,67 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		}
 		go atsync.Bus.Publish(userDID, streamplaceBlock)
 
+	case *streamplace.ChatMessage:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		streamerRepo, err := atsync.SyncBlueskyRepoCached(ctx, rec.Streamer, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		log.Warn(ctx, "streamplace.ChatMessage detected", "message", rec.Text, "repo", repo.Handle)
+		block, err := atsync.Model.GetUserBlock(ctx, streamerRepo.DID, userDID)
+		if err != nil {
+			return fmt.Errorf("failed to get user block: %w", err)
+		}
+		if block != nil {
+			log.Warn(ctx, "excluding message from blocked user", "userDID", userDID, "subjectDID", streamerRepo.DID)
+			return nil
+		}
+		mcm := &model.ChatMessage{
+			CID:             cid,
+			URI:             aturi.String(),
+			CreatedAt:       now,
+			ChatMessage:     recCBOR,
+			RepoDID:         userDID,
+			Repo:            repo,
+			StreamerRepoDID: streamerRepo.DID,
+			IndexedAt:       &now,
+		}
+		err = atsync.Model.CreateChatMessage(ctx, mcm)
+		if err != nil {
+			log.Error(ctx, "failed to create chat message", "err", err)
+		}
+		mcm, err = atsync.Model.GetChatMessage(cid)
+		if err != nil {
+			log.Error(ctx, "failed to get just-saved chat message", "err", err)
+		}
+		if mcm == nil {
+			log.Error(ctx, "failed to retrieve just-saved chat message", "err", err)
+			return nil
+		}
+		scm, err := mcm.ToStreamplaceMessageView()
+		if err != nil {
+			log.Error(ctx, "failed to convert chat message to streamplace message view", "err", err)
+		}
+		go atsync.Bus.Publish(streamerRepo.DID, scm)
+
+	case *streamplace.ChatProfile:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		mcm := &model.ChatProfile{
+			RepoDID: userDID,
+			Repo:    repo,
+			Record:  recCBOR,
+		}
+		err = atsync.Model.CreateChatProfile(ctx, mcm)
+		if err != nil {
+			log.Error(ctx, "failed to create chat profile", "err", err)
+		}
+
 	case *bsky.FeedPost:
 		// jsonData, err := json.Marshal(d)
 		// if err != nil {
@@ -91,7 +152,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		}
 
 		if livestream, ok := d["place.stream.livestream"]; ok {
-			_, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+			repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
 			if err != nil {
 				return fmt.Errorf("failed to sync bluesky repo: %w", err)
 			}
@@ -103,12 +164,13 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			if !ok {
 				return fmt.Errorf("livestream url is not a string")
 			}
-			log.Warn(ctx, "livestream url", "url", url)
+			log.Debug(ctx, "livestream url", "url", url)
 			atsync.Model.CreateFeedPost(ctx, &model.FeedPost{
 				CID:       cid,
 				CreatedAt: createdAt,
 				FeedPost:  recCBOR,
 				RepoDID:   userDID,
+				Repo:      repo,
 				Type:      "livestream",
 				URI:       aturi.String(),
 				IndexedAt: &now,
@@ -124,7 +186,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			if livestream == nil {
 				return nil
 			}
-			log.Warn(ctx, "chat message detected", "uri", livestream.URI)
+			// log.Warn(ctx, "chat message detected", "uri", livestream.URI)
 			// if this post is a reply to someone's livestream post
 			// log.Warn(ctx, "chat message detected", "message", rec.Text)
 			repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
@@ -132,7 +194,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 				return fmt.Errorf("failed to sync bluesky repo: %w", err)
 			}
 
-			log.Warn(ctx, "chat message detected", "message", rec.Text, "repo", repo.Handle)
+			// log.Warn(ctx, "chat message detected", "message", rec.Text, "repo", repo.Handle)
 			block, err := atsync.Model.GetUserBlock(ctx, livestream.RepoDID, userDID)
 			if err != nil {
 				return fmt.Errorf("failed to get user block: %w", err)

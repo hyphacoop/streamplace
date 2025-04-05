@@ -1,9 +1,15 @@
 import { AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
 import { createAction } from "@reduxjs/toolkit";
+import { PROTOCOL_HLS, PROTOCOL_WEBRTC } from "components/player/props";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import { uuidv7 } from "hooks/uuid";
+import {
+  isMessageView,
+  MessageView,
+} from "lexicons/types/place/stream/chat/defs";
 import { createContext, useContext } from "react";
 import { createAppSlice } from "../../hooks/createSlice";
+import { Record as ChatMessageRecord } from "../../lexicons/types/place/stream/chat/message";
 import {
   BlockView,
   isBlockView,
@@ -18,7 +24,6 @@ import {
   ViewerCount,
 } from "../../lexicons/types/place/stream/livestream";
 import * as Segment from "../../lexicons/types/place/stream/segment";
-import { PROTOCOL_HLS, PROTOCOL_WEBRTC } from "components/player/props";
 export interface PlayerContextType {
   playerId: string | null;
 }
@@ -28,6 +33,9 @@ export interface LivestreamViewHydrated extends LivestreamView {
 }
 export interface PostViewHydrated extends AppBskyFeedDefs.PostView {
   record: AppBskyFeedPost.Record;
+}
+export interface MessageViewHydrated extends MessageView {
+  record: ChatMessageRecord;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({
@@ -55,8 +63,8 @@ export interface PlayerState {
   ingestStarting: boolean;
   ingestConnectionState: RTCPeerConnectionState | null;
   viewers: number | null;
-  chat: { [key: string]: PostViewHydrated };
-  chatList: PostViewHydrated[];
+  chat: { [key: string]: MessageViewHydrated };
+  chatList: MessageViewHydrated[];
   livestream: LivestreamViewHydrated | null;
   segment: Segment.Record | null;
   renditions: Rendition[];
@@ -86,11 +94,11 @@ const usePlayerId = () => {
 
 const reduceChat = (
   state: PlayerState,
-  messages: PostViewHydrated[],
+  messages: MessageViewHydrated[],
   blocks: BlockView[],
 ): PlayerState => {
   state = { ...state } as PlayerState;
-  const newChat: { [key: string]: PostViewHydrated } = { ...state.chat };
+  const newChat: { [key: string]: MessageViewHydrated } = { ...state.chat };
   for (const message of messages) {
     const date = new Date(message.record.createdAt);
     const key = `${date.getTime()}-${message.uri}`;
@@ -223,12 +231,12 @@ export const playerSlice = createAppSlice({
                   viewers: message.count,
                 },
               };
-            } else if (AppBskyFeedDefs.isPostView(message)) {
+            } else if (isMessageView(message)) {
               state = {
                 ...state,
                 [action.payload.playerId]: reduceChat(
                   state[action.payload.playerId] as PlayerState,
-                  [message as PostViewHydrated],
+                  [message as MessageViewHydrated],
                   [],
                 ),
               };
@@ -305,7 +313,7 @@ export const playerSlice = createAppSlice({
             streamplace: StreamplaceState;
           };
           const res = await fetch(`${streamplace.url}/api/chat/${user}`);
-          const data = (await res.json()) as PostViewHydrated[];
+          const data = (await res.json()) as MessageViewHydrated[];
           return { playerId, chat: data };
         },
         {
@@ -506,7 +514,7 @@ export const usePlayer = (): ((state: {
 };
 export const useChat = (): ((state: {
   player: PlayersState;
-}) => PostViewHydrated[] | null) => {
+}) => MessageViewHydrated[] | null) => {
   const playerId = usePlayerId();
   return (state) => state.player[playerId].chatList;
 };

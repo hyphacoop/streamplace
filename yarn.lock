@@ -13093,6 +13093,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"color-contrast-checker@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "color-contrast-checker@npm:2.1.0"
+  checksum: 10/9ed5e58b0fdac577c4af61bfcb338e7e44c335c75c442c4fad555e89c4ff6f2d77b3394810d64476db8d5782d42f44903ab3e1ea269bc9e8c6b115ab7eb584d0
+  languageName: node
+  linkType: hard
+
 "color-convert@npm:^1.9.0":
   version: 1.9.3
   resolution: "color-convert@npm:1.9.3"
@@ -24292,6 +24299,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"reanimated-color-picker@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "reanimated-color-picker@npm:4.0.0"
+  peerDependencies:
+    expo: ">=44.0.0"
+    react: "*"
+    react-native: "*"
+    react-native-gesture-handler: ">=2.0.0"
+    react-native-reanimated: ^2.0.0 || ^3.0.0
+  peerDependenciesMeta:
+    expo:
+      optional: true
+  checksum: 10/ae2fbdaa1cd0fe366cd882359c08e2940dd164725f45860de45d336620d4e982c7844944e9b5d8f22db813830b90e7ef5ace67a12fa687b1548e55f06299f6c5
+  languageName: node
+  linkType: hard
+
 "recast@npm:^0.21.0":
   version: 0.21.5
   resolution: "recast@npm:0.21.5"
@@ -25813,6 +25836,7 @@ __metadata:
     babel-preset-expo: "npm:~12.0.0"
     burnt: "npm:^0.12.2"
     chrono-node: "npm:^2.7.7"
+    color-contrast-checker: "npm:^2.1.0"
     event-target-shim: "npm:^6.0.2"
     expo: "npm:~52.0.8"
     expo-build-properties: "npm:~0.13.1"
@@ -25849,6 +25873,7 @@ __metadata:
     react-native-webview: "npm:13.12.4"
     react-redux: "npm:^9.1.2"
     react-use-websocket: "npm:^4.13.0"
+    reanimated-color-picker: "npm:^4.0.0"
     rtcaudiodevice: "git+https://github.com/streamplace/RTCAudioDevice.git#7b4659fe845545d366623cbc813936987144b76f"
     tamagui: "npm:^1.123.17"
     typescript: "npm:~5.3.3"
