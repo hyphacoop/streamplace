@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { PlayerProps, PlayerStatus } from "./props";
-import { usePlayerSelectedRendition } from "features/player/playerSlice";
-import { useAppSelector } from "store/hooks";
 
 export default function VideoRetry(
   props: PlayerProps & { children: React.ReactNode },
@@ -9,7 +7,6 @@ export default function VideoRetry(
   const [resetTime, setResetTime] = useState<number>(Date.now());
   const [retryCount, setRetryCount] = useState(0);
   const isPlaying = props.status === PlayerStatus.PLAYING;
-  const selectedRendition = useAppSelector(usePlayerSelectedRendition());
 
   useEffect(() => {
     if (isPlaying) {
@@ -33,9 +30,5 @@ export default function VideoRetry(
     return () => clearTimeout(handle);
   }, [isPlaying, resetTime, retryCount]);
 
-  return (
-    <React.Fragment key={`${selectedRendition}-${resetTime}`}>
-      {props.children}
-    </React.Fragment>
-  );
+  return <React.Fragment key={resetTime}>{props.children}</React.Fragment>;
 }

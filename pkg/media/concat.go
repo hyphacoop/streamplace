@@ -1,27 +1,26 @@
 package media
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 type ConcatStreamer interface {
-	SubscribeSegment(ctx context.Context, user string, rendition string) <-chan *segchanman.Seg
-	UnsubscribeSegment(ctx context.Context, user string, rendition string, ch <-chan *segchanman.Seg)
+	SubscribeSegment(ctx context.Context, user string) <-chan string
+	UnsubscribeSegment(ctx context.Context, user string, ch <-chan string)
 }
 
 // This function remains in scope for the duration of a single users' playback
-func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rendition string, streamer ConcatStreamer) (*gst.Element, <-chan struct{}, error) {
+func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, streamer ConcatStreamer) (*gst.Element, <-chan struct{}, error) {
 	ctx = log.WithLogValues(ctx, "func", "ConcatStream")
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -35,6 +34,9 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 	err = pipeline.Add(inputQueue)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to add input multiqueue to pipeline: %w", err)
+	}
+	for _, tmpl := range inputQueue.GetPadTemplates() {
+		log.Warn(ctx, "pad template", "name", tmpl.GetName(), "direction", tmpl.Direction())
 	}
 	inputQueuePadVideoSink := inputQueue.GetRequestPad("sink_%u")
 	if inputQueuePadVideoSink == nil {
@@ -123,19 +125,19 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 
 	// this goroutine will read all the files from the segment queue and buffer
 	// them in a pipe so that we don't miss any in between iterations of the output
-	allFiles := make(chan []byte, 1024)
+	allFiles := make(chan string, 1024)
 	go func() {
 		for {
-			ch := streamer.SubscribeSegment(ctx, user, rendition)
+			ch := streamer.SubscribeSegment(ctx, user)
 			select {
 			case <-ctx.Done():
-				log.Debug(ctx, "exiting segment reader")
-				streamer.UnsubscribeSegment(ctx, user, rendition, ch)
+				log.Warn(ctx, "exiting segment reader")
+				streamer.UnsubscribeSegment(ctx, user, ch)
 				return
 			case file := <-ch:
-				log.Debug(ctx, "got segment", "file", file.Filepath)
-				allFiles <- file.Data
-				if len(file.Data) == 0 {
+				log.Debug(ctx, "got segment", "file", file)
+				allFiles <- file
+				if file == "" {
 					log.Warn(ctx, "no more segments")
 					return
 				}
@@ -154,15 +156,23 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 				pr.Close()
 				pw.Close()
 				return
-			case bs := <-allFiles:
-				if len(bs) == 0 {
+			case fullpath := <-allFiles:
+				if fullpath == "" {
 					log.Warn(ctx, "no more segments")
 					cancel()
 					return
 				}
-				_, err = io.Copy(pw, bytes.NewReader(bs))
+				f, err := os.Open(fullpath)
+				log.Debug(ctx, "opening segment file", "file", fullpath)
 				if err != nil {
-					log.Error(ctx, "failed to copy segment file", "error", err)
+					log.Debug(ctx, "failed to open segment file", "error", err, "file", fullpath)
+					cancel()
+					return
+				}
+				defer f.Close()
+				_, err = io.Copy(pw, f)
+				if err != nil {
+					log.Error(ctx, "failed to copy segment file", "error", err, "file", fullpath)
 					cancel()
 					return
 				}
@@ -294,7 +304,7 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 						done()
 						return
 					} else {
-						log.Debug(ctx, "failed to read data, ending stream", "error", err)
+						log.Error(ctx, "failed to read data", "error", err)
 						cancel()
 						return
 					}

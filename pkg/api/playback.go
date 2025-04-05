@@ -52,7 +52,6 @@ func (a *StreamplaceAPI) HandleMP4Playback(ctx context.Context) httprouter.Handl
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		rendition := getRendition(r)
 		user, err := a.NormalizeUser(ctx, user)
 		if err != nil {
 			errors.WriteHTTPBadRequest(w, "invalid user", err)
@@ -80,7 +79,7 @@ func (a *StreamplaceAPI) HandleMP4Playback(ctx context.Context) httprouter.Handl
 		pr, pw := io.Pipe()
 		bufw := bufio.NewWriter(pw)
 		g.Go(func() error {
-			return a.MediaManager.SegmentToMP4(ctx, user, rendition, bufw)
+			return a.MediaManager.SegmentToMP4(ctx, user, bufw)
 		})
 		g.Go(func() error {
 			<-ctx.Done()
@@ -104,7 +103,6 @@ func (a *StreamplaceAPI) HandleMKVPlayback(ctx context.Context) httprouter.Handl
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		rendition := getRendition(r)
 		user, err := a.NormalizeUser(ctx, user)
 		if err != nil {
 			errors.WriteHTTPBadRequest(w, "invalid user", err)
@@ -132,7 +130,7 @@ func (a *StreamplaceAPI) HandleMKVPlayback(ctx context.Context) httprouter.Handl
 		pr, pw := io.Pipe()
 		bufw := bufio.NewWriter(pw)
 		g.Go(func() error {
-			return a.MediaManager.SegmentToMKV(ctx, user, rendition, bufw)
+			return a.MediaManager.SegmentToMKV(ctx, user, bufw)
 		})
 		g.Go(func() error {
 			<-ctx.Done()
@@ -156,7 +154,6 @@ func (a *StreamplaceAPI) HandleWebRTCPlayback(ctx context.Context) httprouter.Ha
 			errors.WriteHTTPBadRequest(w, "user required", nil)
 			return
 		}
-		rendition := getRendition(r)
 		user, err := a.NormalizeUser(ctx, user)
 		if err != nil {
 			errors.WriteHTTPBadRequest(w, "invalid user", err)
@@ -168,7 +165,7 @@ func (a *StreamplaceAPI) HandleWebRTCPlayback(ctx context.Context) httprouter.Ha
 			return
 		}
 		offer := webrtc.SessionDescription{Type: webrtc.SDPTypeOffer, SDP: string(body)}
-		answer, err := a.MediaManager.WebRTCPlayback(ctx, user, rendition, &offer)
+		answer, err := a.MediaManager.WebRTCPlayback(ctx, user, &offer)
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "error playing back", err)
 			return
@@ -349,26 +346,25 @@ func (a *StreamplaceAPI) HandleHLSPlayback(ctx context.Context) httprouter.Handl
 			errors.WriteHTTPBadRequest(w, "file required", nil)
 			return
 		}
-		m3u8, err := a.Director.GetM3U8(ctx, user)
+		m3u8, err := a.MediaManager.SegmentToHLSOnce(ctx, user)
 		if err != nil {
-			errors.WriteHTTPNotFound(w, "could not get m3u8", err)
+			errors.WriteHTTPInternalServerError(w, "SegmentToHLSOnce failed", nil)
 			return
 		}
 		session := r.URL.Query().Get("session")
-		rendition := r.URL.Query().Get("rendition")
-		buf, err := m3u8.GetFile(file, session, rendition)
+		buf, err := m3u8.GetSegment(file, session)
 		if err != nil {
 			errors.WriteHTTPNotFound(w, "segment not found", err)
 			return
 		}
 
 		if strings.HasSuffix(file, ".m3u8") {
-			w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
+			w.Header().Set("Content-Type", "application/x-mpegURL")
 		} else {
 			if session != "" {
 				spmetrics.SessionSeen(user, session)
 			}
-			w.Header().Set("Content-Type", "video/mp2t")
+			w.Header().Set("Content-Type", "video/MP2T")
 		}
 
 		http.ServeContent(w, r, file, time.Now(), bytes.NewReader(buf))

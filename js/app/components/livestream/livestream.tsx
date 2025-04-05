@@ -30,7 +30,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const telemetry = useAppSelector(selectTelemetry);
   const player = useAppSelector(usePlayer());
 
-  const { src, ...extraProps } = props;
+  const { src, protocol, ...extraProps } = props;
   const dispatch = useAppDispatch();
   const { width, height } = useWindowDimensions();
   const video = player.segment?.video?.[0];
@@ -147,6 +147,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
               <Player
                 telemetry={telemetry === true}
                 src={src}
+                forceProtocol={protocol}
                 {...extraProps}
               />
               <View

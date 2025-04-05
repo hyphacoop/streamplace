@@ -9,11 +9,12 @@ import {
   Settings,
   Shell,
   Sparkle,
+  Squirrel,
   Star,
   Volume2,
   VolumeX,
 } from "@tamagui/lucide-icons";
-import { Dispatch, Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable } from "react-native";
 import {
   Button,
@@ -31,21 +32,23 @@ import {
   H5,
   Paragraph,
 } from "tamagui";
-import { PlayerProps, PROTOCOL_HLS, PROTOCOL_WEBRTC } from "./props";
+import {
+  PlayerProps,
+  PROTOCOL_HLS,
+  PROTOCOL_PROGRESSIVE_MP4,
+  PROTOCOL_PROGRESSIVE_WEBM,
+  PROTOCOL_WEBRTC,
+} from "./props";
 import {
   usePlayer,
   usePlayerActions,
-  usePlayerProtocol,
-  usePlayerRenditions,
   usePlayerSegment,
-  usePlayerSelectedRendition,
 } from "features/player/playerSlice";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import Loading from "components/loading/loading";
 import Viewers from "components/viewers";
 import { userMute } from "features/streamplace/streamplaceSlice";
 import { Countdown } from "components/countdown";
-import { Rendition } from "lexicons/types/place/stream/defs";
 
 const Bar = (props) => (
   <XStack
@@ -179,23 +182,6 @@ export default function Controls(props: PlayerProps) {
 export function PopoverMenu(props: PlayerProps) {
   const [open, setOpen] = useState(false);
   const media = useMedia();
-  const renditions = useAppSelector(usePlayerRenditions());
-  const selectedRendition = useAppSelector(usePlayerSelectedRendition());
-  const protocol = useAppSelector(usePlayerProtocol());
-  const { setSelectedRendition, setProtocol } = usePlayerActions();
-  const dispatch = useAppDispatch();
-  // on android, this appears to lose its context. idk. so we just pass everything through.
-  const gearMenu = (
-    <GearMenu
-      {...props}
-      renditions={renditions}
-      selectedRendition={selectedRendition ?? "source"}
-      protocol={protocol}
-      setSelectedRendition={setSelectedRendition}
-      setProtocol={setProtocol}
-      dispatch={dispatch}
-    />
-  );
   useEffect(() => {
     if (!media.sm && props.showControls === false) {
       setOpen(false);
@@ -225,7 +211,9 @@ export function PopoverMenu(props: PlayerProps) {
 
       <Adapt when="sm" platform="touch">
         <Popover.Sheet modal dismissOnSnapToBottom snapPoints={[50]}>
-          <Popover.Sheet.Frame padding="$2">{gearMenu}</Popover.Sheet.Frame>
+          <Popover.Sheet.Frame padding="$2">
+            <GearMenu {...props} />
+          </Popover.Sheet.Frame>
           <Popover.Sheet.Overlay
             animation="lazy"
             enterStyle={{ opacity: 0 }}
@@ -250,7 +238,7 @@ export function PopoverMenu(props: PlayerProps) {
           },
         ]}
       >
-        {gearMenu}
+        <GearMenu {...props} />
       </Popover.Content>
     </Popover>
   );
@@ -308,26 +296,8 @@ function LiveBubbleText() {
   return <Loading />;
 }
 
-function GearMenu(
-  props: PlayerProps & {
-    renditions: Rendition[];
-    selectedRendition: string;
-    protocol: string;
-    setSelectedRendition: (rendition: string) => void;
-    setProtocol: (protocol: string) => void;
-    dispatch: Dispatch<any>;
-  },
-) {
+function GearMenu(props: PlayerProps) {
   const [menu, setMenu] = useState("root");
-  const {
-    renditions,
-    selectedRendition,
-    protocol,
-    setSelectedRendition,
-    setProtocol,
-    dispatch,
-  } = props;
-
   return (
     <YGroup alignSelf="center" bordered width={240} size="$5" borderRadius="$0">
       {menu == "root" && (
@@ -349,10 +319,9 @@ function GearMenu(
               hoverTheme
               pressTheme
               title="Quality"
-              subTitle="Adjust bandwidth usage"
+              subTitle="WIP"
               icon={Sparkle}
               iconAfter={ChevronRight}
-              onPress={() => setMenu("quality")}
             />
           </YGroup.Item>
         </>
@@ -376,11 +345,11 @@ function GearMenu(
               title="HLS"
               subTitle="HTTP Live Streaming"
               icon={Star}
-              iconAfter={protocol === PROTOCOL_HLS ? CheckCircle : Circle}
-              onPress={() => dispatch(setProtocol(PROTOCOL_HLS))}
+              iconAfter={props.protocol === PROTOCOL_HLS ? CheckCircle : Circle}
+              onPress={() => props.setProtocol(PROTOCOL_HLS)}
             />
           </YGroup.Item>
-          {/* <Separator />
+          <Separator />
           <YGroup.Item>
             <ListItem
               hoverTheme
@@ -389,9 +358,11 @@ function GearMenu(
               subTitle="MP4 but loooong"
               icon={Shell}
               iconAfter={
-                protocol === PROTOCOL_PROGRESSIVE_MP4 ? CheckCircle : Circle
+                props.protocol === PROTOCOL_PROGRESSIVE_MP4
+                  ? CheckCircle
+                  : Circle
               }
-              onPress={() => dispatch(setProtocol(PROTOCOL_PROGRESSIVE_MP4))}
+              onPress={() => props.setProtocol(PROTOCOL_PROGRESSIVE_MP4)}
             />
           </YGroup.Item>
           <Separator />
@@ -403,11 +374,13 @@ function GearMenu(
               subTitle="WebM but loooong"
               icon={Squirrel}
               iconAfter={
-                protocol === PROTOCOL_PROGRESSIVE_WEBM ? CheckCircle : Circle
+                props.protocol === PROTOCOL_PROGRESSIVE_WEBM
+                  ? CheckCircle
+                  : Circle
               }
-              onPress={() => dispatch(setProtocol(PROTOCOL_PROGRESSIVE_WEBM))}
+              onPress={() => props.setProtocol(PROTOCOL_PROGRESSIVE_WEBM)}
             />
-          </YGroup.Item> */}
+          </YGroup.Item>
           <Separator />
           <YGroup.Item>
             <ListItem
@@ -416,73 +389,12 @@ function GearMenu(
               title="WebRTC"
               subTitle="Lowest latency, probably"
               icon={Antenna}
-              iconAfter={protocol === PROTOCOL_WEBRTC ? CheckCircle : Circle}
-              onPress={() => dispatch(setProtocol(PROTOCOL_WEBRTC))}
-            />
-          </YGroup.Item>
-        </>
-      )}
-      {menu == "quality" && (
-        <>
-          <YGroup.Item>
-            <ListItem
-              hoverTheme
-              pressTheme
-              title="Back"
-              icon={ChevronLeft}
-              onPress={() => setMenu("root")}
-            />
-          </YGroup.Item>
-          <Separator />
-          {protocol === PROTOCOL_HLS && (
-            <>
-              <YGroup.Item>
-                <ListItem
-                  hoverTheme
-                  pressTheme
-                  title="Auto"
-                  subTitle="Automatic with HLS"
-                  icon={Star}
-                  iconAfter={
-                    props.selectedRendition === "auto" ? CheckCircle : Circle
-                  }
-                  onPress={() => dispatch(setSelectedRendition("auto"))}
-                />
-              </YGroup.Item>
-              <Separator />
-            </>
-          )}
-          <YGroup.Item>
-            <ListItem
-              hoverTheme
-              pressTheme
-              title="Source"
-              subTitle="Original quality"
-              icon={Star}
               iconAfter={
-                props.selectedRendition === "source" ? CheckCircle : Circle
+                props.protocol === PROTOCOL_WEBRTC ? CheckCircle : Circle
               }
-              onPress={() => dispatch(setSelectedRendition("source"))}
+              onPress={() => props.setProtocol(PROTOCOL_WEBRTC)}
             />
           </YGroup.Item>
-          {renditions.map((rendition) => (
-            <Fragment key={rendition.name}>
-              <Separator />
-              <YGroup.Item>
-                <ListItem
-                  hoverTheme
-                  pressTheme
-                  title={rendition.name}
-                  subTitle={rendition.name}
-                  icon={Shell}
-                  iconAfter={
-                    selectedRendition === rendition.name ? CheckCircle : Circle
-                  }
-                  onPress={() => dispatch(setSelectedRendition(rendition.name))}
-                />
-              </YGroup.Item>
-            </Fragment>
-          ))}
         </>
       )}
     </YGroup>

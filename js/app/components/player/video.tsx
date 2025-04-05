@@ -1,6 +1,6 @@
 import streamKey from "components/live-dashboard/stream-key";
 import { selectStoredKey } from "features/bluesky/blueskySlice";
-import { usePlayer, usePlayerProtocol } from "features/player/playerSlice";
+import { usePlayer } from "features/player/playerSlice";
 import Hls from "hls.js";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import {
@@ -32,8 +32,7 @@ type VideoProps = PlayerProps & { url: string };
 export default function WebVideo(
   props: PlayerProps & { videoRef: RefObject<HTMLVideoElement> },
 ) {
-  const inProto = useAppSelector(usePlayerProtocol());
-  const { url, protocol } = srcToUrl(props, inProto);
+  const { url, protocol } = srcToUrl(props);
   useEffect(() => {
     if (props.playTime == 0) {
       return;
@@ -54,7 +53,7 @@ export default function WebVideo(
   } else if (protocol === PROTOCOL_WEBRTC) {
     return <WebRTCPlayer url={url} {...props} />;
   } else {
-    throw new Error(`unknown playback protocol ${inProto}`);
+    throw new Error(`unknown playback protocol ${props.protocol}`);
   }
 }
 
@@ -193,8 +192,7 @@ export function HLSPlayer(
       return;
     }
     if (Hls.isSupported()) {
-      // workaround for not having quite the right number of audio frames :(
-      var hls = new Hls({ maxAudioFramesDrift: 20 });
+      var hls = new Hls();
       hls.loadSource(props.url);
       try {
         hls.attachMedia(videoRef.current);

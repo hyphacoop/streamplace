@@ -29,7 +29,6 @@ import (
 	"stream.place/streamplace/pkg/mist/misttriggers"
 	"stream.place/streamplace/pkg/model"
 	notificationpkg "stream.place/streamplace/pkg/notifications"
-	"stream.place/streamplace/pkg/renditions"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 )
 
@@ -80,8 +79,6 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 	router.Handler("GET", "/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handler("GET", "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handler("GET", "/debug/pprof/block", pprof.Handler("block"))
-	router.Handler("GET", "/debug/pprof/allocs", pprof.Handler("allocs"))
-	router.Handler("GET", "/debug/pprof/mutex", pprof.Handler("mutex"))
 
 	router.POST("/gc", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		runtime.GC()
@@ -90,15 +87,10 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 
 	router.Handler("GET", "/metrics", promhttp.Handler())
 
-	router.GET("/playback/:user/:rendition/concat", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.GET("/playback/:user/concat", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
 		if user == "" {
 			errors.WriteHTTPBadRequest(w, "user required", nil)
-			return
-		}
-		rendition := p.ByName("rendition")
-		if rendition == "" {
-			errors.WriteHTTPBadRequest(w, "rendition required", nil)
 			return
 		}
 		user, err := a.NormalizeUser(ctx, user)
@@ -110,11 +102,11 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		fmt.Fprintf(w, "ffconcat version 1.0\n")
 		// intermittent reports that you need two here to make things work properly? shouldn't matter.
 		for i := 0; i < 2; i += 1 {
-			fmt.Fprintf(w, "file '%s/playback/%s/%s/latest.mp4'\n", a.CLI.OwnInternalURL(), user, rendition)
+			fmt.Fprintf(w, "file '%s/playback/%s/latest.mp4'\n", a.CLI.OwnInternalURL(), user)
 		}
 	})
 
-	router.GET("/playback/:user/:rendition/latest.mp4", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.GET("/playback/:user/latest.mp4", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
 		if user == "" {
 			errors.WriteHTTPBadRequest(w, "user required", nil)
@@ -125,18 +117,13 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			errors.WriteHTTPBadRequest(w, "invalid user", err)
 			return
 		}
-		rendition := p.ByName("rendition")
-		if rendition == "" {
-			errors.WriteHTTPBadRequest(w, "rendition required", nil)
-			return
-		}
-		seg := <-a.MediaManager.SubscribeSegment(ctx, user, rendition)
-		base := filepath.Base(seg.Filepath)
-		w.Header().Set("Location", fmt.Sprintf("%s/playback/%s/%s/segment/%s\n", a.CLI.OwnInternalURL(), user, rendition, base))
+		file := <-a.MediaManager.SubscribeSegment(ctx, user)
+		base := filepath.Base(file)
+		w.Header().Set("Location", fmt.Sprintf("%s/playback/%s/segment/%s\n", a.CLI.OwnInternalURL(), user, base))
 		w.WriteHeader(301)
 	})
 
-	router.GET("/playback/:user/:rendition/segment/:file", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.GET("/playback/:user/segment/:file", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
 		if user == "" {
 			errors.WriteHTTPBadRequest(w, "user required", nil)
@@ -160,15 +147,10 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		http.ServeFile(w, r, fullpath)
 	})
 
-	router.GET("/playback/:user/:rendition/stream.mkv", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.GET("/playback/:user/stream.mkv", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
 		if user == "" {
 			errors.WriteHTTPBadRequest(w, "user required", nil)
-			return
-		}
-		rendition := p.ByName("rendition")
-		if rendition == "" {
-			errors.WriteHTTPBadRequest(w, "rendition required", nil)
 			return
 		}
 		user, err := a.NormalizeUser(ctx, user)
@@ -178,21 +160,16 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		}
 		w.Header().Set("Content-Type", "video/x-matroska")
 		w.WriteHeader(200)
-		err = a.MediaManager.SegmentToMKVPlusOpus(ctx, user, rendition, w)
+		err = a.MediaManager.SegmentToMKVPlusOpus(ctx, user, w)
 		if err != nil {
 			log.Log(ctx, "stream.mkv error", "error", err)
 		}
 	})
 
-	router.GET("/playback/:user/:rendition/stream.mp4", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.GET("/playback/:user/stream.mp4", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
 		if user == "" {
 			errors.WriteHTTPBadRequest(w, "user required", nil)
-			return
-		}
-		rendition := p.ByName("rendition")
-		if rendition == "" {
-			errors.WriteHTTPBadRequest(w, "rendition required", nil)
 			return
 		}
 		user, err := a.NormalizeUser(ctx, user)
@@ -220,7 +197,7 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		pr, pw := io.Pipe()
 		bufw := bufio.NewWriter(pw)
 		g.Go(func() error {
-			return a.MediaManager.SegmentToMP4(ctx, user, rendition, bufw)
+			return a.MediaManager.SegmentToMP4(ctx, user, bufw)
 		})
 		g.Go(func() error {
 			time.Sleep(time.Duration(delayMS) * time.Millisecond)
@@ -230,7 +207,7 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		g.Wait()
 	})
 
-	router.HEAD("/playback/:user/:rendition/stream.mkv", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.HEAD("/playback/:user/stream.mkv", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		user := p.ByName("user")
 		if user == "" {
 			errors.WriteHTTPBadRequest(w, "user required", nil)
@@ -474,55 +451,6 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		}
 
 		w.WriteHeader(http.StatusNoContent)
-	})
-
-	router.POST("/livepeer-auth-webhook-url", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		var payload struct {
-			URL string `json:"url"`
-		}
-		// urls look like http://127.0.0.1:9999/live/did:plc:dkh4rwafdcda4ko7lewe43ml-uucbv40mdkcfat50/47.mp4
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			errors.WriteHTTPBadRequest(w, "invalid request body (could not decode)", err)
-			return
-		}
-		parts := strings.Split(payload.URL, "/")
-		if len(parts) < 5 {
-			errors.WriteHTTPBadRequest(w, "invalid request body (too few parts)", nil)
-			return
-		}
-		didSession := parts[4]
-		idParts := strings.Split(didSession, "-")
-		if len(idParts) != 2 {
-			errors.WriteHTTPBadRequest(w, "invalid request body (invalid did session)", nil)
-			return
-		}
-		did := idParts[0]
-		// sessionID := idParts[1]
-		seg, err := a.Model.LatestSegmentForUser(did)
-		if err != nil {
-			errors.WriteHTTPInternalServerError(w, "unable to get latest segment", err)
-			return
-		}
-		spseg, err := seg.ToStreamplaceSegment()
-		if err != nil {
-			errors.WriteHTTPInternalServerError(w, "unable to convert segment to streamplace segment", err)
-			return
-		}
-		renditions, err := renditions.GenerateRenditions(spseg)
-		if err != nil {
-			errors.WriteHTTPInternalServerError(w, "unable to generate renditions", err)
-			return
-		}
-		out := map[string]any{
-			"manifestID": didSession,
-			"profiles":   renditions.ToLivepeerProfiles(),
-		}
-		bs, err := json.Marshal(out)
-		if err != nil {
-			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
-			return
-		}
-		w.Write(bs)
 	})
 
 	handler := sloghttp.Recovery(router)

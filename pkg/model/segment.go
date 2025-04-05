@@ -13,10 +13,9 @@ import (
 )
 
 type SegmentMediadataVideo struct {
-	Width  int `json:"width"`
-	Height int `json:"height"`
-	FPSNum int `json:"fpsNum"`
-	FPSDen int `json:"fpsDen"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	Framerate string `json:"framerate"`
 }
 
 type SegmentMediadataAudio struct {
@@ -25,9 +24,8 @@ type SegmentMediadataAudio struct {
 }
 
 type SegmentMediaData struct {
-	Video    []*SegmentMediadataVideo `json:"video"`
-	Audio    []*SegmentMediadataAudio `json:"audio"`
-	Duration int64                    `json:"duration"`
+	Video []*SegmentMediadataVideo `json:"video"`
+	Audio []*SegmentMediadataAudio `json:"audio"`
 }
 
 // Scan scan value into Jsonb, implements sql.Scanner interface
@@ -70,23 +68,17 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	if len(s.MediaData.Audio) == 0 || s.MediaData.Audio[0] == nil {
 		return nil, fmt.Errorf("audio data is nil")
 	}
-	duration := s.MediaData.Duration
 	return &streamplace.Segment{
 		LexiconTypeID: "place.stream.segment",
 		Creator:       s.RepoDID,
 		Id:            s.ID,
 		SigningKey:    s.SigningKeyDID,
 		StartTime:     string(aqt),
-		Duration:      &duration,
 		Video: []*streamplace.Segment_Video{
 			{
 				Codec:  "h264",
 				Width:  int64(s.MediaData.Video[0].Width),
 				Height: int64(s.MediaData.Video[0].Height),
-				Framerate: &streamplace.Segment_Framerate{
-					Num: int64(s.MediaData.Video[0].FPSNum),
-					Den: int64(s.MediaData.Video[0].FPSDen),
-				},
 			},
 		},
 		Audio: []*streamplace.Segment_Audio{
