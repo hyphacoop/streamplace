@@ -111,6 +111,11 @@ func MakeDB(dbURL string) (Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error setting journal mode: %w", err)
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("error getting database: %w", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
 	for _, model := range []any{
 		Notification{},
 		PlayerEvent{},
