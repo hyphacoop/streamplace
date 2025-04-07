@@ -49,6 +49,11 @@ func NewLivepeerSession(ctx context.Context, did string, gatewayURL string) (*Li
 func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte, seg *streamplace.Segment) ([][]byte, error) {
 	ctx = log.WithLogValues(ctx, "func", "PostSegmentToGateway")
 	ls.SegLock.Lock()
+	// check if context is done since we were waiting for the lock
+	if ctx.Err() != nil {
+		ls.SegLock.Unlock()
+		return nil, ctx.Err()
+	}
 	ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 	defer cancel()
 	url := fmt.Sprintf("%s/live/%s/%d.mp4", ls.GatewayURL, ls.SessionID, ls.Count)
