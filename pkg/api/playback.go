@@ -262,6 +262,8 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 			}
 		}
 
+		ctx = log.WithLogValues(ctx, "did", did)
+
 		mediaSigner, err := media.MakeMediaSignerExt(ctx, a.CLI, did, addrBytes)
 		// mediaSigner, err := media.MakeMediaSigner(ctx, a.CLI, did, signer)
 		if err != nil {
