@@ -191,7 +191,7 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 
 	}
 	spmetrics.TranscodeAttemptsTotal.Inc()
-	segs, err := ss.lp.PostSegmentToGateway(ctx, data, spseg)
+	segs, err := ss.lp.PostSegmentToGateway(ctx, data, spseg, rs)
 	if err != nil {
 		spmetrics.TranscodeErrorsTotal.Inc()
 		return err

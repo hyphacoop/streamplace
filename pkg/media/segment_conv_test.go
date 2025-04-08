@@ -1,6 +1,7 @@
 package media
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"testing"
@@ -17,19 +18,31 @@ func TestMP4ToMPEGTS(t *testing.T) {
 	require.NoError(t, err)
 	defer inputFile.Close()
 
-	// Create temporary output file
-	outputFile, err := os.CreateTemp("", "*.ts")
-	require.NoError(t, err)
-	defer os.Remove(outputFile.Name())
-	defer outputFile.Close()
+	// Create a buffer for output
+	buf := bytes.Buffer{}
 
 	// Convert MP4 to MPEG-TS
-	dur, err := MP4ToMPEGTS(context.Background(), inputFile, outputFile)
+	dur, err := MP4ToMPEGTS(context.Background(), inputFile, &buf)
 	require.NoError(t, err)
 	require.Greater(t, dur, int64(0), "Duration should be greater than 0")
 
-	// Verify output file has content
-	info, err := os.Stat(outputFile.Name())
+	// Verify buffer has content
+	require.Greater(t, buf.Len(), 0, "Output buffer should not be empty")
+}
+
+func TestMPEGTSToMP4(t *testing.T) {
+	gst.Init(nil)
+
+	// Open input file
+	inputFile, err := os.Open(getFixture("sample-segment.mpegts"))
 	require.NoError(t, err)
-	require.Greater(t, info.Size(), int64(0), "Output file should not be empty")
+	defer inputFile.Close()
+
+	// Create temporary output file
+	buf := bytes.Buffer{}
+
+	// Convert MPEG-TS to MP4
+	err = MPEGTSToMP4(context.Background(), inputFile, &buf)
+	require.NoError(t, err)
+	require.Greater(t, buf.Len(), 0, "Output file should not be empty")
 }

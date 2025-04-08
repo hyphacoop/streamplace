@@ -47,7 +47,7 @@ func ReaderNeedData(ctx context.Context, input io.Reader) func(self *app.Source,
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				if read > 0 {
-					panic("got data on eof???")
+					log.Warn(ctx, "got data on eof???")
 				}
 				log.Debug(ctx, "EOF, ending stream", "length", read)
 				self.EndStream()

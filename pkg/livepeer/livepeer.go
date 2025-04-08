@@ -3,6 +3,7 @@ package livepeer
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -15,6 +16,8 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/media"
+	"stream.place/streamplace/pkg/renditions"
 	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/streamplace"
 )
@@ -49,8 +52,22 @@ func NewLivepeerSession(ctx context.Context, did string, gatewayURL string) (*Li
 	}, nil
 }
 
-func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte, spseg *streamplace.Segment) ([][]byte, error) {
+func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte, spseg *streamplace.Segment, rs renditions.Renditions) ([][]byte, error) {
 	ctx = log.WithLogValues(ctx, "func", "PostSegmentToGateway")
+	lpProfiles := rs.ToLivepeerProfiles()
+	transcodingConfiguration := map[string]any{
+		"manifestID": ls.SessionID,
+		"profiles":   lpProfiles,
+	}
+	bs, err := json.Marshal(transcodingConfiguration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal livepeer profile: %w", err)
+	}
+	tsSeg := bytes.Buffer{}
+	_, err = media.MP4ToMPEGTS(ctx, bytes.NewReader(buf), &tsSeg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert mp4 to ts: %w", err)
+	}
 	ls.Guard <- struct{}{}
 	start := time.Now()
 	// check if context is done since we were waiting for the lock
@@ -60,7 +77,8 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 	}
 	ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 	defer cancel()
-	url := fmt.Sprintf("%s/live/%s/%d.mp4", ls.GatewayURL, ls.SessionID, ls.Count)
+	seqNo := ls.Count
+	url := fmt.Sprintf("%s/live/%s/%d.ts", ls.GatewayURL, ls.SessionID, seqNo)
 	ls.Count++
 
 	dur := time.Duration(*spseg.Duration)
@@ -71,7 +89,7 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 	width := int(vid.Width)
 	height := int(vid.Height)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(buf))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(tsSeg.Bytes()))
 	if err != nil {
 		<-ls.Guard
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -79,18 +97,19 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 	req.Header.Set("Accept", "multipart/mixed")
 	req.Header.Set("Content-Duration", fmt.Sprintf("%d", durationMs))
 	req.Header.Set("Content-Resolution", fmt.Sprintf("%dx%d", width, height))
+	req.Header.Set("Livepeer-Transcode-Configuration", string(bs))
 
 	resp, err := ctxhttp.Do(ctx, &aqhttp.Client, req)
 	if err != nil {
 		<-ls.Guard
-		return nil, fmt.Errorf("failed to send segment to gateway: %w", err)
+		return nil, fmt.Errorf("failed to send segment to gateway (config %s): %w", string(bs), err)
 	}
 	<-ls.Guard
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		errOut, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("gateway returned non-OK status: %d, %s", resp.StatusCode, string(errOut))
+		return nil, fmt.Errorf("gateway returned non-OK status (config %s): %d, %s", string(bs), resp.StatusCode, string(errOut))
 	}
 
 	var out [][]byte
@@ -109,10 +128,12 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 			if err != nil {
 				return nil, fmt.Errorf("failed to get next part: %w", err)
 			}
-			bs, err := io.ReadAll(p)
+			mp4Bs := bytes.Buffer{}
+			err = media.MPEGTSToMP4(ctx, p, &mp4Bs)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read part: %w", err)
+				return nil, fmt.Errorf("failed to convert ts to mp4: %w", err)
 			}
+			bs := mp4Bs.Bytes()
 			log.Debug(ctx, "got part back from livepeer gateway", "length", len(bs), "name", p.FileName())
 			out = append(out, bs)
 		}
