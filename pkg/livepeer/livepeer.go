@@ -64,9 +64,16 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 		return nil, fmt.Errorf("failed to marshal livepeer profile: %w", err)
 	}
 	tsSeg := bytes.Buffer{}
-	_, err = media.MP4ToMPEGTS(ctx, bytes.NewReader(buf), &tsSeg)
+	audioSeg := bytes.Buffer{}
+	err = media.MP4ToMPEGTSVideoMP4Audio(ctx, bytes.NewReader(buf), &tsSeg, &audioSeg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert mp4 to ts: %w", err)
+	}
+	if tsSeg.Len() == 0 {
+		return nil, fmt.Errorf("no video in segment")
+	}
+	if audioSeg.Len() == 0 {
+		return nil, fmt.Errorf("no audio in segment")
 	}
 	ls.Guard <- struct{}{}
 	start := time.Now()
@@ -129,7 +136,8 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 				return nil, fmt.Errorf("failed to get next part: %w", err)
 			}
 			mp4Bs := bytes.Buffer{}
-			err = media.MPEGTSToMP4(ctx, p, &mp4Bs)
+			audioReader := bytes.NewReader(audioSeg.Bytes())
+			err = media.MPEGTSVideoMP4AudioToMP4(ctx, p, audioReader, &mp4Bs)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert ts to mp4: %w", err)
 			}
