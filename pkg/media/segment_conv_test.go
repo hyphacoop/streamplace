@@ -9,9 +9,12 @@ import (
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 )
 
 func TestMP4ToMPEGTS(t *testing.T) {
+	ignore := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, ignore)
 	gst.Init(nil)
 
 	// Open input file
@@ -62,6 +65,8 @@ func TestMP4ToMPEGTS(t *testing.T) {
 // }
 
 func TestMPEGTSToMP4(t *testing.T) {
+	ignore := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, ignore)
 	gst.Init(nil)
 
 	// Open input file
@@ -79,6 +84,8 @@ func TestMPEGTSToMP4(t *testing.T) {
 }
 
 func TestMP4ToMPEGTSVideoMP4Audio(t *testing.T) {
+	ignore := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, ignore)
 	gst.Init(nil)
 
 	// Open input file
