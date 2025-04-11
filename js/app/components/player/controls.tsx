@@ -368,7 +368,8 @@ function GearMenu(
               onPress={() => setMenu("root")}
             />
           </YGroup.Item>
-          <Separator />
+          {/* // #HLS-CAUTERIZATION */}
+          {/* <Separator />
           <YGroup.Item>
             <ListItem
               hoverTheme
@@ -379,7 +380,7 @@ function GearMenu(
               iconAfter={protocol === PROTOCOL_HLS ? CheckCircle : Circle}
               onPress={() => dispatch(setProtocol(PROTOCOL_HLS))}
             />
-          </YGroup.Item>
+          </YGroup.Item> */}
           {/* <Separator />
           <YGroup.Item>
             <ListItem

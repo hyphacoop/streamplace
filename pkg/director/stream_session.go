@@ -72,6 +72,8 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 
 	for _, r := range allRenditions {
 		g.Go(func() error {
+			// #HLS-CAUTERIZATION
+			return nil
 			for {
 				if ctx.Err() != nil {
 					return nil
