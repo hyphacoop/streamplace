@@ -38,7 +38,14 @@ export default function Login() {
             Log out
           </Button>
         </View>
-        <NameColorPicker />
+        <NameColorPicker
+          buttonProps={{
+            textAlign: "center",
+            flexBasis: 250,
+            maxWidth: 300,
+            marginHorizontal: "auto",
+          }}
+        />
       </View>
     );
   }

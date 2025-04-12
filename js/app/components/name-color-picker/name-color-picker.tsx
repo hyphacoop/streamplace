@@ -1,3 +1,4 @@
+import { X } from "@tamagui/lucide-icons";
 import {
   createChatProfileRecord,
   getChatProfileRecordFromPDS,
@@ -6,6 +7,7 @@ import {
 } from "features/bluesky/blueskySlice";
 import { PlaceStreamChatProfile } from "lexicons";
 import { useEffect, useState } from "react";
+import { Keyboard } from "react-native";
 import ColorPicker, {
   HueSlider,
   Panel1,
@@ -13,7 +15,7 @@ import ColorPicker, {
   Swatches,
 } from "reanimated-color-picker";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, H3, Sheet, useTheme, View } from "tamagui";
+import { Button, H3, isWeb, Sheet, useTheme, View } from "tamagui";
 
 /**
  * Parses an RGB color string and returns an object with red, green, and blue values
@@ -37,7 +39,6 @@ function parseRgbString(rgbString: string): PlaceStreamChatProfile.Color {
     throw new Error("Invalid color string (not enough parts)");
   }
 
-  console.log(parts);
   return {
     red: parseInt(parts[0].trim(), 10),
     green: parseInt(parts[1].trim(), 10),
@@ -45,13 +46,26 @@ function parseRgbString(rgbString: string): PlaceStreamChatProfile.Color {
   };
 }
 
-export default function NameColorPicker() {
+export default function NameColorPicker({
+  children,
+  text,
+  buttonProps,
+}: {
+  children?: React.ReactNode;
+  text?: (color: string) => React.ReactNode;
+  buttonProps?: React.ComponentProps<typeof Button>;
+}) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const dispatch = useAppDispatch();
   const chatProfile = useAppSelector(selectChatProfile);
   const [color, setColor] = useState(theme.accentColor?.val ?? "#bd6e86");
   const profile = useAppSelector(selectUserProfile);
+
+  let startColor = "";
+  if (chatProfile?.profile?.color) {
+    startColor = `rgb(${chatProfile.profile.color.red}, ${chatProfile.profile.color.green}, ${chatProfile.profile.color.blue})`;
+  }
 
   useEffect(() => {
     if (!chatProfile?.profile) {
@@ -61,33 +75,34 @@ export default function NameColorPicker() {
       const { red, green, blue } = chatProfile.profile.color;
       setColor(`rgb(${red}, ${green}, ${blue})`);
     }
-  }, [!chatProfile?.profile]);
-  // onCompleteJS={(x) => setColor(x.rgb)}
+  }, [startColor]);
+
   return (
     <View alignItems="center" flexDirection="row">
       <Button
-        maxWidth={300}
-        textAlign="center"
+        {...buttonProps}
         color={color}
-        marginHorizontal="auto"
-        onPress={() => setOpen(true)}
-        flexBasis={250}
-        // textShadowColor="white"
-        // textShadowOffset={{ width: 0, height: 0 }}
-        // textShadowRadius={3}
+        onPress={() => {
+          if (!isWeb) {
+            Keyboard.dismiss();
+          }
+          setOpen(true);
+        }}
       >
-        Change Name Color
+        {text ? text(color) : "Change Name Color"}
       </Button>
       <Sheet
         // forceRemoveScrollEnabled={open}
         open={open}
         modal={true}
-        onOpenChange={setOpen}
-        // snapPoints={snapPoints}
-        // snapPointsMode={snapPointsMode}
+        onOpenChange={(open) => {
+          setOpen(open);
+          if (!open) {
+            dispatch(getChatProfileRecordFromPDS());
+          }
+        }}
         dismissOnSnapToBottom
-        // position={position}
-        // onPositionChange={setPosition}
+        disableDrag={true}
         zIndex={100_000}
         animation="medium"
       >
@@ -108,6 +123,20 @@ export default function NameColorPicker() {
             maxWidth={600}
             marginHorizontal="auto"
           >
+            <Button
+              position="absolute"
+              top="$0"
+              right="$0"
+              onPress={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+              }}
+              marginRight={-15}
+              marginTop={-5}
+              backgroundColor="transparent"
+            >
+              <X />
+            </Button>
             <H3 textAlign="center" color={color}>
               @{profile?.handle}
             </H3>
