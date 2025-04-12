@@ -1,5 +1,5 @@
 import { VideoView } from "expo-video";
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { StatusBar, Dimensions, StyleSheet, BackHandler } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -9,6 +9,8 @@ import PlayerLoading from "./player-loading";
 import { PlayerProps, PROTOCOL_WEBRTC } from "./props";
 import Video from "./video.native";
 import VideoRetry from "./video-retry";
+import { usePlayerProtocol } from "features/player/playerSlice";
+import { useAppSelector } from "store/hooks";
 
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
@@ -18,6 +20,7 @@ export default function Fullscreen(props: PlayerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
+  const protocol = useAppSelector(usePlayerProtocol());
 
   // Re-calculate dimensions on orientation change
   useEffect(() => {
@@ -78,7 +81,7 @@ export default function Fullscreen(props: PlayerProps) {
 
   const setFullscreen = (on) => {
     // For WebRTC, use custom fullscreen implementation
-    if (props.protocol === PROTOCOL_WEBRTC) {
+    if (protocol === PROTOCOL_WEBRTC) {
       props.setFullscreen(on);
       return;
     }
@@ -93,7 +96,7 @@ export default function Fullscreen(props: PlayerProps) {
     }
   };
 
-  if (props.fullscreen && props.protocol === PROTOCOL_WEBRTC) {
+  if (props.fullscreen && protocol === PROTOCOL_WEBRTC) {
     // Determine if we're in landscape mode
     const isLandscape = dimensions.width > dimensions.height;
 
