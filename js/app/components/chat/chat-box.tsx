@@ -5,7 +5,10 @@ import {
   selectIsReady,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
-import { usePlayerLivestream } from "features/player/playerSlice";
+import {
+  LivestreamViewHydrated,
+  usePlayerLivestream,
+} from "features/player/playerSlice";
 import {
   chatWarn,
   selectChatWarned,
@@ -26,6 +29,7 @@ export default function ChatBox({ isPopout }: { isPopout?: boolean }) {
   const livestream = useAppSelector(usePlayerLivestream());
   const textAreaRef = useRef<Input>(null);
   const dispatch = useAppDispatch();
+  const navigate = useNavigation();
   const submit = () => {
     if (!isWeb) {
       Keyboard.dismiss();
@@ -49,7 +53,19 @@ export default function ChatBox({ isPopout }: { isPopout?: boolean }) {
 
   return (
     <View position="relative">
-      {loggedOut && <Login />}
+      {loggedOut && (
+        <View flexDirection="row" justifyContent="center">
+          <Button
+            backgroundColor="$accentColor"
+            onPress={() => {
+              navigate.navigate("Login");
+            }}
+          >
+            Log in to chat
+          </Button>
+          <PopoutButton livestream={livestream} isPopout={isPopout} />
+        </View>
+      )}
       {!loggedOut && (
         <Form
           zIndex={1}
@@ -112,22 +128,7 @@ export default function ChatBox({ isPopout }: { isPopout?: boolean }) {
               buttonProps={{ backgroundColor: "transparent" }}
               text={(color) => <Palette size={16} color={color} />}
             />
-            {isWeb && !isPopout && (
-              <Button
-                flexShrink={0}
-                backgroundColor="transparent"
-                disabled={loggedOut}
-                onPress={() => {
-                  window.open(
-                    "http://127.0.0.1:38080/chat-popout/iame.li",
-                    "_blank",
-                    "popup=true",
-                  );
-                }}
-              >
-                <SquareArrowOutUpRight size={16} />
-              </Button>
-            )}
+            <PopoutButton livestream={livestream} isPopout={isPopout} />
             <Button
               flexShrink={0}
               backgroundColor="transparent"
@@ -145,18 +146,27 @@ export default function ChatBox({ isPopout }: { isPopout?: boolean }) {
   );
 }
 
-const Login = () => {
-  const navigate = useNavigation();
+const PopoutButton = ({
+  livestream,
+  isPopout,
+}: {
+  livestream: LivestreamViewHydrated | null;
+  isPopout?: boolean;
+}) => {
+  if (!isWeb || isPopout) {
+    return <></>;
+  }
   return (
-    <View alignItems="center">
-      <Button
-        backgroundColor="$accentColor"
-        onPress={() => {
-          navigate.navigate("Login");
-        }}
-      >
-        Log in to chat
-      </Button>
-    </View>
+    <Button
+      flexShrink={0}
+      backgroundColor="transparent"
+      onPress={() => {
+        const u = new URL(window.location.href);
+        u.pathname = `/chat-popout/${livestream?.author?.did}`;
+        window.open(u.toString(), "_blank", "popup=true");
+      }}
+    >
+      <SquareArrowOutUpRight size={16} />
+    </Button>
   );
 };
