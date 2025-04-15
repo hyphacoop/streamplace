@@ -36,6 +36,11 @@ app-and-node:
 	$(MAKE) app
 	$(MAKE) node
 
+.PHONY: app-and-node-and-test
+app-and-node-and-test:
+	$(MAKE) app
+	$(MAKE) node
+	$(MAKE) test
 .PHONY: app
 app: schema install
 	yarn run build
@@ -399,14 +404,21 @@ docker:
 .PHONY: docker-build
 docker-build: docker-build-builder docker-build-in-container
 
+.PHONY: docker-test
+docker-test: docker-build-builder docker-test-in-container
+
 .PHONY: docker-build-builder
 docker-build-builder:
 	cd docker \
-	&& docker build --target=builder --os=linux --arch=amd64 -f build.Dockerfile -t dist.stream.place/streamplace/streamplace:builder .
+	&& podman build --target=builder --os=linux --arch=amd64 -f build.Dockerfile -t dist.stream.place/streamplace/streamplace:builder .
 
-.PHONY: docker-build-builder
+.PHONY: docker-build-in-container
 docker-build-in-container:
-	docker run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it dist.stream.place/streamplace/streamplace:builder make app-and-node
+	podman run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it dist.stream.place/streamplace/streamplace:builder make app-and-node
+
+.PHONY: docker-test-in-container
+docker-test-in-container:
+	podman run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it dist.stream.place/streamplace/streamplace:builder make app-and-node-and-test
 
 .PHONY: docker-release
 docker-release:
