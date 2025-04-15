@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"crypto"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"golang.org/x/term"
@@ -83,10 +85,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "whep" {
-		return WHEP()
+		return WHEP(os.Args[2:])
 	}
 	if len(os.Args) > 1 && os.Args[1] == "whip" {
-		return WHIP()
+		return WHIP(os.Args[2:])
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "self-test" {
@@ -137,6 +139,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	fs.BoolVar(&cli.TestStream, "test-stream", false, "run a built-in test stream on boot")
 	fs.BoolVar(&cli.NoFirehose, "no-firehose", false, "disable the bluesky firehose")
 	fs.BoolVar(&cli.PrintChat, "print-chat", false, "print chat messages to stdout")
+	fs.StringVar(&cli.WHIPTest, "whip-test", "", "run a WHIP self-test with the given parameters")
 	verbosity := fs.String("v", "3", "log verbosity level")
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
@@ -381,8 +384,16 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		})
 	}
 
+	if cli.WHIPTest != "" {
+		group.Go(func() error {
+			return WHIP(strings.Split(cli.WHIPTest, " "))
+		})
+	}
+
 	return group.Wait()
 }
+
+var ErrCaughtSignal = errors.New("caught signal")
 
 func handleSignals(ctx context.Context) error {
 	c := make(chan os.Signal, 1)
@@ -394,7 +405,7 @@ func handleSignals(ctx context.Context) error {
 				pprof.Lookup("goroutine").WriteTo(os.Stderr, 2)
 			}
 			log.Log(ctx, "caught signal, attempting clean shutdown", "signal", s)
-			return fmt.Errorf("caught signal=%v", s)
+			return fmt.Errorf("%w signal=%v", ErrCaughtSignal, s)
 		case <-ctx.Done():
 			return nil
 		}
