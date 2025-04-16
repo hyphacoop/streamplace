@@ -47,6 +47,7 @@ import Viewers from "components/viewers";
 import { userMute } from "features/streamplace/streamplaceSlice";
 import { Countdown } from "components/countdown";
 import { Rendition } from "lexicons/types/place/stream/defs";
+import usePlatform from "hooks/usePlatform";
 
 const Bar = (props) => (
   <XStack
@@ -72,6 +73,7 @@ const VolumeSlider = ({ volume, setVolume, muted, setMuted, showControls }) => {
   const [open, setOpen] = useState(false);
   const [sliderValue, setSliderValue] = useState(volume);
   const media = useMedia();
+  const { isWeb } = usePlatform();
 
   // Update slider value when volume prop changes
   useEffect(() => {
@@ -106,6 +108,16 @@ const VolumeSlider = ({ volume, setVolume, muted, setMuted, showControls }) => {
       }
     }
   };
+
+  if (!isWeb) {
+    return (
+      <View paddingLeft="$5" paddingRight="$3" justifyContent="center">
+        <Pressable onPress={() => setMuted(!muted)}>
+          {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <Popover
