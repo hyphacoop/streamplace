@@ -2,36 +2,26 @@ import {
   selectTelemetry,
   setURL,
   telemetryOpt,
-  selectUrl,
+  DEFAULT_URL,
 } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import {
-  Button,
-  Form,
-  H3,
-  Input,
-  View,
-  XStack,
-  Label,
-  Text,
-  isWeb,
-} from "tamagui";
+import { Button, Form, H3, Input, View, XStack, Text, isWeb } from "tamagui";
 import { Updates } from "./updates";
 import { Switch } from "react-native";
 
 export function Settings() {
   const dispatch = useAppDispatch();
   const { url } = useStreamplaceNode();
-  const currentUrl = useAppSelector(selectUrl);
+  const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
 
   // Initialize the override state based on current URL
   useEffect(() => {
-    setOverrideEnabled(url !== currentUrl);
-  }, [url, currentUrl]);
+    setOverrideEnabled(url !== defaultUrl);
+  }, [url, defaultUrl]);
 
   const onSubmit = () => {
     if (newUrl) {
@@ -43,7 +33,7 @@ export function Settings() {
   const handleToggleOverride = (enabled: boolean) => {
     setOverrideEnabled(enabled);
     if (!enabled) {
-      dispatch(setURL(currentUrl));
+      dispatch(setURL(defaultUrl));
     }
   };
 
@@ -89,7 +79,7 @@ export function Settings() {
                 color="$gray10"
                 style={{ opacity: overrideEnabled ? 0 : 1 }}
               >
-                Current node: {currentUrl}
+                Current node: {url}
               </Text>
             </View>
           </XStack>
@@ -107,7 +97,7 @@ export function Settings() {
               value={newUrl}
               flex={1}
               size="$3"
-              placeholder={currentUrl}
+              placeholder={url}
               onChangeText={(t) => setNewUrl(t)}
               onSubmitEditing={onSubmit}
               textContentType="URL"
