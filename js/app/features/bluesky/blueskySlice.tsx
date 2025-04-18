@@ -3,6 +3,7 @@ import {
   AppBskyFeedPost,
   AppBskyGraphBlock,
   BlobRef,
+  RichText,
 } from "@atproto/api";
 import { ProfileViewDetailed } from "@atproto/api/src/client/types/app/bsky/actor/defs";
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
@@ -523,10 +524,37 @@ export const blueskySlice = createAppSlice({
         if (!profile) {
           throw new Error("No profile");
         }
+
+        const rt = new RichText({ text });
+        rt.detectFacetsWithoutResolution();
+
         const record: PlaceStreamChatMessage.Record = {
           text: text,
           createdAt: new Date().toISOString(),
           streamer: livestream.author.did,
+          facets:
+            rt.facets?.map((facet) => ({
+              index: facet.index,
+              features: facet.features
+                .filter(
+                  (feature) =>
+                    feature.$type === "app.bsky.richtext.facet#link" ||
+                    feature.$type === "app.bsky.richtext.facet#mention",
+                )
+                .map((feature) => {
+                  if (feature.$type === "app.bsky.richtext.facet#link") {
+                    return {
+                      $type: "app.bsky.richtext.facet#link",
+                      uri: feature.uri,
+                    };
+                  } else {
+                    return {
+                      $type: "app.bsky.richtext.facet#mention",
+                      did: feature.did,
+                    };
+                  }
+                }),
+            })) || [],
         };
         await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,

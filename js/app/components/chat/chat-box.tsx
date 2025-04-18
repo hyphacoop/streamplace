@@ -86,52 +86,48 @@ export default function ChatBox({
           alignItems="stretch"
           opacity={loggedOut ? 0 : 1}
         >
-          {isChatVisible && (
-            <View flexGrow={1} flexShrink={0}>
-              <TextArea
-                borderRadius={0}
-                overflow="hidden"
-                returnKeyType="done"
-                submitBehavior="blurAndSubmit"
-                value={message}
-                ref={textAreaRef}
-                multiline={true}
-                keyboardType="default"
-                disabled={Boolean(loggedOut)}
-                rows={1}
-                onPress={() => {
-                  if (!chatWarned) {
-                    dispatch(chatWarn(true));
-                    toast.show("Just so you know!", {
-                      message: `Streamplace chat messages are public in the same way that Bluesky posts are public - they create records on your PDS.`,
-                    });
-                  }
-                }}
-                onChangeText={(text) => {
-                  const newMessage = text.replaceAll("\n", "");
-                  // const rt = new RichText({ text: newMessage });
-                  // rt.detectFacetsWithoutResolution();
-                  if (newMessage.length > 300) {
-                    return;
-                  }
-                  setMessage(text.replaceAll("\n", ""));
-                  if (isWeb && textAreaRef.current) {
-                    const textarea =
-                      textAreaRef.current as unknown as HTMLTextAreaElement;
-                    textarea.style.height = "";
-                    textarea.style.height = textarea.scrollHeight + "px";
-                  }
-                }}
-                onKeyPress={(e) => {
-                  if (e.nativeEvent.key === "Enter") {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-                onSubmitEditing={submit}
-              />
-            </View>
-          )}
+          <View flexGrow={1} flexShrink={0}>
+            <TextArea
+              borderRadius={0}
+              overflow="hidden"
+              returnKeyType="done"
+              submitBehavior="blurAndSubmit"
+              value={message}
+              ref={textAreaRef}
+              multiline={true}
+              keyboardType="default"
+              disabled={loggedOut}
+              rows={1}
+              onPress={() => {
+                if (!chatWarned) {
+                  dispatch(chatWarn(true));
+                  toast.show("Just so you know!", {
+                    message: `Streamplace chat messages are public in the same way that Bluesky posts are public - they create records on your PDS.`,
+                  });
+                }
+              }}
+              onChangeText={(text) => {
+                const newMessage = text.replaceAll("\n", "");
+                if (newMessage.length > 300) {
+                  return;
+                }
+                setMessage(text.replaceAll("\n", ""));
+                if (isWeb && textAreaRef.current) {
+                  const textarea =
+                    textAreaRef.current as unknown as HTMLTextAreaElement;
+                  textarea.style.height = "";
+                  textarea.style.height = textarea.scrollHeight + "px";
+                }
+              }}
+              onKeyPress={(e) => {
+                if (e.nativeEvent.key === "Enter") {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              onSubmitEditing={submit}
+            />
+          </View>
           <View
             flexDirection="row"
             justifyContent="flex-end"
