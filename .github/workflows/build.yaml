@@ -67,11 +67,10 @@ jobs:
         run: |
           export GOTOOLCHAIN=go1.23.6 \
           && brew install go \
-          && brew install python@3.11 \
-          && python3.11 -m pip install virtualenv \
-          && python3.11 -m virtualenv ~/venv \
+          && python -m pip install virtualenv \
+          && python -m virtualenv ~/venv \
           && source ~/venv/bin/activate \
-          && pip3 install meson \
+          && python -m pip install meson \
           && make \
           && make test \
           && make check
@@ -90,11 +89,10 @@ jobs:
         run: |
           export GOTOOLCHAIN=go1.23.6 \
           && brew install go \
-          && brew install python@3.11 \
-          && python3.11 -m pip install virtualenv \
-          && python3.11 -m virtualenv ~/venv \
+          && python -m pip install virtualenv \
+          && python -m virtualenv ~/venv \
           && source ~/venv/bin/activate \
-          && pip3 install meson \
+          && python -m pip install meson \
           && make \
           && make test \
           && make check
