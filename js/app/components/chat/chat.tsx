@@ -190,7 +190,6 @@ function ChatMessageRow({
           flexDirection="row"
           right={0}
           top={0}
-          left={0}
           bottom={0}
           alignItems="stretch"
           justifyContent="flex-end"
