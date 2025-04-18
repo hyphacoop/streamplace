@@ -21,7 +21,7 @@ jobs:
       - name: make node
         run: |
           sudo apt install -y podman
-          make in-container IN_CONTAINER_CMD="make node"
+          make in-container IN_CONTAINER_CMD="make"
 
   linux-arm64:
     name: linux-arm64
@@ -36,7 +36,7 @@ jobs:
       - name: make node
         run: |
           sudo apt install -y podman
-          make in-container IN_CONTAINER_CMD="make linux-arm64"
+          make in-container IN_CONTAINER_CMD="make app && make linux-arm64"
 
   windows-amd64:
     name: windows-amd64
@@ -51,7 +51,7 @@ jobs:
       - name: make node
         run: |
           sudo apt install -y podman
-          make in-container IN_CONTAINER_CMD="make windows-amd64"
+          make in-container IN_CONTAINER_CMD="make app && make windows-amd64"
 
   darwin-arm64:
     name: darwin-arm64
