@@ -4,7 +4,9 @@
 
 ![image](https://github.com/user-attachments/assets/1e3e13ab-ef6f-43dd-9d8b-15645adbd695)
 
-Streamplace was generously funded by the Livepeer Treasury as part of their mission to build the world's open video infrastructure. Check out more at [livepeer.org](https://www.livepeer.org/)!
+Streamplace was generously funded by the Livepeer Treasury as part of their
+mission to build the world's open video infrastructure. Check out more at
+[livepeer.org](https://www.livepeer.org/)!
 
 ## The Video Layer for Everything
 

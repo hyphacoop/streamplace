@@ -11,9 +11,11 @@ import {
 } from "features/player/playerSlice";
 import usePlatform from "hooks/usePlatform";
 import { useEffect, useRef, useState } from "react";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, Linking } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Button, ScrollView, Sheet, Text, useMedia, View } from "tamagui";
+import { RichText } from "@atproto/api";
+import { ReactElement } from "react";
 
 export default function Chat({
   isChatVisible,
@@ -212,21 +214,117 @@ function ChatMessageRow({
   );
 }
 
+interface Facet {
+  index: {
+    byteStart: number;
+    byteEnd: number;
+  };
+  features: Array<{
+    $type: string;
+    uri?: string;
+    did?: string;
+  }>;
+}
+
+const RichTextMessage = ({
+  text,
+  facets,
+}: {
+  text: string;
+  facets: Facet[];
+}) => {
+  if (!facets || facets.length === 0) {
+    return <Text>{text}</Text>;
+  }
+
+  const parts: ReactElement[] = [];
+  let lastIndex = 0;
+
+  const sortedFacets = [...facets].sort(
+    (a, b) => a.index.byteStart - b.index.byteStart,
+  );
+
+  sortedFacets.forEach((facet) => {
+    const { byteStart, byteEnd } = facet.index;
+    const start = byteStart;
+    const end = byteEnd;
+
+    // Add text before the facet
+    if (start > lastIndex) {
+      parts.push(
+        <Text key={`text-${lastIndex}`}>{text.slice(lastIndex, start)}</Text>,
+      );
+    }
+
+    // Add the facet
+    facet.features.forEach((feature) => {
+      if (feature.$type === "app.bsky.richtext.facet#link") {
+        parts.push(
+          <Text
+            key={`link-${start}`}
+            color="$accentColor"
+            cursor="pointer"
+            onPress={() => Linking.openURL(feature.uri || "")}
+          >
+            {text.slice(start, end)}
+          </Text>,
+        );
+      } else if (feature.$type === "app.bsky.richtext.facet#mention") {
+        parts.push(
+          <Text
+            key={`mention-${start}`}
+            color="$accentColor"
+            cursor="pointer"
+            onPress={() =>
+              Linking.openURL(`https://bsky.app/profile/${feature.did || ""}`)
+            }
+          >
+            {text.slice(start, end)}
+          </Text>,
+        );
+      }
+    });
+
+    lastIndex = end;
+  });
+
+  // Add remaining text after the last facet
+  if (lastIndex < text.length) {
+    parts.push(<Text key={`text-${lastIndex}`}>{text.slice(lastIndex)}</Text>);
+  }
+
+  return <Text>{parts}</Text>;
+};
+
 const ChatMessageText = ({ message }: { message: MessageViewHydrated }) => {
   let color = "$accentColor";
   if (message.chatProfile?.color) {
     const { red, green, blue } = message.chatProfile.color;
     color = `rgb(${red}, ${green}, ${blue})`;
   }
+
+  const rt = new RichText({ text: message.record.text });
+  rt.detectFacetsWithoutResolution();
+
   return (
     <Text fontSize={13}>
-      <Text color={color}>
+      <Text
+        color={color}
+        cursor="pointer"
+        onPress={() =>
+          Linking.openURL(`https://bsky.app/profile/${message.author.did}`)
+        }
+      >
         {message.author.handle
           ? `@${message.author.handle}`
           : message.author.did}
         :
       </Text>
-      <Text> {message.record.text}</Text>
+      <Text> </Text>
+      <RichTextMessage
+        text={message.record.text}
+        facets={rt.facets as Facet[]}
+      />
     </Text>
   );
 };
