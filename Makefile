@@ -420,6 +420,11 @@ docker-build-in-container:
 docker-test-in-container:
 	podman run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it dist.stream.place/streamplace/streamplace:builder make app-and-node-and-test
 
+IN_CONTAINER_CMD?=echo 'usage: make in-container IN_CONTAINER_CMD=\"<command>\"'
+.PHONY: in-container
+in-container: docker-build-builder
+	podman run -v $$(pwd):$$(pwd) -w $$(pwd) --rm -it dist.stream.place/streamplace/streamplace:builder bash -c "$$IN_CONTAINER_CMD"
+
 .PHONY: docker-release
 docker-release:
 	cd docker \

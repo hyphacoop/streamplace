@@ -8,8 +8,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linux-build:
-    name: linux-build
+  linux-amd64:
+    name: linux-amd64
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -18,13 +18,43 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Build Streamplace
+      - name: make node
         run: |
           sudo apt install -y podman
-          make docker-build
+          make in-container IN_CONTAINER_CMD="make"
 
-  macos-build:
-    name: macos-build
+  linux-arm64:
+    name: linux-arm64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: make node
+        run: |
+          sudo apt install -y podman
+          make in-container IN_CONTAINER_CMD="make app && make linux-arm64"
+
+  windows-amd64:
+    name: windows-amd64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: make node
+        run: |
+          sudo apt install -y podman
+          make in-container IN_CONTAINER_CMD="make app && make windows-amd64"
+
+  darwin-arm64:
+    name: darwin-arm64
     runs-on: macos-latest
     steps:
       - name: Check out code
@@ -37,11 +67,32 @@ jobs:
         run: |
           export GOTOOLCHAIN=go1.23.6 \
           && brew install go \
-          && brew install python@3.11 \
-          && python3.11 -m pip install virtualenv \
-          && python3.11 -m virtualenv ~/venv \
+          && python -m pip install virtualenv \
+          && python -m virtualenv ~/venv \
           && source ~/venv/bin/activate \
-          && pip3 install meson \
+          && python -m pip install meson \
+          && make \
+          && make test \
+          && make check
+
+  darwin-amd64:
+    name: darwin-amd64
+    runs-on: macos-13
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Build Streamplace
+        run: |
+          export GOTOOLCHAIN=go1.23.6 \
+          && brew install go \
+          && python -m pip install virtualenv \
+          && python -m virtualenv ~/venv \
+          && source ~/venv/bin/activate \
+          && python -m pip install meson \
           && make \
           && make test \
           && make check
