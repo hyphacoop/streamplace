@@ -213,10 +213,10 @@ build-mac:
     - "$(which xcodeproj) --version"
     - >
       export GOTOOLCHAIN=go1.23.6
-      && python -m pip install virtualenv
-      && python -m virtualenv ~/venv
+      && python3 -m pip install virtualenv
+      && python3 -m virtualenv ~/venv
       && source ~/venv/bin/activate
-      && python -m pip install meson
+      && python3 -m pip install meson
       && make ci-macos -j16
 
 windows-selftest:
