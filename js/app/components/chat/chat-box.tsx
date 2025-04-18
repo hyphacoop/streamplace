@@ -8,18 +8,25 @@ import {
 import {
   LivestreamViewHydrated,
   usePlayerLivestream,
+  MessageViewHydrated,
+  addLocalChatMessage,
+  usePlayerId,
 } from "features/player/playerSlice";
 import {
   chatWarn,
   selectChatWarned,
 } from "features/streamplace/streamplaceSlice";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Keyboard } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, Form, Input, isWeb, TextArea, View } from "tamagui";
-import { Palette, SquareArrowOutUpRight } from "@tamagui/lucide-icons";
+import { Button, Form, Input, isWeb, TextArea, View, Text } from "tamagui";
+import {
+  Palette,
+  SquareArrowOutUpRight,
+  X as XIcon,
+} from "@tamagui/lucide-icons";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
-
+import { chatEvents } from "./chat-events";
 export default function ChatBox({
   isPopout,
   setIsChatVisible,
@@ -30,6 +37,7 @@ export default function ChatBox({
   isChatVisible?: boolean;
 }) {
   const [message, setMessage] = useState("");
+  const [replyTo, setReplyTo] = useState<MessageViewHydrated | null>(null);
   const isReady = useAppSelector(selectIsReady);
   const userProfile = useAppSelector(selectUserProfile);
   const chatWarned = useAppSelector(selectChatWarned);
@@ -38,6 +46,53 @@ export default function ChatBox({
   const textAreaRef = useRef<Input>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigation();
+
+  useEffect(() => {
+    const handleReplyMessage = (message: MessageViewHydrated) => {
+      setReplyTo(message);
+      if (textAreaRef.current) {
+        textAreaRef.current.focus();
+      }
+    };
+
+    chatEvents.emitter.on(chatEvents.REPLY, handleReplyMessage);
+
+    // Add window event listener for backward compatibility for web
+    if (isWeb && typeof window !== "undefined") {
+      const handleReplyEvent = (event: CustomEvent<MessageViewHydrated>) => {
+        handleReplyMessage(event.detail);
+      };
+
+      try {
+        window.addEventListener(
+          "chat:reply",
+          handleReplyEvent as EventListener,
+        );
+      } catch (e) {
+        console.error("Error adding window event listener:", e);
+      }
+
+      return () => {
+        // Clean up both listeners
+        chatEvents.emitter.off(chatEvents.REPLY, handleReplyMessage);
+        try {
+          window.removeEventListener(
+            "chat:reply",
+            handleReplyEvent as EventListener,
+          );
+        } catch (e) {
+          console.error("Error removing window event listener:", e);
+        }
+      };
+    }
+
+    // Clean up just the emitter listener for non-web platforms
+    return () => {
+      chatEvents.emitter.off(chatEvents.REPLY, handleReplyMessage);
+    };
+  }, []);
+
+  const playerId = usePlayerId();
 
   const submit = () => {
     if (!isWeb) {
@@ -49,8 +104,35 @@ export default function ChatBox({
     if (!livestream) {
       throw new Error("No livestream");
     }
-    dispatch(chatMessage({ text: message, livestream }));
+
+    const replyData = replyTo
+      ? {
+          cid: replyTo.cid,
+          uri: replyTo.uri,
+          author: replyTo.author,
+          text: replyTo.record.text,
+        }
+      : undefined;
+
+    // Add the message to the local chat immediately
+    dispatch(
+      addLocalChatMessage({
+        playerId,
+        message,
+        replyTo: replyData,
+      }),
+    );
+
+    // Send the message to the server
+    dispatch(
+      chatMessage({
+        text: message,
+        livestream,
+        replyTo: replyData,
+      }),
+    );
     setMessage("");
+    setReplyTo(null);
     if (isWeb && textAreaRef.current) {
       const textarea = textAreaRef.current as unknown as HTMLTextAreaElement;
       textarea.style.height = "";
@@ -86,6 +168,38 @@ export default function ChatBox({
           alignItems="stretch"
           opacity={loggedOut ? 0 : 1}
         >
+          {replyTo && (
+            <View
+              flexDirection="row"
+              alignItems="center"
+              backgroundColor="$backgroundHover"
+              padding="$2"
+              borderRadius="$2"
+              marginBottom="$2"
+            >
+              <View flex={1}>
+                <Text fontSize={12} color="$color">
+                  Replying to @{replyTo.author.handle}
+                </Text>
+                <Text
+                  fontSize={12}
+                  color="$color"
+                  opacity={0.7}
+                  numberOfLines={1}
+                >
+                  {replyTo.record.text}
+                </Text>
+              </View>
+              <Button
+                size="$2"
+                circular
+                onPress={() => setReplyTo(null)}
+                backgroundColor="transparent"
+              >
+                <XIcon size={16} />
+              </Button>
+            </View>
+          )}
           <View flexGrow={1} flexShrink={0}>
             <TextArea
               borderRadius={0}
@@ -96,7 +210,7 @@ export default function ChatBox({
               ref={textAreaRef}
               multiline={true}
               keyboardType="default"
-              disabled={loggedOut}
+              disabled={Boolean(loggedOut)}
               rows={1}
               onPress={() => {
                 if (!chatWarned) {
@@ -149,7 +263,7 @@ export default function ChatBox({
                 <Button
                   flexShrink={0}
                   backgroundColor="transparent"
-                  disabled={loggedOut}
+                  disabled={Boolean(loggedOut)}
                   onPress={() => {
                     submit();
                   }}

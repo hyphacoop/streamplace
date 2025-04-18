@@ -17,6 +17,19 @@
         "chatProfile": {
           "type": "ref",
           "ref": "place.stream.chat.profile"
+        },
+        "reply": {
+          "type": "object",
+          "properties": {
+            "root": {
+              "type": "ref",
+              "ref": "com.atproto.repo.strongRef"
+            },
+            "parent": {
+              "type": "ref",
+              "ref": "com.atproto.repo.strongRef"
+            }
+          }
         }
       }
     }
