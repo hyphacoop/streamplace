@@ -8,9 +8,54 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linux-build:
-    name: linux-build
+  linux-amd64:
+    name: linux-amd64
     runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: make node
+        run: |
+          sudo apt install -y podman
+          make in-container IN_CONTAINER_CMD="make node"
+
+  linux-arm64:
+    name: linux-arm64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: make node
+        run: |
+          sudo apt install -y podman
+          make in-container IN_CONTAINER_CMD="make linux-arm64"
+
+  windows-amd64:
+    name: windows-amd64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: make node
+        run: |
+          sudo apt install -y podman
+          make in-container IN_CONTAINER_CMD="make windows-amd64"
+
+  darwin-arm64:
+    name: darwin-arm64
+    runs-on: macos-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4.1.7
@@ -20,12 +65,20 @@ jobs:
 
       - name: Build Streamplace
         run: |
-          sudo apt install -y podman
-          make docker-build
+          export GOTOOLCHAIN=go1.23.6 \
+          && brew install go \
+          && brew install python@3.11 \
+          && python3.11 -m pip install virtualenv \
+          && python3.11 -m virtualenv ~/venv \
+          && source ~/venv/bin/activate \
+          && pip3 install meson \
+          && make \
+          && make test \
+          && make check
 
-  macos-build:
-    name: macos-build
-    runs-on: macos-latest
+  darwin-amd64:
+    name: darwin-amd64
+    runs-on: macos-13
     steps:
       - name: Check out code
         uses: actions/checkout@v4.1.7
