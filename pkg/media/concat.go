@@ -53,11 +53,26 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 		return nil, nil, fmt.Errorf("failed to get input queue audio src pad")
 	}
 
+	go func() {
+		<-ctx.Done()
+		inputQueue.SetState(gst.StateNull)
+		inputQueue = nil
+		inputQueuePadVideoSink = nil
+		inputQueuePadVideoSrc = nil
+		inputQueuePadAudioSink = nil
+		inputQueuePadAudioSrc = nil
+	}()
+
 	// streamsynchronizer
 	streamsynchronizer, err := gst.NewElementWithProperties("streamsynchronizer", map[string]any{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create streamsynchronizer element: %w", err)
 	}
+	go func() {
+		<-ctx.Done()
+		streamsynchronizer.SetState(gst.StateNull)
+		streamsynchronizer = nil
+	}()
 	err = pipeline.Add(streamsynchronizer)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to add streamsynchronizer to pipeline: %w", err)
@@ -80,7 +95,9 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 	}
 
 	// output multiqueue
-	outputQueue, err := gst.NewElementWithProperties("multiqueue", map[string]any{})
+	outputQueue, err := gst.NewElementWithProperties("multiqueue", map[string]any{
+		"name": "concat-output-queue",
+	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create multiqueue element: %w", err)
 	}
@@ -96,6 +113,13 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 	if outputQueuePadAudioSink == nil {
 		return nil, nil, fmt.Errorf("failed to get output queue audio sink pad")
 	}
+	go func() {
+		<-ctx.Done()
+		outputQueue.SetState(gst.StateNull)
+		outputQueue = nil
+		outputQueuePadVideoSink = nil
+		outputQueuePadAudioSink = nil
+	}()
 
 	// linking
 
@@ -136,17 +160,23 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 				log.Debug(ctx, "got segment", "file", file.Filepath)
 				allFiles <- file.Data
 				if len(file.Data) == 0 {
-					log.Warn(ctx, "no more segments")
+					log.Warn(ctx, "no more segments, stopping segment reader")
 					return
 				}
 			}
 		}
 	}()
 
+	segCount := 0
+
 	// nextFile is the primary loop that pops off a file, creates new demuxer elements for it,
 	// and pushes into the pipeline
 	var nextFile func()
 	nextFile = func() {
+		mySegCount := segCount
+		segCount += 1
+		segDone := make(chan struct{})
+		log.Debug(ctx, "moving to next file", "segCount", mySegCount)
 		pr, pw := io.Pipe()
 		go func() {
 			select {
@@ -156,7 +186,9 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 				return
 			case bs := <-allFiles:
 				if len(bs) == 0 {
-					log.Warn(ctx, "no more segments")
+					log.Warn(ctx, "no more segments, ending stream")
+					pr.Close()
+					pw.Close()
 					cancel()
 					return
 				}
@@ -170,7 +202,9 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 			}
 		}()
 
-		demux, err := gst.NewElementWithProperties("qtdemux", map[string]any{})
+		demux, err := gst.NewElementWithProperties("qtdemux", map[string]any{
+			"name": fmt.Sprintf("concat-demux-%d", mySegCount),
+		})
 		if err != nil {
 			log.Error(ctx, "failed to create demux element", "error", err)
 			cancel()
@@ -228,8 +262,11 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 					if count == 0 {
 						// don't keep going if our context is done
 						if ctx.Err() == nil {
-							nextFile()
+							go nextFile()
+							segDone <- struct{}{}
 						}
+					} else {
+						log.Debug(ctx, "demux has more pads, waiting for them to close")
 					}
 					return gst.PadProbeRemove
 				})
@@ -242,6 +279,7 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 		}
 
 		appsrc, err := gst.NewElementWithProperties("appsrc", map[string]any{
+			"name":    fmt.Sprintf("concat-appsrc-%d", mySegCount),
 			"is-live": true,
 		})
 		if err != nil {
@@ -290,7 +328,7 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 							cancel()
 							return
 						}
-						log.Debug(ctx, "EOF, ending stream", "length", read)
+						log.Debug(ctx, "EOF, ending segment", "length", read)
 						done()
 						return
 					} else {
@@ -309,7 +347,7 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 				self.PushBuffer(buffer)
 
 				if uint(read) < length {
-					log.Debug(ctx, "short write, ending stream", "length", read)
+					log.Debug(ctx, "short write, ending segment", "length", read)
 					done()
 				}
 			},
@@ -340,6 +378,18 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 			cancel()
 			return
 		}
+
+		select {
+		case <-ctx.Done():
+		case <-segDone:
+		}
+
+		log.Debug(ctx, "ending segment")
+		demux.SetState(gst.StateNull)
+		src.SetCallbacks(&app.SourceCallbacks{})
+		appsrc.SetState(gst.StateNull)
+		pr.Close()
+		pw.Close()
 	}
 
 	// fire it up!

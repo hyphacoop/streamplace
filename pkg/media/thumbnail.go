@@ -11,13 +11,13 @@ import (
 	"stream.place/streamplace/pkg/log"
 )
 
-func (mm *MediaManager) Thumbnail(ctx context.Context, r io.Reader, w io.Writer) error {
+func Thumbnail(ctx context.Context, r io.Reader, w io.Writer) error {
 	ctx = log.WithLogValues(ctx, "function", "Thumbnail")
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	pipelineSlice := []string{
-		"appsrc name=appsrc ! qtdemux ! decodebin ! videoconvert ! videoscale ! video/x-raw,width=[1,720],height=[1,720],pixel-aspect-ratio=1/1 ! pngenc snapshot=true ! appsink name=appsink",
+		"appsrc name=appsrc ! qtdemux name=demux ! decodebin ! videoconvert ! videoscale ! capsfilter name=capsfilter caps=video/x-raw,width=[1,1280],height=[1,720],pixel-aspect-ratio=1/1 ! queue ! pngenc snapshot=true ! appsink name=appsink",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))

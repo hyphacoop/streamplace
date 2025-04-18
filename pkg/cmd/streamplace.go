@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/term"
 	"stream.place/streamplace/pkg/aqhttp"
@@ -144,6 +145,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
 	fs.StringVar(&cli.Color, "color", "", "'true' to enable colorized logging, 'false' to disable")
+	fs.BoolVar(&cli.Thumbnail, "thumbnail", true, "enable thumbnail generation")
 
 	version := fs.Bool("version", false, "print version and exit")
 
@@ -386,7 +388,12 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	if cli.WHIPTest != "" {
 		group.Go(func() error {
-			return WHIP(strings.Split(cli.WHIPTest, " "))
+			err := WHIP(strings.Split(cli.WHIPTest, " "))
+			log.Warn(ctx, "WHIP test complete, sleeping for 3 seconds and shutting down gstreamer")
+			time.Sleep(time.Second * 3)
+			// gst.Deinit()
+			log.Warn(ctx, "gst deinit complete, exiting")
+			return err
 		})
 	}
 
