@@ -259,7 +259,7 @@ func (g *Git) Describe(reference *plumbing.Reference) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if count == 0 {
+	if count == 0 && os.Getenv("CI_COMMIT_TAG") != "" {
 		return fmt.Sprint(tag.Name().Short()), nil
 	} else {
 		return fmt.Sprintf("%s-%s",
