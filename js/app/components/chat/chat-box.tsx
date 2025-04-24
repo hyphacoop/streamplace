@@ -4,13 +4,16 @@ import {
   chatMessage,
   selectIsReady,
   selectUserProfile,
+  selectChatProfile,
 } from "features/bluesky/blueskySlice";
 import {
   LivestreamViewHydrated,
   usePlayerLivestream,
-  MessageViewHydrated,
   addLocalChatMessage,
   usePlayerId,
+  useReplyToMessage,
+  usePlayerActions,
+  prepareReplyData,
 } from "features/player/playerSlice";
 import {
   chatWarn,
@@ -26,7 +29,7 @@ import {
   X as XIcon,
 } from "@tamagui/lucide-icons";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
-import { chatEvents } from "./chat-events";
+
 export default function ChatBox({
   isPopout,
   setIsChatVisible,
@@ -37,93 +40,54 @@ export default function ChatBox({
   isChatVisible?: boolean;
 }) {
   const [message, setMessage] = useState("");
-  const [replyTo, setReplyTo] = useState<MessageViewHydrated | null>(null);
   const isReady = useAppSelector(selectIsReady);
   const userProfile = useAppSelector(selectUserProfile);
+  const chatProfile = useAppSelector(selectChatProfile);
   const chatWarned = useAppSelector(selectChatWarned);
   const loggedOut = isReady && !userProfile;
   const livestream = useAppSelector(usePlayerLivestream());
   const textAreaRef = useRef<Input>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigation();
+  const playerId = usePlayerId();
+  const playerActions = usePlayerActions();
+  const replyTo = useAppSelector(useReplyToMessage());
 
   useEffect(() => {
-    const handleReplyMessage = (message: MessageViewHydrated) => {
-      setReplyTo(message);
-      if (textAreaRef.current) {
-        textAreaRef.current.focus();
-      }
-    };
-
-    chatEvents.emitter.on(chatEvents.REPLY, handleReplyMessage);
-
-    // Add window event listener for backward compatibility for web
-    if (isWeb && typeof window !== "undefined") {
-      const handleReplyEvent = (event: CustomEvent<MessageViewHydrated>) => {
-        handleReplyMessage(event.detail);
-      };
-
-      try {
-        window.addEventListener(
-          "chat:reply",
-          handleReplyEvent as EventListener,
-        );
-      } catch (e) {
-        console.error("Error adding window event listener:", e);
-      }
-
-      return () => {
-        // Clean up both listeners
-        chatEvents.emitter.off(chatEvents.REPLY, handleReplyMessage);
-        try {
-          window.removeEventListener(
-            "chat:reply",
-            handleReplyEvent as EventListener,
-          );
-        } catch (e) {
-          console.error("Error removing window event listener:", e);
-        }
-      };
+    if (replyTo && textAreaRef.current) {
+      textAreaRef.current.focus();
     }
-
-    // Clean up just the emitter listener for non-web platforms
-    return () => {
-      chatEvents.emitter.off(chatEvents.REPLY, handleReplyMessage);
-    };
-  }, []);
-
-  const playerId = usePlayerId();
+  }, [replyTo]);
 
   const submit = () => {
-    if (!isWeb) {
-      Keyboard.dismiss();
-    }
-    if (message.length === 0) {
-      return;
-    }
-    if (!livestream) {
-      throw new Error("No livestream");
-    }
+    if (!isWeb) Keyboard.dismiss();
+    if (!message.length || !livestream || !userProfile) return;
 
-    const replyData = replyTo
-      ? {
-          cid: replyTo.cid,
-          uri: replyTo.uri,
-          author: replyTo.author,
-          text: replyTo.record.text,
-        }
-      : undefined;
+    const replyData = prepareReplyData(replyTo);
 
-    // Add the message to the local chat immediately
+    // Add local message
     dispatch(
       addLocalChatMessage({
         playerId,
         message,
         replyTo: replyData,
+        author: {
+          did: userProfile.did,
+          handle: userProfile.handle,
+        },
+        chatProfile: chatProfile?.profile?.color
+          ? {
+              color: {
+                red: chatProfile.profile.color.red,
+                green: chatProfile.profile.color.green,
+                blue: chatProfile.profile.color.blue,
+              },
+            }
+          : undefined,
       }),
     );
 
-    // Send the message to the server
+    // Send to server
     dispatch(
       chatMessage({
         text: message,
@@ -131,8 +95,10 @@ export default function ChatBox({
         replyTo: replyData,
       }),
     );
+
     setMessage("");
-    setReplyTo(null);
+    playerActions.setReplyToMessage(null);
+
     if (isWeb && textAreaRef.current) {
       const textarea = textAreaRef.current as unknown as HTMLTextAreaElement;
       textarea.style.height = "";
@@ -193,7 +159,7 @@ export default function ChatBox({
               <Button
                 size="$2"
                 circular
-                onPress={() => setReplyTo(null)}
+                onPress={() => playerActions.setReplyToMessage(null)}
                 backgroundColor="transparent"
               >
                 <XIcon size={16} />
@@ -278,7 +244,6 @@ export default function ChatBox({
     </View>
   );
 }
-
 const PopoutButton = ({
   livestream,
   isPopout,

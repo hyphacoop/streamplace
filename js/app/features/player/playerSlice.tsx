@@ -24,6 +24,8 @@ import {
   ViewerCount,
 } from "../../lexicons/types/place/stream/livestream";
 import * as Segment from "../../lexicons/types/place/stream/segment";
+import { useAppDispatch } from "store/hooks";
+
 export interface PlayerContextType {
   playerId: string | null;
 }
@@ -70,6 +72,7 @@ export interface PlayerState {
   renditions: Rendition[];
   selectedRendition: string | null;
   protocol: string;
+  replyToMessage: MessageViewHydrated | null;
 }
 
 export interface PlayersState {
@@ -83,6 +86,98 @@ export const newPlayer = createAction("player/newPlayer", function prepare() {
     payload: { playerId: uuidv7(), forceProtocol: PROTOCOL_WEBRTC },
   };
 });
+
+interface ChatProfileColor {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+interface ChatProfile {
+  color?: ChatProfileColor;
+}
+
+interface Author {
+  did: string;
+  handle: string;
+}
+
+export interface ReplyTo {
+  cid: string;
+  uri: string;
+  author: Author;
+  text: string;
+  chatProfile?: ChatProfile;
+}
+
+export const prepareReplyData = (
+  message: MessageViewHydrated | null,
+): ReplyTo | undefined => {
+  if (!message) return undefined;
+
+  return {
+    cid: message.cid,
+    uri: message.uri,
+    author: message.author,
+    text: message.record.text,
+    chatProfile: message.chatProfile,
+  };
+};
+
+export const addLocalChatMessage = createAction(
+  "player/addLocalChatMessage",
+  ({
+    playerId,
+    message,
+    replyTo,
+    author,
+    chatProfile,
+  }: {
+    playerId: string;
+    message: string;
+    replyTo?: ReplyTo;
+    author: Author;
+    chatProfile?: ChatProfile;
+  }) => {
+    const timestamp = Date.now();
+    const createdAt = new Date().toISOString();
+
+    const localMessage = {
+      uri: `local-${timestamp}`,
+      cid: `local-${timestamp}`,
+      indexedAt: createdAt,
+      author,
+      record: {
+        text: message,
+        createdAt,
+        ...(replyTo && {
+          reply: {
+            parent: { cid: replyTo.cid, uri: replyTo.uri },
+            root: { cid: replyTo.cid, uri: replyTo.uri },
+          },
+        }),
+      },
+      replyTo: replyTo && {
+        cid: replyTo.cid,
+        uri: replyTo.uri,
+        author: replyTo.author,
+        text: replyTo.text,
+        chatProfile: replyTo.chatProfile,
+      },
+      chatProfile: chatProfile?.color && {
+        color: {
+          red: chatProfile.color.red,
+          green: chatProfile.color.green,
+          blue: chatProfile.color.blue,
+        },
+      },
+    } as unknown as MessageViewHydrated;
+
+    return {
+      payload: { playerId, message: localMessage },
+    };
+  },
+);
 
 export const usePlayerId = () => {
   const { playerId } = useContext(PlayerContext);
@@ -100,51 +195,28 @@ const reduceChat = (
   state = { ...state } as PlayerState;
   const newChat: { [key: string]: MessageViewHydrated } = { ...state.chat };
 
-  // Filter out local messages that have been replaced by server messages
-  const localMessageUris = new Set();
-
-  // Identify all local messages
-  Object.values(newChat).forEach((msg) => {
-    if (msg.uri.startsWith("local-")) {
-      const localText = msg.record.text;
-
-      // Match local message with relayed message
-      const matchingServerMsg = messages.find(
-        (serverMsg) =>
-          serverMsg.record.text === localText &&
-          !serverMsg.uri.startsWith("local-"),
-      );
-
-      if (matchingServerMsg) {
-        // Found a matching server message, mark this local message for removal
-        localMessageUris.add(msg.uri);
-
-        // [HACK] This ensures reply information is preserved even if the server message doesn't have it
-        if ((msg as any).replyTo) {
-          (matchingServerMsg as any).replyTo = (msg as any).replyTo;
-        }
-
-        // Store the server message in the chat object
-        const date = new Date(matchingServerMsg.record.createdAt);
-        const key = `${date.getTime()}-${matchingServerMsg.uri}`;
-        newChat[key] = matchingServerMsg;
-      }
-    }
-  });
-
-  // Remove local messages that the server has returned
-  Object.keys(newChat).forEach((key) => {
-    if (localMessageUris.has(newChat[key].uri)) {
-      delete newChat[key];
-    }
-  });
-
   // Add new messages
   for (let message of messages) {
     const date = new Date(message.record.createdAt);
     const key = `${date.getTime()}-${message.uri}`;
 
-    // Check if this message is a reply and try to find the parent message
+    // Remove existing local message matching the server one
+    if (!message.uri.startsWith("local-")) {
+      const existingLocalMessageKey = Object.keys(newChat).find((k) => {
+        const msg = newChat[k];
+        return (
+          msg.uri.startsWith("local-") &&
+          msg.record.text === message.record.text &&
+          msg.author.did === message.author.did
+        );
+      });
+
+      if (existingLocalMessageKey) {
+        delete newChat[existingLocalMessageKey];
+      }
+    }
+
+    // Handle reply information for local-first messages
     if (message.record.reply) {
       const reply = message.record.reply as {
         parent?: { uri: string; cid: string };
@@ -154,7 +226,7 @@ const reduceChat = (
       const parentUri = reply?.parent?.uri || reply?.root?.uri;
 
       if (parentUri) {
-        // Look for the parent message in our chat
+        // First try to find the parent message in our chat
         const parentMsgKey = Object.keys(newChat).find(
           (k) => newChat[k].uri === parentUri,
         );
@@ -162,11 +234,15 @@ const reduceChat = (
         if (parentMsgKey) {
           // Found the parent message, add its info to our message
           const parentMsg = newChat[parentMsgKey];
-          (message as any).replyTo = {
-            cid: parentMsg.cid,
-            uri: parentMsg.uri,
-            author: parentMsg.author,
-            text: parentMsg.record.text,
+          message = {
+            ...message,
+            replyTo: {
+              cid: parentMsg.cid,
+              uri: parentMsg.uri,
+              author: parentMsg.author,
+              text: parentMsg.record.text,
+              chatProfile: parentMsg.chatProfile,
+            },
           };
         }
       }
@@ -187,73 +263,12 @@ const reduceChat = (
     .sort((a, b) => (a > b ? 1 : -1))
     .map((key) => newChat[key]);
 
-  // Check if any messages have reply information
-  const messagesWithReply = newChatList.filter((msg) => (msg as any).replyTo);
-
   return {
     ...state,
     chat: newChat,
     chatList: newChatList,
   };
 };
-
-// Action to add a message to the chat immediately without waiting for the relay
-export const addLocalChatMessage = createAction(
-  "player/addLocalChatMessage",
-  function prepare({
-    playerId,
-    message,
-    replyTo,
-  }: {
-    playerId: string;
-    message: string;
-    replyTo?: {
-      cid: string;
-      uri: string;
-      author: {
-        did: string;
-        handle: string;
-      };
-      text: string;
-    };
-  }) {
-    const timestamp = Date.now();
-
-    return {
-      payload: {
-        playerId,
-        message: {
-          uri: `local-${timestamp}`,
-          cid: `local-${timestamp}`,
-          indexedAt: new Date().toISOString(),
-          author: {
-            did: "local",
-            handle: "me",
-          },
-          record: {
-            text: message,
-            createdAt: new Date().toISOString(),
-            ...(replyTo
-              ? {
-                  reply: {
-                    parent: {
-                      cid: replyTo.cid,
-                      uri: replyTo.uri,
-                    },
-                    root: {
-                      cid: replyTo.cid,
-                      uri: replyTo.uri,
-                    },
-                  },
-                }
-              : {}),
-          },
-          replyTo: replyTo,
-        } as unknown as MessageViewHydrated,
-      },
-    };
-  },
-);
 
 export const playerSlice = createAppSlice({
   name: "player",
@@ -278,32 +293,10 @@ export const playerSlice = createAppSlice({
           segment: null,
           renditions: [],
           selectedRendition: "source",
+          replyToMessage: null,
         };
       },
     );
-
-    // Handle the addLocalChatMessage action
-    builder.addCase(addLocalChatMessage, (state, action) => {
-      const { playerId, message } = action.payload;
-      if (!state[playerId]) return state;
-
-      const playerState = { ...state[playerId] } as PlayerState;
-
-      const newChat = { ...playerState.chat };
-      const date = new Date(message.record.createdAt);
-      const key = `${date.getTime()}-${message.uri}`;
-      newChat[key] = message;
-
-      const newChatList = Object.keys(newChat)
-        .sort((a, b) => (a > b ? 1 : -1))
-        .map((key) => newChat[key]);
-
-      state[playerId] = {
-        ...playerState,
-        chat: newChat,
-        chatList: newChatList,
-      };
-    });
   },
 
   reducers: (create) => {
@@ -410,6 +403,60 @@ export const playerSlice = createAppSlice({
             }
           }
           return state;
+        },
+      ),
+
+      addLocalChatMessage: create.reducer(
+        (
+          state,
+          action: {
+            payload: {
+              playerId: string;
+              message: MessageViewHydrated;
+            };
+            type: string;
+          },
+        ) => {
+          const { playerId, message } = action.payload;
+          if (!state[playerId]) return state;
+
+          const playerState = { ...state[playerId] } as PlayerState;
+
+          const newChat = { ...playerState.chat };
+          const date = new Date(message.record.createdAt);
+          const key = `${date.getTime()}-${message.uri}`;
+          newChat[key] = message;
+
+          const newChatList = Object.keys(newChat)
+            .sort((a, b) => (a > b ? 1 : -1))
+            .map((key) => newChat[key]);
+
+          return {
+            ...state,
+            [playerId]: {
+              ...playerState,
+              chat: newChat,
+              chatList: newChatList,
+            },
+          };
+        },
+      ),
+
+      setReplyToMessage: create.reducer(
+        (
+          state,
+          action: {
+            payload: { playerId: string; message: MessageViewHydrated | null };
+            type: string;
+          },
+        ) => {
+          return {
+            ...state,
+            [action.payload.playerId]: {
+              ...state[action.payload.playerId],
+              replyToMessage: action.payload.message,
+            },
+          };
         },
       ),
 
@@ -617,6 +664,7 @@ export const playerSlice = createAppSlice({
 
 export const usePlayerActions = () => {
   const playerId = usePlayerId();
+  const dispatch = useAppDispatch();
   return {
     startIngest: (startIngest: boolean) =>
       playerSlice.actions.startIngest({ playerId, startIngest }),
@@ -641,6 +689,8 @@ export const usePlayerActions = () => {
       playerSlice.actions.setSelectedRendition({ playerId, rendition }),
     setProtocol: (protocol: string) =>
       playerSlice.actions.setProtocol({ playerId, protocol }),
+    setReplyToMessage: (message: MessageViewHydrated | null) =>
+      dispatch(playerSlice.actions.setReplyToMessage({ playerId, message })),
   };
 };
 
@@ -688,4 +738,10 @@ export const usePlayerProtocol = (): ((state: {
 }) => string) => {
   const playerId = usePlayerId();
   return (state) => state.player[playerId].protocol;
+};
+export const useReplyToMessage = (): ((state: {
+  player: PlayersState;
+}) => MessageViewHydrated | null) => {
+  const playerId = usePlayerId();
+  return (state) => state.player[playerId].replyToMessage;
 };

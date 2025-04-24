@@ -7,6 +7,7 @@ import {
   MessageViewHydrated,
   useChat,
   usePlayerLivestream,
+  usePlayerActions,
 } from "features/player/playerSlice";
 import { useEffect, useRef, useState } from "react";
 import { TouchableOpacity, Linking } from "react-native";
@@ -22,92 +23,7 @@ import {
   View,
 } from "tamagui";
 import { RichText } from "@atproto/api";
-import { chatEvents } from "./chat-events";
 import { ReactElement } from "react";
-import Storage from "storage";
-
-const REPLY_INFO_STORAGE_KEY = "streamplace_reply_info";
-
-async function storeReplyInfoAsync(
-  messageUri: string,
-  replyInfo: any,
-  messageText?: string,
-) {
-  try {
-    let existingData: Record<string, any> = {};
-
-    const existingDataStr =
-      (await Storage.getItem(REPLY_INFO_STORAGE_KEY)) || "{}";
-    existingData = JSON.parse(existingDataStr);
-
-    existingData[messageUri] = {
-      ...replyInfo,
-      messageText: messageText || replyInfo.messageText,
-    };
-
-    await Storage.setItem(REPLY_INFO_STORAGE_KEY, JSON.stringify(existingData));
-  } catch (e) {
-    console.error("Error storing reply info:", e);
-  }
-}
-
-// Synchronous wrapper for storeReplyInfoAsync
-function storeReplyInfo(
-  messageUri: string,
-  replyInfo: any,
-  messageText?: string,
-) {
-  // Fire and forget the async storage operation
-  storeReplyInfoAsync(messageUri, replyInfo, messageText).catch((e) => {
-    console.error("Error in async storage operation:", e);
-  });
-}
-
-async function getReplyInfoAsync(messageUri: string) {
-  try {
-    const existingDataStr =
-      (await Storage.getItem(REPLY_INFO_STORAGE_KEY)) || "{}";
-    const existingData = JSON.parse(existingDataStr);
-    return existingData[messageUri] || null;
-  } catch (e) {
-    console.error("Error retrieving reply info from Storage:", e);
-    return null;
-  }
-}
-
-async function getAllReplyInfoAsync() {
-  try {
-    const existingDataStr =
-      (await Storage.getItem(REPLY_INFO_STORAGE_KEY)) || "{}";
-    return JSON.parse(existingDataStr);
-  } catch (e) {
-    console.error("Error retrieving all reply info from Storage:", e);
-    return {};
-  }
-}
-
-// Cache for the current session to avoid excessive Storage reads
-const sessionCache: Record<string, any> = {};
-
-(async () => {
-  try {
-    const data = await Storage.getItem(REPLY_INFO_STORAGE_KEY);
-    if (data) {
-      const parsed = JSON.parse(data);
-      Object.assign(sessionCache, parsed);
-    }
-  } catch (e) {
-    console.error("Error initializing reply info cache:", e);
-  }
-})();
-
-function getReplyInfo(messageUri: string) {
-  return sessionCache[messageUri] || null;
-}
-
-function getAllReplyInfo() {
-  return sessionCache;
-}
 
 export default function Chat({
   isChatVisible,
@@ -129,14 +45,17 @@ export default function Chat({
     livestream.author.did &&
     userProfile.did === livestream.author.did
   );
+
   useEffect(() => {
     if (chat) {
       scrollRef.current?.scrollToEnd({ animated: true });
     }
-  }, [chat]);
+  }, [chat]); //[TODO] disable scroll if user is already scrolled to previous messages
+
   if (!chat) {
     return <></>;
   }
+
   const m = useMedia();
   const dispatch = useAppDispatch();
 
@@ -291,6 +210,9 @@ function ChatMessageRow({
   replyHandle?: string;
 }): JSX.Element {
   const [hover, setHover] = useState(false);
+  const playerActions = usePlayerActions();
+  const userProfile = useAppSelector(selectUserProfile);
+
   const moderateMessage = () => {
     if (!myStream) {
       return;
@@ -300,87 +222,26 @@ function ChatMessageRow({
   };
 
   const handleReply = () => {
-    try {
-      chatEvents.reply(message);
-    } catch (e) {
-      console.error("Error emitting reply event:", e);
-    }
-
-    // Use CustomEvent for backward compatibility on web
-    if (isWeb && typeof window !== "undefined") {
-      try {
-        const event = new CustomEvent("chat:reply", { detail: message });
-        window.dispatchEvent(event);
-      } catch (e) {
-        console.error("Error dispatching window event:", e);
-      }
-    }
+    playerActions.setReplyToMessage(message);
   };
-
-  let color = "$accentColor";
-  if (message.chatProfile?.color) {
-    const { red, green, blue } = message.chatProfile.color;
-    color = `rgb(${red}, ${green}, ${blue})`;
-  }
-
-  const rt = new RichText({ text: message.record.text });
-  rt.detectFacetsWithoutResolution();
 
   let hasReply = !!message.record.reply;
   let replyToHandle: string | null = null;
   let replyToText: string | null = null;
-  let storedReplyInfo = getReplyInfo(message.uri);
+  let replyToColor = "$accentColor";
 
-  // If not found by URI, try to find by text
-  if (!storedReplyInfo) {
-    const allStoredInfo = getAllReplyInfo();
-
-    const matchingEntry = Object.entries(allStoredInfo).find(
-      ([_, info]: [string, any]) => {
-        return info.messageText === message.record.text;
-      },
-    );
-
-    // Try to load asynchronously if not found in session cache
-    if (!matchingEntry) {
-      getReplyInfoAsync(message.uri).catch((e) => {
-        console.error("Error in async getReplyInfoAsync:", e);
-      });
-
-      // Refresh all reply info
-      getAllReplyInfoAsync().catch((e) => {
-        console.error("Error in async getAllReplyInfoAsync:", e);
-      });
-    }
-
-    if (matchingEntry) {
-      storedReplyInfo = matchingEntry[1];
-      storeReplyInfo(message.uri, storedReplyInfo);
-    }
-  }
-
-  if (storedReplyInfo) {
-    hasReply = true; // Force hasReply to true
-    replyToHandle = storedReplyInfo.handle;
-    replyToText = storedReplyInfo.text;
-  }
-  // Then check if we have replyTo information directly on the message
-  else if ((message as any).replyTo) {
+  // For the sender, we can use the direct reply info
+  if (message.author.did === userProfile?.did && (message as any).replyTo) {
     hasReply = true;
     replyToHandle = (message as any).replyTo.author.handle;
     replyToText = (message as any).replyTo.text;
-
-    storeReplyInfo(
-      message.uri,
-      {
-        handle: replyToHandle,
-        text: replyToText,
-        parentUri: (message as any).replyTo.uri,
-      },
-      message.record.text,
-    );
-  } else if (hasReply) {
-    // Try to find the reply in the chat state
+    if ((message as any).replyTo.chatProfile?.color) {
+      const { red, green, blue } = (message as any).replyTo.chatProfile.color;
+      replyToColor = `rgb(${red}, ${green}, ${blue})`;
+    }
+  }
+  // For other users, only show the server-hydrated message which already has reply info
+  else if (message.record.reply) {
     const reply = message.record.reply as {
       parent?: { uri: string; cid: string };
       root?: { uri: string; cid: string };
@@ -395,37 +256,9 @@ function ChatMessageRow({
         if (parentMsg) {
           replyToHandle = parentMsg.author.handle;
           replyToText = parentMsg.record.text;
-
-          storeReplyInfo(
-            message.uri,
-            {
-              handle: replyToHandle,
-              text: replyToText,
-              parentUri: parentUri,
-            },
-            message.record.text,
-          );
-        } else {
-          // Try to extract the handle from the URI
-          try {
-            const parts = parentUri.split("/");
-            const did = parts[2];
-            const authorMsg = chat.find((m) => m.author.did === did);
-            if (authorMsg) {
-              replyToHandle = authorMsg.author.handle;
-
-              storeReplyInfo(
-                message.uri,
-                {
-                  handle: replyToHandle,
-                  text: null,
-                  parentUri: parentUri,
-                },
-                message.record.text,
-              );
-            }
-          } catch (e) {
-            console.error("Error extracting DID from URI:", e);
+          if (parentMsg.chatProfile?.color) {
+            const { red, green, blue } = parentMsg.chatProfile.color;
+            replyToColor = `rgb(${red}, ${green}, ${blue})`;
           }
         }
       }
@@ -490,8 +323,8 @@ function ChatMessageRow({
               borderRadius="$2"
               marginLeft="-$1"
             >
-              <Text fontSize={12} color="$accentColor" fontWeight="bold">
-                {replyToHandle ? `@${replyToHandle}` : "Unknown"}
+              <Text fontSize={12} color={replyToColor} fontWeight="bold">
+                {replyToHandle ? `@${replyToHandle}` : ""}
               </Text>
               <Text
                 fontSize={12}
@@ -508,27 +341,7 @@ function ChatMessageRow({
 
         {/* Message content */}
         <View flexDirection="row" alignItems="flex-start" gap="$2">
-          <Text fontSize={13}>
-            <Text
-              color={color}
-              cursor="pointer"
-              onPress={() =>
-                Linking.openURL(
-                  `https://bsky.app/profile/${message.author.did}`,
-                )
-              }
-            >
-              {message.author.handle
-                ? `@${message.author.handle}`
-                : message.author.did}
-              :
-            </Text>
-            <Text> </Text>
-            <RichTextMessage
-              text={message.record.text}
-              facets={rt.facets as Facet[]}
-            />
-          </Text>
+          <ChatMessageText message={message} />
         </View>
       </View>
       <View
@@ -573,6 +386,39 @@ function ChatMessageRow({
     </View>
   );
 }
+
+const ChatMessageText = ({ message }: { message: MessageViewHydrated }) => {
+  let color = "$accentColor";
+  if (message.chatProfile?.color) {
+    const { red, green, blue } = message.chatProfile.color;
+    color = `rgb(${red}, ${green}, ${blue})`;
+  }
+
+  const rt = new RichText({ text: message.record.text });
+  rt.detectFacetsWithoutResolution();
+
+  return (
+    <Text fontSize={13}>
+      <Text
+        color={color}
+        cursor="pointer"
+        onPress={() =>
+          Linking.openURL(`https://bsky.app/profile/${message.author.did}`)
+        }
+      >
+        {message.author.handle
+          ? `@${message.author.handle}`
+          : message.author.did}
+        :
+      </Text>
+      <Text> </Text>
+      <RichTextMessage
+        text={message.record.text}
+        facets={rt.facets as Facet[]}
+      />
+    </Text>
+  );
+};
 
 interface Facet {
   index: {
