@@ -34,6 +34,7 @@ export default function Chat({
 }) {
   const [open, setOpen] = useState(false);
   const [modMessage, setMessage] = useState<MessageViewHydrated | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const chat = useAppSelector(useChat());
   const scrollRef = useRef<ScrollView>(null);
   const livestream = useAppSelector(usePlayerLivestream());
@@ -46,11 +47,20 @@ export default function Chat({
     userProfile.did === livestream.author.did
   );
 
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20;
+    const isAtBottom =
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+    setIsAtBottom(isAtBottom);
+  };
+
   useEffect(() => {
-    if (chat) {
+    if (chat && isAtBottom) {
       scrollRef.current?.scrollToEnd({ animated: true });
     }
-  }, [chat]); //[TODO] disable scroll if user is already scrolled to previous messages
+  }, [chat, isAtBottom]);
 
   if (!chat) {
     return <></>;
@@ -170,11 +180,17 @@ export default function Chat({
             invertStickyHeaders={true}
             ref={scrollRef}
             onContentSizeChange={() => {
-              scrollRef.current?.scrollToEnd({ animated: true });
+              if (isAtBottom) {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }
             }}
             onLayout={() => {
-              scrollRef.current?.scrollToEnd({ animated: true });
+              if (isAtBottom) {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }
             }}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
           >
             {chat.map((message) => (
               <ChatMessageRow
