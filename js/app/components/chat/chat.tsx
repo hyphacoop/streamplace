@@ -93,7 +93,7 @@ export default function Chat({
                 </Button>
                 {modMessage && (
                   <>
-                    <ChatMessageText message={modMessage} />
+                    <ChatMessageText message={modMessage} chat={chat || []} />
                     {modMessage.author.did !== userProfile?.did && (
                       <Button
                         width="100%"
@@ -161,6 +161,7 @@ function ChatMessageRow({
 }) {
   const [hover, setHover] = useState(false);
   const { isWeb } = usePlatform();
+  const chat = useAppSelector(useChat());
   const moderateMessage = () => {
     if (!myStream) {
       return;
@@ -183,7 +184,7 @@ function ChatMessageRow({
         }
       }}
     >
-      <ChatMessageText message={message} />
+      <ChatMessageText message={message} chat={chat || []} />
       {isWeb && myStream && (
         <View
           position="absolute"
@@ -225,16 +226,19 @@ interface Facet {
   }>;
 }
 
+const getRgbColor = (color?: { red: number; green: number; blue: number }) =>
+  color ? `rgb(${color.red}, ${color.green}, ${color.blue})` : "$accentColor";
+
 const RichTextMessage = ({
   text,
   facets,
+  chat,
 }: {
   text: string;
   facets: Facet[];
+  chat: MessageViewHydrated[];
 }) => {
-  if (!facets || facets.length === 0) {
-    return <Text>{text}</Text>;
-  }
+  if (!facets?.length) return <Text>{text}</Text>;
 
   const parts: ReactElement[] = [];
   let lastIndex = 0;
@@ -244,19 +248,17 @@ const RichTextMessage = ({
   );
 
   sortedFacets.forEach((facet) => {
-    const { byteStart, byteEnd } = facet.index;
-    const start = byteStart;
-    const end = byteEnd;
+    const { byteStart: start, byteEnd: end } = facet.index;
 
-    // Add text before the facet
     if (start > lastIndex) {
       parts.push(
         <Text key={`text-${lastIndex}`}>{text.slice(lastIndex, start)}</Text>,
       );
     }
 
-    // Add the facet
     facet.features.forEach((feature) => {
+      const content = text.slice(start, end);
+
       if (feature.$type === "app.bsky.richtext.facet#link") {
         parts.push(
           <Text
@@ -265,20 +267,23 @@ const RichTextMessage = ({
             cursor="pointer"
             onPress={() => Linking.openURL(feature.uri || "")}
           >
-            {text.slice(start, end)}
+            {content}
           </Text>,
         );
       } else if (feature.$type === "app.bsky.richtext.facet#mention") {
+        const mentionedUserMessage = chat.find(
+          (msg) => msg.author.did === feature.did,
+        );
         parts.push(
           <Text
             key={`mention-${start}`}
-            color="$accentColor"
+            color={getRgbColor(mentionedUserMessage?.chatProfile?.color)}
             cursor="pointer"
             onPress={() =>
               Linking.openURL(`https://bsky.app/profile/${feature.did || ""}`)
             }
           >
-            {text.slice(start, end)}
+            {content}
           </Text>,
         );
       }
@@ -287,7 +292,6 @@ const RichTextMessage = ({
     lastIndex = end;
   });
 
-  // Add remaining text after the last facet
   if (lastIndex < text.length) {
     parts.push(<Text key={`text-${lastIndex}`}>{text.slice(lastIndex)}</Text>);
   }
@@ -295,20 +299,39 @@ const RichTextMessage = ({
   return <Text>{parts}</Text>;
 };
 
-const ChatMessageText = ({ message }: { message: MessageViewHydrated }) => {
-  let color = "$accentColor";
-  if (message.chatProfile?.color) {
-    const { red, green, blue } = message.chatProfile.color;
-    color = `rgb(${red}, ${green}, ${blue})`;
-  }
-
+const ChatMessageText = ({
+  message,
+  chat,
+}: {
+  message: MessageViewHydrated;
+  chat: MessageViewHydrated[];
+}) => {
   const rt = new RichText({ text: message.record.text });
   rt.detectFacetsWithoutResolution();
+
+  // Process facets to add DID information for mentions
+  rt.facets?.forEach((facet) => {
+    facet.features.forEach((feature) => {
+      if (feature.$type === "app.bsky.richtext.facet#mention") {
+        const mentionText = message.record.text.slice(
+          facet.index.byteStart,
+          facet.index.byteEnd,
+        );
+        // Find the mentioned user by their handle (removing the @ symbol)
+        const mentionedUser = chat.find(
+          (msg) => msg.author.handle === mentionText.slice(1),
+        );
+        if (mentionedUser) {
+          feature.did = mentionedUser.author.did;
+        }
+      }
+    });
+  });
 
   return (
     <Text fontSize={13}>
       <Text
-        color={color}
+        color={getRgbColor(message.chatProfile?.color)}
         cursor="pointer"
         onPress={() =>
           Linking.openURL(`https://bsky.app/profile/${message.author.did}`)
@@ -323,7 +346,18 @@ const ChatMessageText = ({ message }: { message: MessageViewHydrated }) => {
       <RichTextMessage
         text={message.record.text}
         facets={rt.facets as Facet[]}
+        chat={chat}
       />
     </Text>
   );
 };
+
+interface MentionSuggestion {
+  did: string;
+  handle: string;
+  color?: {
+    red: number;
+    green: number;
+    blue: number;
+  };
+}
