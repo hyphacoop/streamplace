@@ -14,7 +14,7 @@ import {
   VolumeX,
 } from "@tamagui/lucide-icons";
 import { Dispatch, Fragment, useEffect, useRef, useState } from "react";
-import { Animated, Pressable, Dimensions } from "react-native";
+import { Animated, Pressable } from "react-native";
 import {
   Button,
   Adapt,
@@ -342,6 +342,17 @@ export function PopoverMenu(props: PlayerProps) {
           </View>
         </Pressable>
       </Popover.Trigger>
+
+      <Adapt when="sm" platform="touch">
+        <Popover.Sheet modal dismissOnSnapToBottom snapPoints={[50]}>
+          <Popover.Sheet.Frame padding="$2">{gearMenu}</Popover.Sheet.Frame>
+          <Popover.Sheet.Overlay
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+          />
+        </Popover.Sheet>
+      </Adapt>
 
       <Popover.Content
         borderWidth={0}
