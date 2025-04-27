@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { TouchableOpacity, Linking } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
+import usePlatform from "hooks/usePlatform";
 
 import {
   Button,
@@ -130,24 +131,7 @@ export default function Chat({
                 </Button>
                 {modMessage && (
                   <>
-                    <View flexDirection="column" gap="$1">
-                      <View
-                        flexDirection="row"
-                        alignItems="flex-start"
-                        gap="$2"
-                      >
-                        <Text fontSize={13}>
-                          <Text color="$accentColor">
-                            {modMessage.author.handle
-                              ? `@${modMessage.author.handle}`
-                              : modMessage.author.did}
-                            :
-                          </Text>
-                          <Text> </Text>
-                          <Text>{modMessage.record.text}</Text>
-                        </Text>
-                      </View>
-                    </View>
+                    <ChatMessageText message={modMessage} chat={chat || []} />
                     {modMessage.author.did !== userProfile?.did && (
                       <Button
                         width="100%"
@@ -228,6 +212,8 @@ function ChatMessageRow({
   const [hover, setHover] = useState(false);
   const playerActions = usePlayerActions();
   const userProfile = useAppSelector(selectUserProfile);
+  const chat = useAppSelector(useChat());
+  const { isWeb } = usePlatform();
 
   const moderateMessage = () => {
     if (!myStream) {
@@ -265,17 +251,14 @@ function ChatMessageRow({
 
     const parentUri = reply?.parent?.uri || reply?.root?.uri;
 
-    if (parentUri) {
-      const chat = useAppSelector(useChat());
-      if (chat) {
-        const parentMsg = chat.find((msg) => msg.uri === parentUri);
-        if (parentMsg) {
-          replyToHandle = parentMsg.author.handle;
-          replyToText = parentMsg.record.text;
-          if (parentMsg.chatProfile?.color) {
-            const { red, green, blue } = parentMsg.chatProfile.color;
-            replyToColor = `rgb(${red}, ${green}, ${blue})`;
-          }
+    if (parentUri && chat) {
+      const parentMsg = chat.find((msg) => msg.uri === parentUri);
+      if (parentMsg) {
+        replyToHandle = parentMsg.author.handle;
+        replyToText = parentMsg.record.text;
+        if (parentMsg.chatProfile?.color) {
+          const { red, green, blue } = parentMsg.chatProfile.color;
+          replyToColor = `rgb(${red}, ${green}, ${blue})`;
         }
       }
     }
@@ -285,7 +268,7 @@ function ChatMessageRow({
     <View
       flexDirection="row"
       display="block"
-      paddingVertical={4}
+      paddingVertical={isWeb ? 6 : 4} // Adjust padding for web
       position="relative"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -304,7 +287,6 @@ function ChatMessageRow({
           top={-8}
           width={2}
           height={16}
-          backgroundColor="$borderColor"
           opacity={0.7}
         />
       )}
@@ -357,7 +339,7 @@ function ChatMessageRow({
 
         {/* Message content */}
         <View flexDirection="row" alignItems="flex-start" gap="$2">
-          <ChatMessageText message={message} />
+          <ChatMessageText message={message} chat={chat || []} />
         </View>
       </View>
       <View
@@ -391,9 +373,7 @@ function ChatMessageRow({
               justifyContent: "center",
               padding: 4,
             }}
-            onPress={() => {
-              moderateMessage();
-            }}
+            onPress={moderateMessage}
           >
             <Settings size={16} />
           </TouchableOpacity>
@@ -403,20 +383,39 @@ function ChatMessageRow({
   );
 }
 
-const ChatMessageText = ({ message }: { message: MessageViewHydrated }) => {
-  let color = "$accentColor";
-  if (message.chatProfile?.color) {
-    const { red, green, blue } = message.chatProfile.color;
-    color = `rgb(${red}, ${green}, ${blue})`;
-  }
-
+const ChatMessageText = ({
+  message,
+  chat = [],
+}: {
+  message: MessageViewHydrated;
+  chat?: MessageViewHydrated[];
+}) => {
   const rt = new RichText({ text: message.record.text });
   rt.detectFacetsWithoutResolution();
+
+  // Process facets to add DID information for mentions
+  rt.facets?.forEach((facet) => {
+    facet.features.forEach((feature) => {
+      if (feature.$type === "app.bsky.richtext.facet#mention") {
+        const mentionText = message.record.text.slice(
+          facet.index.byteStart,
+          facet.index.byteEnd,
+        );
+        // Find the mentioned user by their handle (removing the @ symbol)
+        const mentionedUser = chat.find(
+          (msg) => msg.author.handle === mentionText.slice(1),
+        );
+        if (mentionedUser) {
+          feature.did = mentionedUser.author.did;
+        }
+      }
+    });
+  });
 
   return (
     <Text fontSize={13}>
       <Text
-        color={color}
+        color={getRgbColor(message.chatProfile?.color)}
         cursor="pointer"
         onPress={() =>
           Linking.openURL(`https://bsky.app/profile/${message.author.did}`)
@@ -431,6 +430,7 @@ const ChatMessageText = ({ message }: { message: MessageViewHydrated }) => {
       <RichTextMessage
         text={message.record.text}
         facets={rt.facets as Facet[]}
+        chat={chat}
       />
     </Text>
   );
@@ -448,16 +448,19 @@ interface Facet {
   }>;
 }
 
+const getRgbColor = (color?: { red: number; green: number; blue: number }) =>
+  color ? `rgb(${color.red}, ${color.green}, ${color.blue})` : "$accentColor";
+
 const RichTextMessage = ({
   text,
   facets,
+  chat = [],
 }: {
   text: string;
   facets: Facet[];
+  chat?: MessageViewHydrated[];
 }) => {
-  if (!facets || facets.length === 0) {
-    return <Text>{text}</Text>;
-  }
+  if (!facets?.length) return <Text>{text}</Text>;
 
   const parts: ReactElement[] = [];
   let lastIndex = 0;
@@ -467,19 +470,17 @@ const RichTextMessage = ({
   );
 
   sortedFacets.forEach((facet) => {
-    const { byteStart, byteEnd } = facet.index;
-    const start = byteStart;
-    const end = byteEnd;
+    const { byteStart: start, byteEnd: end } = facet.index;
 
-    // Add text before the facet
     if (start > lastIndex) {
       parts.push(
         <Text key={`text-${lastIndex}`}>{text.slice(lastIndex, start)}</Text>,
       );
     }
 
-    // Add the facet
     facet.features.forEach((feature) => {
+      const content = text.slice(start, end);
+
       if (feature.$type === "app.bsky.richtext.facet#link") {
         parts.push(
           <Text
@@ -488,20 +489,23 @@ const RichTextMessage = ({
             cursor="pointer"
             onPress={() => Linking.openURL(feature.uri || "")}
           >
-            {text.slice(start, end)}
+            {content}
           </Text>,
         );
       } else if (feature.$type === "app.bsky.richtext.facet#mention") {
+        const mentionedUserMessage = chat.find(
+          (msg) => msg.author.did === feature.did,
+        );
         parts.push(
           <Text
             key={`mention-${start}`}
-            color="$accentColor"
+            color={getRgbColor(mentionedUserMessage?.chatProfile?.color)}
             cursor="pointer"
             onPress={() =>
               Linking.openURL(`https://bsky.app/profile/${feature.did || ""}`)
             }
           >
-            {text.slice(start, end)}
+            {content}
           </Text>,
         );
       }
@@ -510,7 +514,6 @@ const RichTextMessage = ({
     lastIndex = end;
   });
 
-  // Add remaining text after the last facet
   if (lastIndex < text.length) {
     parts.push(<Text key={`text-${lastIndex}`}>{text.slice(lastIndex)}</Text>);
   }
