@@ -42,8 +42,8 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 
 	pipelineSlice := []string{
 		"multiqueue name=queue",
-		"appsrc format=time is-live=true do-timestamp=true name=videosrc ! capsfilter caps=application/x-rtp ! rtph264depay ! capsfilter caps=video/x-h264,stream-format=byte-stream,alignment=nal ! h264parse ! h264timestamper ! identity ! queue.sink_0",
-		"appsrc format=time is-live=true do-timestamp=true name=audiosrc ! capsfilter caps=application/x-rtp,media=audio,encoding-name=OPUS,payload=111 ! rtpopusdepay ! opusdec use-inband-fec=true ! audiorate ! opusenc ! queue.sink_1",
+		"appsrc format=time is-live=true do-timestamp=true name=videosrc ! capsfilter caps=application/x-rtp ! rtph264depay ! capsfilter caps=video/x-h264,stream-format=byte-stream,alignment=nal ! h264parse disable-passthrough=true config-interval=-1 ! h264timestamper ! identity ! queue.sink_0",
+		"appsrc format=time do-timestamp=true name=audiosrc ! capsfilter caps=application/x-rtp,media=audio,encoding-name=OPUS,payload=111 ! rtpopusdepay ! queue.sink_1",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -190,7 +190,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 			if track.Kind() == webrtc.RTPCodecTypeVideo {
 				// Send a PLI on an interval so that the publisher is pushing a keyframe every rtcpPLIInterval
 				go func() {
-					ticker := time.NewTicker(time.Second * 5)
+					ticker := time.NewTicker(time.Second * 1)
 					for {
 						select {
 						case <-ctx.Done():

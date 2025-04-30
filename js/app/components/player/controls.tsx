@@ -17,7 +17,6 @@ import { Dispatch, Fragment, useEffect, useRef, useState } from "react";
 import { Animated, Pressable } from "react-native";
 import {
   Button,
-  Adapt,
   H3,
   ListItem,
   Popover,
@@ -31,6 +30,7 @@ import {
   H5,
   Paragraph,
   Slider,
+  Adapt,
 } from "tamagui";
 import { PlayerProps, PROTOCOL_HLS, PROTOCOL_WEBRTC } from "./props";
 import {
@@ -498,8 +498,7 @@ function GearMenu(
               onPress={() => setMenu("root")}
             />
           </YGroup.Item>
-          {/* // #HLS-CAUTERIZATION */}
-          {/* <Separator />
+          <Separator />
           <YGroup.Item>
             <ListItem
               hoverTheme
@@ -510,9 +509,9 @@ function GearMenu(
               iconAfter={protocol === PROTOCOL_HLS ? CheckCircle : Circle}
               onPress={() => dispatch(setProtocol(PROTOCOL_HLS))}
             />
-          </YGroup.Item> */}
-          {/* <Separator />
-          <YGroup.Item>
+          </YGroup.Item>
+          <Separator />
+          {/* <YGroup.Item>
             <ListItem
               hoverTheme
               pressTheme
@@ -538,8 +537,8 @@ function GearMenu(
               }
               onPress={() => dispatch(setProtocol(PROTOCOL_PROGRESSIVE_WEBM))}
             />
-          </YGroup.Item> */}
-          <Separator />
+          </YGroup.Item>
+          <Separator /> */}
           <YGroup.Item>
             <ListItem
               hoverTheme

@@ -20,7 +20,7 @@ func MP4ToMPEGTS(ctx context.Context, input io.Reader, output io.Writer) (int64,
 		"appsrc name=appsrc ! qtdemux name=demux",
 		"mpegtsmux name=mux ! appsink name=appsink sync=false",
 		"demux.video_0 ! h264parse ! video/x-h264,stream-format=byte-stream ! queue name=videoqueue",
-		"demux.audio_0 ! opusparse ! queue name=audioqueue",
+		"demux.audio_0 ! opusdec name=audioparse ! audioresample ! audiorate ! fdkaacenc name=audioenc ! queue name=audioqueue",
 	}, " ")
 
 	pipeline, err := gst.NewPipelineFromString(pipelineStr)
@@ -506,6 +506,7 @@ func MPEGTSVideoMP4AudioToMP4(ctx context.Context, videoInput io.Reader, audioIn
 	onPadAdded := func(element *gst.Element, pad *gst.Pad) {
 		if pad.GetDirection() == gst.PadDirectionSource {
 			ok := pad.Link(videoParseSinkPad)
+			defer func() { videoParseSinkPad = nil }()
 			if ok != gst.PadLinkOK {
 				log.Error(ctx, "failed to link video parse sink pad to video demux pad", "error", ok)
 				cancel()
