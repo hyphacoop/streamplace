@@ -23,6 +23,8 @@ type ChatMessage struct {
 	IndexedAt       *time.Time   `json:"indexedAt,omitempty"    gorm:"column:indexed_at"`
 	StreamerRepoDID string       `json:"streamerRepoDID"        gorm:"column:streamer_repo_did;idx_recent_messages,priority:1"`
 	StreamerRepo    *Repo        `json:"streamerRepo,omitempty" gorm:"foreignKey:DID;references:StreamerRepoDID"`
+	ReplyToCID      *string      `json:"replyToCID,omitempty"   gorm:"column:reply_to_cid"`
+	ReplyTo         *ChatMessage `json:"replyTo,omitempty"      gorm:"foreignKey:CID;references:ReplyToCID"`
 }
 
 func (m *ChatMessage) ToStreamplaceMessageView() (*streamplace.ChatDefs_MessageView, error) {
@@ -36,8 +38,10 @@ func (m *ChatMessage) ToStreamplaceMessageView() (*streamplace.ChatDefs_MessageV
 	message.Uri = m.URI
 	message.Cid = m.CID
 	message.Author = &bsky.ActorDefs_ProfileViewBasic{
-		Did:    m.RepoDID,
-		Handle: m.Repo.Handle,
+		Did: m.RepoDID,
+	}
+	if m.Repo != nil {
+		message.Author.Handle = m.Repo.Handle
 	}
 	message.Record = &lexutil.LexiconTypeDecoder{Val: rec}
 	message.IndexedAt = m.IndexedAt.UTC().Format(time.RFC3339Nano)
@@ -48,6 +52,15 @@ func (m *ChatMessage) ToStreamplaceMessageView() (*streamplace.ChatDefs_MessageV
 		}
 		message.ChatProfile = scp
 	}
+	if m.ReplyTo != nil {
+		replyTo, err := m.ReplyTo.ToStreamplaceMessageView()
+		if err != nil {
+			return nil, fmt.Errorf("error converting reply to to streamplace message view: %w", err)
+		}
+		message.ReplyTo = &streamplace.ChatDefs_MessageView_ReplyTo{
+			ChatDefs_MessageView: replyTo,
+		}
+	}
 	return message, nil
 }
 
@@ -57,7 +70,15 @@ func (m *DBModel) CreateChatMessage(ctx context.Context, message *ChatMessage) e
 
 func (m *DBModel) GetChatMessage(cid string) (*ChatMessage, error) {
 	var message ChatMessage
-	err := m.DB.Preload("Repo").Preload("ChatProfile").Where("cid = ?", cid).First(&message).Error
+	err := m.DB.
+		Preload("Repo").
+		Preload("ChatProfile").
+		Preload("ReplyTo").
+		Preload("ReplyTo.Repo").
+		Preload("ReplyTo.ChatProfile").
+		Where("cid = ?", cid).
+		First(&message).
+		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -72,6 +93,9 @@ func (m *DBModel) MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDef
 	err := m.DB.
 		Preload("Repo").
 		Preload("ChatProfile").
+		Preload("ReplyTo").
+		Preload("ReplyTo.Repo").
+		Preload("ReplyTo.ChatProfile").
 		Where("streamer_repo_did = ?", repoDID).
 		// Exclude messages from users blocked by the streamer
 		Joins("LEFT JOIN blocks ON blocks.repo_did = chat_messages.streamer_repo_did AND blocks.subject_did = chat_messages.repo_did").
