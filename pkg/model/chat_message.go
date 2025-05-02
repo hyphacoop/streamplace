@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"time"
 
 	"github.com/bluesky-social/indigo/api/bsky"
@@ -25,6 +26,13 @@ type ChatMessage struct {
 	StreamerRepo    *Repo        `json:"streamerRepo,omitempty" gorm:"foreignKey:DID;references:StreamerRepoDID"`
 	ReplyToCID      *string      `json:"replyToCID,omitempty"   gorm:"column:reply_to_cid"`
 	ReplyTo         *ChatMessage `json:"replyTo,omitempty"      gorm:"foreignKey:CID;references:ReplyToCID"`
+}
+
+// hashString creates a hash from a string, used for deterministic color selection
+func hashString(s string) int {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return int(h.Sum32())
 }
 
 func (m *ChatMessage) ToStreamplaceMessageView() (*streamplace.ChatDefs_MessageView, error) {
@@ -51,6 +59,13 @@ func (m *ChatMessage) ToStreamplaceMessageView() (*streamplace.ChatDefs_MessageV
 			return nil, fmt.Errorf("error converting chat profile to streamplace chat profile: %w", err)
 		}
 		message.ChatProfile = scp
+	} else {
+		// If no chat profile exists, create a default one with a color based on the user's DID
+		defaultColor := defaultColors[hashString(m.RepoDID)%len(defaultColors)]
+		message.ChatProfile = &streamplace.ChatProfile{
+			Color: defaultColor,
+		}
+
 	}
 	if m.ReplyTo != nil {
 		replyTo, err := m.ReplyTo.ToStreamplaceMessageView()
