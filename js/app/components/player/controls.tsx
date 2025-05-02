@@ -14,10 +14,9 @@ import {
   VolumeX,
 } from "@tamagui/lucide-icons";
 import { Dispatch, Fragment, useEffect, useRef, useState } from "react";
-import { Animated, Pressable, Dimensions } from "react-native";
+import { Animated, Pressable } from "react-native";
 import {
   Button,
-  Adapt,
   H3,
   ListItem,
   Popover,
@@ -31,6 +30,7 @@ import {
   H5,
   Paragraph,
   Slider,
+  Adapt,
 } from "tamagui";
 import { PlayerProps, PROTOCOL_HLS, PROTOCOL_WEBRTC } from "./props";
 import {
@@ -311,8 +311,14 @@ export function PopoverMenu(props: PlayerProps) {
       renditions={renditions}
       selectedRendition={selectedRendition ?? "source"}
       protocol={protocol}
-      setSelectedRendition={setSelectedRendition}
-      setProtocol={setProtocol}
+      setSelectedRendition={(rendition) => {
+        dispatch(setSelectedRendition(rendition));
+        setOpen(false);
+      }}
+      setProtocol={(protocol) => {
+        dispatch(setProtocol(protocol));
+        setOpen(false);
+      }}
       dispatch={dispatch}
     />
   );
@@ -329,19 +335,34 @@ export function PopoverMenu(props: PlayerProps) {
       keepChildrenMounted
       stayInFrame
       open={open}
+      onOpenChange={setOpen}
     >
       <Popover.Trigger asChild cursor="pointer">
-        <Pressable
-          style={{
-            justifyContent: "center",
-          }}
-          onPress={() => setOpen(!open)}
-        >
-          <View paddingLeft="$3" paddingRight="$5" justifyContent="center">
-            <Settings />
-          </View>
-        </Pressable>
+        <View position="relative" justifyContent="center" height={50}>
+          <Pressable
+            style={{
+              justifyContent: "center",
+              height: "100%",
+            }}
+            onPress={() => setOpen(!open)}
+          >
+            <View paddingLeft="$3" paddingRight="$5" justifyContent="center">
+              <Settings />
+            </View>
+          </Pressable>
+        </View>
       </Popover.Trigger>
+
+      <Adapt when="sm" platform="touch">
+        <Popover.Sheet modal dismissOnSnapToBottom snapPoints={[50]}>
+          <Popover.Sheet.Frame padding="$2">{gearMenu}</Popover.Sheet.Frame>
+          <Popover.Sheet.Overlay
+            animation="lazy"
+            enterStyle={{ opacity: 0 }}
+            exitStyle={{ opacity: 0 }}
+          />
+        </Popover.Sheet>
+      </Adapt>
 
       <Popover.Content
         borderWidth={0}
@@ -477,8 +498,7 @@ function GearMenu(
               onPress={() => setMenu("root")}
             />
           </YGroup.Item>
-          {/* // #HLS-CAUTERIZATION */}
-          {/* <Separator />
+          <Separator />
           <YGroup.Item>
             <ListItem
               hoverTheme
@@ -489,9 +509,9 @@ function GearMenu(
               iconAfter={protocol === PROTOCOL_HLS ? CheckCircle : Circle}
               onPress={() => dispatch(setProtocol(PROTOCOL_HLS))}
             />
-          </YGroup.Item> */}
-          {/* <Separator />
-          <YGroup.Item>
+          </YGroup.Item>
+          <Separator />
+          {/* <YGroup.Item>
             <ListItem
               hoverTheme
               pressTheme
@@ -517,8 +537,8 @@ function GearMenu(
               }
               onPress={() => dispatch(setProtocol(PROTOCOL_PROGRESSIVE_WEBM))}
             />
-          </YGroup.Item> */}
-          <Separator />
+          </YGroup.Item>
+          <Separator /> */}
           <YGroup.Item>
             <ListItem
               hoverTheme
@@ -527,7 +547,7 @@ function GearMenu(
               subTitle="Lowest latency, probably"
               icon={Antenna}
               iconAfter={protocol === PROTOCOL_WEBRTC ? CheckCircle : Circle}
-              onPress={() => dispatch(setProtocol(PROTOCOL_WEBRTC))}
+              onPress={() => setProtocol(PROTOCOL_WEBRTC)}
             />
           </YGroup.Item>
         </>
@@ -556,7 +576,7 @@ function GearMenu(
                   iconAfter={
                     props.selectedRendition === "auto" ? CheckCircle : Circle
                   }
-                  onPress={() => dispatch(setSelectedRendition("auto"))}
+                  onPress={() => setSelectedRendition("auto")}
                 />
               </YGroup.Item>
               <Separator />
@@ -572,7 +592,7 @@ function GearMenu(
               iconAfter={
                 props.selectedRendition === "source" ? CheckCircle : Circle
               }
-              onPress={() => dispatch(setSelectedRendition("source"))}
+              onPress={() => setSelectedRendition("source")}
             />
           </YGroup.Item>
           {renditions.map((rendition) => (
@@ -588,7 +608,7 @@ function GearMenu(
                   iconAfter={
                     selectedRendition === rendition.name ? CheckCircle : Circle
                   }
-                  onPress={() => dispatch(setSelectedRendition(rendition.name))}
+                  onPress={() => setSelectedRendition(rendition.name)}
                 />
               </YGroup.Item>
             </Fragment>
