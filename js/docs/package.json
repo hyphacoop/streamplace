@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && rm -rf ../app/dist/docs && cp -R dist ../app/dist/docs",
+    "build": "astro build && rm -rf ../app/dist/docs && cp -r dist ../app/dist/docs",
     "preview": "astro preview",
     "astro": "astro"
   },
