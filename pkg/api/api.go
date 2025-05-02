@@ -233,14 +233,20 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 		return nil, err
 	}
 	fs := AppHostingFS{http.FS(files)}
+
 	fileHandler := a.FileHandler(ctx, http.FileServer(fs))
 	defaultHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		f := strings.TrimPrefix(req.URL.Path, "/")
+		// under docs we need the index.html suffix due to astro rendering
+		if strings.HasPrefix(req.URL.Path, "/docs") && strings.HasSuffix(req.URL.Path, "/") {
+			f += "index.html"
+		}
 		_, err := fs.Open(f)
 		if err == nil {
 			fileHandler.ServeHTTP(w, req)
 			return
-		} else if errors.Is(err, ErrorIndex) || f == "" {
+		}
+		if errors.Is(err, ErrorIndex) || f == "" {
 			bs, err := linker.GenerateDefaultCard(ctx, req.URL)
 			if err != nil {
 				log.Error(ctx, "error generating default card", "error", err)
