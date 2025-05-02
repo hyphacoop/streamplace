@@ -1,0 +1,38 @@
+---
+title: Welcome to Streamplace!
+description: Begin your development journey with the Streamplace documentation.
+template: splash
+hero:
+  tagline: Solve live video for your project with Streamplace.
+  image:
+    file: ../../assets/cube.png
+    alt: Streamplace logo. A pink 3d box viewed from a top corner.
+  actions:
+    - text: Get Started
+      link: /guides/getting-started/
+      icon: right-arrow
+    - text: Visit Streamplace
+      link: https://stream.place
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Next Steps
+
+<CardGrid stagger>
+  <Card title="Update Content" icon="pencil">
+    Modify `src/content/docs/index.mdx` to reflect your changes.
+  </Card>
+  <Card title="Add New Pages" icon="add-document">
+    Introduce new Markdown or MDX files in `src/content/docs` to expand your
+    documentation.
+  </Card>
+  <Card title="Configure Your Site" icon="setting">
+    Adjust your `sidebar` and other configurations in `astro.config.mjs`.
+  </Card>
+  <Card title="Read the Docs" icon="open-book">
+    Dive deeper into [stream.place Documentation](https://stream.place/docs).
+  </Card>
+</CardGrid>
