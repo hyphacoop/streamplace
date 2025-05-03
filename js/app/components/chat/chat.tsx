@@ -14,15 +14,7 @@ import { TouchableOpacity, Linking } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import usePlatform from "hooks/usePlatform";
 
-import {
-  Button,
-  isWeb,
-  ScrollView,
-  Sheet,
-  Text,
-  useMedia,
-  View,
-} from "tamagui";
+import { Button, ScrollView, Sheet, Text, useMedia, View } from "tamagui";
 import { RichText } from "@atproto/api";
 import { ReactElement } from "react";
 
@@ -39,7 +31,7 @@ export default function Chat({
   const chat = useAppSelector(useChat());
   const scrollRef = useRef<ScrollView>(null);
   const livestream = useAppSelector(usePlayerLivestream());
-  const userProfile = useAppSelector(selectUserProfile) as any;
+  const userProfile = useAppSelector(selectUserProfile);
   const myStream = !!(
     userProfile &&
     livestream &&
@@ -50,7 +42,7 @@ export default function Chat({
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 20;
+    const paddingToBottom = 100;
     const isAtBottom =
       layoutMeasurement.height + contentOffset.y >=
       contentSize.height - paddingToBottom;
@@ -69,19 +61,6 @@ export default function Chat({
 
   const m = useMedia();
   const dispatch = useAppDispatch();
-
-  const replyTargets = new Set(
-    chat
-      .filter((msg) => msg.record.reply)
-      .map((msg) => {
-        const reply = msg.record.reply as {
-          parent?: { uri: string };
-          root?: { uri: string };
-        };
-        return reply?.parent?.uri || reply?.root?.uri;
-      })
-      .filter(Boolean),
-  );
 
   return (
     <View f={1} position="relative">
@@ -183,8 +162,8 @@ export default function Chat({
                 setOpen={setOpen}
                 setMessage={setMessage}
                 myStream={myStream}
-                isReplyTarget={replyTargets.has(message.uri)}
                 replyHandle={undefined}
+                chat={chat}
               />
             ))}
           </ScrollView>
@@ -199,20 +178,18 @@ function ChatMessageRow({
   setMessage,
   setOpen,
   myStream,
-  isReplyTarget,
   replyHandle: _replyHandle,
+  chat,
 }: {
   message: MessageViewHydrated;
   setOpen: (open: boolean) => void;
   setMessage: (message: MessageViewHydrated) => void;
   myStream: boolean;
-  isReplyTarget?: boolean;
   replyHandle?: string;
+  chat: MessageViewHydrated[];
 }): JSX.Element {
   const [hover, setHover] = useState(false);
   const playerActions = usePlayerActions();
-  const userProfile = useAppSelector(selectUserProfile);
-  const chat = useAppSelector(useChat());
   const { isWeb } = usePlatform();
 
   const moderateMessage = () => {
@@ -227,42 +204,13 @@ function ChatMessageRow({
     playerActions.setReplyToMessage(message);
   };
 
-  let hasReply = !!message.record.reply;
-  let replyToHandle: string | null = null;
-  let replyToText: string | null = null;
-  let replyToColor = "$accentColor";
-
-  // For the sender, we can use the direct reply info
-  if (message.author.did === userProfile?.did && (message as any).replyTo) {
-    hasReply = true;
-    replyToHandle = (message as any).replyTo.author.handle;
-    replyToText = (message as any).replyTo.text;
-    if ((message as any).replyTo.chatProfile?.color) {
-      const { red, green, blue } = (message as any).replyTo.chatProfile.color;
-      replyToColor = `rgb(${red}, ${green}, ${blue})`;
-    }
-  }
-  // For other users, only show the server-hydrated message which already has reply info
-  else if (message.record.reply) {
-    const reply = message.record.reply as {
-      parent?: { uri: string; cid: string };
-      root?: { uri: string; cid: string };
-    };
-
-    const parentUri = reply?.parent?.uri || reply?.root?.uri;
-
-    if (parentUri && chat) {
-      const parentMsg = chat.find((msg) => msg.uri === parentUri);
-      if (parentMsg) {
-        replyToHandle = parentMsg.author.handle;
-        replyToText = parentMsg.record.text;
-        if (parentMsg.chatProfile?.color) {
-          const { red, green, blue } = parentMsg.chatProfile.color;
-          replyToColor = `rgb(${red}, ${green}, ${blue})`;
-        }
-      }
-    }
-  }
+  const replyTo = message.replyTo as MessageViewHydrated | undefined;
+  const hasReply = !!replyTo;
+  const replyToHandle = replyTo?.author?.handle;
+  const replyToText = replyTo?.record?.text;
+  const replyToColor = replyTo?.chatProfile?.color
+    ? `rgb(${replyTo.chatProfile.color.red}, ${replyTo.chatProfile.color.green}, ${replyTo.chatProfile.color.blue})`
+    : "$accentColor";
 
   return (
     <View
@@ -280,7 +228,7 @@ function ChatMessageRow({
       }}
       onLongPress={handleReply}
     >
-      {isReplyTarget && (
+      {hasReply && (
         <View
           position="absolute"
           left={6}
@@ -317,7 +265,6 @@ function ChatMessageRow({
               gap="$1"
               paddingVertical="$1"
               paddingHorizontal="$2"
-              backgroundColor="rgba(255,255,255,0.05)"
               borderRadius="$2"
               marginLeft="-$1"
             >
@@ -339,7 +286,7 @@ function ChatMessageRow({
 
         {/* Message content */}
         <View flexDirection="row" alignItems="flex-start" gap="$2">
-          <ChatMessageText message={message} chat={chat || []} />
+          <ChatMessageText message={message} chat={chat} />
         </View>
       </View>
       <View

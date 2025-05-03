@@ -3,10 +3,7 @@ import { createAction } from "@reduxjs/toolkit";
 import { PROTOCOL_HLS, PROTOCOL_WEBRTC } from "components/player/props";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import { uuidv7 } from "hooks/uuid";
-import {
-  isMessageView,
-  MessageView,
-} from "lexicons/types/place/stream/chat/defs";
+import { isMessageView } from "lexicons/types/place/stream/chat/defs";
 import { createContext, useContext } from "react";
 import { createAppSlice } from "../../hooks/createSlice";
 import { Record as ChatMessageRecord } from "../../lexicons/types/place/stream/chat/message";
@@ -36,8 +33,14 @@ export interface LivestreamViewHydrated extends LivestreamView {
 export interface PostViewHydrated extends AppBskyFeedDefs.PostView {
   record: AppBskyFeedPost.Record;
 }
-export interface MessageViewHydrated extends MessageView {
+export interface MessageViewHydrated {
+  uri: string;
+  cid: string;
+  author: Author;
   record: ChatMessageRecord;
+  indexedAt: string;
+  chatProfile?: ChatProfile;
+  replyTo?: MessageViewHydrated;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({
@@ -102,28 +105,6 @@ interface Author {
   handle: string;
 }
 
-export interface ReplyTo {
-  cid: string;
-  uri: string;
-  author: Author;
-  text: string;
-  chatProfile?: ChatProfile;
-}
-
-export const prepareReplyData = (
-  message: MessageViewHydrated | null,
-): ReplyTo | undefined => {
-  if (!message) return undefined;
-
-  return {
-    cid: message.cid,
-    uri: message.uri,
-    author: message.author,
-    text: message.record.text,
-    chatProfile: message.chatProfile,
-  };
-};
-
 export const addLocalChatMessage = createAction(
   "player/addLocalChatMessage",
   ({
@@ -135,7 +116,7 @@ export const addLocalChatMessage = createAction(
   }: {
     playerId: string;
     message: string;
-    replyTo?: ReplyTo;
+    replyTo?: MessageViewHydrated;
     author: Author;
     chatProfile?: ChatProfile;
   }) => {
@@ -157,21 +138,9 @@ export const addLocalChatMessage = createAction(
           },
         }),
       },
-      replyTo: replyTo && {
-        cid: replyTo.cid,
-        uri: replyTo.uri,
-        author: replyTo.author,
-        text: replyTo.text,
-        chatProfile: replyTo.chatProfile,
-      },
-      chatProfile: chatProfile?.color && {
-        color: {
-          red: chatProfile.color.red,
-          green: chatProfile.color.green,
-          blue: chatProfile.color.blue,
-        },
-      },
-    } as unknown as MessageViewHydrated;
+      ...(replyTo && { replyTo }),
+      ...(chatProfile && { chatProfile }),
+    } as MessageViewHydrated;
 
     return {
       payload: { playerId, message: localMessage },
@@ -240,8 +209,9 @@ const reduceChat = (
               cid: parentMsg.cid,
               uri: parentMsg.uri,
               author: parentMsg.author,
-              text: parentMsg.record.text,
+              record: parentMsg.record,
               chatProfile: parentMsg.chatProfile,
+              indexedAt: parentMsg.indexedAt,
             },
           };
         }
@@ -366,11 +336,21 @@ export const playerSlice = createAppSlice({
                 },
               };
             } else if (isMessageView(message)) {
+              // Explicitly map MessageView to MessageViewHydrated
+              const hydrated: MessageViewHydrated = {
+                uri: message.uri,
+                cid: message.cid,
+                author: message.author,
+                record: message.record as ChatMessageRecord,
+                indexedAt: message.indexedAt,
+                chatProfile: (message as any).chatProfile,
+                replyTo: (message as any).replyTo,
+              };
               state = {
                 ...state,
                 [action.payload.playerId]: reduceChat(
                   state[action.payload.playerId] as PlayerState,
-                  [message as MessageViewHydrated],
+                  [hydrated],
                   [],
                 ),
               };

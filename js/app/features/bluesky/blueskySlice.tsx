@@ -9,7 +9,10 @@ import { ProfileViewDetailed } from "@atproto/api/src/client/types/app/bsky/acto
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
-import { LivestreamViewHydrated } from "features/player/playerSlice";
+import {
+  LivestreamViewHydrated,
+  MessageViewHydrated,
+} from "features/player/playerSlice";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import {
   PlaceStreamChatMessage,
@@ -510,15 +513,7 @@ export const blueskySlice = createAppSlice({
         }: {
           text: string;
           livestream: LivestreamViewHydrated;
-          replyTo?: {
-            cid: string;
-            uri: string;
-            author: {
-              did: string;
-              handle: string;
-            };
-            text: string;
-          };
+          replyTo?: MessageViewHydrated;
         },
         thunkAPI,
       ) => {

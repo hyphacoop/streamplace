@@ -14,13 +14,15 @@ export interface MentionSuggestion {
 interface MentionSuggestionsProps {
   suggestions: MentionSuggestion[];
   onSelect: (suggestion: MentionSuggestion) => void;
-  position: { top: number; left: number };
+  highlightedIndex: number;
+  setHighlightedIndex: (i: number) => void;
 }
 
 export default function MentionSuggestions({
   suggestions,
   onSelect,
-  position,
+  highlightedIndex,
+  setHighlightedIndex,
 }: MentionSuggestionsProps) {
   if (suggestions.length === 0) return null;
 
@@ -30,10 +32,11 @@ export default function MentionSuggestions({
   return (
     <View
       position="absolute"
-      top={0}
       left={0}
       right={0}
-      backgroundColor="white"
+      bottom="100%"
+      marginBottom={44}
+      backgroundColor="$background"
       borderRadius={4}
       maxHeight={200}
       minWidth={200}
@@ -44,28 +47,40 @@ export default function MentionSuggestions({
       shadowRadius={4}
       style={{
         pointerEvents: "auto",
-        border: "2px solid red",
       }}
     >
+      <Text
+        fontSize={12}
+        color="$color"
+        padding="$2"
+        opacity={0.7}
+        style={{ borderBottomWidth: 1, borderBottomColor: "$borderColor" }}
+      >
+        ↑/↓ to navigate, Tab/Enter to select, Esc to close
+      </Text>
       <ScrollView>
-        {suggestions.map((suggestion) => (
-          <TouchableOpacity
+        {suggestions.map((suggestion, i) => (
+          <View
             key={suggestion.did}
-            onPress={() => onSelect(suggestion)}
+            onMouseEnter={() => setHighlightedIndex(i)}
           >
-            <View
-              padding="$2"
-              hoverStyle={{ backgroundColor: "$background3" }}
-              style={{
-                borderBottomWidth: 1,
-                borderBottomColor: "$borderColor",
-              }}
-            >
-              <Text fontSize={14} color={getRgbColor(suggestion.color)}>
-                @{suggestion.handle}
-              </Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => onSelect(suggestion)} style={{}}>
+              <View
+                padding="$2"
+                backgroundColor={
+                  i === highlightedIndex ? "$accentBackground" : "transparent"
+                }
+                style={{
+                  borderBottomWidth: 1,
+                  borderBottomColor: "$borderColor",
+                }}
+              >
+                <Text fontSize={14} color={getRgbColor(suggestion.color)}>
+                  @{suggestion.handle}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
     </View>

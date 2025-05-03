@@ -13,7 +13,6 @@ import {
   usePlayerId,
   useReplyToMessage,
   usePlayerActions,
-  prepareReplyData,
   useChat,
   MessageViewHydrated,
 } from "features/player/playerSlice";
@@ -22,7 +21,7 @@ import {
   selectChatWarned,
 } from "features/streamplace/streamplaceSlice";
 import { useRef, useState, useEffect } from "react";
-import { Keyboard, TextInput } from "react-native";
+import { Keyboard } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Button, Form, Input, isWeb, TextArea, View, Text } from "tamagui";
 import {
@@ -66,11 +65,8 @@ export default function ChatBox({
   const [message, setMessage] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
-  const [suggestionPosition, setSuggestionPosition] = useState({
-    top: 0,
-    left: 0,
-  });
   const [lastAtPosition, setLastAtPosition] = useState(-1);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const isReady = useAppSelector(selectIsReady);
   const userProfile = useAppSelector(selectUserProfile);
   const chatProfile = useAppSelector(selectChatProfile);
@@ -84,6 +80,8 @@ export default function ChatBox({
   const playerId = usePlayerId();
   const playerActions = usePlayerActions();
   const replyTo = useAppSelector(useReplyToMessage());
+  const [isTextAreaFocused, setIsTextAreaFocused] = useState(false);
+  const enterHandledRef = useRef(false);
 
   useEffect(() => {
     if (replyTo && textAreaRef.current) {
@@ -96,16 +94,13 @@ export default function ChatBox({
 
     const allSuggestions = getParticipantSuggestions(chat, userProfile?.did);
     setSuggestions(allSuggestions);
-
-    if (textAreaRef.current) {
-      const textarea = textAreaRef.current as unknown as HTMLTextAreaElement;
-      const rect = textarea.getBoundingClientRect();
-      setSuggestionPosition({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-      });
-    }
   }, [chat, userProfile?.did]);
+
+  useEffect(() => {
+    if (!showSuggestions) {
+      setHighlightedIndex(0);
+    }
+  }, [showSuggestions]);
 
   const updateSuggestions = (text: string, cursorPosition: number) => {
     const atIndex = text.lastIndexOf("@", cursorPosition);
@@ -138,22 +133,26 @@ export default function ChatBox({
     const wordEndIndex = afterAt.search(/\s|$/);
     const afterWord = afterAt.slice(wordEndIndex);
 
-    setMessage(`${beforeAt}@${suggestion.handle}${afterWord}`);
+    setMessage(`${beforeAt}@${suggestion.handle}${afterWord} `);
     setShowSuggestions(false);
+  };
+
+  const handleMentionSelectByIndex = (index: number) => {
+    if (suggestions.length > 0) {
+      handleMentionSelect(suggestions[index]);
+    }
   };
 
   const submit = () => {
     if (!isWeb) Keyboard.dismiss();
     if (!message.length || !livestream || !userProfile) return;
 
-    const replyData = prepareReplyData(replyTo);
-
     // Add local message
     dispatch(
       addLocalChatMessage({
         playerId,
         message,
-        replyTo: replyData,
+        ...(replyTo ? { replyTo } : {}),
         author: {
           did: userProfile.did,
           handle: userProfile.handle,
@@ -175,7 +174,7 @@ export default function ChatBox({
       chatMessage({
         text: message,
         livestream,
-        replyTo: replyData,
+        ...(replyTo ? { replyTo } : {}),
       }),
     );
 
@@ -184,11 +183,41 @@ export default function ChatBox({
     setShowSuggestions(false);
     if (isWeb && textAreaRef.current) {
       const textarea = textAreaRef.current as unknown as HTMLTextAreaElement;
+      textarea.style.height = "";
       textarea.focus();
     }
   };
 
   const toast = useToastController();
+
+  useEffect(() => {
+    if (!isWeb || !textAreaRef.current) return;
+    const textarea = textAreaRef.current as unknown as HTMLTextAreaElement;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isTextAreaFocused) return;
+      if (showSuggestions && suggestions.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setHighlightedIndex(
+            (prev) => (prev - 1 + suggestions.length) % suggestions.length,
+          );
+        } else if (e.key === "Tab" || e.key === "Enter") {
+          e.preventDefault();
+          handleMentionSelectByIndex(highlightedIndex);
+          enterHandledRef.current = true;
+        } else if (e.key === "Escape") {
+          setShowSuggestions(false);
+        }
+      }
+    };
+    textarea.addEventListener("keydown", handleKeyDown);
+    return () => {
+      textarea.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isTextAreaFocused, showSuggestions, suggestions, highlightedIndex]);
 
   return (
     <View position="relative">
@@ -230,7 +259,18 @@ export default function ChatBox({
               >
                 <View flex={1}>
                   <Text fontSize={12} color="$color">
-                    Replying to @{replyTo.author.handle}
+                    Replying to{" "}
+                    <Text
+                      fontSize={12}
+                      color={
+                        replyTo.chatProfile?.color
+                          ? `rgb(${replyTo.chatProfile.color.red}, ${replyTo.chatProfile.color.green}, ${replyTo.chatProfile.color.blue})`
+                          : "$accentColor"
+                      }
+                      fontWeight="bold"
+                    >
+                      @{replyTo.author.handle}
+                    </Text>
                   </Text>
                   <Text
                     fontSize={12}
@@ -262,8 +302,10 @@ export default function ChatBox({
                   ref={textAreaRef}
                   multiline={true}
                   keyboardType="default"
-                  disabled={Boolean(loggedOut)}
+                  disabled={loggedOut}
                   rows={1}
+                  onFocus={() => setIsTextAreaFocused(true)}
+                  onBlur={() => setIsTextAreaFocused(false)}
                   onPress={() => {
                     if (!chatWarned) {
                       dispatch(chatWarn(true));
@@ -290,6 +332,20 @@ export default function ChatBox({
                     }
                   }}
                   onKeyPress={(e) => {
+                    if (enterHandledRef.current) {
+                      enterHandledRef.current = false;
+                      e.preventDefault();
+                      return;
+                    }
+                    if (
+                      showSuggestions &&
+                      suggestions.length > 0 &&
+                      (e.nativeEvent.key === "Enter" ||
+                        e.nativeEvent.key === "Tab")
+                    ) {
+                      e.preventDefault();
+                      return;
+                    }
                     if (e.nativeEvent.key === "Enter") {
                       e.preventDefault();
                       submit();
@@ -318,7 +374,8 @@ export default function ChatBox({
                     <MentionSuggestions
                       suggestions={suggestions}
                       onSelect={handleMentionSelect}
-                      position={suggestionPosition}
+                      highlightedIndex={highlightedIndex}
+                      setHighlightedIndex={setHighlightedIndex}
                     />
                   </View>
                 )}
@@ -346,7 +403,7 @@ export default function ChatBox({
                 <Button
                   flexShrink={0}
                   backgroundColor="transparent"
-                  disabled={Boolean(loggedOut)}
+                  disabled={loggedOut}
                   onPress={() => {
                     submit();
                   }}
