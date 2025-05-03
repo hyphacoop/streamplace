@@ -9,7 +9,10 @@ import { ProfileViewDetailed } from "@atproto/api/src/client/types/app/bsky/acto
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
-import { LivestreamViewHydrated } from "features/player/playerSlice";
+import {
+  LivestreamViewHydrated,
+  MessageViewHydrated,
+} from "features/player/playerSlice";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import {
   PlaceStreamChatMessage,
@@ -506,7 +509,12 @@ export const blueskySlice = createAppSlice({
         {
           text,
           livestream,
-        }: { text: string; livestream: LivestreamViewHydrated },
+          replyTo,
+        }: {
+          text: string;
+          livestream: LivestreamViewHydrated;
+          replyTo?: MessageViewHydrated;
+        },
         thunkAPI,
       ) => {
         const { bluesky, streamplace } = thunkAPI.getState() as {
@@ -532,29 +540,46 @@ export const blueskySlice = createAppSlice({
           text: text,
           createdAt: new Date().toISOString(),
           streamer: livestream.author.did,
-          facets:
-            rt.facets?.map((facet) => ({
-              index: facet.index,
-              features: facet.features
-                .filter(
-                  (feature) =>
-                    feature.$type === "app.bsky.richtext.facet#link" ||
-                    feature.$type === "app.bsky.richtext.facet#mention",
-                )
-                .map((feature) => {
-                  if (feature.$type === "app.bsky.richtext.facet#link") {
-                    return {
-                      $type: "app.bsky.richtext.facet#link",
-                      uri: feature.uri,
-                    };
-                  } else {
-                    return {
-                      $type: "app.bsky.richtext.facet#mention",
-                      did: feature.did,
-                    };
-                  }
-                }),
-            })) || [],
+          ...(replyTo
+            ? {
+                reply: {
+                  root: {
+                    cid: replyTo.cid,
+                    uri: replyTo.uri,
+                  },
+                  parent: {
+                    cid: replyTo.cid,
+                    uri: replyTo.uri,
+                  },
+                },
+              }
+            : {}),
+          ...(rt.facets && rt.facets.length > 0
+            ? {
+                facets: rt.facets.map((facet) => ({
+                  index: facet.index,
+                  features: facet.features
+                    .filter(
+                      (feature) =>
+                        feature.$type === "app.bsky.richtext.facet#link" ||
+                        feature.$type === "app.bsky.richtext.facet#mention",
+                    )
+                    .map((feature) => {
+                      if (feature.$type === "app.bsky.richtext.facet#link") {
+                        return {
+                          $type: "app.bsky.richtext.facet#link",
+                          uri: feature.uri,
+                        };
+                      } else {
+                        return {
+                          $type: "app.bsky.richtext.facet#mention",
+                          did: feature.did,
+                        };
+                      }
+                    }),
+                })),
+              }
+            : {}),
         };
         await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,

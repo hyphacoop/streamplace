@@ -30,6 +30,7 @@ func main() {
 		streamplace.RichtextFacet{},
 		streamplace.ChatProfile{},
 		streamplace.ChatProfile_Color{},
+		streamplace.ChatMessage_ReplyRef{},
 	); err != nil {
 		panic(err)
 	}

@@ -30,7 +30,25 @@
             "type": "string",
             "format": "did",
             "description": "The DID of the streamer whose chat this is."
+          },
+          "reply": {
+            "type": "ref",
+            "ref": "#replyRef"
           }
+        }
+      }
+    },
+    "replyRef": {
+      "type": "object",
+      "required": ["root", "parent"],
+      "properties": {
+        "root": {
+          "type": "ref",
+          "ref": "com.atproto.repo.strongRef"
+        },
+        "parent": {
+          "type": "ref",
+          "ref": "com.atproto.repo.strongRef"
         }
       }
     }

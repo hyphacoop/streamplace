@@ -5,6 +5,7 @@ package streamplace
 // schema: place.stream.chat.message
 
 import (
+	comatprototypes "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/lex/util"
 )
 
@@ -17,9 +18,16 @@ type ChatMessage struct {
 	// createdAt: Client-declared timestamp when this message was originally created.
 	CreatedAt string `json:"createdAt" cborgen:"createdAt"`
 	// facets: Annotations of text (mentions, URLs, etc)
-	Facets []*RichtextFacet `json:"facets,omitempty" cborgen:"facets,omitempty"`
+	Facets []*RichtextFacet      `json:"facets,omitempty" cborgen:"facets,omitempty"`
+	Reply  *ChatMessage_ReplyRef `json:"reply,omitempty" cborgen:"reply,omitempty"`
 	// streamer: The DID of the streamer whose chat this is.
 	Streamer string `json:"streamer" cborgen:"streamer"`
 	// text: The primary message content. May be an empty string, if there are embeds.
 	Text string `json:"text" cborgen:"text"`
+}
+
+// ChatMessage_ReplyRef is a "replyRef" in the place.stream.chat.message schema.
+type ChatMessage_ReplyRef struct {
+	Parent *comatprototypes.RepoStrongRef `json:"parent" cborgen:"parent"`
+	Root   *comatprototypes.RepoStrongRef `json:"root" cborgen:"root"`
 }

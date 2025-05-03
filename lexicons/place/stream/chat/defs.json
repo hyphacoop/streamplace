@@ -17,6 +17,10 @@
         "chatProfile": {
           "type": "ref",
           "ref": "place.stream.chat.profile"
+        },
+        "replyTo": {
+          "type": "union",
+          "refs": ["place.stream.chat.defs#messageView"]
         }
       }
     }

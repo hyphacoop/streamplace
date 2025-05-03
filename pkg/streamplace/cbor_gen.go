@@ -1525,9 +1525,13 @@ func (t *ChatMessage) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 5
+	fieldCount := 6
 
 	if t.Facets == nil {
+		fieldCount--
+	}
+
+	if t.Reply == nil {
 		fieldCount--
 	}
 
@@ -1575,6 +1579,25 @@ func (t *ChatMessage) MarshalCBOR(w io.Writer) error {
 	}
 	if _, err := cw.WriteString(string("place.stream.chat.message")); err != nil {
 		return err
+	}
+
+	// t.Reply (streamplace.ChatMessage_ReplyRef) (struct)
+	if t.Reply != nil {
+
+		if len("reply") > 1000000 {
+			return xerrors.Errorf("Value in field \"reply\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("reply"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("reply")); err != nil {
+			return err
+		}
+
+		if err := t.Reply.MarshalCBOR(cw); err != nil {
+			return err
+		}
 	}
 
 	// t.Facets ([]*streamplace.RichtextFacet) (slice)
@@ -1716,6 +1739,26 @@ func (t *ChatMessage) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.LexiconTypeID = string(sval)
+			}
+			// t.Reply (streamplace.ChatMessage_ReplyRef) (struct)
+		case "reply":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.Reply = new(ChatMessage_ReplyRef)
+					if err := t.Reply.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.Reply pointer: %w", err)
+					}
+				}
+
 			}
 			// t.Facets ([]*streamplace.RichtextFacet) (slice)
 		case "facets":
@@ -2315,6 +2358,144 @@ func (t *ChatProfile_Color) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.Green = int64(extraI)
+			}
+
+		default:
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(r, func(cid.Cid) {}); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+func (t *ChatMessage_ReplyRef) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write([]byte{162}); err != nil {
+		return err
+	}
+
+	// t.Root (atproto.RepoStrongRef) (struct)
+	if len("root") > 1000000 {
+		return xerrors.Errorf("Value in field \"root\" was too long")
+	}
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("root"))); err != nil {
+		return err
+	}
+	if _, err := cw.WriteString(string("root")); err != nil {
+		return err
+	}
+
+	if err := t.Root.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.Parent (atproto.RepoStrongRef) (struct)
+	if len("parent") > 1000000 {
+		return xerrors.Errorf("Value in field \"parent\" was too long")
+	}
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("parent"))); err != nil {
+		return err
+	}
+	if _, err := cw.WriteString(string("parent")); err != nil {
+		return err
+	}
+
+	if err := t.Parent.MarshalCBOR(cw); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *ChatMessage_ReplyRef) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = ChatMessage_ReplyRef{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajMap {
+		return fmt.Errorf("cbor input should be of type map")
+	}
+
+	if extra > cbg.MaxLength {
+		return fmt.Errorf("ChatMessage_ReplyRef: map struct too large (%d)", extra)
+	}
+
+	n := extra
+
+	nameBuf := make([]byte, 6)
+	for i := uint64(0); i < n; i++ {
+		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(cr, func(cid.Cid) {}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		switch string(nameBuf[:nameLen]) {
+		// t.Root (atproto.RepoStrongRef) (struct)
+		case "root":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.Root = new(atproto.RepoStrongRef)
+					if err := t.Root.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.Root pointer: %w", err)
+					}
+				}
+
+			}
+			// t.Parent (atproto.RepoStrongRef) (struct)
+		case "parent":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.Parent = new(atproto.RepoStrongRef)
+					if err := t.Parent.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.Parent pointer: %w", err)
+					}
+				}
+
 			}
 
 		default:

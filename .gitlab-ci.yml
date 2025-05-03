@@ -194,7 +194,7 @@ build-android:
 build-mac:
   stage: build
   interruptible: true
-  image: ghcr.io/cirruslabs/macos-sonoma-xcode:16.1
+  image: macos-sonoma-xcode-big
   tags:
     - tart-installed
   variables:
