@@ -3,10 +3,7 @@ import { createAction } from "@reduxjs/toolkit";
 import { PROTOCOL_HLS, PROTOCOL_WEBRTC } from "components/player/props";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import { uuidv7 } from "hooks/uuid";
-import {
-  isMessageView,
-  MessageView,
-} from "lexicons/types/place/stream/chat/defs";
+import { isMessageView } from "lexicons/types/place/stream/chat/defs";
 import { createContext, useContext } from "react";
 import { createAppSlice } from "../../hooks/createSlice";
 import { Record as ChatMessageRecord } from "../../lexicons/types/place/stream/chat/message";
@@ -24,6 +21,8 @@ import {
   ViewerCount,
 } from "../../lexicons/types/place/stream/livestream";
 import * as Segment from "../../lexicons/types/place/stream/segment";
+import { useAppDispatch } from "store/hooks";
+
 export interface PlayerContextType {
   playerId: string | null;
 }
@@ -34,8 +33,14 @@ export interface LivestreamViewHydrated extends LivestreamView {
 export interface PostViewHydrated extends AppBskyFeedDefs.PostView {
   record: AppBskyFeedPost.Record;
 }
-export interface MessageViewHydrated extends MessageView {
+export interface MessageViewHydrated {
+  uri: string;
+  cid: string;
+  author: Author;
   record: ChatMessageRecord;
+  indexedAt: string;
+  chatProfile?: ChatProfile;
+  replyTo?: MessageViewHydrated;
 }
 
 export const PlayerContext = createContext<PlayerContextType>({
@@ -70,6 +75,7 @@ export interface PlayerState {
   renditions: Rendition[];
   selectedRendition: string | null;
   protocol: string;
+  replyToMessage: MessageViewHydrated | null;
 }
 
 export interface PlayersState {
@@ -84,7 +90,65 @@ export const newPlayer = createAction("player/newPlayer", function prepare() {
   };
 });
 
-const usePlayerId = () => {
+interface ChatProfileColor {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+interface ChatProfile {
+  color?: ChatProfileColor;
+}
+
+interface Author {
+  did: string;
+  handle: string;
+}
+
+export const addLocalChatMessage = createAction(
+  "player/addLocalChatMessage",
+  ({
+    playerId,
+    message,
+    replyTo,
+    author,
+    chatProfile,
+  }: {
+    playerId: string;
+    message: string;
+    replyTo?: MessageViewHydrated;
+    author: Author;
+    chatProfile?: ChatProfile;
+  }) => {
+    const timestamp = Date.now();
+    const createdAt = new Date().toISOString();
+
+    const localMessage = {
+      uri: `local-${timestamp}`,
+      cid: `local-${timestamp}`,
+      indexedAt: createdAt,
+      author,
+      record: {
+        text: message,
+        createdAt,
+        ...(replyTo && {
+          reply: {
+            parent: { cid: replyTo.cid, uri: replyTo.uri },
+            root: { cid: replyTo.cid, uri: replyTo.uri },
+          },
+        }),
+      },
+      ...(replyTo && { replyTo }),
+      ...(chatProfile && { chatProfile }),
+    } as MessageViewHydrated;
+
+    return {
+      payload: { playerId, message: localMessage },
+    };
+  },
+);
+
+export const usePlayerId = () => {
   const { playerId } = useContext(PlayerContext);
   if (!playerId) {
     throw new Error("Player context not found");
@@ -99,29 +163,68 @@ const reduceChat = (
 ): PlayerState => {
   state = { ...state } as PlayerState;
   const newChat: { [key: string]: MessageViewHydrated } = { ...state.chat };
-  for (const message of messages) {
+
+  // Add new messages
+  for (let message of messages) {
     const date = new Date(message.record.createdAt);
     const key = `${date.getTime()}-${message.uri}`;
+
+    // Remove existing local message matching the server one
+    if (!message.uri.startsWith("local-")) {
+      const existingLocalMessageKey = Object.keys(newChat).find((k) => {
+        const msg = newChat[k];
+        return (
+          msg.uri.startsWith("local-") &&
+          msg.record.text === message.record.text &&
+          msg.author.did === message.author.did
+        );
+      });
+
+      if (existingLocalMessageKey) {
+        delete newChat[existingLocalMessageKey];
+      }
+    }
+
+    // Handle reply information for local-first messages
+    if (message.record.reply) {
+      const reply = message.record.reply as {
+        parent?: { uri: string; cid: string };
+        root?: { uri: string; cid: string };
+      };
+
+      const parentUri = reply?.parent?.uri || reply?.root?.uri;
+
+      if (parentUri) {
+        // First try to find the parent message in our chat
+        const parentMsgKey = Object.keys(newChat).find(
+          (k) => newChat[k].uri === parentUri,
+        );
+
+        if (parentMsgKey) {
+          // Found the parent message, add its info to our message
+          const parentMsg = newChat[parentMsgKey];
+          message = {
+            ...message,
+            replyTo: {
+              cid: parentMsg.cid,
+              uri: parentMsg.uri,
+              author: parentMsg.author,
+              record: parentMsg.record,
+              chatProfile: parentMsg.chatProfile,
+              indexedAt: parentMsg.indexedAt,
+            },
+          };
+        }
+      }
+    }
+
     newChat[key] = message;
   }
 
   for (const block of blocks) {
     for (const [k, v] of Object.entries(newChat)) {
       if (v.author.did === block.record.subject) {
-        console.log(
-          "deleting message",
-          v.cid,
-          v.author.did,
-          block.record.subject,
-        );
         delete newChat[k];
-      } else {
-        console.log(
-          "keeping message",
-          v.cid,
-          v.author.did,
-          block.record.subject,
-        );
       }
     }
   }
@@ -160,6 +263,7 @@ export const playerSlice = createAppSlice({
           segment: null,
           renditions: [],
           selectedRendition: "source",
+          replyToMessage: null,
         };
       },
     );
@@ -232,11 +336,21 @@ export const playerSlice = createAppSlice({
                 },
               };
             } else if (isMessageView(message)) {
+              // Explicitly map MessageView to MessageViewHydrated
+              const hydrated: MessageViewHydrated = {
+                uri: message.uri,
+                cid: message.cid,
+                author: message.author,
+                record: message.record as ChatMessageRecord,
+                indexedAt: message.indexedAt,
+                chatProfile: (message as any).chatProfile,
+                replyTo: (message as any).replyTo,
+              };
               state = {
                 ...state,
                 [action.payload.playerId]: reduceChat(
                   state[action.payload.playerId] as PlayerState,
-                  [message as MessageViewHydrated],
+                  [hydrated],
                   [],
                 ),
               };
@@ -269,6 +383,60 @@ export const playerSlice = createAppSlice({
             }
           }
           return state;
+        },
+      ),
+
+      addLocalChatMessage: create.reducer(
+        (
+          state,
+          action: {
+            payload: {
+              playerId: string;
+              message: MessageViewHydrated;
+            };
+            type: string;
+          },
+        ) => {
+          const { playerId, message } = action.payload;
+          if (!state[playerId]) return state;
+
+          const playerState = { ...state[playerId] } as PlayerState;
+
+          const newChat = { ...playerState.chat };
+          const date = new Date(message.record.createdAt);
+          const key = `${date.getTime()}-${message.uri}`;
+          newChat[key] = message;
+
+          const newChatList = Object.keys(newChat)
+            .sort((a, b) => (a > b ? 1 : -1))
+            .map((key) => newChat[key]);
+
+          return {
+            ...state,
+            [playerId]: {
+              ...playerState,
+              chat: newChat,
+              chatList: newChatList,
+            },
+          };
+        },
+      ),
+
+      setReplyToMessage: create.reducer(
+        (
+          state,
+          action: {
+            payload: { playerId: string; message: MessageViewHydrated | null };
+            type: string;
+          },
+        ) => {
+          return {
+            ...state,
+            [action.payload.playerId]: {
+              ...state[action.payload.playerId],
+              replyToMessage: action.payload.message,
+            },
+          };
         },
       ),
 
@@ -476,6 +644,7 @@ export const playerSlice = createAppSlice({
 
 export const usePlayerActions = () => {
   const playerId = usePlayerId();
+  const dispatch = useAppDispatch();
   return {
     startIngest: (startIngest: boolean) =>
       playerSlice.actions.startIngest({ playerId, startIngest }),
@@ -500,6 +669,8 @@ export const usePlayerActions = () => {
       playerSlice.actions.setSelectedRendition({ playerId, rendition }),
     setProtocol: (protocol: string) =>
       playerSlice.actions.setProtocol({ playerId, protocol }),
+    setReplyToMessage: (message: MessageViewHydrated | null) =>
+      dispatch(playerSlice.actions.setReplyToMessage({ playerId, message })),
   };
 };
 
@@ -547,4 +718,10 @@ export const usePlayerProtocol = (): ((state: {
 }) => string) => {
   const playerId = usePlayerId();
   return (state) => state.player[playerId].protocol;
+};
+export const useReplyToMessage = (): ((state: {
+  player: PlayersState;
+}) => MessageViewHydrated | null) => {
+  const playerId = usePlayerId();
+  return (state) => state.player[playerId].replyToMessage;
 };

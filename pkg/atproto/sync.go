@@ -105,6 +105,9 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			StreamerRepoDID: streamerRepo.DID,
 			IndexedAt:       &now,
 		}
+		if rec.Reply != nil && rec.Reply.Parent != nil && rec.Reply.Root != nil {
+			mcm.ReplyToCID = &rec.Reply.Parent.Cid
+		}
 		err = atsync.Model.CreateChatMessage(ctx, mcm)
 		if err != nil {
 			log.Error(ctx, "failed to create chat message", "err", err)

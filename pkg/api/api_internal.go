@@ -399,6 +399,30 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		w.Write(bs)
 	})
 
+	router.GET("/chat/:cid", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		cid := p.ByName("cid")
+		if cid == "" {
+			errors.WriteHTTPBadRequest(w, "cid required", nil)
+			return
+		}
+		msg, err := a.Model.GetChatMessage(cid)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to get chat posts", err)
+			return
+		}
+		spmsg, err := msg.ToStreamplaceMessageView()
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to convert chat message to streamplace message view", err)
+			return
+		}
+		bs, err := json.Marshal(spmsg)
+		if err != nil {
+			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
+			return
+		}
+		w.Write(bs)
+	})
+
 	router.POST("/notification-blast", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var payload notificationpkg.NotificationBlast
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {

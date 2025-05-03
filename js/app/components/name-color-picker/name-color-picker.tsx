@@ -62,20 +62,15 @@ export default function NameColorPicker({
   const [color, setColor] = useState(theme.accentColor?.val ?? "#bd6e86");
   const profile = useAppSelector(selectUserProfile);
 
-  let startColor = "";
-  if (chatProfile?.profile?.color) {
-    startColor = `rgb(${chatProfile.profile.color.red}, ${chatProfile.profile.color.green}, ${chatProfile.profile.color.blue})`;
-  }
-
   useEffect(() => {
-    if (!chatProfile?.profile) {
+    if (profile?.did && !chatProfile?.profile) {
       dispatch(getChatProfileRecordFromPDS());
     }
     if (chatProfile?.profile && chatProfile?.profile.color) {
       const { red, green, blue } = chatProfile.profile.color;
       setColor(`rgb(${red}, ${green}, ${blue})`);
     }
-  }, [startColor]);
+  }, [profile?.did, chatProfile?.profile?.color]);
 
   return (
     <View alignItems="center" flexDirection="row">

@@ -5,6 +5,9 @@ package streamplace
 // schema: place.stream.chat.defs
 
 import (
+	"encoding/json"
+	"fmt"
+
 	appbskytypes "github.com/bluesky-social/indigo/api/bsky"
 	"github.com/bluesky-social/indigo/lex/util"
 )
@@ -19,5 +22,33 @@ type ChatDefs_MessageView struct {
 	Cid           string                                   `json:"cid" cborgen:"cid"`
 	IndexedAt     string                                   `json:"indexedAt" cborgen:"indexedAt"`
 	Record        *util.LexiconTypeDecoder                 `json:"record" cborgen:"record"`
+	ReplyTo       *ChatDefs_MessageView_ReplyTo            `json:"replyTo,omitempty" cborgen:"replyTo,omitempty"`
 	Uri           string                                   `json:"uri" cborgen:"uri"`
+}
+
+type ChatDefs_MessageView_ReplyTo struct {
+	ChatDefs_MessageView *ChatDefs_MessageView
+}
+
+func (t *ChatDefs_MessageView_ReplyTo) MarshalJSON() ([]byte, error) {
+	if t.ChatDefs_MessageView != nil {
+		t.ChatDefs_MessageView.LexiconTypeID = "place.stream.chat.defs#messageView"
+		return json.Marshal(t.ChatDefs_MessageView)
+	}
+	return nil, fmt.Errorf("cannot marshal empty enum")
+}
+func (t *ChatDefs_MessageView_ReplyTo) UnmarshalJSON(b []byte) error {
+	typ, err := util.TypeExtract(b)
+	if err != nil {
+		return err
+	}
+
+	switch typ {
+	case "place.stream.chat.defs#messageView":
+		t.ChatDefs_MessageView = new(ChatDefs_MessageView)
+		return json.Unmarshal(b, t.ChatDefs_MessageView)
+
+	default:
+		return nil
+	}
 }
