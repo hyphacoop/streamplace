@@ -14,7 +14,7 @@ import {
   VolumeX,
 } from "@tamagui/lucide-icons";
 import { Dispatch, Fragment, useEffect, useRef, useState } from "react";
-import { Animated, Pressable } from "react-native";
+import { Animated, ImageBackground, Pressable } from "react-native";
 import {
   Button,
   H3,
@@ -48,28 +48,45 @@ import { userMute } from "features/streamplace/streamplaceSlice";
 import { Countdown } from "components/countdown";
 import { Rendition } from "lexicons/types/place/stream/defs";
 import usePlatform from "hooks/usePlatform";
+import { Image } from "tamagui";
 
 const Bar = (props) => (
   <XStack
     height={50}
     backgroundColor="rgba(0,0,0,0.8)"
     justifyContent="space-between"
+    alignItems="stretch"
     flex-direction="row"
-    opacity={props.opacity}
     animation="quick"
     animateOnly={["opacity"]}
-  >
-    {props.children}
-  </XStack>
+    {...props}
+  />
 );
 
 const Part = (props) => (
-  <View alignItems="stretch" justifyContent="center" flexDirection="row">
-    {props.children}
-  </View>
+  <View
+    alignItems="stretch"
+    justifyContent="center"
+    flexDirection="row"
+    flexBasis={0}
+    flexGrow={1}
+    {...props}
+  />
 );
 
-const VolumeSlider = ({ volume, setVolume, muted, setMuted, showControls }) => {
+const VolumeSlider = ({
+  volume,
+  setVolume,
+  muted,
+  setMuted,
+  showControls,
+}: {
+  volume: number;
+  setVolume: (volume: number) => void;
+  muted: boolean;
+  setMuted: (muted: boolean) => void;
+  showControls: boolean;
+}) => {
   const [open, setOpen] = useState(false);
   const [sliderValue, setSliderValue] = useState(volume);
   const media = useMedia();
@@ -213,6 +230,7 @@ export default function Controls(props: PlayerProps) {
 
   const player = useAppSelector(usePlayer());
   const dispatch = useAppDispatch();
+  const m = useMedia();
 
   return (
     <View
@@ -227,6 +245,17 @@ export default function Controls(props: PlayerProps) {
       onPress={onPress}
       {...cursor}
     >
+      {props.muteWasForced && (
+        <View
+          position="absolute"
+          left={0}
+          bottom={0}
+          padding={20}
+          opacity={props.showControls ? 0 : 1}
+        >
+          <VolumeX size={60} color="red" />
+        </View>
+      )}
       {!props.offline ? null : (
         <View
           position="absolute"
@@ -253,31 +282,60 @@ export default function Controls(props: PlayerProps) {
           justifyContent: "space-between",
         }}
       > */}
-      <Bar opacity={props.showControls ? (props.fullscreen ? 0 : 1) : 0}>
-        <Part>
-          <View justifyContent="center" paddingLeft="$5">
-            <Text>{props.name}</Text>
+      <Bar
+        opacity={props.showControls ? (props.fullscreen ? 0 : 1) : 0}
+        cursor={props.embedded ? "pointer" : undefined}
+        onPress={() => {
+          if (props.embedded) {
+            // Open the current URL in a new window
+            const u = new URL(window.location.href);
+            u.pathname = u.pathname.replace("/embed", "");
+            window.open(u.toString(), "_blank");
+            props.setMuted(true);
+          }
+        }}
+      >
+        <Part justifyContent="flex-start" overflow="hidden">
+          <View justifyContent="center" paddingLeft="$5" maxWidth="100%">
+            <Text wordWrap="break-word" numberOfLines={1} ellipsizeMode="tail">
+              {props.name}
+            </Text>
           </View>
         </Part>
         <Part>
+          {props.embedded && m.gtXs ? (
+            <>
+              <Image
+                src={require("../../assets/images/cube_small.png")}
+                height={50}
+                width={50}
+              />
+            </>
+          ) : null}
+        </Part>
+        <Part justifyContent="flex-end">
           <Viewers viewers={player.viewers ?? 0} />
         </Part>
       </Bar>
       {props.ingest && <LiveBubble />}
       <Bar opacity={props.showControls ? 1 : 0}>
-        <Part>
+        <Part justifyContent="flex-start">
           <VolumeSlider
             volume={props.volume}
-            setVolume={props.setVolume}
+            setVolume={(vol) => {
+              props.setVolume(vol);
+              props.setMuteWasForced(false);
+            }}
             muted={props.muted}
             showControls={props.showControls}
             setMuted={(muted) => {
               dispatch(userMute(muted));
+              props.setMuteWasForced(false);
               props.setMuted(muted);
             }}
           />
         </Part>
-        <Part>
+        <Part justifyContent="flex-end">
           <PopoverMenu {...props} />
           <Pressable
             style={{
