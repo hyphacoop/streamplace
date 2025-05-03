@@ -25,7 +25,7 @@ type ChatMessage struct {
 	StreamerRepoDID string       `json:"streamerRepoDID"        gorm:"column:streamer_repo_did;idx_recent_messages,priority:1"`
 	StreamerRepo    *Repo        `json:"streamerRepo,omitempty" gorm:"foreignKey:DID;references:StreamerRepoDID"`
 	ReplyToCID      *string      `json:"replyToCID,omitempty"   gorm:"column:reply_to_cid"`
-	ReplyTo         *ChatMessage `json:"replyTo,omitempty"      gorm:"foreignKey:CID;references:ReplyToCID"`
+	ReplyTo         *ChatMessage `json:"replyTo,omitempty"      gorm:"foreignKey:ReplyToCID;references:CID"`
 }
 
 // hashString creates a hash from a string, used for deterministic color selection
