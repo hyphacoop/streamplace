@@ -13,8 +13,8 @@ get started:
   - A way to install it is with `pnpm/npm install -g yarn`. No corepack in this
     repo _just_ yet.
 - Go (version 1.24)
-  - If you use `mise`, you can install latest Go 1.23 with
-    `mise install go@prefix:1.23`
+  - If you use `mise`, you can install latest Go 1.24 with
+    `mise install go@prefix:1.24`
 - Meson
 - Ninja
 
