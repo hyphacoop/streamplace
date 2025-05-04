@@ -27,12 +27,21 @@ export default defineConfig({
       sidebar: [
         {
           label: "Guides",
-          autogenerate: { directory: "guides" },
+          items: [
+            {
+              label: "Start Streaming",
+              autogenerate: { directory: "guides/start-streaming" },
+            },
+            {
+              label: "Start Contributing",
+              autogenerate: { directory: "guides/start-contributing" },
+            },
+          ],
         },
-        {
-          label: "Reference",
-          autogenerate: { directory: "reference" },
-        },
+        // {
+        //   label: "Reference",
+        //   autogenerate: { directory: "reference" },
+        // },
         {
           label: "Lexicon Reference",
           autogenerate: { directory: "lex-reference" },
