@@ -1,7 +1,7 @@
 ---
 title: Welcome to Streamplace!
 description: Begin your development journey with the Streamplace documentation.
-template: splash
+template: doc
 hero:
   tagline: Solve live video for your project with Streamplace.
   image:
@@ -21,11 +21,18 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 
 ## Next Steps
 
-<CardGrid stagger>
-  <Card title="Start Streaming" icon="wifi">
-    Stream live, on ATProtocol.
+<CardGrid>
+  <Card title="Start Streaming" icon="rss">
+    Stream live, on the ATProtocol.
   </Card>
   <Card title="Read the Docs" icon="open-book">
-    Dive deeper into [stream.place Documentation](/docs/guides/getting-started).
+    Learn how to start streaming with
+    [Streamplace](/docs/guides/start-streaming/obs).
+  </Card>
+  <Card title="API Reference" icon="document">
+    Explore the [Lexicon API reference](/docs/lex-reference/place-stream-defs).
+  </Card>
+  <Card title="Developer Setup" icon="setting">
+    Set up your [development environment](/docs/guides/streamplace-dev-setup).
   </Card>
 </CardGrid>
