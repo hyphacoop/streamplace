@@ -106,17 +106,39 @@ js-lexicons:
 		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/app/lexicons/types/place/stream -type f) \
 		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
 		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/app/lexicons/types -type f) \
 		&& rm -rf ./js/app/lexicons/types/place/stream/*.bak
 
 .PHONY: lexgen
 lexgen:
+	$(MAKE) lexgen-types
+	$(MAKE) lexgen-server
+
+.PHONY: lexgen-types
+lexgen-types:
 	go run github.com/bluesky-social/indigo/cmd/lexgen --package streamplace \
 		--types-import place.stream:stream.place/streamplace/pkg/streamplace \
 		-outdir ./pkg/streamplace \
 		--prefix place.stream \
-		--build-file util/lexgen-build.json \
+		--build-file util/lexgen-types.json \
 		lexicons/place/stream \
 		../atproto/lexicons
+
+.PHONY: lexgen-server
+lexgen-server:
+	mkdir -p ./pkg/spxrpc
+	go run github.com/bluesky-social/indigo/cmd/lexgen --package spxrpc \
+		--gen-server \
+		--types-import place.stream:stream.place/streamplace/pkg/streamplace \
+		--types-import app.bsky:github.com/bluesky-social/indigo/api/bsky \
+		--types-import com.atproto:github.com/bluesky-social/indigo/api/atproto \
+		--types-import chat.bsky:github.com/bluesky-social/indigo/api/chat \
+		--types-import tools.ozone:github.com/bluesky-social/indigo/api/ozone \
+		-outdir ./pkg/spxrpc \
+		--prefix place.stream \
+		--build-file util/lexgen-server.json \
+		lexicons/place/stream \
+		lexicons/app/bsky
 
 .PHONY: test
 test:
