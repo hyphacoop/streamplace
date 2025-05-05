@@ -23,6 +23,7 @@ description: Reference for the place.stream.chat.defs lexicon
 | `record`      | `unknown`                                                                                                                                        | ✅    |             |                    |
 | `indexedAt`   | `string`                                                                                                                                         | ✅    |             | Format: `datetime` |
 | `chatProfile` | [`place.stream.chat.profile`](/lex-reference/place-stream-chat-profile)                                                                          | ❌    |             |                    |
+| `replyTo`     | Union of:<br/>&nbsp;&nbsp;[`place.stream.chat.defs#messageView`](/lex-reference/place-stream-chat-defs#messageview)                              | ❌    |             |                    |
 
 ---
 
@@ -59,6 +60,10 @@ description: Reference for the place.stream.chat.defs lexicon
         "chatProfile": {
           "type": "ref",
           "ref": "place.stream.chat.profile"
+        },
+        "replyTo": {
+          "type": "union",
+          "refs": ["place.stream.chat.defs#messageView"]
         }
       }
     }

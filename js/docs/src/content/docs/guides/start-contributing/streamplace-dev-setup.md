@@ -10,8 +10,8 @@ get started:
 
 - [Node.js](https://nodejs.org/)
 - [Yarn](https://yarnpkg.com/)
-  - A way to install it is with `pnpm/npm install -g yarn`. No corepack in this
-    repo _just_ yet.
+  - A way to install it is with `pnpm/npm install -g yarn` if corepack is not
+    enabled in your node install.
 - Go (version 1.24)
   - If you use `mise`, you can install latest Go 1.24 with
     `mise install go@prefix:1.24`
