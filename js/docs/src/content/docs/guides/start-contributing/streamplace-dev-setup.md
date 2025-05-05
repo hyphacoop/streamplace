@@ -17,15 +17,48 @@ get started:
     `mise install go@prefix:1.24`
 - Meson
 - Ninja
-
-### For development only
-
 - pkg-config
 
 ## Get Started
 
+### Streamplace Node
+
 1. Install prereqs
-2. Download JS packages with `yarn`
-3. `make dev-setup`
-4. `make dev`
-5. launch via `./build-<platform>-<arch>/streamplace`
+2. `make dev-setup`
+
+Now you're ready to start developing! The app can be rebuilt with `make dev`, so
+as you make changes to the node, you can run your app something like this:
+
+```
+make dev && ./build-darwin-arm64/streamplace
+
+// or
+
+make dev && ./build-linux-amd64/streamplace
+```
+
+### Streamplace App
+
+#### Web
+
+1. `yarn install`
+2. `yarn run app start`
+
+#### iOS/Android
+
+1. `yarn install`
+2. `yarn run app ios` or `yarn run app android`
+
+You can also specify a physical device with something like
+`yarn run app ios -d 'Stream’s iPhone'`. Note also that this command runs a full
+native build of the iOS/Android app, which is not necessary in many cases: once
+you have a copy of the `Devplace` app on your device or emulator, you can boot
+the dev server back up with `yarn run app start`.
+
+### Streamplace Desktop
+
+1. `yarn install`
+2. `yarn run desktop start`
+
+By default Streamplace Desktop will assume there's a local node to connect to,
+running with something like `make dev && ./build-linux-amd64/streamplace` above.

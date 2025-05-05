@@ -14,7 +14,8 @@
     "release": "lerna publish --force-publish",
     "precommit": "make precommit",
     "app": "cd js/app && yarn run \"$@\"",
-    "desktop": "cd js/desktop && yarn run \"$@\""
+    "desktop": "cd js/desktop && yarn run \"$@\"",
+    "docs": "cd js/docs && yarn run \"$@\""
   },
   "keywords": [],
   "author": "Streamplace",
