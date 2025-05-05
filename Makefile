@@ -82,7 +82,7 @@ schema:
 lexicons:
 	$(MAKE) go-lexicons \
 	&& $(MAKE) js-lexicons \
-	&& $(MAKE) lexgen-md
+	&& $(MAKE) md-lexicons
 
 .PHONY: go-lexicons
 go-lexicons:
