@@ -29521,7 +29521,6 @@ __metadata:
     "@astrojs/starlight": "npm:^0.34.1"
     "@fontsource/atkinson-hyperlegible-next": "npm:^5.2.2"
     astro: "npm:^5.6.1"
-    lex-md: "npm:^0.0.2"
     sharp: "npm:^0.32.5"
   languageName: unknown
   linkType: soft
@@ -29537,6 +29536,7 @@ __metadata:
     firebase-admin: "npm:^12.7.0"
     husky: "npm:^9.1.6"
     lerna: "npm:^8.1.9"
+    lex-md: "npm:^0.0.2"
     lint-staged: "npm:^15.2.10"
     prettier: "npm:3.4.2"
   languageName: unknown
