@@ -51,7 +51,7 @@ node: schema
 	meson compile -C $(BUILDDIR) streamplace
 
 js/app/dist/index.html: install
-  yarn run build
+	yarn run build
 
 .PHONY: dev-setup
 dev-setup: schema install js/app/dist/index.html
