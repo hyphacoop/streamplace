@@ -81,7 +81,8 @@ schema:
 .PHONY: lexicons
 lexicons:
 	$(MAKE) go-lexicons \
-	&& $(MAKE) js-lexicons
+	&& $(MAKE) js-lexicons \
+	&& $(MAKE) md-lexicons
 
 .PHONY: go-lexicons
 go-lexicons:
@@ -108,6 +109,12 @@ js-lexicons:
 		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
 		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/app/lexicons/types -type f) \
 		&& rm -rf ./js/app/lexicons/types/place/stream/*.bak
+
+.PHONY: md-lexicons
+md-lexicons:
+	yarn exec lexmd \
+	    lexicons/place/stream \
+		js/docs/src/content/docs/lex-reference
 
 .PHONY: lexgen
 lexgen:
