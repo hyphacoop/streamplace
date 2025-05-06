@@ -19,6 +19,8 @@ import {
   ShieldQuestion,
   Download,
   Video,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from "@tamagui/lucide-icons";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
@@ -34,7 +36,7 @@ import {
   StatusBar,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { useTheme, Text, View, H3 } from "tamagui";
+import { useTheme, Text, View, H3, useWindowDimensions } from "tamagui";
 import AppReturnScreen from "./screens/app-return";
 import MultiScreen from "./screens/multi";
 import StreamScreen from "./screens/stream";
@@ -57,6 +59,8 @@ import LiveDashboard from "./screens/live-dashboard";
 import Popup from "components/popup";
 import PopoutChat from "./screens/chat-popout";
 import EmbedScreen from "./screens/embed";
+import useSidebarControl, { UseSidebarProps } from "hooks/useSidebarControl";
+import Sidebar from "components/sidebar/sidebar";
 function HomeScreen() {
   return (
     <View f={1}>
@@ -123,20 +127,38 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
 
 const Drawer = createDrawerNavigator();
 
-const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
+const NavigationButton = ({
+  canGoBack,
+  sidebar,
+}: {
+  canGoBack?: boolean;
+  sidebar?: UseSidebarProps;
+}) => {
   const navigation = useNavigation();
   return (
     <Pressable
-      style={{ padding: 10 }}
+      style={{ padding: 5, marginLeft: 15 }}
       onPress={() => {
         if (canGoBack) {
           navigation.goBack();
+        } else if (sidebar?.isActive) {
+          sidebar.toggle();
         } else {
           navigation.dispatch(DrawerActions.toggleDrawer());
         }
       }}
     >
-      {canGoBack ? <ArrowLeft /> : <Menu />}
+      {canGoBack ? (
+        <ArrowLeft />
+      ) : sidebar?.isActive ? (
+        sidebar?.isCollapsed ? (
+          <PanelLeftOpen />
+        ) : (
+          <PanelLeftClose />
+        )
+      ) : (
+        <Menu />
+      )}
     </Pressable>
   );
 };
@@ -194,6 +216,8 @@ export function StreamplaceDrawer() {
   const [poppedUp, setPoppedUp] = useState(false);
   const [livePopup, setLivePopup] = useState(false);
 
+  const sidebar = useSidebarControl();
+
   // Top-level stuff to handle push notification registration
   useEffect(() => {
     dispatch(hydrate());
@@ -245,13 +269,34 @@ export function StreamplaceDrawer() {
     <>
       <StatusBar backgroundColor={theme.background.val} />
       <Drawer.Navigator
+        // if this isn't here there are issues around drawer width
+        key={sidebar.isActive ? "1" : "0"}
         initialRouteName="Home"
         screenOptions={{
-          headerLeft: () => <NavigationButton />,
+          // for the custom sidebar
+          drawerType: sidebar.isActive ? "permanent" : "front",
+          swipeEnabled: !sidebar.isActive,
+          drawerStyle: {
+            width: sidebar.isActive ? sidebar.width : undefined,
+          },
+          // rest
+          headerLeft: () => <NavigationButton sidebar={sidebar} />,
           headerRight: () => <AvatarButton />,
           drawerActiveTintColor: theme.accentColor.val,
           unmountOnBlur: true,
         }}
+        drawerContent={
+          sidebar.isActive
+            ? (props) => (
+                <Sidebar
+                  {...props}
+                  collapsed={sidebar.isCollapsed}
+                  widthAnim={sidebar.width}
+                  toggleSidebar={sidebar.toggle}
+                />
+              )
+            : undefined
+        }
       >
         <Drawer.Screen
           name="Home"
