@@ -21,7 +21,10 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+var pingPeriod = 5 * time.Second
+
 func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle {
+	ctx = log.WithLogValues(ctx, "func", "HandleWebsocket")
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		user := params.ByName("repoDID")
 		if user == "" {
@@ -42,13 +45,21 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 		defer cancel()
 		defer conn.Close()
 		initialBurst := make(chan any, 200)
+		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		conn.SetPongHandler(func(appData string) error {
+			log.Debug(ctx, "received pong", "appData", appData)
+			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+			return nil
+		})
 		go func() {
 
 			ch := a.Bus.Subscribe(repoDID)
 			defer a.Bus.Unsubscribe(repoDID, ch)
 			// Create a ticker that fires every 3 seconds
 			ticker := time.NewTicker(3 * time.Second)
+			pingTicker := time.NewTicker(pingPeriod)
 			defer ticker.Stop()
+			defer pingTicker.Stop()
 
 			send := func(msg any) {
 				bs, err := json.Marshal(msg)
@@ -78,6 +89,12 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 						continue
 					}
 					err = conn.WriteMessage(websocket.TextMessage, bs)
+					if err != nil {
+						log.Error(ctx, "could not write ping message", "error", err)
+						return
+					}
+				case <-pingTicker.C:
+					err := conn.WriteMessage(websocket.PingMessage, []byte{})
 					if err != nil {
 						log.Error(ctx, "could not write ping message", "error", err)
 						return
