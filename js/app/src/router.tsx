@@ -302,10 +302,11 @@ export function StreamplaceDrawer() {
         />
         <Drawer.Screen
           name="Settings"
-          component={Settings}
+          component={WrappedSettings}
           options={{
             drawerIcon: () => <SettingsIcon />,
             drawerLabel: () => <Text>Settings</Text>,
+            headerShown: false,
           }}
         />
         <Drawer.Screen
@@ -353,10 +354,11 @@ export function StreamplaceDrawer() {
         />
         <Drawer.Screen
           name="Login"
-          component={Login}
+          component={WrappedLogin}
           options={{
             drawerIcon: () => <LogIn />,
             drawerLabel: () => <Text>Login</Text>,
+            headerShown: false,
           }}
         />
         <Drawer.Screen
@@ -435,3 +437,40 @@ const MainTab = () => {
     </Stack.Navigator>
   );
 };
+
+const withStackNavigator = (Component, screenTitle) => {
+  function WrappedComponent(props) {
+    const theme = useTheme();
+    const { isWeb } = usePlatform();
+
+    return (
+      <Stack.Navigator
+        initialRouteName="Main"
+        screenOptions={{
+          headerLeft: ({ canGoBack }) => (
+            <NavigationButton canGoBack={canGoBack} />
+          ),
+          headerRight: () => <AvatarButton />,
+          headerShown: true,
+        }}
+      >
+        <Stack.Screen
+          name="Main"
+          options={{
+            headerTitle: screenTitle,
+            title: screenTitle,
+          }}
+        >
+          {() => <Component {...props} />}
+        </Stack.Screen>
+      </Stack.Navigator>
+    );
+  }
+
+  WrappedComponent.displayName = `withStackNavigator(${Component.displayName || Component.name || "Component"})`;
+
+  return WrappedComponent;
+};
+
+const WrappedLogin = withStackNavigator(Login, "Login");
+const WrappedSettings = withStackNavigator(Settings, "Settings");
