@@ -81,7 +81,7 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 		}()
 
 		conn.SetPongHandler(func(appData string) error {
-			log.Log(ctx, "received pong", "appData", appData)
+			log.Debug(ctx, "received pong", "appData", appData)
 			pongCh <- struct{}{}
 			return nil
 		})
