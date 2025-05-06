@@ -129,10 +129,10 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 		mr := multipart.NewReader(resp.Body, params["boundary"])
 		for {
 			p, err := mr.NextPart()
-			ctx := log.WithLogValues(ctx, "part", p.FileName())
 			if err == io.EOF {
 				break
 			}
+			ctx := log.WithLogValues(ctx, "part", p.FileName())
 			if err != nil {
 				return nil, fmt.Errorf("failed to get next part: %w", err)
 			}
