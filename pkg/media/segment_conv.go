@@ -100,15 +100,23 @@ func MP4ToMPEGTS(ctx context.Context, input io.Reader, output io.Writer) (int64,
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	defer func() {
+		cancel()
+		// Clean up
+		err = pipeline.SetState(gst.StateNull)
+		if err != nil {
+			log.Error(ctx, "failed to set pipeline state to null", "error", err)
+		}
+	}()
 
 	// Handle bus messages in a separate goroutine
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		HandleBusMessages(ctx, pipeline)
+	errCh := make(chan error)
+	go func() {
+		err := HandleBusMessages(ctx, pipeline)
 		cancel()
-		return nil
-	})
+		errCh <- err
+		close(errCh)
+	}()
 
 	// Start the pipeline
 	err = pipeline.SetState(gst.StatePlaying)
@@ -116,21 +124,18 @@ func MP4ToMPEGTS(ctx context.Context, input io.Reader, output io.Writer) (int64,
 		return 0, fmt.Errorf("failed to set pipeline state to playing: %w", err)
 	}
 
-	// Wait for the pipeline to finish or context to be canceled
-	<-ctx.Done()
+	var durOk bool
+	var dur int64
+	busErr := <-errCh
 
-	durOk, dur := pipeline.QueryDuration(gst.FormatTime)
-	if !durOk {
-		return 0, fmt.Errorf("failed to query duration")
+	if busErr == nil {
+		durOk, dur = pipeline.QueryDuration(gst.FormatTime)
+		if !durOk {
+			return 0, fmt.Errorf("failed to query duration")
+		}
 	}
 
-	// Clean up
-	err = pipeline.SetState(gst.StateNull)
-	if err != nil {
-		return 0, fmt.Errorf("failed to set pipeline state to null: %w", err)
-	}
-
-	return dur, nil
+	return dur, busErr
 }
 
 // MPEGTSToMP4 converts an MPEG-TS file with H264 video and Opus audio to an MP4 file.

@@ -51,6 +51,25 @@ func TestMP4ToMPEGTS(t *testing.T) {
 	require.Greater(t, buf.Len(), 0, "Output buffer should not be empty")
 }
 
+func TestMP4ToMPEGTSInvalid(t *testing.T) {
+	ignore := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, ignore)
+	before := getLeakCount(t)
+	defer checkGStreamerLeaks(t, before)
+
+	inputFile, err := os.Open(getFixture("sample-segment.mpegts"))
+	require.NoError(t, err)
+	defer inputFile.Close()
+
+	buf := bytes.Buffer{}
+
+	bs, err := io.ReadAll(inputFile)
+
+	// Convert MP4 to MPEG-TS
+	_, err = MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
+	require.ErrorContains(t, err, "This file is invalid and cannot be played")
+}
+
 // func TestNoRealtime(t *testing.T) {
 // 	gst.Init(nil)
 
