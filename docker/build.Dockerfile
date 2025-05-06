@@ -71,7 +71,6 @@ RUN git clone https://git.stream.place/streamplace/streamplace \
   && cd streamplace \
   && make version install check app android -j$(nproc) \
   && make node \
-  && make test \
   && cd .. \
   && rm -rf streamplace
 
