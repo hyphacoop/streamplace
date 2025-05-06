@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 	apierrors "stream.place/streamplace/pkg/errors"
@@ -26,6 +27,10 @@ var pingPeriod = 5 * time.Second
 func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle {
 	ctx = log.WithLogValues(ctx, "func", "HandleWebsocket")
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		uu, _ := uuid.NewV7()
+		ctx = log.WithLogValues(ctx, "uuid", uu.String())
+		spmetrics.WebsocketsOpen.Inc()
+		defer spmetrics.WebsocketsOpen.Dec()
 		user := params.ByName("repoDID")
 		if user == "" {
 			apierrors.WriteHTTPBadRequest(w, "user required", nil)
@@ -45,10 +50,38 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 		defer cancel()
 		defer conn.Close()
 		initialBurst := make(chan any, 200)
-		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		err = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		if err != nil {
+			log.Error(ctx, "could not set read deadline", "error", err)
+			return
+		}
+
+		pongCh := make(chan struct{})
+
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-pongCh:
+					err := conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+					if err != nil {
+						log.Error(ctx, "could not set read deadline", "error", err)
+						return
+					}
+				case <-time.After(30 * time.Second):
+					log.Log(ctx, "websocket timeout, closing connection")
+					// timeout!
+					conn.Close()
+					cancel()
+					return
+				}
+			}
+		}()
+
 		conn.SetPongHandler(func(appData string) error {
-			log.Debug(ctx, "received pong", "appData", appData)
-			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+			log.Log(ctx, "received pong", "appData", appData)
+			pongCh <- struct{}{}
 			return nil
 		})
 		go func() {
