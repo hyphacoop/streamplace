@@ -50,8 +50,11 @@ node: schema
 	$(MAKE) meson-setup
 	meson compile -C $(BUILDDIR) streamplace
 
+js/app/dist/index.html: install
+	yarn run build
+
 .PHONY: dev-setup
-dev-setup: schema
+dev-setup: schema install js/app/dist/index.html
 	meson setup --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 	meson configure --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 	meson compile -C $(BUILDDIR) streamplace

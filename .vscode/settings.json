@@ -8,5 +8,6 @@
     "streamplace.h": "c",
     "avfilter.h": "c"
   },
-  "mesonbuild.configureOnOpen": false
+  "mesonbuild.configureOnOpen": false,
+  "cSpell.words": ["Devplace", "streamplace", "webrtc"]
 }
