@@ -67,7 +67,7 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 	audioSeg := bytes.Buffer{}
 	err = media.MP4ToMPEGTSVideoMP4Audio(ctx, bytes.NewReader(buf), &tsSeg, &audioSeg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert mp4 to ts: %w", err)
+		return nil, fmt.Errorf("failed to convert mp4 to ts video/mp4 audio: %w", err)
 	}
 	if tsSeg.Len() == 0 {
 		return nil, fmt.Errorf("no video in segment")
@@ -129,6 +129,7 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 		mr := multipart.NewReader(resp.Body, params["boundary"])
 		for {
 			p, err := mr.NextPart()
+			ctx := log.WithLogValues(ctx, "part", p.FileName())
 			if err == io.EOF {
 				break
 			}

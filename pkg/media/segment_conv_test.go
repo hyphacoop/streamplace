@@ -3,12 +3,14 @@ package media
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
+	"golang.org/x/sync/errgroup"
 )
 
 func TestMP4ToMPEGTS(t *testing.T) {
@@ -25,8 +27,23 @@ func TestMP4ToMPEGTS(t *testing.T) {
 	// Create a buffer for output
 	buf := bytes.Buffer{}
 
+	bs, err := io.ReadAll(inputFile)
+	require.NoError(t, err)
+	// Create temporary output file
+
+	g, _ := errgroup.WithContext(context.Background())
+	for i := 0; i < streamplaceTestCount; i++ {
+		g.Go(func() error {
+			_, err := MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
+			return err
+		})
+	}
+	err = g.Wait()
+	require.NoError(t, err)
+	// Convert MPEG-TS to MP4
+
 	// Convert MP4 to MPEG-TS
-	dur, err := MP4ToMPEGTS(context.Background(), inputFile, &buf)
+	dur, err := MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
 	require.NoError(t, err)
 	require.Greater(t, dur, int64(0), "Duration should be greater than 0")
 
@@ -74,12 +91,20 @@ func TestMPEGTSToMP4(t *testing.T) {
 	inputFile, err := os.Open(getFixture("sample-segment.mpegts"))
 	require.NoError(t, err)
 	defer inputFile.Close()
-
+	bs, err := io.ReadAll(inputFile)
+	require.NoError(t, err)
 	// Create temporary output file
 	buf := bytes.Buffer{}
 
+	g, _ := errgroup.WithContext(context.Background())
+	for i := 0; i < streamplaceTestCount; i++ {
+		g.Go(func() error {
+			return MPEGTSToMP4(context.Background(), bytes.NewReader(bs), &buf)
+		})
+	}
+	err = g.Wait()
 	// Convert MPEG-TS to MP4
-	err = MPEGTSToMP4(context.Background(), inputFile, &buf)
+
 	require.NoError(t, err)
 	require.Greater(t, buf.Len(), 0, "Output file should not be empty")
 }

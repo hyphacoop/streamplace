@@ -16,6 +16,7 @@ import (
 // It reads from the provided reader and writes the converted MPEG-TS to the writer.
 // The conversion is optimized for speed.
 func MP4ToMPEGTS(ctx context.Context, input io.Reader, output io.Writer) (int64, error) {
+	ctx = log.WithLogValues(ctx, "func", "MP4ToMPEGTS")
 	pipelineStr := strings.Join([]string{
 		"appsrc name=appsrc ! qtdemux name=demux",
 		"mpegtsmux name=mux ! appsink name=appsink sync=false",
@@ -135,6 +136,7 @@ func MP4ToMPEGTS(ctx context.Context, input io.Reader, output io.Writer) (int64,
 // MPEGTSToMP4 converts an MPEG-TS file with H264 video and Opus audio to an MP4 file.
 // It reads from the provided reader and writes the converted MP4 to the writer.
 func MPEGTSToMP4(ctx context.Context, input io.Reader, output io.Writer) error {
+	ctx = log.WithLogValues(ctx, "func", "MPEGTSToMP4")
 	pipelineStr := strings.Join([]string{
 		"appsrc name=appsrc ! tsdemux name=demux",
 		"mp4mux name=mux ! appsink sync=false name=appsink",
@@ -253,6 +255,7 @@ func MPEGTSToMP4(ctx context.Context, input io.Reader, output io.Writer) error {
 
 // Splits out video into MPEG-TS and audio into MP4 (to be recombined after transcoding)
 func MP4ToMPEGTSVideoMP4Audio(ctx context.Context, input io.Reader, videoOutput io.Writer, audioOutput io.Writer) error {
+	ctx = log.WithLogValues(ctx, "func", "MP4ToMPEGTSVideoMP4Audio")
 	pipelineStr := strings.Join([]string{
 		"appsrc name=appsrc ! qtdemux name=demux",
 		"mpegtsmux name=videomux ! appsink name=videoappsink sync=false",
