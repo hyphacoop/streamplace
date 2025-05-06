@@ -1,8 +1,13 @@
 import { YStack, styled, Text, View, Image } from "tamagui";
 import { SharedValue, useAnimatedStyle } from "react-native-reanimated"; // Import SharedValue
 import SidebarItem from "./sidebar-item";
-import { CommonActions, DrawerNavigationState } from "@react-navigation/native"; // Import necessary types
+import {
+  CommonActions,
+  DrawerNavigationState,
+  ParamListBase,
+} from "@react-navigation/native"; // Import necessary types
 import { DrawerNavigationOptions } from "@react-navigation/drawer";
+import { DrawerDescriptorMap } from "@react-navigation/drawer/lib/typescript/src/types";
 
 const AnimatedYStack = styled(YStack, {
   name: "AnimatedYStack",
@@ -11,9 +16,8 @@ const AnimatedYStack = styled(YStack, {
 interface CustomSidebarProps {
   collapsed: boolean;
   widthAnim: SharedValue<number>;
-  descriptors: ReactNavigation.RootParamList;
-  // FIXME
-  state: any;
+  descriptors: DrawerDescriptorMap;
+  state: DrawerNavigationState<ParamListBase>;
 }
 
 // Combine standard drawer props with custom props
@@ -56,58 +60,54 @@ export default function Sidebar({
         {!collapsed && <Text fontSize="$7">Streamplace</Text>}
       </View>
 
-      {state.routes.map(
-        (
-          route: DrawerNavigationState<ReactNavigation.RootParamList>["routes"][number], // Type the route object
-        ) => {
-          const descriptor = descriptors[route.key];
-          const options = descriptor?.options ?? {};
-          if (options?.headerShown == false) {
-            return null;
-          }
+      {state.routes.map((route) => {
+        const descriptor = descriptors[route.key];
+        const options = descriptor?.options ?? {};
+        if (options?.headerShown == false) {
+          return null;
+        }
 
-          const label =
-            typeof options.drawerLabel === "function"
-              ? options.drawerLabel({ focused: false, color: "$color" })
-              : (options.drawerLabel ?? options.title ?? route.name);
+        const label =
+          typeof options.drawerLabel === "function"
+            ? options.drawerLabel({ focused: false, color: "$color" })
+            : (options.drawerLabel ?? options.title ?? route.name);
 
-          const IconComponent = options.drawerIcon as
-            | React.ComponentType<any>
-            | undefined;
+        const IconComponent = options.drawerIcon as
+          | React.ComponentType<any>
+          | undefined;
 
-          return (
-            <SidebarItem
-              key={route.key}
-              icon={IconComponent ? IconComponent : null}
-              label={label}
-              active={descriptor.navigation.isFocused()}
-              collapsed={collapsed}
-              onPress={() => {
-                if (route.name === "Home") {
-                  // copy logic for 'Home' to reset the stack
-                  descriptor.navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [
-                        {
-                          name: "Home",
-                          state: {
-                            routes: [{ name: "StreamList" }],
-                          },
+        return (
+          <SidebarItem
+            key={route.key}
+            icon={IconComponent ? IconComponent : null}
+            label={label}
+            active={descriptor.navigation.isFocused()}
+            collapsed={collapsed}
+            onPress={() => {
+              if (route.name === "Home") {
+                // copy logic for 'Home' to reset the stack
+                descriptor.navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: "Home",
+                        state: {
+                          routes: [{ name: "StreamList" }],
                         },
-                      ],
-                    }),
-                  );
-                } else {
-                  descriptor.navigation.navigate(route.name);
-                }
-              }}
-              style={options.drawerItemStyle}
-              tint={options.drawerActiveTintColor as string | undefined} // Assuming tint is a string color or undefined
-            />
-          );
-        },
-      )}
+                      },
+                    ],
+                  }),
+                );
+              } else {
+                descriptor.navigation.navigate(route.name);
+              }
+            }}
+            style={options.drawerItemStyle}
+            tint={options.drawerActiveTintColor as string | undefined} // Assuming tint is a string color or undefined
+          />
+        );
+      })}
     </AnimatedYStack>
   );
 }

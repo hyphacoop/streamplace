@@ -59,7 +59,7 @@ import LiveDashboard from "./screens/live-dashboard";
 import Popup from "components/popup";
 import PopoutChat from "./screens/chat-popout";
 import EmbedScreen from "./screens/embed";
-import useSidebarControl, { UseSidebarProps } from "hooks/useSidebarControl";
+import useSidebarControl, { UseSidebarOutput } from "hooks/useSidebarControl";
 import Sidebar from "components/sidebar/sidebar";
 function HomeScreen() {
   return (
@@ -132,7 +132,7 @@ const NavigationButton = ({
   sidebar,
 }: {
   canGoBack?: boolean;
-  sidebar?: UseSidebarProps;
+  sidebar?: UseSidebarOutput;
 }) => {
   const navigation = useNavigation();
   return (
@@ -277,7 +277,7 @@ export function StreamplaceDrawer() {
           drawerType: sidebar.isActive ? "permanent" : "front",
           swipeEnabled: !sidebar.isActive,
           drawerStyle: {
-            width: sidebar.isActive ? sidebar.width : undefined,
+            width: sidebar.isActive ? sidebar.width.get() : undefined,
           },
           // rest
           headerLeft: () => <NavigationButton sidebar={sidebar} />,
@@ -292,7 +292,6 @@ export function StreamplaceDrawer() {
                   {...props}
                   collapsed={sidebar.isCollapsed}
                   widthAnim={sidebar.width}
-                  toggleSidebar={sidebar.toggle}
                 />
               )
             : undefined
