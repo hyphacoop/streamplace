@@ -28,7 +28,8 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 	ctx = log.WithLogValues(ctx, "func", "HandleWebsocket")
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		uu, _ := uuid.NewV7()
-		ctx = log.WithLogValues(ctx, "uuid", uu.String())
+		ctx = log.WithLogValues(ctx, "uuid", uu.String(), "remoteAddr", req.RemoteAddr, "url", req.URL.String())
+		log.Log(ctx, "websocket opened")
 		spmetrics.WebsocketsOpen.Inc()
 		defer spmetrics.WebsocketsOpen.Dec()
 		user := params.ByName("repoDID")
