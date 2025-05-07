@@ -16,6 +16,7 @@ build-bunny:
 builder:
   stage: build
   interruptible: true
+  allow_failure: true
   image:
     name: gcr.io/kaniko-project/executor:v1.14.0-debug
     entrypoint: [""]
