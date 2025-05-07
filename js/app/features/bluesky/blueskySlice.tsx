@@ -2,6 +2,7 @@ import {
   Agent,
   AppBskyFeedPost,
   AppBskyGraphBlock,
+  AppBskyGraphFollow,
   BlobRef,
   RichText,
 } from "@atproto/api";
@@ -89,6 +90,23 @@ const clearQueryParams = () => {
   params.delete("code");
   u.search = params.toString();
   window.history.replaceState(null, "", u.toString());
+};
+
+// Deterministic rkey for follow
+const createDeterministicRKey = (
+  userDID: string,
+  subjectDID: string,
+): string => {
+  const combinedStr = userDID + ":" + subjectDID;
+  let hash = 0;
+  for (let i = 0; i < combinedStr.length; i++) {
+    const char = combinedStr.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  // Convert to hex string and take first 16 chars
+  const hexHash = Math.abs(hash).toString(16).padStart(8, "0");
+  return hexHash.substring(0, 16);
 };
 
 export const blueskySlice = createAppSlice({
@@ -927,6 +945,83 @@ export const blueskySlice = createAppSlice({
         },
       },
     ),
+
+    followUser: create.asyncThunk(
+      async (subjectDID: string, thunkAPI) => {
+        const { bluesky } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+
+        const rkey = createDeterministicRKey(did, subjectDID);
+        const record: AppBskyGraphFollow.Record = {
+          subject: subjectDID,
+          createdAt: new Date().toISOString(),
+        };
+        await bluesky.pdsAgent.com.atproto.repo.createRecord({
+          repo: did,
+          collection: "app.bsky.graph.follow",
+          rkey: rkey,
+          record,
+        });
+
+        return { subjectDID, rkey };
+      },
+      {
+        pending: (state) => {
+          console.log("followUser pending");
+        },
+        fulfilled: (state, action) => {
+          console.log("followUser fulfilled", action.payload);
+        },
+        rejected: (state, action) => {
+          console.error("followUser rejected", action.error);
+        },
+      },
+    ),
+
+    unfollowUser: create.asyncThunk(
+      async (
+        { subjectDID, rkey }: { subjectDID: string; rkey: string },
+        thunkAPI,
+      ) => {
+        const { bluesky } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+
+        await bluesky.pdsAgent.com.atproto.repo.deleteRecord({
+          repo: did,
+          collection: "app.bsky.graph.follow",
+          rkey: rkey,
+        });
+
+        return { subjectDID };
+      },
+      {
+        pending: (state) => {
+          console.log("unfollowUser pending");
+        },
+        fulfilled: (state, action) => {
+          console.log("unfollowUser fulfilled", action.payload);
+        },
+        rejected: (state, action) => {
+          console.error("unfollowUser rejected", action.error);
+        },
+      },
+    ),
   }),
 
   // You can define your selectors here. These selectors receive the slice
@@ -980,6 +1075,8 @@ export const {
   chatPost,
   chatMessage,
   createBlockRecord,
+  followUser,
+  unfollowUser,
 } = blueskySlice.actions;
 
 // Selectors returned by `slice.selectors` take the root state as their first argument.
