@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
@@ -106,6 +107,17 @@ func MP4ToMPEGTS(ctx context.Context, input io.Reader, output io.Writer) (int64,
 		err = pipeline.SetState(gst.StateNull)
 		if err != nil {
 			log.Error(ctx, "failed to set pipeline state to null", "error", err)
+		}
+	}()
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second * 10):
+			log.Debug(ctx, "pipeline is taking too long to start, cancelling")
+			err := fmt.Errorf("pipeline is taking too long to start, cancelling")
+			pipeline.Error(err.Error(), err)
 		}
 	}()
 

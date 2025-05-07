@@ -19,36 +19,38 @@ func TestMP4ToMPEGTS(t *testing.T) {
 	before := getLeakCount(t)
 	defer checkGStreamerLeaks(t, before)
 
-	// Open input file
-	inputFile, err := os.Open(getFixture("sample-segment.mp4"))
-	require.NoError(t, err)
-	defer inputFile.Close()
+	for _, file := range []string{"sample-segment.mp4", "short-video.mp4"} {
+		// Open input file
+		inputFile, err := os.Open(getFixture(file))
+		require.NoError(t, err)
+		defer inputFile.Close()
 
-	// Create a buffer for output
-	buf := bytes.Buffer{}
+		// Create a buffer for output
+		buf := bytes.Buffer{}
 
-	bs, err := io.ReadAll(inputFile)
-	require.NoError(t, err)
-	// Create temporary output file
+		bs, err := io.ReadAll(inputFile)
+		require.NoError(t, err)
+		// Create temporary output file
 
-	g, _ := errgroup.WithContext(context.Background())
-	for i := 0; i < streamplaceTestCount; i++ {
-		g.Go(func() error {
-			_, err := MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
-			return err
-		})
+		g, _ := errgroup.WithContext(context.Background())
+		for i := 0; i < streamplaceTestCount; i++ {
+			g.Go(func() error {
+				_, err := MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
+				return err
+			})
+		}
+		err = g.Wait()
+		require.NoError(t, err)
+		// Convert MPEG-TS to MP4
+
+		// Convert MP4 to MPEG-TS
+		dur, err := MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
+		require.NoError(t, err)
+		require.Greater(t, dur, int64(0), "Duration should be greater than 0")
+
+		// Verify buffer has content
+		require.Greater(t, buf.Len(), 0, "Output buffer should not be empty")
 	}
-	err = g.Wait()
-	require.NoError(t, err)
-	// Convert MPEG-TS to MP4
-
-	// Convert MP4 to MPEG-TS
-	dur, err := MP4ToMPEGTS(context.Background(), bytes.NewReader(bs), &buf)
-	require.NoError(t, err)
-	require.Greater(t, dur, int64(0), "Duration should be greater than 0")
-
-	// Verify buffer has content
-	require.Greater(t, buf.Len(), 0, "Output buffer should not be empty")
 }
 
 func TestMP4ToMPEGTSInvalid(t *testing.T) {
