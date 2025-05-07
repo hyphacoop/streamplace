@@ -675,6 +675,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@atproto/syntax@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@atproto/syntax@npm:0.4.0"
+  checksum: 10/f4a1987bf6a3e0ed63df660a1543049ef023c7ecd4c394efbd247acd1e562a9dfb2beb228e26f806e0a5b56bd5c706345dfdfa804e901e2091100b4c82653556
+  languageName: node
+  linkType: hard
+
 "@atproto/xrpc@npm:0.6.10":
   version: 0.6.10
   resolution: "@atproto/xrpc@npm:0.6.10"
@@ -21671,6 +21678,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lex-md@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "lex-md@npm:0.0.2"
+  dependencies:
+    "@atproto/syntax": "npm:^0.4.0"
+    lexmd: "link:../../Library/pnpm/global/5/node_modules/lexmd"
+    zod: "npm:^3.24.3"
+  bin:
+    lexmd: dist/main.js
+  checksum: 10/b4b74b61a3027eb570ccd189a7ddc4a08378099579f9cef05daa6784ba672588d097d357e6b22cde474e0540a5401249eff80d5361d00af8a9c766b2bc2d8688
+  languageName: node
+  linkType: hard
+
+"lexmd@link:../../Library/pnpm/global/5/node_modules/lexmd::locator=lex-md%40npm%3A0.0.2":
+  version: 0.0.0-use.local
+  resolution: "lexmd@link:../../Library/pnpm/global/5/node_modules/lexmd::locator=lex-md%40npm%3A0.0.2"
+  languageName: node
+  linkType: soft
+
 "libnpmaccess@npm:8.0.6":
   version: 8.0.6
   resolution: "libnpmaccess@npm:8.0.6"
@@ -29510,6 +29536,7 @@ __metadata:
     firebase-admin: "npm:^12.7.0"
     husky: "npm:^9.1.6"
     lerna: "npm:^8.1.9"
+    lex-md: "npm:^0.0.2"
     lint-staged: "npm:^15.2.10"
     prettier: "npm:3.4.2"
   languageName: unknown
@@ -32853,6 +32880,13 @@ __metadata:
   version: 3.24.3
   resolution: "zod@npm:3.24.3"
   checksum: 10/1b15db625ca633324084f3a8587bfb907043bbca407a09f7d5da6a9781b3838c68e9312b49e91e479d2f8bf04cdda5810803ac9504e3b7ccbec3adf2de625fb8
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.24.3":
+  version: 3.24.4
+  resolution: "zod@npm:3.24.4"
+  checksum: 10/3d545792fa54bb27ee5dbc34a5709e81f603185fcc94c8204b5d95c20dc4c81d870ff9c51f3884a30ef05cdc601449f4c4df254ac4783f0827b1faed7c1cdb48
   languageName: node
   linkType: hard
 

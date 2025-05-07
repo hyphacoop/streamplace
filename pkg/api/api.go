@@ -38,6 +38,7 @@ import (
 	"stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/renditions"
 	"stream.place/streamplace/pkg/spmetrics"
+	"stream.place/streamplace/pkg/spxrpc"
 	"stream.place/streamplace/pkg/streamplace"
 )
 
@@ -107,6 +108,10 @@ func (fs AppHostingFS) Open(name string) (http.File, error) {
 // api/playback/iame.li/hls/source/000000000000.ts
 
 func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
+	xrpc, err := spxrpc.NewServer(a.CLI, a.Model)
+	if err != nil {
+		return nil, err
+	}
 	router := httprouter.New()
 	apiRouter := httprouter.New()
 	apiRouter.HandlerFunc("POST", "/api/notification", a.HandleNotification(ctx))
@@ -138,21 +143,22 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	apiRouter.GET("/api/segment/recent", a.HandleRecentSegments(ctx))
 	apiRouter.GET("/api/segment/recent/:repoDID", a.HandleUserRecentSegments(ctx))
 	apiRouter.GET("/api/bluesky/resolve/:handle", a.HandleBlueskyResolve(ctx))
-	apiRouter.GET("/api/atproto-oauth/:platform", a.HandleATProtoOAuth(ctx))
+	for _, platform := range atproto.AllowedPlatforms {
+		apiRouter.GET(fmt.Sprintf("/api/atproto-oauth/%s", platform), a.HandleATProtoOAuth(ctx, platform))
+	}
 	apiRouter.GET("/api/live-users", a.HandleLiveUsers(ctx))
 	apiRouter.GET("/api/view-count/:user", a.HandleViewCount(ctx))
-	apiRouter.GET("/xrpc/app.bsky.feed.getFeedSkeleton", a.HandleXRPCAppBskyFeedGetFeedSkeleton(ctx))
 	apiRouter.NotFound = a.HandleAPI404(ctx)
 	router.Handler("GET", "/api/*resource", apiRouter)
 	router.Handler("POST", "/api/*resource", apiRouter)
 	router.Handler("PUT", "/api/*resource", apiRouter)
 	router.Handler("PATCH", "/api/*resource", apiRouter)
 	router.Handler("DELETE", "/api/*resource", apiRouter)
-	router.Handler("GET", "/xrpc/*resource", apiRouter)
-	router.Handler("POST", "/xrpc/*resource", apiRouter)
-	router.Handler("PUT", "/xrpc/*resource", apiRouter)
-	router.Handler("PATCH", "/xrpc/*resource", apiRouter)
-	router.Handler("DELETE", "/xrpc/*resource", apiRouter)
+	router.Handler("GET", "/xrpc/*resource", xrpc)
+	router.Handler("POST", "/xrpc/*resource", xrpc)
+	router.Handler("PUT", "/xrpc/*resource", xrpc)
+	router.Handler("PATCH", "/xrpc/*resource", xrpc)
+	router.Handler("DELETE", "/xrpc/*resource", xrpc)
 	router.GET("/.well-known/did.json", a.HandleDidJson(ctx))
 	router.GET("/dl/*params", a.HandleAppDownload(ctx))
 	router.POST("/", a.HandleWebRTCIngest(ctx))
@@ -571,13 +577,12 @@ func (a *StreamplaceAPI) HandleBlueskyResolve(ctx context.Context) httprouter.Ha
 	}
 }
 
-func (a *StreamplaceAPI) HandleATProtoOAuth(ctx context.Context) httprouter.Handle {
+func (a *StreamplaceAPI) HandleATProtoOAuth(ctx context.Context, platform string) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		host, _, err := net.SplitHostPort(req.Host)
 		if err != nil {
 			host = req.Host
 		}
-		platform := params.ByName("platform")
 		if !slices.Contains(atproto.AllowedPlatforms, platform) {
 			apierrors.WriteHTTPBadRequest(w, "unsupported platform", nil)
 			return

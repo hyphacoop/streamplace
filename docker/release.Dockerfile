@@ -4,6 +4,7 @@ FROM --platform=linux/$TARGETARCH ubuntu:24.04
 RUN apt update && apt install -y curl
 ARG STREAMPLACE_URL
 ENV STREAMPLACE_URL $STREAMPLACE_URL
-RUN echo "downloading $STREAMPLACE_URL" && cd /usr/local/bin && curl -L "$STREAMPLACE_URL" | tar xzv
+# strip the -cloudflare suffix from the url; we're on the git server we don't need to leave
+RUN export LOCAL_URL="$(echo $STREAMPLACE_URL | sed 's/-cloudflare//')" && echo "downloading $LOCAL_URL" && cd /usr/local/bin && curl -L "$LOCAL_URL" | tar xzv
 RUN streamplace self-test
 CMD streamplace

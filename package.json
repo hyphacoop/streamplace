@@ -14,7 +14,8 @@
     "release": "lerna publish --force-publish",
     "precommit": "make precommit",
     "app": "cd js/app && yarn run \"$@\"",
-    "desktop": "cd js/desktop && yarn run \"$@\""
+    "desktop": "cd js/desktop && yarn run \"$@\"",
+    "docs": "cd js/docs && yarn run \"$@\""
   },
   "keywords": [],
   "author": "Streamplace",
@@ -34,6 +35,7 @@
     "@atproto/api": "^0.13.16",
     "@atproto/jwk-webcrypto": "^0.1.2",
     "@atproto/oauth-client-browser": "^0.3.1",
-    "firebase-admin": "^12.7.0"
+    "firebase-admin": "^12.7.0",
+    "lex-md": "^0.0.2"
   }
 }
