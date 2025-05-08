@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"time"
 
@@ -29,7 +30,10 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 	ctx = log.WithLogValues(ctx, "func", "HandleWebsocket")
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		// XXX: check if x-forwarded-for
-		clientIP := req.RemoteAddr
+		clientIP, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			clientIP = req.RemoteAddr
+		}
 
 		limiter := a.getLimiter(clientIP)
 		if !limiter.Allow() {
