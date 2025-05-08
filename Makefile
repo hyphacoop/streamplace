@@ -133,7 +133,7 @@ lexgen-types:
 		--prefix place.stream \
 		--build-file util/lexgen-types.json \
 		lexicons/place/stream \
-		../atproto/lexicons
+		./subprojects/atproto/lexicons
 
 .PHONY: ci-lexicons
 ci-lexicons:
