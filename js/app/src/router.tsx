@@ -1,5 +1,10 @@
 import "@expo/metro-runtime";
-import { createDrawerNavigator } from "@react-navigation/drawer";
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItem,
+  DrawerItemList,
+} from "@react-navigation/drawer";
 import {
   CommonActions,
   DrawerActions,
@@ -21,6 +26,8 @@ import {
   Video,
   PanelLeftOpen,
   PanelLeftClose,
+  Book,
+  ExternalLink,
 } from "@tamagui/lucide-icons";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
@@ -32,6 +39,7 @@ import { ReactElement, useEffect, useState } from "react";
 import {
   ImageBackground,
   ImageSourcePropType,
+  Linking,
   Pressable,
   StatusBar,
 } from "react-native";
@@ -206,6 +214,28 @@ const AvatarButton = () => {
   );
 };
 
+function CustomDrawerContent(props) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <DrawerItemList {...props} />
+      <DrawerItem
+        icon={() => <Book />}
+        label={() => (
+          <Text alignSelf="flex-start">
+            Documentation{" "}
+            <ExternalLink size={16} pl={4} position="relative" top={2} />
+          </Text>
+        )}
+        onPress={() => {
+          const u = new URL(window.location.href);
+          u.pathname = "/docs";
+          Linking.openURL(u.toString());
+        }}
+      />
+    </DrawerContentScrollView>
+  );
+}
+
 export default function Router() {
   const { isWeb, isElectron } = usePlatform();
   useEffect(() => {
@@ -308,7 +338,7 @@ export function StreamplaceDrawer() {
                   widthAnim={sidebar.width}
                 />
               )
-            : undefined
+            : CustomDrawerContent
         }
       >
         <Drawer.Screen
