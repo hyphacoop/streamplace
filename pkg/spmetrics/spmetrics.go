@@ -72,7 +72,7 @@ var WebsocketsOpen = promauto.NewGauge(prometheus.GaugeOpts{
 var SegmentSubscriptionsOpen = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "streamplace_segment_subscriptions_open",
 	Help: "number of open new segment subscriptions",
-}, []string{"streamer"})
+}, []string{"streamer", "rendition"})
 
 func ViewerInc(user string) {
 	go func() {
