@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
+
 	apierrors "stream.place/streamplace/pkg/errors"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/renditions"
@@ -27,8 +28,19 @@ var pingPeriod = 5 * time.Second
 func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle {
 	ctx = log.WithLogValues(ctx, "func", "HandleWebsocket")
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		// XXX: check if x-forwarded-for
+		clientIP := req.RemoteAddr
+
+		limiter := a.getLimiter(clientIP)
+		if !limiter.Allow() {
+				apierrors.WriteHTTPTooManyRequests(w, "rate limit")
+				return
+		}
+
 		uu, _ := uuid.NewV7()
-		ctx = log.WithLogValues(ctx, "uuid", uu.String(), "remoteAddr", req.RemoteAddr, "url", req.URL.String())
+		connID := uu.String()
+
+		ctx = log.WithLogValues(ctx, "uuid", connID, "remoteAddr", req.RemoteAddr, "url", req.URL.String())
 		log.Log(ctx, "websocket opened")
 		spmetrics.WebsocketsOpen.Inc()
 		defer spmetrics.WebsocketsOpen.Dec()
@@ -50,6 +62,10 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer conn.Close()
+
+		msgLimiter := a.getMsgLimiter(connID)
+		defer a.removeMsgLimiter(connID)
+		
 		initialBurst := make(chan any, 200)
 		err = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 		if err != nil {
@@ -203,6 +219,27 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 		}()
 
 		for {
+			r := msgLimiter.Reserve()
+			if !r.OK() {
+				log.Error(ctx, "rate limit exceeded, message rejected")
+
+        errorMsg := map[string]string{"error": "rate limit exceeded"}
+        errorBytes, _ := json.Marshal(errorMsg)
+        conn.WriteMessage(websocket.TextMessage, errorBytes)
+        
+        continue
+			}
+
+			// wait for rate limit delay if there is one 
+			delay := r.Delay()
+			if delay > 0 {
+					select {
+					case <-time.After(delay):
+					case <-ctx.Done():
+							return
+					}
+			}
+
 			messageType, message, err := conn.ReadMessage()
 			if err != nil {
 				log.Error(ctx, "error reading message", "error", err)
