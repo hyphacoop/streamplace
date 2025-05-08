@@ -189,8 +189,8 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
               fg={1}
               zIndex={1}
               $gtXs={{
-                width: isChatVisible ? 300 : 0,
-                fb: isChatVisible ? 300 : 0,
+                width: isChatVisible ? 380 : 0,
+                fb: isChatVisible ? 380 : 0,
                 fs: 0,
                 borderLeftColor: "#666",
                 borderLeftWidth: isChatVisible ? 1 : 0,
