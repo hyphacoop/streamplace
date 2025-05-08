@@ -1,7 +1,8 @@
 import { FileQuestion } from "@tamagui/lucide-icons";
 import { Text, View, AnimatePresence } from "tamagui";
 import { Pressable } from "react-native-gesture-handler";
-import { useState } from "react";
+import { ReactElement, ReactNode, useState } from "react";
+import { PressableStateCallbackType, StyleProp, ViewStyle } from "react-native";
 
 export default function SidebarItem({
   icon,
@@ -9,10 +10,22 @@ export default function SidebarItem({
   collapsed,
   active,
   onPress,
-  style,
-  tint,
+  style = null,
+  tint = "#eebaba",
+}: {
+  icon: React.ComponentType<any> | React.NamedExoticComponent<any>;
+  label: React.ComponentType<any> | string | ReactNode;
+  collapsed: boolean;
+  active: boolean;
+  onPress: () => void;
+  style?:
+    | StyleProp<ViewStyle>
+    | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>);
+  tint: string;
 }) {
   const [hover, setHover] = useState<boolean>(false);
+  // if we don't have an icon for some reason default to filequestion
+  const Icon: React.NamedExoticComponent<any> = (icon as any) || FileQuestion;
   return (
     <Pressable
       onPress={onPress}
@@ -39,11 +52,7 @@ export default function SidebarItem({
         overflow="hidden"
       >
         <View width="$3" paddingVertical="$3">
-          {icon ? (
-            icon({ color: "$color" })
-          ) : (
-            <FileQuestion color="$color" alignSelf="center" />
-          )}
+          <Icon color="$color" />
         </View>
         <AnimatePresence>
           {!collapsed && (

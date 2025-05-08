@@ -9,16 +9,25 @@ import {
 import { DrawerNavigationOptions } from "@react-navigation/drawer";
 import { DrawerDescriptorMap } from "@react-navigation/drawer/lib/typescript/src/types";
 import { Platform } from "react-native";
+import { ReactElement } from "react";
+import { FileQuestion } from "@tamagui/lucide-icons";
 
 const AnimatedYStack = styled(YStack, {
   name: "AnimatedYStack",
 });
+
+export interface ExternalDrawerItem {
+  item: React.NamedExoticComponent<any>;
+  label: React.ComponentType<any> | string;
+  onPress: () => void;
+}
 
 interface CustomSidebarProps {
   collapsed: boolean;
   widthAnim: SharedValue<number>;
   descriptors: DrawerDescriptorMap;
   state: DrawerNavigationState<ParamListBase>;
+  externalItems?: ExternalDrawerItem[];
 }
 
 // Combine standard drawer props with custom props
@@ -29,6 +38,7 @@ export default function Sidebar({
   descriptors,
   collapsed,
   widthAnim,
+  externalItems = [],
 }: SidebarProps) {
   // Apply the defined type to the component props
   const animatedSidebarStyle = useAnimatedStyle(() => {
@@ -81,7 +91,7 @@ export default function Sidebar({
         return (
           <SidebarItem
             key={route.key}
-            icon={IconComponent ? IconComponent : null}
+            icon={IconComponent ? IconComponent : FileQuestion}
             label={label}
             active={descriptor.navigation.isFocused()}
             collapsed={collapsed}
@@ -106,7 +116,21 @@ export default function Sidebar({
               }
             }}
             style={options.drawerItemStyle}
-            tint={options.drawerActiveTintColor as string | undefined} // Assuming tint is a string color or undefined
+            tint={options.drawerActiveTintColor as string} // Assuming tint is a string color or undefined
+          />
+        );
+      })}
+      {externalItems.map((i) => {
+        console.log(i.label);
+        return (
+          <SidebarItem
+            key={JSON.stringify(i.label)}
+            icon={i.item}
+            label={i.label || "Fix this label!"}
+            active={false}
+            collapsed={collapsed}
+            onPress={() => i.onPress()}
+            tint="#fff"
           />
         );
       })}

@@ -73,7 +73,7 @@ import {
   UseSidebarOutput,
   useSidebarControl,
 } from "hooks/useSidebarControl";
-import Sidebar from "components/sidebar/sidebar";
+import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 function HomeScreen() {
   return (
     <View f={1}>
@@ -147,14 +147,14 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
   const handlePress = () => {
     if (sidebar?.isActive) {
       sidebar.toggle();
-    } else {
-      navigation.dispatch(DrawerActions.toggleDrawer());
     }
   };
 
   const handleGoBackPress = () => {
     if (canGoBack) {
       navigation.goBack();
+    } else {
+      navigation.dispatch(DrawerActions.toggleDrawer());
     }
   };
 
@@ -214,6 +214,24 @@ const AvatarButton = () => {
   );
 };
 
+const EXTERNAL_ITEMS: ExternalDrawerItem[] = [
+  {
+    item: Book,
+    label: (
+      <Text alignSelf="flex-start">
+        Documentation{" "}
+        <ExternalLink size={16} pl={4} position="relative" top={2} />
+      </Text>
+    ) as any,
+    onPress: () => {
+      const u = new URL(window.location.href);
+      u.pathname = "/docs";
+      Linking.openURL(u.toString());
+    },
+  },
+];
+
+// TODO: merge in ^
 function CustomDrawerContent(props) {
   return (
     <DrawerContentScrollView {...props}>
@@ -336,6 +354,7 @@ export function StreamplaceDrawer() {
                   {...props}
                   collapsed={sidebar.isCollapsed}
                   widthAnim={sidebar.width}
+                  externalItems={EXTERNAL_ITEMS}
                 />
               )
             : CustomDrawerContent
