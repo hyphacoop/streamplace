@@ -126,16 +126,13 @@ lexgen:
 
 .PHONY: lexgen-types
 lexgen-types:
-	rm -rf ../atproto \
-	&& git clone git@github.com:bluesky-social/atproto \
-	&& mv atproto ../
 	go run github.com/bluesky-social/indigo/cmd/lexgen --package streamplace \
 		--types-import place.stream:stream.place/streamplace/pkg/streamplace \
 		-outdir ./pkg/streamplace \
 		--prefix place.stream \
 		--build-file util/lexgen-types.json \
 		lexicons/place/stream \
-		../atproto/lexicons
+		./subprojects/atproto/lexicons
 
 .PHONY: lexgen-server
 lexgen-server:
