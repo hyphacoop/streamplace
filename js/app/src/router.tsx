@@ -28,7 +28,7 @@ import Login from "components/login/login";
 import StreamList from "components/stream-list/stream-list";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import usePlatform from "hooks/usePlatform";
-import { useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import {
   ImageBackground,
   ImageSourcePropType,
@@ -59,7 +59,12 @@ import LiveDashboard from "./screens/live-dashboard";
 import Popup from "components/popup";
 import PopoutChat from "./screens/chat-popout";
 import EmbedScreen from "./screens/embed";
-import useSidebarControl, { UseSidebarOutput } from "hooks/useSidebarControl";
+import {
+  useSidebar,
+  SidebarContext,
+  UseSidebarOutput,
+  useSidebarControl,
+} from "hooks/useSidebarControl";
 import Sidebar from "components/sidebar/sidebar";
 function HomeScreen() {
   return (
@@ -127,39 +132,46 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
 
 const Drawer = createDrawerNavigator();
 
-const NavigationButton = ({
-  canGoBack,
-  sidebar,
-}: {
-  canGoBack?: boolean;
-  sidebar?: UseSidebarOutput;
-}) => {
+const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
+  const sidebar = useSidebar();
   const navigation = useNavigation();
+
+  const handlePress = () => {
+    if (sidebar?.isActive) {
+      sidebar.toggle();
+    } else {
+      navigation.dispatch(DrawerActions.toggleDrawer());
+    }
+  };
+
+  const handleGoBackPress = () => {
+    if (canGoBack) {
+      navigation.goBack();
+    }
+  };
+
+  console.log("sidebar", sidebar);
+
+  let icon: ReactElement | null = null;
+  if (sidebar?.isActive) {
+    if (sidebar.isCollapsed) {
+      icon = <PanelLeftOpen />;
+    } else {
+      icon = <PanelLeftClose />;
+    }
+  }
+
   return (
-    <Pressable
-      style={{ padding: 5, marginLeft: 15 }}
-      onPress={() => {
-        if (canGoBack) {
-          navigation.goBack();
-        } else if (sidebar?.isActive) {
-          sidebar.toggle();
-        } else {
-          navigation.dispatch(DrawerActions.toggleDrawer());
-        }
-      }}
-    >
-      {canGoBack ? (
-        <ArrowLeft />
-      ) : sidebar?.isActive ? (
-        sidebar?.isCollapsed ? (
-          <PanelLeftOpen />
-        ) : (
-          <PanelLeftClose />
-        )
-      ) : (
-        <Menu />
+    <View flexDirection="row" marginLeft="$3">
+      {icon && (
+        <Pressable style={{ padding: 5 }} onPress={handlePress}>
+          {icon}
+        </Pressable>
       )}
-    </Pressable>
+      <Pressable style={{ padding: 5 }} onPress={handleGoBackPress}>
+        {canGoBack ? <ArrowLeft /> : sidebar?.isActive || <Menu />}
+      </Pressable>
+    </View>
   );
 };
 
@@ -266,7 +278,7 @@ export function StreamplaceDrawer() {
     return <View />;
   }
   return (
-    <>
+    <SidebarContext.Provider value={sidebar}>
       <StatusBar backgroundColor={theme.background.val} />
       <Drawer.Navigator
         // if this isn't here there are issues around drawer width
@@ -282,7 +294,7 @@ export function StreamplaceDrawer() {
             width: sidebar.isActive ? (sidebar.width as any) : undefined,
           },
           // rest
-          headerLeft: () => <NavigationButton sidebar={sidebar} />,
+          headerLeft: () => <NavigationButton />,
           headerRight: () => <AvatarButton />,
           drawerActiveTintColor: theme.accentColor.val,
           unmountOnBlur: true,
@@ -447,7 +459,7 @@ export function StreamplaceDrawer() {
           </Text>
         </Popup>
       )}
-    </>
+    </SidebarContext.Provider>
   );
 }
 

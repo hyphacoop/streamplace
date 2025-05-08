@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   SharedValue,
   useSharedValue,
@@ -28,7 +28,7 @@ export interface UseSidebarOutput {
  * - sidebarWidth: Animated.Value - An animated value controlling the sidebar's width.
  * - toggleSidebar: () => void - A function to toggle the sidebar's collapsed state with animation.
  */
-export default function useSidebarControl(): UseSidebarOutput {
+export function useSidebarControl(): UseSidebarOutput {
   const [collapsed, setCollapsed] = useState(false);
   const width = useSharedValue(300);
 
@@ -47,3 +47,15 @@ export default function useSidebarControl(): UseSidebarOutput {
     toggle,
   };
 }
+
+export const SidebarContext = createContext<UseSidebarOutput | undefined>(
+  undefined,
+);
+
+export const useSidebar = () => {
+  const context = useContext(SidebarContext);
+  if (context === undefined) {
+    throw new Error("useSidebar must be used within a SidebarProvider");
+  }
+  return context;
+};
