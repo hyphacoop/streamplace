@@ -8,6 +8,7 @@ import {
 } from "@react-navigation/native"; // Import necessary types
 import { DrawerNavigationOptions } from "@react-navigation/drawer";
 import { DrawerDescriptorMap } from "@react-navigation/drawer/lib/typescript/src/types";
+import { Platform } from "react-native";
 
 const AnimatedYStack = styled(YStack, {
   name: "AnimatedYStack",
@@ -44,7 +45,7 @@ export default function Sidebar({
       gap="$2"
     >
       <View
-        marginTop="$3"
+        marginTop={Platform.OS === "ios" ? 29 : 12}
         marginBottom="$5"
         paddingLeft="$2.5"
         gap="$3"
@@ -57,15 +58,16 @@ export default function Sidebar({
           height="$2"
           width="$2"
         />
-        {!collapsed && <Text fontSize="$7">Streamplace</Text>}
+        {!collapsed && (
+          <Text fontSize="$7" minWidth={200} numberOfLines={1}>
+            Streamplace
+          </Text>
+        )}
       </View>
 
       {state.routes.map((route) => {
         const descriptor = descriptors[route.key];
         const options = descriptor?.options ?? {};
-        if (options?.headerShown == false) {
-          return null;
-        }
 
         const label =
           typeof options.drawerLabel === "function"

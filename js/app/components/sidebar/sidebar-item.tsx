@@ -51,11 +51,12 @@ export default function SidebarItem({
               // setting to maximum width of the sidebar
               // so we don't get collapsing text on collapse
               minWidth={270}
+              maxHeight="auto"
               fontSize="$6"
               textAlign="left"
               animation="quick"
-              enterStyle={{ opacity: 0, width: "100vw" }}
-              exitStyle={{ opacity: 0, width: "100vw" }}
+              enterStyle={{ opacity: 100, width: "100" }}
+              exitStyle={{ opacity: 0, width: "100" }}
               animateOnly={["opacity"]}
             >
               {label}
