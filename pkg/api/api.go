@@ -14,6 +14,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -21,6 +22,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	sloghttp "github.com/samber/slog-http"
+	"golang.org/x/time/rate"
 
 	"stream.place/streamplace/js/app"
 	"stream.place/streamplace/pkg/atproto"
@@ -54,6 +56,14 @@ type StreamplaceAPI struct {
 	Bus      *bus.Bus
 	ATSync   *atproto.ATProtoSynchronizer
 	Director *director.Director
+
+	// general rate limits
+	limiters   map[string]*rate.Limiter
+	limitersMu sync.Mutex
+
+	// msg rate limits for websockets
+	msgLimiters   map[string]*rate.Limiter
+	msgLimitersMu sync.Mutex
 }
 
 func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712Signer, noter notifications.FirebaseNotifier, mm *media.MediaManager, ms media.MediaSigner, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer, d *director.Director) (*StreamplaceAPI, error) {
@@ -72,6 +82,8 @@ func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712S
 		Bus:              bus,
 		ATSync:           atsync,
 		Director:         d,
+		limiters:         make(map[string]*rate.Limiter),
+		msgLimiters:      make(map[string]*rate.Limiter),
 	}
 	a.Mimes, err = updater.GetMimes()
 	if err != nil {
@@ -214,6 +226,7 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	handler := sloghttp.Recovery(router)
 	handler = cors.AllowAll().Handler(handler)
 	handler = sloghttp.New(slog.Default())(handler)
+	handler = a.RateLimitMiddleware(ctx)(handler)
 
 	return handler, nil
 }
@@ -669,6 +682,28 @@ func (a *StreamplaceAPI) HandleLivestream(ctx context.Context) httprouter.Handle
 	}
 }
 
+func (a *StreamplaceAPI) RateLimitMiddleware(ctx context.Context) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			// XXX: check if x-forwarded-for
+			ip, _, err := net.SplitHostPort(req.RemoteAddr)
+			if err != nil {
+				ip = req.RemoteAddr
+			}
+
+			limiter := a.getLimiter(ip)
+
+			if !limiter.Allow() {
+				log.Warn(ctx, "rate limit exceeded", "ip", ip, "path", req.URL.Path)
+				apierrors.WriteHTTPTooManyRequests(w, "rate limit exceeded")
+				return
+			}
+
+			next.ServeHTTP(w, req)
+		})
+	}
+}
+
 func (a *StreamplaceAPI) ServeHTTP(ctx context.Context) error {
 	handler, err := a.Handler(ctx)
 	if err != nil {
@@ -732,4 +767,38 @@ func (a *StreamplaceAPI) HandleHealthz(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(200)
 	}
+}
+
+func (a *StreamplaceAPI) getLimiter(ip string) *rate.Limiter {
+	a.limitersMu.Lock()
+	defer a.limitersMu.Unlock()
+
+	limiter, exists := a.limiters[ip]
+	if !exists {
+		// 5 actions per second with a burst of 3
+		limiter = rate.NewLimiter(rate.Limit(10.0), 8)
+		a.limiters[ip] = limiter
+	}
+
+	return limiter
+}
+
+func (a *StreamplaceAPI) getMsgLimiter(connID string) *rate.Limiter {
+	a.msgLimitersMu.Lock()
+	defer a.msgLimitersMu.Unlock()
+
+	limiter, exists := a.msgLimiters[connID]
+	if !exists {
+		// 10 messages per second with a burst of 20
+		limiter = rate.NewLimiter(rate.Limit(10), 20)
+		a.msgLimiters[connID] = limiter
+	}
+
+	return limiter
+}
+
+func (a *StreamplaceAPI) removeMsgLimiter(connID string) {
+	a.msgLimitersMu.Lock()
+	defer a.msgLimitersMu.Unlock()
+	delete(a.msgLimiters, connID)
 }
