@@ -8,8 +8,8 @@ export function usePreloadEmoji({ immediate }: { immediate?: boolean } = {}) {
     if (loadRequested) return;
     loadRequested = true;
     try {
-      const data = (await import("../components/emoji-picker/emoji-data.json"))
-        .default;
+      const res = await fetch("/emoji-data.json");
+      const data = await res.json();
       init({ data });
     } catch (e) {}
   }, []);

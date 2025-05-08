@@ -34,7 +34,6 @@ import MentionSuggestions, { MentionSuggestion } from "./mention-suggestions";
 import { emojiEmitter } from "components/emoji-picker/emoji-emitter";
 import { EmojiPicker } from "components/emoji-picker/emoji-picker";
 import EmojiSuggestions, { EmojiSuggestion } from "./emoji-suggestions";
-import emojiDataRaw from "components/emoji-picker/emoji-data.json";
 import { usePreloadEmoji } from "hooks/usePreloadEmoji";
 
 const getParticipantSuggestions = (
@@ -87,7 +86,6 @@ export default function ChatBox({
   const replyTo = useAppSelector(useReplyToMessage());
   if (isWeb) usePreloadEmoji({ immediate: true });
   const [isTextAreaFocused, setIsTextAreaFocused] = useState(false);
-  const enterHandledRef = useRef(false);
   const [pickerState, setPickerState] = useState({
     isOpen: false,
     position: { top: 0, left: 0 },
@@ -101,17 +99,23 @@ export default function ChatBox({
   const [lastColonPosition, setLastColonPosition] = useState(-1);
 
   const emojiList = useRef<EmojiSuggestion[]>([]);
+  const [emojiDataLoaded, setEmojiDataLoaded] = useState(false);
   useEffect(() => {
     if (emojiList.current.length === 0) {
-      const emojis = emojiDataRaw.emojis;
-      emojiList.current = Object.keys(emojis).map((id) => {
-        const e = emojis[id];
-        return {
-          emoji: e.skins[0].native,
-          shortcode: `:${id}:`,
-          name: e.name,
-        };
-      });
+      fetch("/emoji-data.json")
+        .then((res) => res.json())
+        .then((emojiDataRaw) => {
+          const emojis = emojiDataRaw.emojis;
+          emojiList.current = Object.keys(emojis).map((id) => {
+            const e = emojis[id];
+            return {
+              emoji: e.skins[0].native,
+              shortcode: `:${id}:`,
+              name: e.name,
+            };
+          });
+          setEmojiDataLoaded(true);
+        });
     }
   }, []);
 
@@ -126,6 +130,7 @@ export default function ChatBox({
   }
 
   const updateEmojiSuggestions = (text: string, cursor: number) => {
+    if (!emojiDataLoaded) return;
     const result = getEmojiQuery(text, cursor);
     if (result && result.query.length > 0) {
       const exact = emojiList.current.find(
@@ -192,6 +197,7 @@ export default function ChatBox({
 
   useEffect(() => {
     if (!showEmojiSuggestions && emojiQuery) {
+      if (!emojiDataLoaded) return;
       const valid = emojiList.current.find(
         (e) => e.shortcode === `:${emojiQuery}:`,
       );
@@ -495,6 +501,7 @@ export default function ChatBox({
                     }
                   }}
                   onChangeText={(text) => {
+                    if (!emojiDataLoaded) return;
                     const newMessage = text.replaceAll("\n", "");
                     if (newMessage.length > 300) {
                       return;
