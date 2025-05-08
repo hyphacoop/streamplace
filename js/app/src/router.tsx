@@ -277,7 +277,9 @@ export function StreamplaceDrawer() {
           drawerType: sidebar.isActive ? "permanent" : "front",
           swipeEnabled: !sidebar.isActive,
           drawerStyle: {
-            width: sidebar.isActive ? sidebar.width.get() : undefined,
+            // afaict the drawer is a RN Animated component internally
+            // TODO (nat): look into this and change width prop as needed
+            width: sidebar.isActive ? (sidebar.width as any) : undefined,
           },
           // rest
           headerLeft: () => <NavigationButton sidebar={sidebar} />,
