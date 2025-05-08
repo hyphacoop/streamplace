@@ -747,35 +747,35 @@ func (a *StreamplaceAPI) HandleHealthz(ctx context.Context) http.HandlerFunc {
 }
 
 func (a *StreamplaceAPI) getLimiter(ip string) *rate.Limiter {
-    a.limitersMu.Lock()
-    defer a.limitersMu.Unlock()
-    
-    limiter, exists := a.limiters[ip]
-    if !exists {
-				// 5 actions per second with a burst of 3
-				limiter = rate.NewLimiter(rate.Limit(5.0), 3)
-        a.limiters[ip] = limiter
-    }
-    
-    return limiter
+	a.limitersMu.Lock()
+	defer a.limitersMu.Unlock()
+
+	limiter, exists := a.limiters[ip]
+	if !exists {
+		// 5 actions per second with a burst of 3
+		limiter = rate.NewLimiter(rate.Limit(5.0), 3)
+		a.limiters[ip] = limiter
+	}
+
+	return limiter
 }
 
 func (a *StreamplaceAPI) getMsgLimiter(connID string) *rate.Limiter {
-    a.msgLimitersMu.Lock()
-    defer a.msgLimitersMu.Unlock()
-    
-    limiter, exists := a.msgLimiters[connID]
-    if !exists {
-		    // 10 messages per second with a burst of 20
-        limiter = rate.NewLimiter(rate.Limit(10), 20)
-        a.msgLimiters[connID] = limiter
-    }
-    
-    return limiter
+	a.msgLimitersMu.Lock()
+	defer a.msgLimitersMu.Unlock()
+
+	limiter, exists := a.msgLimiters[connID]
+	if !exists {
+		// 10 messages per second with a burst of 20
+		limiter = rate.NewLimiter(rate.Limit(10), 20)
+		a.msgLimiters[connID] = limiter
+	}
+
+	return limiter
 }
 
 func (a *StreamplaceAPI) removeMsgLimiter(connID string) {
-    a.msgLimitersMu.Lock()
-    defer a.msgLimitersMu.Unlock()
-    delete(a.msgLimiters, connID)
+	a.msgLimitersMu.Lock()
+	defer a.msgLimitersMu.Unlock()
+	delete(a.msgLimiters, connID)
 }

@@ -37,8 +37,8 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 
 		limiter := a.getLimiter(clientIP)
 		if !limiter.Allow() {
-				apierrors.WriteHTTPTooManyRequests(w, "rate limit")
-				return
+			apierrors.WriteHTTPTooManyRequests(w, "rate limit")
+			return
 		}
 
 		uu, _ := uuid.NewV7()
@@ -69,7 +69,7 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 
 		msgLimiter := a.getMsgLimiter(connID)
 		defer a.removeMsgLimiter(connID)
-		
+
 		initialBurst := make(chan any, 200)
 		err = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 		if err != nil {
@@ -227,21 +227,21 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 			if !r.OK() {
 				log.Error(ctx, "rate limit exceeded, message rejected")
 
-        errorMsg := map[string]string{"error": "rate limit exceeded"}
-        errorBytes, _ := json.Marshal(errorMsg)
-        conn.WriteMessage(websocket.TextMessage, errorBytes)
-        
-        continue
+				errorMsg := map[string]string{"error": "rate limit exceeded"}
+				errorBytes, _ := json.Marshal(errorMsg)
+				conn.WriteMessage(websocket.TextMessage, errorBytes)
+
+				continue
 			}
 
-			// wait for rate limit delay if there is one 
+			// wait for rate limit delay if there is one
 			delay := r.Delay()
 			if delay > 0 {
-					select {
-					case <-time.After(delay):
-					case <-ctx.Done():
-							return
-					}
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 
 			messageType, message, err := conn.ReadMessage()
