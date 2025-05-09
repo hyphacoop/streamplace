@@ -21678,24 +21678,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lex-md@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "lex-md@npm:0.0.2"
+"lex-md@npm:^0.0.3":
+  version: 0.0.3
+  resolution: "lex-md@npm:0.0.3"
   dependencies:
     "@atproto/syntax": "npm:^0.4.0"
-    lexmd: "link:../../Library/pnpm/global/5/node_modules/lexmd"
     zod: "npm:^3.24.3"
   bin:
     lexmd: dist/main.js
-  checksum: 10/b4b74b61a3027eb570ccd189a7ddc4a08378099579f9cef05daa6784ba672588d097d357e6b22cde474e0540a5401249eff80d5361d00af8a9c766b2bc2d8688
+  checksum: 10/1a9d508fc916cf24862a902a80ce4ce5f4632755a4f9e18232ae7f34bf657856864fad5e3f62be23ffe87a1daf64ae7ce1ed105d1cd7459d7565f2d62dafc945
   languageName: node
   linkType: hard
-
-"lexmd@link:../../Library/pnpm/global/5/node_modules/lexmd::locator=lex-md%40npm%3A0.0.2":
-  version: 0.0.0-use.local
-  resolution: "lexmd@link:../../Library/pnpm/global/5/node_modules/lexmd::locator=lex-md%40npm%3A0.0.2"
-  languageName: node
-  linkType: soft
 
 "libnpmaccess@npm:8.0.6":
   version: 8.0.6
@@ -29536,7 +29529,7 @@ __metadata:
     firebase-admin: "npm:^12.7.0"
     husky: "npm:^9.1.6"
     lerna: "npm:^8.1.9"
-    lex-md: "npm:^0.0.2"
+    lex-md: "npm:^0.0.3"
     lint-staged: "npm:^15.2.10"
     prettier: "npm:3.4.2"
   languageName: unknown
