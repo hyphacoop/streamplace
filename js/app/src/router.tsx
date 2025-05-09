@@ -67,13 +67,15 @@ import LiveDashboard from "./screens/live-dashboard";
 import Popup from "components/popup";
 import PopoutChat from "./screens/chat-popout";
 import EmbedScreen from "./screens/embed";
-import {
-  useSidebar,
-  SidebarContext,
-  UseSidebarOutput,
-  useSidebarControl,
-} from "hooks/useSidebarControl";
+import { UseSidebarOutput, useSidebarControl } from "hooks/useSidebarControl";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
+
+// probabl should move this
+import { store } from "store/store";
+import { loadStateFromStorage } from "features/base/sidebarSlice";
+
+store.dispatch(loadStateFromStorage());
+
 function HomeScreen() {
   return (
     <View f={1}>
@@ -141,7 +143,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
 const Drawer = createDrawerNavigator();
 
 const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
-  const sidebar = useSidebar();
+  const sidebar = useSidebarControl();
   const navigation = useNavigation();
 
   const handlePress = () => {
@@ -326,7 +328,7 @@ export function StreamplaceDrawer() {
     return <View />;
   }
   return (
-    <SidebarContext.Provider value={sidebar}>
+    <>
       <StatusBar backgroundColor={theme.background.val} />
       <Drawer.Navigator
         // if this isn't here there are issues around drawer width
@@ -339,7 +341,9 @@ export function StreamplaceDrawer() {
           drawerStyle: {
             // afaict the drawer is a RN Animated component internally
             // TODO (nat): look into this and change width prop as needed
-            width: sidebar.isActive ? (sidebar.width as any) : undefined,
+            width: sidebar.isActive
+              ? (sidebar.animatedWidth as any)
+              : undefined,
           },
           // rest
           headerLeft: () => <NavigationButton />,
@@ -353,7 +357,7 @@ export function StreamplaceDrawer() {
                 <Sidebar
                   {...props}
                   collapsed={sidebar.isCollapsed}
-                  widthAnim={sidebar.width}
+                  widthAnim={sidebar.animatedWidth}
                   externalItems={EXTERNAL_ITEMS}
                 />
               )
@@ -510,7 +514,7 @@ export function StreamplaceDrawer() {
           </Text>
         </Popup>
       )}
-    </SidebarContext.Provider>
+    </>
   );
 }
 
