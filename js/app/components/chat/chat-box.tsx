@@ -348,13 +348,32 @@ export default function ChatBox({
 
   const openEmojiPicker = () => {
     if (textAreaRef.current) {
-      setPickerState({
-        isOpen: true,
-        position: {
-          top: 0,
-          left: 0,
-        },
-      });
+      if (isWeb) {
+        setPickerState({
+          isOpen: true,
+          position: {
+            top: 0,
+            left: 0,
+          },
+        });
+      } else {
+        textAreaRef.current.focus?.();
+        setEmojiSuggestions(emojiList.current.slice(0, 5));
+        setShowEmojiSuggestions(!showEmojiSuggestions);
+        setEmojiQuery("");
+        setLastColonPosition(message.length);
+        setEmojiHighlightedIndex(0);
+      }
+    }
+  };
+
+  const openMentionSuggestions = () => {
+    if (textAreaRef.current) {
+      textAreaRef.current.focus?.();
+      setSuggestions(getParticipantSuggestions(chat || [], userProfile?.did));
+      setShowSuggestions(!showSuggestions);
+      setHighlightedIndex(0);
+      setLastAtPosition(message.length);
     }
   };
 
@@ -509,7 +528,7 @@ export default function ChatBox({
                     let cursorPosition = 0;
                     if (isWeb && textAreaRef.current) {
                       const textarea =
-                      textAreaRef.current as unknown as HTMLTextAreaElement;
+                        textAreaRef.current as unknown as HTMLTextAreaElement;
                       cursorPosition = textarea.selectionStart;
                     } else {
                       cursorPosition = newMessage.length;
@@ -604,23 +623,28 @@ export default function ChatBox({
           >
             {isChatVisible && (
               <>
-                {isWeb && (
-                  <View position="relative" flexShrink={0}>
-                    <Button
-                      onPress={openEmojiPicker}
-                      backgroundColor="transparent"
-                      flexShrink={0}
-                    >
-                      😊
-                    </Button>
-                    <EmojiPicker
-                      isOpen={pickerState.isOpen}
-                      onClose={() =>
-                        setPickerState((prev) => ({ ...prev, isOpen: false }))
-                      }
-                    />
-                  </View>
-                )}
+                <Button
+                  onPress={openMentionSuggestions}
+                  backgroundColor="transparent"
+                  flexShrink={0}
+                >
+                  @
+                </Button>
+                <View position="relative" flexShrink={0}>
+                  <Button
+                    onPress={openEmojiPicker}
+                    backgroundColor="transparent"
+                    flexShrink={0}
+                  >
+                    😊
+                  </Button>
+                  <EmojiPicker
+                    isOpen={pickerState.isOpen}
+                    onClose={() =>
+                      setPickerState((prev) => ({ ...prev, isOpen: false }))
+                    }
+                  />
+                </View>
                 <NameColorPicker
                   buttonProps={{ backgroundColor: "transparent" }}
                   text={(color) => <Palette size={16} color={color} />}
