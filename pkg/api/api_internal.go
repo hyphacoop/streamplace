@@ -3,9 +3,7 @@ package api
 import (
 	"bufio"
 	"context"
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	sloghttp "github.com/samber/slog-http"
@@ -35,166 +32,6 @@ import (
 	"stream.place/streamplace/pkg/renditions"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 )
-
-// Get current user DID from custom header
-func getUserDIDFromHeader(r *http.Request) (string, error) {
-	didHeader := r.Header.Get("X-User-DID")
-	if didHeader != "" && strings.HasPrefix(didHeader, "did:") {
-		return didHeader, nil
-	}
-
-	return "", fmt.Errorf("could not find user DID in headers")
-}
-
-// Deterministic rkey for a follow relationship
-func deterministicRKey(userDID, subjectDID string) string {
-	h := sha256.New()
-	h.Write([]byte(userDID + ":" + subjectDID))
-	return hex.EncodeToString(h.Sum(nil))[:16] // 16 chars for brevity
-}
-
-// GET /api/following/:user
-func (a *StreamplaceAPI) HandleFollowing(ctx context.Context) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		user := p.ByName("user")
-		if user == "" {
-			log.Error(ctx, "Missing user parameter")
-			errors.WriteHTTPBadRequest(w, "user required", nil)
-			return
-		}
-		user, err := a.NormalizeUser(ctx, user)
-		if err != nil {
-			log.Error(ctx, "Failed to normalize user", "user", user, "error", err)
-			errors.WriteHTTPNotFound(w, "user not found", err)
-			return
-		}
-
-		following, err := a.Model.GetUserFollowing(ctx, user)
-		if err != nil {
-			log.Error(ctx, "Failed to get user following", "user", user, "error", err)
-			errors.WriteHTTPInternalServerError(w, "unable to get following", err)
-			return
-		}
-
-		bs, err := json.Marshal(following)
-		if err != nil {
-			log.Error(ctx, "Failed to marshal following list", "error", err)
-			errors.WriteHTTPInternalServerError(w, "unable to marshal json", err)
-			return
-		}
-		w.Write(bs)
-	}
-}
-
-// POST /api/follow/:user
-func (a *StreamplaceAPI) HandleFollow(ctx context.Context) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		userDID, err := getUserDIDFromHeader(r)
-		if err != nil {
-			log.Error(ctx, "Failed to get user DID from session", "error", err)
-			http.Error(w, fmt.Sprintf("Unauthorized: %v", err), http.StatusUnauthorized)
-			return
-		}
-
-		subject := p.ByName("user")
-		if subject == "" {
-			http.Error(w, "user required", http.StatusBadRequest)
-			return
-		}
-		subject, err = a.NormalizeUser(ctx, subject)
-		if err != nil {
-			log.Error(ctx, "Invalid user", "subject", subject, "error", err)
-			http.Error(w, "invalid user", http.StatusBadRequest)
-			return
-		}
-
-		if userDID == subject {
-			http.Error(w, "cannot follow yourself", http.StatusBadRequest)
-			return
-		}
-
-		// Check if already following
-		following, err := a.Model.GetUserFollowing(ctx, userDID)
-		if err != nil {
-			log.Error(ctx, "Error getting user following", "userDID", userDID, "error", err)
-		} else {
-			for _, f := range following {
-				if f.SubjectDID == subject {
-					log.Debug(ctx, "User already following subject", "userDID", userDID, "subject", subject)
-					w.WriteHeader(http.StatusNoContent)
-					return
-				}
-			}
-		}
-
-		rkey := deterministicRKey(userDID, subject)
-		createdAt := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
-		follow := &bsky.GraphFollow{
-			Subject:   subject,
-			CreatedAt: createdAt,
-		}
-
-		err = a.Model.CreateFollow(ctx, userDID, rkey, follow)
-		if err != nil {
-			log.Error(ctx, "Failed to create follow in local database", "userDID", userDID, "subject", subject, "error", err)
-			http.Error(w, fmt.Sprintf("failed to follow: %v", err), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-// DELETE /api/follow/:user
-func (a *StreamplaceAPI) HandleUnfollow(ctx context.Context) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		userDID, err := getUserDIDFromHeader(r)
-		if err != nil {
-			log.Error(ctx, "Failed to get user DID from session", "error", err)
-			http.Error(w, fmt.Sprintf("Unauthorized: %v", err), http.StatusUnauthorized)
-			return
-		}
-
-		subject := p.ByName("user")
-		if subject == "" {
-			http.Error(w, "user required", http.StatusBadRequest)
-			return
-		}
-		subject, err = a.NormalizeUser(ctx, subject)
-		if err != nil {
-			log.Error(ctx, "Invalid user", "subject", subject, "error", err)
-			http.Error(w, "invalid user", http.StatusBadRequest)
-			return
-		}
-
-		// Find the follow record to get the rkey
-		following, err := a.Model.GetUserFollowing(ctx, userDID)
-		if err != nil {
-			log.Error(ctx, "Error getting user following", "userDID", userDID, "error", err)
-			http.Error(w, fmt.Sprintf("failed to query follows: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		var rkey string
-		for _, f := range following {
-			if f.SubjectDID == subject {
-				rkey = f.RKey
-				break
-			}
-		}
-
-		if rkey == "" {
-			log.Debug(ctx, "No follow relationship found to delete", "userDID", userDID, "subject", subject)
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		err = a.Model.DeleteFollow(ctx, userDID, rkey)
-		if err != nil {
-			log.Error(ctx, "Failed to delete follow from local database", "userDID", userDID, "subject", subject, "rkey", rkey, "error", err)
-			http.Error(w, fmt.Sprintf("failed to unfollow: %v", err), http.StatusInternalServerError)
-			return
-		}
-	}
-}
 
 func (a *StreamplaceAPI) ServeInternalHTTP(ctx context.Context) error {
 	handler, err := a.InternalHandler(ctx)

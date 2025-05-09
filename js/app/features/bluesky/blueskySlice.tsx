@@ -2,7 +2,6 @@ import {
   Agent,
   AppBskyFeedPost,
   AppBskyGraphBlock,
-  AppBskyGraphFollow,
   BlobRef,
   RichText,
 } from "@atproto/api";
@@ -90,23 +89,6 @@ const clearQueryParams = () => {
   params.delete("code");
   u.search = params.toString();
   window.history.replaceState(null, "", u.toString());
-};
-
-// Deterministic rkey for follow
-const createDeterministicRKey = (
-  userDID: string,
-  subjectDID: string,
-): string => {
-  const combinedStr = userDID + ":" + subjectDID;
-  let hash = 0;
-  for (let i = 0; i < combinedStr.length; i++) {
-    const char = combinedStr.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  // Convert to hex string and take first 16 chars
-  const hexHash = Math.abs(hash).toString(16).padStart(8, "0");
-  return hexHash.substring(0, 16);
 };
 
 export const blueskySlice = createAppSlice({
@@ -271,7 +253,6 @@ export const blueskySlice = createAppSlice({
         },
         rejected: (state, action) => {
           clearQueryParams();
-          console.error("getProfile rejected", action.error);
           // state.status = "failed";
         },
       },
@@ -869,10 +850,8 @@ export const blueskySlice = createAppSlice({
         { red, green, blue }: { red: number; green: number; blue: number },
         thunkAPI,
       ) => {
-        const now = new Date();
-        const { bluesky, streamplace } = thunkAPI.getState() as {
+        const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
-          streamplace: StreamplaceState;
         };
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
@@ -958,20 +937,9 @@ export const blueskySlice = createAppSlice({
         if (!did) {
           throw new Error("No DID");
         }
+        await bluesky.pdsAgent.follow(subjectDID);
 
-        const rkey = createDeterministicRKey(did, subjectDID);
-        const record: AppBskyGraphFollow.Record = {
-          subject: subjectDID,
-          createdAt: new Date().toISOString(),
-        };
-        await bluesky.pdsAgent.com.atproto.repo.createRecord({
-          repo: did,
-          collection: "app.bsky.graph.follow",
-          rkey: rkey,
-          record,
-        });
-
-        return { subjectDID, rkey };
+        return { subjectDID };
       },
       {
         pending: (state) => {
@@ -988,11 +956,12 @@ export const blueskySlice = createAppSlice({
 
     unfollowUser: create.asyncThunk(
       async (
-        { subjectDID, rkey }: { subjectDID: string; rkey: string },
+        { subjectDID, followUri }: { subjectDID: string; followUri?: string },
         thunkAPI,
       ) => {
-        const { bluesky } = thunkAPI.getState() as {
+        const { bluesky, streamplace } = thunkAPI.getState() as {
           bluesky: BlueskyState;
+          streamplace: StreamplaceState;
         };
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
@@ -1002,11 +971,26 @@ export const blueskySlice = createAppSlice({
           throw new Error("No DID");
         }
 
-        await bluesky.pdsAgent.com.atproto.repo.deleteRecord({
-          repo: did,
-          collection: "app.bsky.graph.follow",
-          rkey: rkey,
-        });
+        if (followUri) {
+          await bluesky.pdsAgent.deleteFollow(followUri);
+        } else {
+          const res = await fetch(
+            `${streamplace.url}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(subjectDID)}`,
+            {
+              credentials: "include",
+              headers: {
+                "X-User-DID": did,
+              },
+            },
+          );
+          const data = await res.json();
+
+          if (!data.follow || !data.follow.uri) {
+            throw new Error("Follow record not found");
+          }
+
+          await bluesky.pdsAgent.deleteFollow(data.follow.uri);
+        }
 
         return { subjectDID };
       },

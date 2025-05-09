@@ -56,11 +56,14 @@ func (s *Server) RegisterHandlersPlaceStream(e *echo.Echo) error {
 func (s *Server) HandlePlaceStreamGraphGetFollowingUser(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamGraphGetFollowingUser")
 	defer span.End()
+
+	userDID := c.Request().Header.Get("X-User-DID")
 	subjectDID := c.QueryParam("subjectDID")
+
 	var out *placestreamtypes.GraphGetFollowingUser_Output
 	var handleErr error
 	// func (s *Server) handlePlaceStreamGraphGetFollowingUser(ctx context.Context,subjectDID string) (*placestreamtypes.GraphGetFollowingUser_Output, error)
-	out, handleErr = s.handlePlaceStreamGraphGetFollowingUser(ctx, subjectDID)
+	out, handleErr = s.handlePlaceStreamGraphGetFollowingUser(ctx, userDID, subjectDID)
 	if handleErr != nil {
 		return handleErr
 	}

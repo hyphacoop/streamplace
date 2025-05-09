@@ -56,8 +56,8 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const video = player.segment?.video?.[0];
   const [videoWidth, setVideoWidth] = useState(0);
   const [videoHeight, setVideoHeight] = useState(0);
-  const { isKeyboardVisible, keyboardHeight } = useKeyboard();
-  const { isIOS, isWeb } = usePlatform();
+  const { keyboardHeight } = useKeyboard();
+  const { isIOS } = usePlatform();
 
   const [outerHeight, setOuterHeight] = useState(0);
   const [innerHeight, setInnerHeight] = useState(0);
@@ -66,7 +66,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
 
   const streamerDID = player.livestream?.author?.did;
   const streamerProfile = streamerDID ? profiles[streamerDID] : undefined;
-  const streamerHandle = streamerProfile?.handle || streamerDID;
+  const streamerHandle = streamerProfile?.handle;
 
   // this would all be really easy if i had library that would give me the
   // safe area view height and width but i don't. so let's measure
@@ -217,20 +217,25 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                     gap="$2"
                     minWidth={0}
                   >
-                    {streamerHandle && (
-                      <Text
-                        onPress={() =>
-                          Linking.openURL(
-                            `https://bsky.app/profile/${streamerHandle}`,
-                          )
-                        }
-                        aria-label={`View @${streamerHandle} on Bluesky`}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {`@${streamerHandle}`}
-                      </Text>
+                    {streamerDID && !streamerHandle ? (
+                      // Skeleton loader for handle
+                      <Text>&nbsp;</Text>
+                    ) : (
+                      streamerHandle && (
+                        <Text
+                          onPress={() =>
+                            Linking.openURL(
+                              `https://bsky.app/profile/${streamerHandle}`,
+                            )
+                          }
+                          aria-label={`View @${streamerHandle} on Bluesky`}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {`@${streamerHandle}`}
+                        </Text>
+                      )
                     )}
-                    {streamerDID && currentUserDID && (
+                    {streamerDID && streamerHandle && currentUserDID && (
                       <FollowButton
                         streamerDID={streamerDID}
                         currentUserDID={currentUserDID}
@@ -322,22 +327,27 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                       minWidth: 0,
                     }}
                   >
-                    {streamerHandle && (
-                      <Text
-                        onPress={() =>
-                          Linking.openURL(
-                            `https://bsky.app/profile/${streamerHandle}`,
-                          )
-                        }
-                        aria-label={`View @${streamerHandle} on Bluesky`}
-                        style={{ cursor: "pointer" }}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                      >
-                        {`@${streamerHandle}`}
-                      </Text>
+                    {streamerDID && !streamerHandle ? (
+                      // Skeleton loader for handle
+                      <Text>&nbsp;</Text>
+                    ) : (
+                      streamerHandle && (
+                        <Text
+                          onPress={() =>
+                            Linking.openURL(
+                              `https://bsky.app/profile/${streamerHandle}`,
+                            )
+                          }
+                          aria-label={`View @${streamerHandle} on Bluesky`}
+                          style={{ cursor: "pointer" }}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {`@${streamerHandle}`}
+                        </Text>
+                      )
                     )}
-                    {streamerDID && currentUserDID && (
+                    {streamerDID && streamerHandle && currentUserDID && (
                       <FollowButton
                         streamerDID={streamerDID}
                         currentUserDID={currentUserDID}

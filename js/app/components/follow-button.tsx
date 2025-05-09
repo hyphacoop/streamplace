@@ -26,14 +26,14 @@ const FollowButton: React.FC<FollowButtonProps> = ({
 }) => {
   const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [followRKey, setFollowRKey] = useState<string | null>(null);
+  const [followUri, setFollowUri] = useState<string | null>(null);
   const { url: streamplaceUrl } = useAppSelector(selectStreamplace);
   const dispatch = useAppDispatch();
 
   // Hide button if not logged in or viewing own stream
   if (!currentUserDID || currentUserDID === streamerDID) return null;
 
-  // Fetch initial follow state
+  // Fetch initial follow state using xrpc
   useEffect(() => {
     let cancelled = false;
 
@@ -43,7 +43,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       setError(null);
       try {
         const res = await fetch(
-          `${streamplaceUrl}/api/following/${currentUserDID}`,
+          `${streamplaceUrl}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(streamerDID)}`,
           {
             credentials: "include",
             headers: {
@@ -54,23 +54,18 @@ const FollowButton: React.FC<FollowButtonProps> = ({
 
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(`Failed to fetch following list: ${errorText}`);
+          throw new Error(`Failed to fetch follow status: ${errorText}`);
         }
 
         const data = await res.json();
         if (cancelled) return;
 
-        const following = Array.isArray(data) ? data : [];
-        const followRecord = following.find(
-          (f: any) => f.SubjectDID === streamerDID,
-        );
-
-        if (followRecord) {
+        if (data.follow) {
           setIsFollowing(true);
-          setFollowRKey(followRecord.RKey);
+          setFollowUri(data.follow.uri);
         } else {
           setIsFollowing(false);
-          setFollowRKey(null);
+          setFollowUri(null);
         }
       } catch (err) {
         if (!cancelled) setError("Could not determine follow state");
@@ -87,9 +82,8 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     setError(null);
     setIsFollowing(true); // Optimistic
     try {
-      const result = await dispatch(followUser(streamerDID)).unwrap();
+      await dispatch(followUser(streamerDID)).unwrap();
       setIsFollowing(true);
-      setFollowRKey(result.rkey);
       onFollowChange?.(true);
     } catch (err) {
       setIsFollowing(false);
@@ -100,19 +94,17 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   const handleUnfollow = async () => {
-    if (!followRKey) {
-      setError("Cannot unfollow: missing record key");
-      return;
-    }
-
     setError(null);
     setIsFollowing(false); // Optimistic
     try {
       await dispatch(
-        unfollowUser({ subjectDID: streamerDID, rkey: followRKey }),
+        unfollowUser({
+          subjectDID: streamerDID,
+          ...(followUri ? { followUri } : {}),
+        }),
       ).unwrap();
       setIsFollowing(false);
-      setFollowRKey(null);
+      setFollowUri(null);
       onFollowChange?.(false);
     } catch (err) {
       setIsFollowing(true);
@@ -124,7 +116,12 @@ const FollowButton: React.FC<FollowButtonProps> = ({
 
   return (
     <View flexDirection="row" alignItems="center" gap={8}>
-      {isFollowing ? (
+      {isFollowing === null ? (
+        // Skeleton loader to prevent layout shift
+        <Button backgroundColor="transparent" disabled>
+          &nbsp;
+        </Button>
+      ) : isFollowing ? (
         <Button
           backgroundColor="transparent"
           onPress={handleUnfollow}
