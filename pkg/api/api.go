@@ -57,13 +57,16 @@ type StreamplaceAPI struct {
 	ATSync   *atproto.ATProtoSynchronizer
 	Director *director.Director
 
-	// general rate limits
+	connTracker *WebsocketTracker
+
 	limiters   map[string]*rate.Limiter
 	limitersMu sync.Mutex
+}
 
-	// msg rate limits for websockets
-	msgLimiters   map[string]*rate.Limiter
-	msgLimitersMu sync.Mutex
+type WebsocketTracker struct {
+	connections   map[string]int
+	maxConnsPerIP int
+	mu            sync.RWMutex
 }
 
 func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712Signer, noter notifications.FirebaseNotifier, mm *media.MediaManager, ms media.MediaSigner, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer, d *director.Director) (*StreamplaceAPI, error) {
@@ -82,8 +85,8 @@ func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712S
 		Bus:              bus,
 		ATSync:           atsync,
 		Director:         d,
+		connTracker:      NewWebsocketTracker(5),
 		limiters:         make(map[string]*rate.Limiter),
-		msgLimiters:      make(map[string]*rate.Limiter),
 	}
 	a.Mimes, err = updater.GetMimes()
 	if err != nil {
@@ -685,7 +688,6 @@ func (a *StreamplaceAPI) HandleLivestream(ctx context.Context) httprouter.Handle
 func (a *StreamplaceAPI) RateLimitMiddleware(ctx context.Context) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			// XXX: check if x-forwarded-for
 			ip, _, err := net.SplitHostPort(req.RemoteAddr)
 			if err != nil {
 				ip = req.RemoteAddr
@@ -783,22 +785,37 @@ func (a *StreamplaceAPI) getLimiter(ip string) *rate.Limiter {
 	return limiter
 }
 
-func (a *StreamplaceAPI) getMsgLimiter(connID string) *rate.Limiter {
-	a.msgLimitersMu.Lock()
-	defer a.msgLimitersMu.Unlock()
-
-	limiter, exists := a.msgLimiters[connID]
-	if !exists {
-		// 10 messages per second with a burst of 20
-		limiter = rate.NewLimiter(rate.Limit(10), 20)
-		a.msgLimiters[connID] = limiter
+func NewWebsocketTracker(maxConns int) *WebsocketTracker {
+	return &WebsocketTracker{
+		connections:   make(map[string]int),
+		maxConnsPerIP: maxConns,
 	}
-
-	return limiter
 }
 
-func (a *StreamplaceAPI) removeMsgLimiter(connID string) {
-	a.msgLimitersMu.Lock()
-	defer a.msgLimitersMu.Unlock()
-	delete(a.msgLimiters, connID)
+func (t *WebsocketTracker) AddConnection(ip string) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	count := t.connections[ip]
+
+	if count >= t.maxConnsPerIP {
+		return false
+	}
+
+	t.connections[ip] = count + 1
+	return true
+}
+
+func (t *WebsocketTracker) RemoveConnection(ip string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	count := t.connections[ip]
+	if count > 0 {
+		t.connections[ip] = count - 1
+	}
+
+	if t.connections[ip] == 0 {
+		delete(t.connections, ip)
+	}
 }
