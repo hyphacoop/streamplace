@@ -1,15 +1,14 @@
 import { YStack, styled, Text, View, Image } from "tamagui";
-import { SharedValue, useAnimatedStyle } from "react-native-reanimated"; // Import SharedValue
+import { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import SidebarItem from "./sidebar-item";
 import {
   CommonActions,
   DrawerNavigationState,
   ParamListBase,
-} from "@react-navigation/native"; // Import necessary types
+} from "@react-navigation/native";
 import { DrawerNavigationOptions } from "@react-navigation/drawer";
 import { DrawerDescriptorMap } from "@react-navigation/drawer/lib/typescript/src/types";
 import { Platform } from "react-native";
-import { ReactElement } from "react";
 import { FileQuestion } from "@tamagui/lucide-icons";
 
 const AnimatedYStack = styled(YStack, {
@@ -121,7 +120,6 @@ export default function Sidebar({
         );
       })}
       {externalItems.map((i) => {
-        console.log(i.label);
         return (
           <SidebarItem
             key={JSON.stringify(i.label)}
@@ -130,7 +128,7 @@ export default function Sidebar({
             active={false}
             collapsed={collapsed}
             onPress={() => i.onPress()}
-            tint="#fff"
+            tint="rgba(189, 110, 134)"
           />
         );
       })}

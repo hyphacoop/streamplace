@@ -1,7 +1,7 @@
 import { FileQuestion } from "@tamagui/lucide-icons";
 import { Text, View, AnimatePresence } from "tamagui";
 import { Pressable } from "react-native-gesture-handler";
-import { ReactElement, ReactNode, useState } from "react";
+import { ReactNode, useState } from "react";
 import { PressableStateCallbackType, StyleProp, ViewStyle } from "react-native";
 
 export default function SidebarItem({
@@ -11,7 +11,7 @@ export default function SidebarItem({
   active,
   onPress,
   style = null,
-  tint = "#eebaba",
+  tint = "rgba(189, 110, 134)",
 }: {
   icon: React.ComponentType<any> | React.NamedExoticComponent<any>;
   label: React.ComponentType<any> | string | ReactNode;

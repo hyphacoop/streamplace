@@ -1,5 +1,4 @@
 import { createAppSlice } from "../../hooks/createSlice";
-import { type RootState } from "../../store/store";
 import WebStorage from "../../storage/storage";
 
 const storage = new WebStorage();

@@ -67,7 +67,7 @@ import LiveDashboard from "./screens/live-dashboard";
 import Popup from "components/popup";
 import PopoutChat from "./screens/chat-popout";
 import EmbedScreen from "./screens/embed";
-import { UseSidebarOutput, useSidebarControl } from "hooks/useSidebarControl";
+import { useSidebarControl } from "hooks/useSidebarControl";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 
 // probabl should move this
