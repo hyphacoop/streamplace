@@ -1,5 +1,10 @@
 import "@expo/metro-runtime";
-import { createDrawerNavigator } from "@react-navigation/drawer";
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItem,
+  DrawerItemList,
+} from "@react-navigation/drawer";
 import {
   CommonActions,
   DrawerActions,
@@ -19,6 +24,8 @@ import {
   ShieldQuestion,
   Download,
   Video,
+  Book,
+  ExternalLink,
 } from "@tamagui/lucide-icons";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
@@ -30,6 +37,7 @@ import { useEffect, useState } from "react";
 import {
   ImageBackground,
   ImageSourcePropType,
+  Linking,
   Pressable,
   StatusBar,
 } from "react-native";
@@ -172,6 +180,28 @@ const AvatarButton = () => {
   );
 };
 
+function CustomDrawerContent(props) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <DrawerItemList {...props} />
+      <DrawerItem
+        icon={() => <Book />}
+        label={() => (
+          <Text alignSelf="flex-start">
+            Documentation{" "}
+            <ExternalLink size={16} pl={4} position="relative" top={2} />
+          </Text>
+        )}
+        onPress={() => {
+          const u = new URL(window.location.href);
+          u.pathname = "/docs";
+          Linking.openURL(u.toString());
+        }}
+      />
+    </DrawerContentScrollView>
+  );
+}
+
 export default function Router() {
   const { isWeb, isElectron } = usePlatform();
   useEffect(() => {
@@ -252,6 +282,7 @@ export function StreamplaceDrawer() {
           drawerActiveTintColor: theme.accentColor.val,
           unmountOnBlur: true,
         }}
+        drawerContent={CustomDrawerContent}
       >
         <Drawer.Screen
           name="Home"
@@ -302,10 +333,11 @@ export function StreamplaceDrawer() {
         />
         <Drawer.Screen
           name="Settings"
-          component={Settings}
+          component={WrappedSettings}
           options={{
             drawerIcon: () => <SettingsIcon />,
             drawerLabel: () => <Text>Settings</Text>,
+            headerShown: false,
           }}
         />
         <Drawer.Screen
@@ -353,10 +385,11 @@ export function StreamplaceDrawer() {
         />
         <Drawer.Screen
           name="Login"
-          component={Login}
+          component={WrappedLogin}
           options={{
             drawerIcon: () => <LogIn />,
             drawerLabel: () => <Text>Login</Text>,
+            headerShown: false,
           }}
         />
         <Drawer.Screen
@@ -435,3 +468,40 @@ const MainTab = () => {
     </Stack.Navigator>
   );
 };
+
+const withStackNavigator = (Component, screenTitle) => {
+  function WrappedComponent(props) {
+    const theme = useTheme();
+    const { isWeb } = usePlatform();
+
+    return (
+      <Stack.Navigator
+        initialRouteName="Main"
+        screenOptions={{
+          headerLeft: ({ canGoBack }) => (
+            <NavigationButton canGoBack={canGoBack} />
+          ),
+          headerRight: () => <AvatarButton />,
+          headerShown: true,
+        }}
+      >
+        <Stack.Screen
+          name="Main"
+          options={{
+            headerTitle: screenTitle,
+            title: screenTitle,
+          }}
+        >
+          {() => <Component {...props} />}
+        </Stack.Screen>
+      </Stack.Navigator>
+    );
+  }
+
+  WrappedComponent.displayName = `withStackNavigator(${Component.displayName || Component.name || "Component"})`;
+
+  return WrappedComponent;
+};
+
+const WrappedLogin = withStackNavigator(Login, "Login");
+const WrappedSettings = withStackNavigator(Settings, "Settings");

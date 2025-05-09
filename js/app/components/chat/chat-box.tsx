@@ -509,7 +509,7 @@ export default function ChatBox({
                     let cursorPosition = 0;
                     if (isWeb && textAreaRef.current) {
                       const textarea =
-                        textAreaRef.current as unknown as HTMLTextAreaElement;
+                      textAreaRef.current as unknown as HTMLTextAreaElement;
                       cursorPosition = textarea.selectionStart;
                     } else {
                       cursorPosition = newMessage.length;
