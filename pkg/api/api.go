@@ -226,6 +226,7 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	handler := sloghttp.Recovery(router)
 	handler = cors.AllowAll().Handler(handler)
 	handler = sloghttp.New(slog.Default())(handler)
+	handler = a.RateLimitMiddleware(ctx)(handler)
 
 	return handler, nil
 }
@@ -678,6 +679,28 @@ func (a *StreamplaceAPI) HandleLivestream(ctx context.Context) httprouter.Handle
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(bs)
+	}
+}
+
+func (a *StreamplaceAPI) RateLimitMiddleware(ctx context.Context) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			// XXX: check if x-forwarded-for
+			ip, _, err := net.SplitHostPort(req.RemoteAddr)
+			if err != nil {
+				ip = req.RemoteAddr
+			}
+
+			limiter := a.getLimiter(ip)
+
+			if !limiter.Allow() {
+				log.Warn(ctx, "rate limit exceeded", "ip", ip, "path", req.URL.Path)
+				apierrors.WriteHTTPTooManyRequests(w, "rate limit exceeded")
+				return
+			}
+
+			next.ServeHTTP(w, req)
+		})
 	}
 }
 

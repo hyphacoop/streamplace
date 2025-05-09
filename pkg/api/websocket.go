@@ -29,18 +29,6 @@ var pingPeriod = 5 * time.Second
 func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle {
 	ctx = log.WithLogValues(ctx, "func", "HandleWebsocket")
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		// XXX: check if x-forwarded-for
-		clientIP, _, err := net.SplitHostPort(req.RemoteAddr)
-		if err != nil {
-			clientIP = req.RemoteAddr
-		}
-
-		limiter := a.getLimiter(clientIP)
-		if !limiter.Allow() {
-			apierrors.WriteHTTPTooManyRequests(w, "rate limit")
-			return
-		}
-
 		uu, _ := uuid.NewV7()
 		connID := uu.String()
 
