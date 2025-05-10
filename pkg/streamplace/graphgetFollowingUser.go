@@ -18,12 +18,14 @@ type GraphGetFollowingUser_Output struct {
 
 // GraphGetFollowingUser calls the XRPC method "place.stream.graph.getFollowingUser".
 //
-// subjectDID: The DID of the user you want to check if you're following.
-func GraphGetFollowingUser(ctx context.Context, c *xrpc.Client, subjectDID string) (*GraphGetFollowingUser_Output, error) {
+// subjectDID: The DID of the user potentially being followed
+// userDID: The DID of the potentially-following user
+func GraphGetFollowingUser(ctx context.Context, c *xrpc.Client, subjectDID string, userDID string) (*GraphGetFollowingUser_Output, error) {
 	var out GraphGetFollowingUser_Output
 
 	params := map[string]interface{}{
 		"subjectDID": subjectDID,
+		"userDID":    userDID,
 	}
 	if err := c.Do(ctx, xrpc.Query, "", "place.stream.graph.getFollowingUser", params, nil, &out); err != nil {
 		return nil, err

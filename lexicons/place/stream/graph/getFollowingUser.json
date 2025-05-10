@@ -4,15 +4,20 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Get whether or not you're following a user.",
+      "description": "Get whether or not user A is following user B.",
       "parameters": {
         "type": "params",
-        "required": ["subjectDID"],
+        "required": ["userDID", "subjectDID"],
         "properties": {
+          "userDID": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID of the potentially-following user"
+          },
           "subjectDID": {
             "type": "string",
             "format": "did",
-            "description": "The DID of the user you want to check if you're following."
+            "description": "The DID of the user potentially being followed"
           }
         }
       },

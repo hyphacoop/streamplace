@@ -975,12 +975,9 @@ export const blueskySlice = createAppSlice({
           await bluesky.pdsAgent.deleteFollow(followUri);
         } else {
           const res = await fetch(
-            `${streamplace.url}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(subjectDID)}`,
+            `${streamplace.url}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(subjectDID)}&userDID=${encodeURIComponent(did)}`,
             {
               credentials: "include",
-              headers: {
-                "X-User-DID": did,
-              },
             },
           );
           const data = await res.json();

@@ -10,7 +10,7 @@ import (
 	placestreamtypes "stream.place/streamplace/pkg/streamplace"
 )
 
-func (s *Server) handlePlaceStreamGraphGetFollowingUser(ctx context.Context, userDID string, subjectDID string) (*placestreamtypes.GraphGetFollowingUser_Output, error) {
+func (s *Server) handlePlaceStreamGraphGetFollowingUser(ctx context.Context, subjectDID string, userDID string) (*placestreamtypes.GraphGetFollowingUser_Output, error) {
 	ctx, span := otel.Tracer("server").Start(ctx, "handlePlaceStreamGraphGetFollowingUser")
 	defer span.End()
 

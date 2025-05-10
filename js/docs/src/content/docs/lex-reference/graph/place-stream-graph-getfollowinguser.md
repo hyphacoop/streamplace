@@ -13,13 +13,14 @@ description: Reference for the place.stream.graph.getFollowingUser lexicon
 
 **Type:** `query`
 
-Get whether or not you're following a user.
+Get whether or not user A is following user B.
 
 **Parameters:**
 
-| Name         | Type     | Req'd | Description                                                | Constraints   |
-| ------------ | -------- | ----- | ---------------------------------------------------------- | ------------- |
-| `subjectDID` | `string` | ✅    | The DID of the user you want to check if you're following. | Format: `did` |
+| Name         | Type     | Req'd | Description                                    | Constraints   |
+| ------------ | -------- | ----- | ---------------------------------------------- | ------------- |
+| `userDID`    | `string` | ✅    | The DID of the potentially-following user      | Format: `did` |
+| `subjectDID` | `string` | ✅    | The DID of the user potentially being followed | Format: `did` |
 
 **Output:**
 
@@ -43,15 +44,20 @@ Get whether or not you're following a user.
   "defs": {
     "main": {
       "type": "query",
-      "description": "Get whether or not you're following a user.",
+      "description": "Get whether or not user A is following user B.",
       "parameters": {
         "type": "params",
-        "required": ["subjectDID"],
+        "required": ["userDID", "subjectDID"],
         "properties": {
+          "userDID": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID of the potentially-following user"
+          },
           "subjectDID": {
             "type": "string",
             "format": "did",
-            "description": "The DID of the user you want to check if you're following."
+            "description": "The DID of the user potentially being followed"
           }
         }
       },

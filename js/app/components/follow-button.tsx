@@ -43,12 +43,9 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       setError(null);
       try {
         const res = await fetch(
-          `${streamplaceUrl}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(streamerDID)}`,
+          `${streamplaceUrl}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(streamerDID)}&userDID=${encodeURIComponent(currentUserDID)}`,
           {
             credentials: "include",
-            headers: {
-              "X-User-DID": currentUserDID || "",
-            },
           },
         );
 
