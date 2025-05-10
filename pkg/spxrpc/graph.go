@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bluesky-social/indigo/api/atproto"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"go.opentelemetry.io/otel"
-	"stream.place/streamplace/pkg/log"
 	placestreamtypes "stream.place/streamplace/pkg/streamplace"
 )
 
@@ -14,33 +14,23 @@ func (s *Server) handlePlaceStreamGraphGetFollowingUser(ctx context.Context, use
 	ctx, span := otel.Tracer("server").Start(ctx, "handlePlaceStreamGraphGetFollowingUser")
 	defer span.End()
 
-	if userDID == "" || !isValidDID(userDID) {
-		log.Error(ctx, "Missing or invalid user DID")
-		return &placestreamtypes.GraphGetFollowingUser_Output{}, nil
+	_, didErr := syntax.ParseDID(userDID)
+	if userDID == "" || didErr != nil {
+		return nil, fmt.Errorf("Missing or invalid user DID")
 	}
 
-	follows, err := s.model.GetUserFollowing(ctx, userDID)
+	follow, err := s.model.GetUserFollowingUser(ctx, userDID, subjectDID)
 	if err != nil {
-		log.Error(ctx, "Failed to get user following", "error", err)
-		return &placestreamtypes.GraphGetFollowingUser_Output{}, nil
+		return nil, fmt.Errorf("Failed to get user following: %w", err)
 	}
 
-	for _, follow := range follows {
-		if follow.SubjectDID == subjectDID {
-			// User is following the subject, return the follow reference
-			return &placestreamtypes.GraphGetFollowingUser_Output{
-				Follow: &atproto.RepoStrongRef{
-					Cid: "", // We don't store CID in our model
-					Uri: fmt.Sprintf("at://%s/app.bsky.graph.follow/%s", userDID, follow.RKey),
-				},
-			}, nil
+	output := &placestreamtypes.GraphGetFollowingUser_Output{}
+	if follow != nil {
+		output.Follow = &atproto.RepoStrongRef{
+			Cid: "", // We don't store CID in our model
+			Uri: fmt.Sprintf("at://%s/app.bsky.graph.follow/%s", userDID, follow.RKey),
 		}
 	}
 
-	// User is not following the subject
-	return &placestreamtypes.GraphGetFollowingUser_Output{}, nil
-}
-
-func isValidDID(did string) bool {
-	return len(did) > 0 && (did[:7] == "did:plc" || did[:7] == "did:web")
+	return output, nil
 }
