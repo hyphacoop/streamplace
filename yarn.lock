@@ -3729,6 +3729,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@emoji-mart/react@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "@emoji-mart/react@npm:1.1.1"
+  peerDependencies:
+    emoji-mart: ^5.2
+    react: ^16.8 || ^17 || ^18
+  checksum: 10/def4dddaa01ce88c396510d84d1878b881fe0f9c484a836a50e3db784a91ab98edf94816cff503b4d1cab7b00400a01c87e32d19dee2d950f64ef9243f79101e
+  languageName: node
+  linkType: hard
+
 "@emotion/hash@npm:^0.9.0":
   version: 0.9.2
   resolution: "@emotion/hash@npm:0.9.2"
@@ -16084,6 +16094,13 @@ __metadata:
     minimalistic-assert: "npm:^1.0.1"
     minimalistic-crypto-utils: "npm:^1.0.1"
   checksum: 10/27575b0403e010e5d7e7a131fcadce6a7dd1ae82ccb24cc7c20b275d32ab1cb7ecb6a070225795df08407441dc8c7a32efd986596d48d1d6846f64ff8f094af7
+  languageName: node
+  linkType: hard
+
+"emoji-mart@npm:^5.6.0":
+  version: 5.6.0
+  resolution: "emoji-mart@npm:5.6.0"
+  checksum: 10/fbbd6ce6fe6bc30020a7de4bfd6375f3c00da9880a147fdbee37303d985856e5463a48a61177166ad056a355e0bd589df9c0866bd54f9c065d60a9efa80639dd
   languageName: node
   linkType: hard
 
@@ -29553,6 +29570,7 @@ __metadata:
     "@babel/plugin-transform-runtime": "npm:^7.25.9"
     "@bacons/text-decoder": "npm:^0.0.0"
     "@config-plugins/react-native-webrtc": "npm:^10.0.0"
+    "@emoji-mart/react": "npm:^1.1.1"
     "@expo/metro-config": "npm:~0.19.0"
     "@expo/metro-runtime": "npm:~4.0.0"
     "@rainbow-me/rainbowkit": "npm:2.2.0"
@@ -29580,6 +29598,7 @@ __metadata:
     burnt: "npm:^0.12.2"
     chrono-node: "npm:^2.7.7"
     color-contrast-checker: "npm:^2.1.0"
+    emoji-mart: "npm:^5.6.0"
     event-target-shim: "npm:^6.0.2"
     expo: "npm:~52.0.8"
     expo-build-properties: "npm:~0.13.1"
