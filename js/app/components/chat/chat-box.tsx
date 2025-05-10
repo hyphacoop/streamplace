@@ -102,20 +102,24 @@ export default function ChatBox({
   const [emojiDataLoaded, setEmojiDataLoaded] = useState(false);
   useEffect(() => {
     if (emojiList.current.length === 0) {
-      fetch("/emoji-data.json")
-        .then((res) => res.json())
-        .then((emojiDataRaw) => {
-          const emojis = emojiDataRaw.emojis;
-          emojiList.current = Object.keys(emojis).map((id) => {
-            const e = emojis[id];
-            return {
-              emoji: e.skins[0].native,
-              shortcode: `:${id}:`,
-              name: e.name,
-            };
-          });
-          setEmojiDataLoaded(true);
+      (async () => {
+        let emojiDataRaw;
+        if (isWeb) {
+          emojiDataRaw = (await import("../../assets/emoji-data.json")).default;
+        } else {
+          emojiDataRaw = require("../../assets/emoji-data.json");
+        }
+        const emojis = emojiDataRaw.emojis;
+        emojiList.current = Object.keys(emojis).map((id) => {
+          const e = emojis[id];
+          return {
+            emoji: e.skins[0].native,
+            shortcode: `:${id}:`,
+            name: e.name,
+          };
         });
+        setEmojiDataLoaded(true);
+      })();
     }
   }, []);
 

@@ -37,8 +37,13 @@ export function EmojiPicker({ isOpen, onClose }: EmojiPickerProps) {
       <View position="relative" width="380">
         <Picker
           data={async () => {
-            const res = await fetch("/emoji-data.json");
-            return await res.json();
+            let data;
+            if (isWeb) {
+              data = (await import("../../assets/emoji-data.json")).default;
+            } else {
+              data = require("../../assets/emoji-data.json");
+            }
+            return data;
           }}
           onEmojiSelect={onEmojiSelect}
           autoFocus={true}
