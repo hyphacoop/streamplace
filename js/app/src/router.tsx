@@ -40,6 +40,7 @@ import {
   ImageBackground,
   ImageSourcePropType,
   Linking,
+  Platform,
   Pressable,
   StatusBar,
 } from "react-native";
@@ -172,7 +173,11 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
   }
 
   return (
-    <View flexDirection="row" marginLeft="$3">
+    <View
+      flexDirection="row"
+      marginLeft={Platform.OS === "android" ? "$0" : "$3"}
+      marginRight={Platform.OS === "android" ? "$3" : "$0"}
+    >
       {icon && (
         <Pressable style={{ padding: 5 }} onPress={handlePress}>
           {icon}
