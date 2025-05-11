@@ -24,6 +24,8 @@ import {
   ShieldQuestion,
   Download,
   Video,
+  PanelLeftOpen,
+  PanelLeftClose,
   Book,
   ExternalLink,
 } from "@tamagui/lucide-icons";
@@ -33,16 +35,17 @@ import Login from "components/login/login";
 import StreamList from "components/stream-list/stream-list";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import usePlatform from "hooks/usePlatform";
-import { useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import {
   ImageBackground,
   ImageSourcePropType,
   Linking,
+  Platform,
   Pressable,
   StatusBar,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { useTheme, Text, View, H3 } from "tamagui";
+import { useTheme, Text, View, H3, useWindowDimensions } from "tamagui";
 import AppReturnScreen from "./screens/app-return";
 import MultiScreen from "./screens/multi";
 import StreamScreen from "./screens/stream";
@@ -65,6 +68,15 @@ import LiveDashboard from "./screens/live-dashboard";
 import Popup from "components/popup";
 import PopoutChat from "./screens/chat-popout";
 import EmbedScreen from "./screens/embed";
+import { useSidebarControl } from "hooks/useSidebarControl";
+import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
+
+// probabl should move this
+import { store } from "store/store";
+import { loadStateFromStorage } from "features/base/sidebarSlice";
+
+store.dispatch(loadStateFromStorage());
+
 function HomeScreen() {
   return (
     <View f={1}>
@@ -132,20 +144,49 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
 const Drawer = createDrawerNavigator();
 
 const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
+  const sidebar = useSidebarControl();
   const navigation = useNavigation();
+
+  const handlePress = () => {
+    if (sidebar?.isActive) {
+      sidebar.toggle();
+    }
+  };
+
+  const handleGoBackPress = () => {
+    if (canGoBack) {
+      navigation.goBack();
+    } else {
+      navigation.dispatch(DrawerActions.toggleDrawer());
+    }
+  };
+
+  console.log("sidebar", sidebar);
+
+  let icon: ReactElement | null = null;
+  if (sidebar?.isActive) {
+    if (sidebar.isCollapsed) {
+      icon = <PanelLeftOpen />;
+    } else {
+      icon = <PanelLeftClose />;
+    }
+  }
+
   return (
-    <Pressable
-      style={{ padding: 10 }}
-      onPress={() => {
-        if (canGoBack) {
-          navigation.goBack();
-        } else {
-          navigation.dispatch(DrawerActions.toggleDrawer());
-        }
-      }}
+    <View
+      flexDirection="row"
+      marginLeft={Platform.OS === "android" ? "$0" : "$3"}
+      marginRight={Platform.OS === "android" ? "$3" : "$0"}
     >
-      {canGoBack ? <ArrowLeft /> : <Menu />}
-    </Pressable>
+      {icon && (
+        <Pressable style={{ padding: 5 }} onPress={handlePress}>
+          {icon}
+        </Pressable>
+      )}
+      <Pressable style={{ padding: 5 }} onPress={handleGoBackPress}>
+        {canGoBack ? <ArrowLeft /> : sidebar?.isActive || <Menu />}
+      </Pressable>
+    </View>
   );
 };
 
@@ -180,6 +221,24 @@ const AvatarButton = () => {
   );
 };
 
+const EXTERNAL_ITEMS: ExternalDrawerItem[] = [
+  {
+    item: Book,
+    label: (
+      <Text alignSelf="flex-start">
+        Documentation{" "}
+        <ExternalLink size={16} pl={4} position="relative" top={2} />
+      </Text>
+    ) as any,
+    onPress: () => {
+      const u = new URL(window.location.href);
+      u.pathname = "/docs";
+      Linking.openURL(u.toString());
+    },
+  },
+];
+
+// TODO: merge in ^
 function CustomDrawerContent(props) {
   return (
     <DrawerContentScrollView {...props}>
@@ -223,6 +282,8 @@ export function StreamplaceDrawer() {
   const dispatch = useAppDispatch();
   const [poppedUp, setPoppedUp] = useState(false);
   const [livePopup, setLivePopup] = useState(false);
+
+  const sidebar = useSidebarControl();
 
   // Top-level stuff to handle push notification registration
   useEffect(() => {
@@ -275,14 +336,38 @@ export function StreamplaceDrawer() {
     <>
       <StatusBar backgroundColor={theme.background.val} />
       <Drawer.Navigator
+        // if this isn't here there are issues around drawer width
+        key={sidebar.isActive ? "1" : "0"}
         initialRouteName="Home"
         screenOptions={{
+          // for the custom sidebar
+          drawerType: sidebar.isActive ? "permanent" : "front",
+          swipeEnabled: !sidebar.isActive,
+          drawerStyle: {
+            // afaict the drawer is a RN Animated component internally
+            // TODO (nat): look into this and change width prop as needed
+            width: sidebar.isActive
+              ? (sidebar.animatedWidth as any)
+              : undefined,
+          },
+          // rest
           headerLeft: () => <NavigationButton />,
           headerRight: () => <AvatarButton />,
           drawerActiveTintColor: theme.accentColor.val,
           unmountOnBlur: true,
         }}
-        drawerContent={CustomDrawerContent}
+        drawerContent={
+          sidebar.isActive
+            ? (props) => (
+                <Sidebar
+                  {...props}
+                  collapsed={sidebar.isCollapsed}
+                  widthAnim={sidebar.animatedWidth}
+                  externalItems={EXTERNAL_ITEMS}
+                />
+              )
+            : CustomDrawerContent
+        }
       >
         <Drawer.Screen
           name="Home"
