@@ -161,8 +161,6 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
     }
   };
 
-  console.log("sidebar", sidebar);
-
   let icon: ReactElement | null = null;
   if (sidebar?.isActive) {
     if (sidebar.isCollapsed) {
