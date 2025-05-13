@@ -336,8 +336,6 @@ export function StreamplaceDrawer() {
     <>
       <StatusBar backgroundColor={theme.background.val} />
       <Drawer.Navigator
-        // if this isn't here there are issues around drawer width
-        key={sidebar.isActive ? "1" : "0"}
         initialRouteName="Home"
         screenOptions={{
           // for the custom sidebar
