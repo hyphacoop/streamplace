@@ -8,9 +8,10 @@ import {
 } from "features/bluesky/blueskySlice";
 import { useAppSelector } from "store/hooks";
 import { Redirect } from "components/aqlink";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useLiveUser } from "hooks/useLiveUser";
 import StreamKeyScreen from "components/live-dashboard/stream-key";
+import { VideoElementProvider } from "contexts/VideoElementContext";
 
 enum StreamSource {
   Start,
@@ -24,6 +25,15 @@ export default function LiveDashboard() {
   const [streamSource, setStreamSource] = useState(StreamSource.Start);
   const isLive = useLiveUser();
   const telemetry = useAppSelector(selectTelemetry);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
+    null,
+  );
+
+  const videoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node !== null) {
+      setVideoElement(node);
+    }
+  }, []);
   if (!isReady) {
     return <Loading />;
   }
@@ -35,12 +45,14 @@ export default function LiveDashboard() {
   if (isWeb) {
     params = new URLSearchParams(window.location.search);
   }
+
   if (isLive && streamSource !== StreamSource.Camera) {
     topPane = (
       <Player
         telemetry={telemetry === true}
         src={userProfile.did}
         name={userProfile.handle}
+        videoRef={videoRef}
       />
     );
   } else if (streamSource === StreamSource.Start) {
@@ -74,15 +86,17 @@ export default function LiveDashboard() {
     );
   }
   return (
-    <View f={1} ai="stretch" jc="center">
-      <View f={1} fb={0}>
-        {topPane}
-        {closeButton}
+    <VideoElementProvider videoElement={videoElement}>
+      <View f={1} ai="stretch" jc="center">
+        <View f={1} fb={0}>
+          {topPane}
+          {closeButton}
+        </View>
+        <View f={1} ai="center" jc="center" fb={0}>
+          <CreateLivestream />
+        </View>
       </View>
-      <View f={1} ai="center" jc="center" fb={0}>
-        <CreateLivestream />
-      </View>
-    </View>
+    </VideoElementProvider>
   );
 }
 
