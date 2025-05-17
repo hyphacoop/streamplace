@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/bluesky-social/indigo/api/atproto"
+	"github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/lex/util"
+	"github.com/bluesky-social/indigo/xrpc"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/bus"
@@ -15,6 +20,7 @@ import (
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/media/segchanman"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/oproxy"
 	"stream.place/streamplace/pkg/renditions"
 	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/streamplace"
@@ -22,14 +28,17 @@ import (
 )
 
 type StreamSession struct {
-	mm          *media.MediaManager
-	mod         model.Model
-	cli         *config.CLI
-	bus         *bus.Bus
-	hls         *media.M3U8
-	lp          *livepeer.LivepeerSession
-	repoDID     string
-	segmentChan chan struct{}
+	mm             *media.MediaManager
+	mod            model.Model
+	cli            *config.CLI
+	bus            *bus.Bus
+	op             *oproxy.OProxy
+	hls            *media.M3U8
+	lp             *livepeer.LivepeerSession
+	repoDID        string
+	segmentChan    chan struct{}
+	lastStatus     time.Time
+	lastStatusLock sync.Mutex
 }
 
 func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
@@ -128,6 +137,13 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 		}()
 	}
 
+	go func() {
+		err := ss.UpdateStatus(ctx, spseg.Creator)
+		if err != nil {
+			log.Error(ctx, "could not update status", "error", err)
+		}
+	}()
+
 	if ss.cli.LivepeerGatewayURL != "" {
 		go func() {
 			start := time.Now()
@@ -180,6 +196,106 @@ func (ss *StreamSession) Thumbnail(ctx context.Context, repoDID string, not *med
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error {
+	ctx = log.WithLogValues(ctx, "func", "UpdateStatus")
+	ss.lastStatusLock.Lock()
+	defer ss.lastStatusLock.Unlock()
+	if time.Since(ss.lastStatus) < time.Minute {
+		log.Debug(ctx, "not updating status, last status was less than 1 minute ago")
+		return nil
+	}
+
+	session, err := ss.mod.GetSessionByDID(repoDID)
+	if err != nil {
+		return fmt.Errorf("could not get session for repoDID: %w", err)
+	}
+	if session == nil {
+		return fmt.Errorf("no session found for repoDID: %s", repoDID)
+	}
+
+	ls, err := ss.mod.GetLatestLivestreamForRepo(repoDID)
+	if err != nil {
+		return fmt.Errorf("could not get latest livestream for repoDID: %w", err)
+	}
+	lsv, err := ls.ToLivestreamView()
+	if err != nil {
+		return fmt.Errorf("could not convert livestream to streamplace livestream: %w", err)
+	}
+
+	repo, err := ss.mod.GetRepoByHandleOrDID(repoDID)
+	if err != nil {
+		return fmt.Errorf("could not get repo for repoDID: %w", err)
+	}
+
+	lsr, ok := lsv.Record.Val.(*streamplace.Livestream)
+	if !ok {
+		return fmt.Errorf("livestream is not a streamplace livestream")
+	}
+
+	actorStatusEmbed := bsky.ActorStatus_Embed{
+		EmbedExternal: &bsky.EmbedExternal{
+			External: &bsky.EmbedExternal_External{
+				Title:       fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.PublicHost),
+				Uri:         fmt.Sprintf("https://%s/%s", ss.cli.PublicHost, repo.Handle),
+				Description: lsr.Title,
+			},
+		},
+	}
+
+	duration := int64(2)
+	status := bsky.ActorStatus{
+		Status:          "live",
+		DurationMinutes: &duration,
+		Embed:           &actorStatusEmbed,
+		CreatedAt:       time.Now().Format(time.RFC3339),
+	}
+
+	client, err := ss.op.GetXrpcClient(session)
+	if err != nil {
+		return fmt.Errorf("could not get xrpc client: %w", err)
+	}
+
+	var swapRecord *string
+	getOutput := atproto.RepoGetRecord_Output{}
+	err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", map[string]any{
+		"repo":       repoDID,
+		"collection": "app.bsky.actor.status",
+		"rkey":       "_self",
+	}, nil, &getOutput)
+	if err != nil {
+		xErr, ok := err.(*xrpc.Error)
+		if !ok {
+			return fmt.Errorf("could not get record: %w", err)
+		}
+		if xErr.StatusCode != 400 { // yes, they return "400" for "not found"
+			return fmt.Errorf("could not get record: %w", err)
+		}
+		log.Debug(ctx, "record not found, creating", "repoDID", repoDID)
+	} else {
+		log.Debug(ctx, "got record", "record", getOutput)
+		swapRecord = getOutput.Cid
+	}
+
+	inp := atproto.RepoPutRecord_Input{
+		Collection: "app.bsky.actor.status",
+		Record:     &util.LexiconTypeDecoder{Val: &status},
+		Rkey:       "_self",
+		Repo:       repoDID,
+		SwapRecord: swapRecord,
+	}
+	out := atproto.RepoPutRecord_Output{}
+
+	err = client.Do(ctx, xrpc.Procedure, "application/json", "com.atproto.repo.putRecord", map[string]any{}, inp, &out)
+	if err != nil {
+		return fmt.Errorf("could not create record: %w", err)
+	}
+	log.Debug(ctx, "created status record", "out", out)
+
+	ss.lastStatus = time.Now()
+
 	return nil
 }
 
