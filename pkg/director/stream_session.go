@@ -199,6 +199,29 @@ func (ss *StreamSession) Thumbnail(ctx context.Context, repoDID string, not *med
 	return nil
 }
 
+func getThumbnailCID(pv *bsky.FeedDefs_PostView) (*util.LexBlob, error) {
+	if pv == nil {
+		return nil, fmt.Errorf("post view is nil")
+	}
+	rec, ok := pv.Record.Val.(*bsky.FeedPost)
+	if !ok {
+		return nil, fmt.Errorf("post view record is not a feed post")
+	}
+	if rec.Embed == nil {
+		return nil, fmt.Errorf("post view embed is nil")
+	}
+	if rec.Embed.EmbedExternal == nil {
+		return nil, fmt.Errorf("post view embed external view is nil")
+	}
+	if rec.Embed.EmbedExternal.External == nil {
+		return nil, fmt.Errorf("post view embed external is nil")
+	}
+	if rec.Embed.EmbedExternal.External.Thumb == nil {
+		return nil, fmt.Errorf("post view embed external thumb is nil")
+	}
+	return rec.Embed.EmbedExternal.External.Thumb, nil
+}
+
 func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error {
 	ctx = log.WithLogValues(ctx, "func", "UpdateStatus")
 	ss.lastStatusLock.Lock()
@@ -225,6 +248,19 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		return fmt.Errorf("could not convert livestream to streamplace livestream: %w", err)
 	}
 
+	post, err := ss.mod.GetFeedPost(ls.PostCID)
+	if err != nil {
+		return fmt.Errorf("could not get feed post: %w", err)
+	}
+	postView, err := post.ToBskyPostView()
+	if err != nil {
+		return fmt.Errorf("could not convert feed post to bsky post view: %w", err)
+	}
+	thumb, err := getThumbnailCID(postView)
+	if err != nil {
+		return fmt.Errorf("could not get thumbnail cid: %w", err)
+	}
+
 	repo, err := ss.mod.GetRepoByHandleOrDID(repoDID)
 	if err != nil {
 		return fmt.Errorf("could not get repo for repoDID: %w", err)
@@ -241,6 +277,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 				Title:       fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.PublicHost),
 				Uri:         fmt.Sprintf("https://%s/%s", ss.cli.PublicHost, repo.Handle),
 				Description: lsr.Title,
+				Thumb:       thumb,
 			},
 		},
 	}
