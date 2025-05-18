@@ -274,9 +274,9 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 	actorStatusEmbed := bsky.ActorStatus_Embed{
 		EmbedExternal: &bsky.EmbedExternal{
 			External: &bsky.EmbedExternal_External{
-				Title:       fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.PublicHost),
+				Title:       lsr.Title,
 				Uri:         fmt.Sprintf("https://%s/%s", ss.cli.PublicHost, repo.Handle),
-				Description: lsr.Title,
+				Description: fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.PublicHost),
 				Thumb:       thumb,
 			},
 		},
@@ -300,7 +300,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 	err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", map[string]any{
 		"repo":       repoDID,
 		"collection": "app.bsky.actor.status",
-		"rkey":       "_self",
+		"rkey":       "self",
 	}, nil, &getOutput)
 	if err != nil {
 		xErr, ok := err.(*xrpc.Error)
@@ -319,7 +319,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 	inp := atproto.RepoPutRecord_Input{
 		Collection: "app.bsky.actor.status",
 		Record:     &util.LexiconTypeDecoder{Val: &status},
-		Rkey:       "_self",
+		Rkey:       "self",
 		Repo:       repoDID,
 		SwapRecord: swapRecord,
 	}
