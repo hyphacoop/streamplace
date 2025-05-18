@@ -5,7 +5,7 @@ import {
   BlobRef,
   RichText,
 } from "@atproto/api";
-import { ProfileViewDetailed } from "@atproto/api/src/client/types/app/bsky/actor/defs";
+import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
@@ -26,6 +26,11 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createAppSlice } from "../../hooks/createSlice";
 import { BlueskyState } from "./blueskyTypes";
 import createOAuthClient from "./oauthClient";
+import { StreamplaceAgent } from "./agent";
+import {
+  isLink,
+  isMention,
+} from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 
 const initialState: BlueskyState = {
   status: "start",
@@ -125,7 +130,7 @@ export const blueskySlice = createAppSlice({
               ...state,
               client: client,
               oauthSession: initResult.session as any,
-              pdsAgent: new Agent(initResult.session),
+              pdsAgent: new StreamplaceAgent(initResult.session),
             };
           }
           return {
@@ -429,6 +434,7 @@ export const blueskySlice = createAppSlice({
           },
         ];
         const record: AppBskyFeedPost.Record = {
+          $type: "app.bsky.feed.post",
           text: content,
           "place.stream.livestream": {
             url: linkUrl,
@@ -490,6 +496,7 @@ export const blueskySlice = createAppSlice({
           throw new Error("No post");
         }
         const record: AppBskyFeedPost.Record = {
+          $type: "app.bsky.feed.post",
           text: text,
           createdAt: new Date().toISOString(),
           reply: {
@@ -537,6 +544,7 @@ export const blueskySlice = createAppSlice({
           throw new Error("No profile");
         }
         const record: AppBskyGraphBlock.Record = {
+          $type: "app.bsky.graph.block",
           subject: subjectDID,
           createdAt: new Date().toISOString(),
         };
@@ -621,16 +629,18 @@ export const blueskySlice = createAppSlice({
                         feature.$type === "app.bsky.richtext.facet#mention",
                     )
                     .map((feature) => {
-                      if (feature.$type === "app.bsky.richtext.facet#link") {
+                      if (isLink(feature)) {
                         return {
                           $type: "app.bsky.richtext.facet#link",
                           uri: feature.uri,
                         };
-                      } else {
+                      } else if (isMention(feature)) {
                         return {
                           $type: "app.bsky.richtext.facet#mention",
                           did: feature.did,
                         };
+                      } else {
+                        throw new Error("invalid code path");
                       }
                     }),
                 })),
@@ -960,10 +970,7 @@ export const blueskySlice = createAppSlice({
         if (!res.success) {
           throw new Error("Failed to create chat profile record");
         }
-        if (PlaceStreamChatProfile.isRecord(res.data.value)) {
-          return res.data.value;
-        }
-        return null;
+        return chatProfile;
       },
       {
         pending: (state) => {
