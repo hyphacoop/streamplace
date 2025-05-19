@@ -1,10 +1,12 @@
 package spxrpc
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"stream.place/streamplace/pkg/config"
+	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 )
 
@@ -14,13 +16,14 @@ type Server struct {
 	model model.Model
 }
 
-func NewServer(cli *config.CLI, model model.Model) (*Server, error) {
+func NewServer(ctx context.Context, cli *config.CLI, model model.Model) (*Server, error) {
 	e := echo.New()
 	s := &Server{
 		e:     e,
 		cli:   cli,
 		model: model,
 	}
+	e.Use(s.ErrorHandlingMiddleware())
 	err := s.RegisterHandlersPlaceStream(e)
 	if err != nil {
 		return nil, err
@@ -40,4 +43,22 @@ func NewServer(cli *config.CLI, model model.Model) (*Server, error) {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.e.ServeHTTP(w, r)
+}
+
+func (s *Server) ErrorHandlingMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			err := next(c)
+			if err == nil {
+				return nil
+			}
+			httpError, ok := err.(*echo.HTTPError)
+			if ok {
+				log.Error(c.Request().Context(), "http error", "code", httpError.Code, "message", httpError.Message, "internal", httpError.Internal)
+				return err
+			}
+			log.Error(c.Request().Context(), "unhandled error", "error", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+	}
 }

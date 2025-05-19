@@ -63,6 +63,7 @@ func (o *OProxy) OAuthMiddleware(next http.Handler) http.Handler {
 				w.Write(bs)
 				return
 			}
+			o.slog.Error("oauth error", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
@@ -94,7 +95,7 @@ func (o *OProxy) getOAuthSession(r *http.Request, w http.ResponseWriter) (*OAuth
 		return nil, nil
 	}
 	if !strings.HasPrefix(authHeader, "DPoP ") {
-		return nil, fmt.Errorf("invalid authorization header (must start with DPoP)")
+		return nil, nil
 	}
 	token := strings.TrimPrefix(authHeader, "DPoP ")
 
@@ -124,7 +125,9 @@ func (o *OProxy) getOAuthSession(r *http.Request, w http.ResponseWriter) (*OAuth
 		return nil, fmt.Errorf("could not get oauth session: %w", err)
 	}
 	if session == nil {
-		return nil, fmt.Errorf("oauth session not found")
+		// this can happen for stuff like getFeedSkeleton where they've submitted oauth credentials
+		// but they're not actually for this server
+		return nil, nil
 	}
 	if session.RevokedAt != nil {
 		return nil, fmt.Errorf("oauth session revoked")
