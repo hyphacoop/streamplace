@@ -80,7 +80,7 @@ import KeyManager from "components/settings/key-manager";
 import { loadStateFromStorage } from "features/base/sidebarSlice";
 import { store } from "store/store";
 import HomeScreen from "./screens/home";
-import KeyManager from "components/settings/keymgr";
+import KeyManager from "components/settings/key-manager";
 
 import {
   configureReanimatedLogger,

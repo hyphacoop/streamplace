@@ -91,6 +91,7 @@ export function Settings() {
             </View>
           </XStack>
 
+          {/* Custom URL Input Row */}
           <XStack
             alignItems="center" // Changed to center
             gap="$2"
