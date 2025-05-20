@@ -10,9 +10,8 @@ import {
 } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
-import { Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, H3, H5, Input, Text, View, XStack } from "tamagui";
+import { Button, H3, H5, Input, Switch, Text, View, XStack } from "tamagui";
 import { Updates } from "./updates";
 
 export function Settings() {
@@ -83,7 +82,7 @@ export function Settings() {
                 </Text>
               </View>
               <Switch
-                size="$3"
+                size="small"
                 checked={overrideEnabled}
                 onCheckedChange={handleToggleOverride}
               >
@@ -92,6 +91,7 @@ export function Settings() {
             </View>
           </XStack>
 
+          {/* Custom URL Input Row */}
           <XStack
             alignItems="center" // Changed to center
             gap="$2"
