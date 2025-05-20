@@ -12,6 +12,8 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/labstack/echo/v4"
 	"github.com/multiformats/go-multihash"
+	"stream.place/streamplace/pkg/spmetrics"
+
 	placestreamtypes "stream.place/streamplace/pkg/streamplace"
 )
 
@@ -56,6 +58,42 @@ func (s *Server) handlePlaceStreamLiveGetSegments(ctx context.Context, before st
 	}
 
 	return output, nil
+}
+
+func (s *Server) handlePlaceStreamLiveGetLiveUsers(ctx context.Context, before string, limit int) (*placestreamtypes.LiveGetLiveUsers_Output, error) {
+	var beforeTime *time.Time
+	if before != "" {
+		parsedTime, err := time.Parse(time.RFC3339, before)
+		if err != nil {
+			return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid 'before' parameter: must be RFC3339 format")
+		}
+		beforeTime = &parsedTime
+	}
+	ls, err := s.model.GetLatestLivestreams(limit, beforeTime)
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch livestreams")
+	}
+
+	streams := make([]*placestreamtypes.Livestream_LivestreamView, len(ls))
+
+	for i, l := range ls {
+		stream, err := l.ToLivestreamView()
+		if err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Failed to convert livestream to streamplace livestream: %s", err))
+		}
+		viewers := spmetrics.GetViewCount(stream.Author.Did)
+		stream.ViewerCount = &placestreamtypes.Livestream_ViewerCount{
+			LexiconTypeID: "place.stream.livestream#viewerCount",
+			Count:         int64(viewers),
+		}
+		streams[i] = stream
+	}
+
+	liveUsers := &placestreamtypes.LiveGetLiveUsers_Output{
+		Streams: streams,
+	}
+
+	return liveUsers, nil
 }
 
 func getCID(record repo.CborMarshaler) (*cid.Cid, error) {

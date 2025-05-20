@@ -18,7 +18,8 @@ import { RootState } from "../store/store";
 // Returns *true* if the screen is > 1024px
 function useIsLargeScreen() {
   const { width } = useWindowDimensions();
-  return width >= 1024;
+  // gtMd breakpoint
+  return width >= 980 + 1;
 }
 
 export interface UseSidebarOutput {
@@ -55,7 +56,6 @@ export function useSidebarControl(): UseSidebarOutput {
   const animatedWidth = useSharedValue(targetWidth);
 
   const isActive = useIsLargeScreen();
-
   useEffect(() => {
     if (isActive) {
       // Only animate if the sidebar is active

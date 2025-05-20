@@ -76,17 +76,10 @@ import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 // probabl should move this
 import { store } from "store/store";
 import { loadStateFromStorage } from "features/base/sidebarSlice";
-import StreamList from "components/stream-list/stream-list";
+import HomeScreen from "./screens/home";
 
 store.dispatch(loadStateFromStorage());
 
-function HomeScreen() {
-  return (
-    <View f={1}>
-      <StreamList contentContainerStyle={{ paddingTop: "$3" }}></StreamList>
-    </View>
-  );
-}
 const Stack = createNativeStackNavigator();
 
 type HomeStackParamList = {
@@ -228,7 +221,7 @@ const EXTERNAL_ITEMS: ExternalDrawerItem[] = [
     label: (
       <Text alignSelf="flex-start">
         Documentation{" "}
-        <ExternalLink size={16} pl={4} position="relative" top={2} />
+        <ExternalLink size={16} paddingLeft={4} position="relative" top={2} />
       </Text>
     ) as any,
     onPress: () => {
@@ -313,13 +306,17 @@ export function StreamplaceDrawer() {
 
   // Top-level stuff to handle polling for live streamers
   useEffect(() => {
-    dispatch(pollSegments());
-    dispatch(pollMySegments());
-    const interval = setInterval(() => {
+    let handle: NodeJS.Timeout;
+    const doSegments = () => {
+      handle = setTimeout(doMySegments, 2500);
       dispatch(pollSegments());
+    };
+    const doMySegments = () => {
+      handle = setTimeout(doSegments, 2500);
       dispatch(pollMySegments());
-    }, 5000);
-    return () => clearInterval(interval);
+    };
+    doSegments();
+    return () => clearTimeout(handle);
   }, []);
 
   const userIsLive = useLiveUser();

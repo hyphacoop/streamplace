@@ -1,5 +1,6 @@
 import {
   Agent,
+  AppBskyActorGetProfiles,
   AppBskyFeedPost,
   AppBskyGraphBlock,
   BlobRef,
@@ -38,6 +39,7 @@ const initialState: BlueskyState = {
   oauthSession: null,
   pdsAgent: null,
   profiles: {},
+  profileCache: {},
   client: null,
   login: {
     loading: false,
@@ -279,6 +281,46 @@ export const blueskySlice = createAppSlice({
             ...state,
             status: "loggedOut",
           };
+        },
+      },
+    ),
+
+    getProfiles: create.asyncThunk(
+      async (actors: string[], thunkAPI) => {
+        if (actors.length > 25) {
+          throw Error("Requested too many actors! (max 25 actors)");
+        }
+        const { bluesky } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+        };
+        // unauthed request to Bluesky Appview
+        const bskyAgent = new Agent("https://public.api.bsky.app");
+
+        return await bskyAgent.getProfiles({
+          actors: actors,
+        });
+      },
+      {
+        pending: (state) => {
+          // state.status = "loading";
+        },
+        fulfilled: (state, action) => {
+          let payload: AppBskyActorGetProfiles.Response = action.payload;
+          let parsedProfiles = {};
+          console.log(payload);
+          payload.data.profiles.forEach((p) => {
+            parsedProfiles[p.did] = p;
+          });
+
+          return {
+            ...state,
+            profileCache: {
+              ...state.profileCache,
+              ...parsedProfiles,
+            },
+          };
+        },
+        rejected: (state, action) => {
           // state.status = "failed";
         },
       },
@@ -1045,6 +1087,7 @@ export const blueskySlice = createAppSlice({
           bluesky: BlueskyState;
           streamplace: StreamplaceState;
         };
+        let agent;
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
         }
@@ -1118,6 +1161,7 @@ export const blueskySlice = createAppSlice({
     },
     selectNewLivestream: (bluesky) => bluesky.newLivestream,
     selectChatProfile: (bluesky) => bluesky.chatProfile,
+    selectCachedProfiles: (bluesky) => bluesky.profileCache,
   },
 });
 
@@ -1126,6 +1170,7 @@ export const {
   loadOAuthClient,
   login,
   getProfile,
+  getProfiles,
   logout,
   golivePost,
   oauthCallback,
@@ -1154,4 +1199,5 @@ export const {
   selectIsReady,
   selectNewLivestream,
   selectChatProfile,
+  selectCachedProfiles,
 } = blueskySlice.selectors;
