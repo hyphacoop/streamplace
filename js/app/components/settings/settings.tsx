@@ -68,6 +68,7 @@ export function Settings() {
             alignItems="stretch"
             justifyContent="space-between"
             width="100%"
+            flexDirection="column"
           >
             <View
               flexDirection="row"
@@ -91,6 +92,7 @@ export function Settings() {
             </View>
           </XStack>
 
+          {/* Custom URL Input Row */}
           <XStack
             alignItems="center" // Changed to center
             gap="$2"
