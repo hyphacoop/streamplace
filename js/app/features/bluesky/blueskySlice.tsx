@@ -55,6 +55,8 @@ const initialState: BlueskyState = {
   },
   newKey: null,
   storedKey: null,
+  isDeletingKey: false,
+  streamKeysResponse: null,
   newLivestream: null,
 };
 
@@ -649,6 +651,100 @@ export const blueskySlice = createAppSlice({
       };
     }),
 
+    getStreamKeyRecords: create.asyncThunk(
+      async (_, thunkAPI) => {
+        const { bluesky } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const profile = bluesky.profiles[did];
+        if (!profile) {
+          throw new Error("No profile");
+        }
+        if (!did) {
+          throw new Error("No DID");
+        }
+        return await bluesky.pdsAgent.com.atproto.repo.listRecords({
+          repo: did,
+          collection: "place.stream.key",
+          limit: 100,
+        });
+      },
+      {
+        pending: (state) => {
+          return {
+            ...state,
+            streamKeysResponse: null,
+          };
+        },
+        fulfilled: (state, action) => {
+          console.log(action.payload);
+          return {
+            ...state,
+            streamKeysResponse: action.payload.data,
+          };
+        },
+        rejected: (state, action) => {
+          console.error("listStreamKeyRecords rejected", action.error);
+        },
+      },
+    ),
+
+    deleteStreamKeyRecord: create.asyncThunk(
+      async ({ rkey }: { rkey: string }, thunkAPI) => {
+        const { bluesky } = thunkAPI.getState() as {
+          bluesky: BlueskyState;
+        };
+        if (!bluesky.pdsAgent) {
+          throw new Error("No agent");
+        }
+        const did = bluesky.oauthSession?.did;
+        if (!did) {
+          throw new Error("No DID");
+        }
+        const profile = bluesky.profiles[did];
+        if (!profile) {
+          throw new Error("No profile");
+        }
+        if (!did) {
+          throw new Error("No DID");
+        }
+
+        return await bluesky.pdsAgent.com.atproto.repo.deleteRecord({
+          repo: did,
+          collection: "place.stream.key",
+          rkey,
+        });
+      },
+      {
+        pending: (state) => {
+          return {
+            ...state,
+            isDeletingKey: true,
+          };
+        },
+        fulfilled: (state, action) => {
+          return {
+            ...state,
+            isDeletingKey: false,
+          };
+        },
+        rejected: (state, action) => {
+          console.error("deleteStreamKeyRecord rejected", action.error);
+          return {
+            ...state,
+            isDeletingKey: false,
+          };
+        },
+      },
+    ),
+
     setPDS: create.asyncThunk(
       async (pds: string, thunkAPI) => {
         await Storage.setItem("pdsURL", pds);
@@ -1139,6 +1235,7 @@ export const blueskySlice = createAppSlice({
     selectLogin: (bluesky) => bluesky.login,
     selectProfiles: (bluesky) => bluesky.profiles,
     selectStoredKey: (bluesky) => bluesky.storedKey,
+    selectKeyRecords: (bluesky) => bluesky.streamKeysResponse,
     selectUserProfile: (bluesky) => {
       const did = bluesky.oauthSession?.did;
       if (!did) return null;
@@ -1179,6 +1276,8 @@ export const {
   oauthError,
   createStreamKeyRecord,
   clearStreamKeyRecord,
+  getStreamKeyRecords,
+  deleteStreamKeyRecord,
   createLivestreamRecord,
   updateLivestreamRecord,
   createChatProfileRecord,
@@ -1196,6 +1295,7 @@ export const {
   selectPDS,
   selectLogin,
   selectStoredKey,
+  selectKeyRecords,
   selectIsReady,
   selectNewLivestream,
   selectChatProfile,

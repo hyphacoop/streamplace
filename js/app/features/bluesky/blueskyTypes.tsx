@@ -1,4 +1,5 @@
 import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
+import { OutputSchema } from "@atproto/api/dist/client/types/com/atproto/repo/listRecords";
 import { OAuthSession } from "@streamplace/atproto-oauth-client-react-native";
 import { StreamKey } from "features/base/baseSlice";
 import {
@@ -35,6 +36,8 @@ export interface BlueskyState {
   };
   newKey: null | StreamKey;
   storedKey: null | StreamKey;
+  isDeletingKey: boolean;
+  streamKeysResponse: null | OutputSchema;
   newLivestream: null | NewLivestream;
   chatProfile: {
     loading: boolean;
