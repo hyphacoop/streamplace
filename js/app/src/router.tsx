@@ -140,7 +140,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Multi: "multi/:config",
       Support: "support",
       Settings: "settings",
-      KeyManagement: "key-management",
+      KeyManagement: "settings/key-management",
       GoLive: "golive",
       LiveDashboard: "live",
       Login: "login",
@@ -443,6 +443,14 @@ export function StreamplaceDrawer() {
 
         <Drawer.Screen
           name="KeyManagement"
+          component={KeyManager}
+          options={{
+            drawerLabel: () => <Text>Key Manager</Text>,
+            drawerItemStyle: { display: "none" },
+          }}
+        />
+        <Drawer.Screen
+          name="Key Manager"
           component={KeyManager}
           options={{
             drawerLabel: () => <Text>Key Manager</Text>,
