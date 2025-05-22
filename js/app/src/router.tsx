@@ -347,7 +347,6 @@ export function StreamplaceDrawer() {
           swipeEnabled: !sidebar.isActive,
           drawerStyle: {
             // afaict the drawer is a RN Animated component internally
-            // TODO (nat): look into this and change width prop as needed
             width: sidebar.isActive
               ? (sidebar.animatedWidth as any)
               : undefined,
@@ -486,7 +485,6 @@ export function StreamplaceDrawer() {
             drawerIcon: () => <Notebook />,
             drawerItemStyle: { display: "none" },
             drawerLabel: () => <Text>Sign up</Text>,
-            drawerStyle: { display: "none" },
           }}
         />
         <Drawer.Screen
