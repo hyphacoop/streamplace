@@ -28,6 +28,7 @@ import {
   PanelLeftClose,
   Book,
   ExternalLink,
+  Notebook,
 } from "@tamagui/lucide-icons";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
@@ -77,6 +78,7 @@ import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 import { store } from "store/store";
 import { loadStateFromStorage } from "features/base/sidebarSlice";
 import HomeScreen from "./screens/home";
+import SignUp from "components/login/signup";
 
 store.dispatch(loadStateFromStorage());
 
@@ -95,6 +97,7 @@ type RootStackParamList = {
   GoLive: undefined;
   LiveDashboard: undefined;
   Login: undefined;
+  Signup: undefined;
   AVSync: undefined;
   AppReturn: { scheme: string };
   About: undefined;
@@ -127,6 +130,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       GoLive: "golive",
       LiveDashboard: "live",
       Login: "login",
+      Signup: "signup",
       AVSync: "sync-test",
       AppReturn: "app-return/:scheme",
       About: "about",
@@ -423,6 +427,7 @@ export function StreamplaceDrawer() {
             drawerLabel: () => <Text>Settings</Text>,
           }}
         />
+
         <Drawer.Screen
           name="Support"
           component={SupportScreen}
@@ -472,6 +477,16 @@ export function StreamplaceDrawer() {
           options={{
             drawerIcon: () => <LogIn />,
             drawerLabel: () => <Text>Login</Text>,
+          }}
+        />
+        <Drawer.Screen
+          name="Signup"
+          component={SignUp}
+          options={{
+            drawerIcon: () => <Notebook />,
+            drawerItemStyle: { display: "none" },
+            drawerLabel: () => <Text>Sign up</Text>,
+            drawerStyle: { display: "none" },
           }}
         />
         <Drawer.Screen
