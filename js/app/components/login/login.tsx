@@ -3,6 +3,7 @@ import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
   login,
   logout,
+  selectChatProfile,
   selectIsReady,
   selectLogin,
   selectPDS,
@@ -18,17 +19,24 @@ import {
   H3,
   H5,
   Input,
+  Label,
   Sheet,
   Spinner,
   Text,
+  useTheme,
   View,
+  XStack,
+  YStack,
 } from "tamagui";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import Loading from "components/loading/loading";
 import { useToastController } from "@tamagui/toast";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Login() {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
+  const chatProfile = useAppSelector(selectChatProfile);
   const userProfile = useAppSelector(selectUserProfile);
   const pds = useAppSelector(selectPDS);
   const loginState = useAppSelector(selectLogin);
@@ -36,9 +44,16 @@ export default function Login() {
   const [handle, setHandle] = useState("");
   const isReady = useAppSelector(selectIsReady);
   const toast = useToastController();
+  const navigation = useNavigation();
   const onOpenChange = (open: boolean) => {
     setOpen(open);
     Keyboard.dismiss();
+  };
+
+  const onEnterPress = (e: any) => {
+    if (e.nativeEvent.key === "Enter") {
+      dispatch(login(handle));
+    }
   };
 
   useEffect(() => {
@@ -57,10 +72,17 @@ export default function Login() {
     );
   }
 
+  let rgb =
+    chatProfile.profile?.color &&
+    `rgb(${chatProfile.profile?.color?.red},${chatProfile.profile?.color?.green},${chatProfile.profile?.color?.blue})`;
+
   if (userProfile) {
+    navigation.setOptions({ title: `Account` });
     return (
       <View f={1} jc="center" ai="stretch" gap="$3">
-        <Text textAlign="center">Logged in as @{userProfile.handle}</Text>
+        <Text textAlign="center" fontSize="$8">
+          Hey, <Text color={rgb || "#bd6e86"}>@{userProfile.handle}</Text>.
+        </Text>
         <View flexDirection="row" gap="$2" justifyContent="center">
           <Button
             onPress={() => dispatch(logout())}
@@ -86,51 +108,69 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <View
-        f={1}
-        jc="center"
-        ai="center"
-        backgroundColor="$gray1"
-        padding="$4"
-        width="100%"
-        maxWidth={800}
-        marginHorizontal="auto"
+      <Form
+        flex={1}
+        onSubmit={async () => {
+          await dispatch(login(handle));
+        }}
       >
-        <Form
-          width="100%"
-          maxWidth={800}
+        <View
+          f={1}
           jc="center"
           ai="center"
-          onSubmit={async () => {
-            await dispatch(login(handle));
-          }}
+          padding="$4"
+          width="100%"
+          marginHorizontal="auto"
         >
-          <H3>Log in with ATProto | Bluesky</H3>
-          <H5 alignSelf="flex-start">Handle:</H5>
-          <Input
+          <YStack
+            px="$6"
+            py="$6"
+            br="$4"
+            backgroundColor="$color2"
             width="100%"
-            placeholder="example.bsky.social"
-            value={handle}
-            onChangeText={(text) => setHandle(text)}
-            keyboardType="url"
-            autoCapitalize="none"
-            autoComplete="off"
-            autoCorrect={false}
-          />
-          <Form.Trigger asChild>
-            <Button
-              width="100%"
-              margin="$4"
-              backgroundColor="$accentColor"
-              disabled={loginState.loading}
-            >
-              <Text>
-                {loginState.loading ? <Spinner /> : `Log in with ATProto`}
+            maxWidth={600}
+            gap="$2"
+          >
+            <Text fontSize="$9" fontWeight="200">
+              Log in
+            </Text>
+            <Text color="$color11">
+              Sign in using your handle on the Atmosphere (e.g. your Bluesky
+              handle)
+            </Text>
+
+            <YStack gap="$2" py="$4">
+              <Text htmlFor="pdsUrl" color="$color11">
+                Handle
               </Text>
-            </Button>
-          </Form.Trigger>
-        </Form>
-      </View>
+              <Input
+                id="pdsUrl"
+                value={handle}
+                onChangeText={setHandle}
+                backgroundColor="$color2"
+                onSubmitEditing={onEnterPress}
+              />
+            </YStack>
+
+            <XStack justifyContent="space-between">
+              <Button backgroundColor="$gray3" color="$color">
+                Sign Up
+              </Button>
+              <Form.Trigger asChild>
+                <Button
+                  px="$6"
+                  // @ts-expect-error Not in the type definition but required for web.
+                  type="submit"
+                  backgroundColor="$accentColor"
+                  disabled={loginState.loading}
+                >
+                  <Text>{loginState.loading ? <Spinner /> : `Log in`}</Text>
+                </Button>
+              </Form.Trigger>
+            </XStack>
+          </YStack>
+        </View>
+      </Form>
     </KeyboardAvoidingView>
   );
 }
