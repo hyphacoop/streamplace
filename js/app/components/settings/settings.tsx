@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
+import { ArrowRight } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Container from "components/container";
 import {
@@ -11,7 +12,7 @@ import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, H3, Input, Text, View, XStack } from "tamagui";
+import { Button, H3, H5, Input, Text, View, XStack } from "tamagui";
 import { Updates } from "./updates";
 
 export function Settings() {
@@ -53,21 +54,21 @@ export function Settings() {
       <View
         f={1}
         alignItems="stretch"
-        justifyContent="center"
+        justifyContent="flex-start"
         mt="$8"
         maxWidth={500}
+        $platform-web={{ width: "100%" }}
         gap="$6"
-        width="100%"
       >
-        <Updates />
+        <View maxHeight={200}>
+          <Updates />
+        </View>
 
-        <View alignItems="center" justifyContent="center" width="100%">
-          {/* Toggle Switch for Custom Node */}
+        <View alignItems="center" justifyContent="center" gap="$4">
           <XStack
             alignItems="stretch"
             justifyContent="space-between"
             width="100%"
-            flexDirection="column"
           >
             <View
               flexDirection="row"
@@ -75,84 +76,59 @@ export function Settings() {
               justifyContent="space-between"
               flex={1}
             >
-              <H3 fontSize="$7">Use custom node</H3>
+              <View flex={1} pr="$3">
+                <H3 fontSize="$7">Use Custom Node</H3>
+                <Text fontSize="$5" color="$gray10">
+                  Default: {url}
+                </Text>
+              </View>
               <Switch
-                size="$3" // Tamagui Switch size
+                size="$3"
                 checked={overrideEnabled}
                 onCheckedChange={handleToggleOverride}
-                theme="green" // Optional: use a theme color
               >
                 <Switch.Thumb animation="bouncy" />
               </Switch>
             </View>
-            {!overrideEnabled && (
-              <Text
-                fontSize="$5" // Slightly smaller text
-                color="$gray10"
-                style={{ opacity: overrideEnabled ? 0 : 1 }}
-                numberOfLines={1}
-                ellipsizeMode="middle"
-              >
-                Default: {url} {/* Shorter label */}
-              </Text>
-            )}
           </XStack>
 
-          {/* Custom URL Input Row */}
           <XStack
             alignItems="center" // Changed to center
             gap="$2"
-            width="100%" // Adjusted width
             style={{
               opacity: overrideEnabled ? 1 : 0,
               height: overrideEnabled ? "auto" : 0, // Collapse when hidden
               overflow: "hidden", // Hide overflow when collapsed
-              transition: "opacity 0.2s ease-in-out, height 0.2s ease-in-out", // Add transition
+              transition: "opacity 0.2s ease-in-out, height 0.2s ease-in-out",
             }}
           >
             <Input
               value={newUrl}
               flex={1}
-              size="$4" // Slightly larger input
-              placeholder={url || "Enter custom node URL"} // Fallback placeholder
+              size="$4"
+              placeholder={url || "Enter custom node URL"}
               onChangeText={setNewUrl}
               onSubmitEditing={onSubmitUrl}
               textContentType="URL"
               autoCapitalize="none"
               autoCorrect={false}
-              keyboardType="url" // Use URL keyboard
+              keyboardType="url"
             />
             <Button size="$4" onPress={onSubmitUrl}>
-              {" "}
-              {/* Slightly larger button */}
-              SAVE
+              <Text>SAVE</Text>
             </Button>
           </XStack>
         </View>
 
-        {/* Player Telemetry Section */}
-        <View
-          alignItems="center"
-          justifyContent="center"
-          gap="$4" // Increased gap
-        >
-          {/* Toggle Switch for Player Telemetry */}
+        <View alignItems="center" justifyContent="center" gap="$4">
           <XStack
             alignItems="center"
             justifyContent="space-between"
             width="100%"
           >
-            {" "}
-            {/* Adjusted width and justification */}
             <View flex={1} pr="$3">
-              {" "}
-              {/* Added padding right to text container */}
-              <H3 fontSize="$7">Player Telemetry</H3>{" "}
-              {/* Slightly smaller heading */}
-              <Text
-                fontSize="$5" // Slightly smaller text
-                color="$gray10"
-              >
+              <H3 fontSize="$7">Player Telemetry</H3>
+              <Text fontSize="$5" color="$gray10">
                 Optional
               </Text>
             </View>
@@ -170,18 +146,23 @@ export function Settings() {
         {/* Manage Keys Button */}
         <AQLink
           to={{
-            screen: "Key Manager",
+            screen: "KeyManagement",
           }}
         >
-          <Button
-            size="$4" // Slightly larger button
-            onPress={() => {
-              // redirect to manage keys page
-            }}
-            theme="blue" // Optional: use a theme color
+          <View
+            flexDirection="row"
+            gap="$2"
+            alignItems="center"
+            justifyContent="center"
+            borderWidth={1}
+            borderColor="$color.gray3Dark"
+            padding="$2"
+            borderRadius="$4"
+            backgroundColor="$color.gray1Dark"
           >
-            Manage Keys
-          </Button>
+            <H5>Manage Keys</H5>
+            <ArrowRight size="$1" />
+          </View>
         </AQLink>
       </View>
     </Container>
