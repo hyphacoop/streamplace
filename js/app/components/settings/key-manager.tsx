@@ -77,9 +77,9 @@ export default function KeyManager() {
   return (
     <ScrollView justifyContent="flex-start" alignItems="center">
       <YStack f={1} p="$4" gap="$4" maxWidth={650}>
-        {keyRecords === null ? (
+        {keyRecords.records === null ? (
           <Loading />
-        ) : keyRecords.records.length === 0 ? (
+        ) : keyRecords.records.records.length === 0 ? (
           <>
             <Text mt="$8">No keys here!</Text>
             <AQLink to={{ screen: "LiveDashboard" }}>
@@ -97,7 +97,7 @@ export default function KeyManager() {
                 revoke access for a specific stream key by revoking its
                 associated public key below.
               </Text>
-              {keyRecords.records.map((keyRecord) => (
+              {keyRecords.records.records.map((keyRecord) => (
                 <KeyRow
                   rkey={keyRecord.uri.split("/").pop() as string}
                   keyRecord={keyRecord.value as any}
@@ -105,8 +105,8 @@ export default function KeyManager() {
                 />
               ))}
               <Text fontSize="$2" color="$color.gray11Dark">
-                {keyRecords.records.length} key
-                {keyRecords.records.length > 1 && "s"}
+                {keyRecords.records.records.length} key
+                {keyRecords.records.records.length > 1 && "s"}
               </Text>
             </YStack>
             <Separator />
