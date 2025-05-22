@@ -11,7 +11,6 @@ import ButtonSelector from "components/ui/button-selector";
 import { VideoElementProvider } from "contexts/VideoElementContext";
 import {
   selectIsReady,
-  selectNewLivestream,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { selectTelemetry } from "features/streamplace/streamplaceSlice";

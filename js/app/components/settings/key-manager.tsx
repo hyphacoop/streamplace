@@ -1,9 +1,6 @@
 import { RefreshCcw, X } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
-import { YStack, XStack, Text, Separator, Button, ScrollView } from "tamagui";
-import { useEffect } from "react";
-import { X } from "@tamagui/lucide-icons";
 import {
   deleteStreamKeyRecord,
   getStreamKeyRecords,
@@ -14,11 +11,6 @@ import { useAppDispatch, useAppSelector } from "store/hooks";
 import { PlaceStreamKey } from "streamplace";
 import { Button, ScrollView, Text, View, XStack, YStack } from "tamagui";
 import { timeAgo } from "utils/timeAgo";
-import { useAppDispatch, useAppSelector } from "store/hooks";
-import { PlaceStreamKey } from "lexicons";
-import Loading from "components/loading/loading";
-import { timeAgo } from "utils/timeAgo";
-import AQLink from "components/aqlink";
 
 function KeyRow({
   keyRecord,

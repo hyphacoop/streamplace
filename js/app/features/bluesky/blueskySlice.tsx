@@ -10,7 +10,6 @@ import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/act
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { OAuthSession } from "@atproto/oauth-client";
 import { DID_KEY, hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
-import { hydrate, STORED_KEY_KEY, StreamKey } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import { PlayersState } from "features/player/playerSlice";
 import {
