@@ -466,7 +466,7 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
-          name="Key Manager"
+          name="KeyManagement"
           component={KeyManager}
           options={{
             drawerLabel: () => <Text>Key Manager</Text>,
