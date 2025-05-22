@@ -11,6 +11,7 @@ import ButtonSelector from "components/ui/button-selector";
 import { VideoElementProvider } from "contexts/VideoElementContext";
 import {
   selectIsReady,
+  selectNewLivestream,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { selectTelemetry } from "features/streamplace/streamplaceSlice";
@@ -36,7 +37,6 @@ export default function LiveDashboard() {
   );
 
   const [playerId, setPlayerId] = useState<string | null>(null);
-
   const [page, setPage] = useState<"update" | "create">("create");
 
   const videoRef = useCallback((node: HTMLVideoElement | null) => {
