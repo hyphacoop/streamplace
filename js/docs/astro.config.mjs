@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
 
 // https://astro.build/config
 export default defineConfig({
@@ -24,6 +25,16 @@ export default defineConfig({
         src: "/src/assets/cube.png",
         alt: "Streamplace Logo",
       },
+      plugins: [
+        starlightOpenAPI([
+          {
+            base: "api",
+            label: "Related XRPC API endpoints",
+            schema: "./src/content/docs/lex-reference/openapi.json", // or your json generated from swagger
+            sidebarMethodBadges: true,
+          },
+        ]),
+      ],
       sidebar: [
         {
           label: "Guides",
@@ -46,6 +57,7 @@ export default defineConfig({
           label: "Lexicon Reference",
           autogenerate: { directory: "lex-reference" },
         },
+        ...openAPISidebarGroups,
       ],
     }),
   ],
