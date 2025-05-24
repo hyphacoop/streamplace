@@ -70,7 +70,9 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 	if selfTest {
 		runtime.GC()
-		pprof.Lookup("goroutine").WriteTo(os.Stderr, 2)
+		if err := pprof.Lookup("goroutine").WriteTo(os.Stderr, 2); err != nil {
+			log.Error(context.Background(), "error creating pprof", "error", err)
+		}
 		fmt.Println("self-test successful!")
 		os.Exit(0)
 	}
@@ -111,14 +113,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		fmt.Println("self-test successful!")
 		os.Exit(0)
 	}
-	flag.Set("logtostderr", "true")
+	_ = flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("streamplace", flag.ExitOnError)
 	cli := config.CLI{Build: build}
 	fs.StringVar(&cli.DataDir, "data-dir", config.DefaultDataDir(), "directory for keeping all streamplace data")
-	fs.StringVar(&cli.HttpAddr, "http-addr", ":38080", "Public HTTP address")
-	fs.StringVar(&cli.HttpInternalAddr, "http-internal-addr", "127.0.0.1:39090", "Private, admin-only HTTP address")
-	fs.StringVar(&cli.HttpsAddr, "https-addr", ":38443", "Public HTTPS address")
+	fs.StringVar(&cli.HTTPAddr, "http-addr", ":38080", "Public HTTP address")
+	fs.StringVar(&cli.HTTPInternalAddr, "http-internal-addr", "127.0.0.1:39090", "Private, admin-only HTTP address")
+	fs.StringVar(&cli.HTTPSAddr, "https-addr", ":38443", "Public HTTPS address")
 	fs.BoolVar(&cli.Secure, "secure", false, "Run with HTTPS. Required for WebRTC output")
 	cli.DataDirFlag(fs, &cli.TLSCertPath, "tls-cert", filepath.Join("tls", "tls.crt"), "Path to TLS certificate")
 	cli.DataDirFlag(fs, &cli.TLSKeyPath, "tls-key", filepath.Join("tls", "tls.key"), "Path to TLS key")
@@ -184,7 +186,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
-	vFlag.Value.Set(*verbosity)
+	_ = vFlag.Value.Set(*verbosity)
 	log.SetColorLogger(cli.Color)
 	ctx := context.Background()
 	ctx = log.WithDebugValue(ctx, cli.Debug)
@@ -475,7 +477,9 @@ func handleSignals(ctx context.Context) error {
 		select {
 		case s := <-c:
 			if s == syscall.SIGABRT {
-				pprof.Lookup("goroutine").WriteTo(os.Stderr, 2)
+				if err := pprof.Lookup("goroutine").WriteTo(os.Stderr, 2); err != nil {
+					log.Error(ctx, "failed to create pprof", "error", err)
+				}
 			}
 			log.Log(ctx, "caught signal, attempting clean shutdown", "signal", s)
 			return fmt.Errorf("%w signal=%v", ErrCaughtSignal, s)

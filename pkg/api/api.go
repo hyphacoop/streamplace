@@ -184,7 +184,7 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	router.Handler("PUT", "/xrpc/*resource", xrpcHandler)
 	router.Handler("PATCH", "/xrpc/*resource", xrpcHandler)
 	router.Handler("DELETE", "/xrpc/*resource", xrpcHandler)
-	router.GET("/.well-known/did.json", a.HandleDidJson(ctx))
+	router.GET("/.well-known/did.json", a.HandleDidJSON(ctx))
 	router.GET("/dl/*params", a.HandleAppDownload(ctx))
 	router.POST("/", a.HandleWebRTCIngest(ctx))
 	for _, redirect := range a.CLI.Redirects {
@@ -296,7 +296,9 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 				log.Error(ctx, "error generating default card", "error", err)
 			}
 			w.Header().Set("Content-Type", "text/html")
-			w.Write(bs)
+			if _, err := w.Write(bs); err != nil {
+				log.Error(ctx, "error writing response", "error", err)
+			}
 		} else {
 			log.Warn(ctx, "error opening file", "error", err)
 			apierrors.WriteHTTPInternalServerError(w, "file not found", err)
@@ -339,7 +341,9 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 			return
 		}
 		w.Header().Set("Content-Type", "text/html")
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}), nil
 }
 
@@ -355,7 +359,7 @@ func (a *StreamplaceAPI) MistProxyHandler(ctx context.Context, tmpl string) http
 			return
 		}
 
-		fullstream := fmt.Sprintf("%s+%s", mistconfig.STREAM_NAME, stream)
+		fullstream := fmt.Sprintf("%s+%s", mistconfig.StreamName, stream)
 		prefix := fmt.Sprintf(tmpl, fullstream)
 		resource := params.ByName("resource")
 
@@ -382,7 +386,9 @@ func (a *StreamplaceAPI) MistProxyHandler(ctx context.Context, tmpl string) http
 
 		copyHeader(w.Header(), resp.Header)
 		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
+		if _, err := io.Copy(w, resp.Body); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -398,7 +404,7 @@ func (a *StreamplaceAPI) FileHandler(ctx context.Context, fs http.Handler) http.
 }
 
 func (a *StreamplaceAPI) RedirectHandler(ctx context.Context) (http.Handler, error) {
-	_, tlsPort, err := net.SplitHostPort(a.CLI.HttpsAddr)
+	_, tlsPort, err := net.SplitHostPort(a.CLI.HTTPSAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -506,7 +512,9 @@ func (a *StreamplaceAPI) HandleRecentSegments(ctx context.Context) httprouter.Ha
 			return
 		}
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -538,7 +546,9 @@ func (a *StreamplaceAPI) HandleUserRecentSegments(ctx context.Context) httproute
 			return
 		}
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -560,7 +570,9 @@ func (a *StreamplaceAPI) HandleViewCount(ctx context.Context) httprouter.Handle 
 			apierrors.WriteHTTPInternalServerError(w, "could not marshal view count", err)
 			return
 		}
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -582,7 +594,9 @@ func (a *StreamplaceAPI) HandleBlueskyResolve(ctx context.Context) httprouter.Ha
 			apierrors.WriteHTTPInternalServerError(w, "could not marshal signing keys", err)
 			return
 		}
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -615,7 +629,9 @@ func (a *StreamplaceAPI) HandleChat(ctx context.Context) httprouter.Handle {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -654,7 +670,9 @@ func (a *StreamplaceAPI) HandleLivestream(ctx context.Context) httprouter.Handle
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(bs)
+		if _, err := w.Write(bs); err != nil {
+			log.Error(ctx, "error writing response", "error", err)
+		}
 	}
 }
 
@@ -687,7 +705,7 @@ func (a *StreamplaceAPI) ServeHTTP(ctx context.Context) error {
 		return err
 	}
 	return a.ServerWithShutdown(ctx, handler, func(s *http.Server) error {
-		s.Addr = a.CLI.HttpAddr
+		s.Addr = a.CLI.HTTPAddr
 		log.Log(ctx, "http server starting", "addr", s.Addr)
 		return s.ListenAndServe()
 	})
@@ -699,7 +717,7 @@ func (a *StreamplaceAPI) ServeHTTPRedirect(ctx context.Context) error {
 		return err
 	}
 	return a.ServerWithShutdown(ctx, handler, func(s *http.Server) error {
-		s.Addr = a.CLI.HttpAddr
+		s.Addr = a.CLI.HTTPAddr
 		log.Log(ctx, "http tls redirecct server starting", "addr", s.Addr)
 		return s.ListenAndServe()
 	})
@@ -711,7 +729,7 @@ func (a *StreamplaceAPI) ServeHTTPS(ctx context.Context) error {
 		return err
 	}
 	return a.ServerWithShutdown(ctx, handler, func(s *http.Server) error {
-		s.Addr = a.CLI.HttpsAddr
+		s.Addr = a.CLI.HTTPSAddr
 		log.Log(ctx, "https server starting",
 			"addr", s.Addr,
 			"certPath", a.CLI.TLSCertPath,

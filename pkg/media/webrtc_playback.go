@@ -19,7 +19,7 @@ import (
 // we have a bug that prevents us from correctly probing video durations
 // a lot of the time. so when we don't have them we use the last duration
 // that we had, and when we don't have that we use a default duration
-var DEFAULT_DURATION = time.Duration(32 * time.Millisecond)
+var DefaultDuration = time.Duration(32 * time.Millisecond)
 
 // This function remains in scope for the duration of a single users' playback
 func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, rendition string, offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error) {
@@ -28,8 +28,6 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		return nil, err
 	}
 	ctx = log.WithLogValues(ctx, "webrtcID", uu.String())
-	ctx, cancel := context.WithCancel(ctx)
-
 	ctx = log.WithLogValues(ctx, "mediafunc", "WebRTCPlayback")
 
 	pipelineSlice := []string{
@@ -41,11 +39,6 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err)
 	}
-
-	go func() {
-		HandleBusMessages(ctx, pipeline)
-		cancel()
-	}()
 
 	segBuffer := make(chan *segchanman.Seg, 1024)
 	go func() {
@@ -209,9 +202,18 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		}
 	}()
 
-	var lastVideoDuration = &DEFAULT_DURATION
+	var lastVideoDuration = &DefaultDuration
 
 	go func() {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		go func() {
+			if err := HandleBusMessages(ctx, pipeline); err != nil {
+				log.Log(ctx, "pipeline error", "error", err)
+			}
+			cancel()
+		}()
 
 		videoappsink := app.SinkFromElement(videoappsinkele)
 		videoappsink.SetCallbacks(&app.SinkCallbacks{
@@ -300,7 +302,10 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		})
 
 		// Start the pipeline
-		pipeline.SetState(gst.StatePlaying)
+		err := pipeline.SetState(gst.StatePlaying)
+		if err != nil {
+			log.Log(ctx, "failed to set pipeline state to null", "error", err)
+		}
 		spmetrics.ViewerInc(user)
 		defer spmetrics.ViewerDec(user)
 
@@ -326,9 +331,6 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		// This will notify you when the peer has connected/disconnected
 		peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 			log.Log(ctx, "Connection State has changed", "state", connectionState.String())
-			if connectionState == webrtc.ICEConnectionStateConnected {
-				// iceConnectedCtxCancel()
-			}
 		})
 
 		// Set the handler for Peer connection state

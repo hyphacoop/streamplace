@@ -338,6 +338,10 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 
 func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segment, data []byte) error {
 	rs, err := renditions.GenerateRenditions(spseg)
+	if err != nil {
+		return fmt.Errorf("failed to generated renditions: %w", err)
+	}
+
 	if ss.lp == nil {
 		var err error
 		ss.lp, err = livepeer.NewLivepeerSession(ctx, spseg.Creator, ss.cli.LivepeerGatewayURL)
@@ -365,10 +369,13 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 		log.Debug(ctx, "publishing segment", "rendition", rs[i])
 		fd, err := ss.cli.SegmentFileCreate(spseg.Creator, aqt, fmt.Sprintf("%s.mp4", rs[i].Name))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create transcoded segment file: %w", err)
 		}
 		defer fd.Close()
-		fd.Write(seg)
+		_, err = fd.Write(seg)
+		if err != nil {
+			return fmt.Errorf("failed to write transcoded segment file: %w", err)
+		}
 		go ss.TryAddToHLS(ctx, spseg, rs[i].Name, seg)
 		go ss.mm.PublishSegment(ctx, spseg.Creator, rs[i].Name, &segchanman.Seg{
 			Filepath: fd.Name(),
@@ -407,10 +414,13 @@ func (ss *StreamSession) AddToHLS(ctx context.Context, spseg *streamplace.Segmen
 		return fmt.Errorf("failed to parse segment start time: %w", err)
 	}
 	log.Debug(ctx, "transmuxed to mpegts, adding to hls", "rendition", rendition, "size", buf.Len())
-	ss.hls.GetRendition(rendition).NewSegment(&media.Segment{
+	if err := ss.hls.GetRendition(rendition).NewSegment(&media.Segment{
 		Buf:      &buf,
 		Duration: time.Duration(dur),
 		Time:     aqt.Time(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to create new segment: %w", err)
+	}
+
 	return nil
 }

@@ -29,8 +29,8 @@ type Model interface {
 	ListNotifications() ([]Notification, error)
 
 	CreatePlayerEvent(event PlayerEventAPI) error
-	ListPlayerEvents(playerId string) ([]PlayerEvent, error)
-	PlayerReport(playerId string) (map[string]any, error)
+	ListPlayerEvents(playerID string) ([]PlayerEvent, error)
+	PlayerReport(playerID string) (map[string]any, error)
 	ClearPlayerEvents() error
 
 	CreateSegment(segment *Segment) error
@@ -103,7 +103,9 @@ func MakeDB(dbURL string) (Model, error) {
 		// if this isn't ":memory:", ensure that directory exists (eg, if db
 		// file is being initialized)
 		if !strings.Contains(sqliteSuffix, ":?") {
-			os.MkdirAll(filepath.Dir(sqliteSuffix), os.ModePerm)
+			if err := os.MkdirAll(filepath.Dir(sqliteSuffix), os.ModePerm); err != nil {
+				return nil, fmt.Errorf("error creating database path: %w", err)
+			}
 		}
 	}
 	dial := sqlite.Open(sqliteSuffix)
