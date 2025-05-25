@@ -155,11 +155,13 @@ export default function Login() {
             </YStack>
 
             <XStack justifyContent="space-between">
-              <AQLink to={{ screen: "Signup" }}>
-                <Button backgroundColor="$gray3" color="$color">
-                  Sign Up
-                </Button>
-              </AQLink>
+              <Button
+                onPress={() => navigation.navigate("Signup")}
+                backgroundColor="$gray3"
+                color="$color"
+              >
+                Sign Up
+              </Button>
               <Form.Trigger asChild>
                 <Button
                   px="$6"

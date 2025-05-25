@@ -117,7 +117,7 @@ export default function SignUp() {
             <Text fontSize="$9" fontWeight="200">
               Sign up
             </Text>
-            <Text color="$color11" flex={1}>
+            <Text color="$color12">
               We'll redirect you to your chosen PDS{" "}
               <CircleHelp
                 size="$1"
@@ -148,11 +148,13 @@ export default function SignUp() {
             </YStack>
 
             <XStack justifyContent="space-between">
-              <AQLink to={{ screen: "Login" }}>
-                <Button backgroundColor="$gray3" color="$color">
-                  Log In
-                </Button>
-              </AQLink>
+              <Button
+                onPress={() => navigation.navigate("Login")}
+                backgroundColor="$gray3"
+                color="$color"
+              >
+                Log In
+              </Button>
               <Form.Trigger asChild>
                 <Button
                   px="$6"
