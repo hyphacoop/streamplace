@@ -150,7 +150,6 @@ export default function Login() {
                 onChangeText={setHandle}
                 backgroundColor="$color2"
                 onSubmitEditing={onEnterPress}
-                defaultValue="alice.bsky.co"
               />
             </YStack>
 

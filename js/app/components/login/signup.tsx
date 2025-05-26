@@ -1,26 +1,21 @@
-import { AtpBaseClient } from "lexicons";
-import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
   login,
-  logout,
-  selectChatProfile,
   selectIsReady,
   selectLogin,
-  selectPDS,
   selectUserProfile,
-  setPDS,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import { Keyboard, KeyboardAvoidingView, Linking } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Linking,
+  Pressable,
+} from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   Button,
   Form,
-  H3,
-  H5,
   Input,
-  Label,
-  Sheet,
   Spinner,
   Text,
   useTheme,
@@ -28,16 +23,10 @@ import {
   XStack,
   YStack,
 } from "tamagui";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
 import Loading from "components/loading/loading";
 import { useToastController } from "@tamagui/toast";
 import { useNavigation } from "@react-navigation/native";
-import {
-  BadgeHelp,
-  CircleHelp,
-  MessageCircleQuestion,
-} from "@tamagui/lucide-icons";
-import AQLink from "components/aqlink";
+import { CircleHelp } from "@tamagui/lucide-icons";
 
 export default function SignUp() {
   const dispatch = useAppDispatch();
@@ -45,7 +34,7 @@ export default function SignUp() {
   const userProfile = useAppSelector(selectUserProfile);
   const loginState = useAppSelector(selectLogin);
   const [open, setOpen] = useState<boolean>(false);
-  const [pds, setPDS] = useState<undefined | string>();
+  const [pds, setPDS] = useState<string>("https://bsky.social");
   const isReady = useAppSelector(selectIsReady);
   const toast = useToastController();
   const navigation = useNavigation();
@@ -117,22 +106,25 @@ export default function SignUp() {
             <Text fontSize="$9" fontWeight="200">
               Sign up
             </Text>
-            <Text color="$color12">
-              We'll redirect you to your chosen PDS{" "}
-              <CircleHelp
-                size="$1"
-                mb={-4}
-                color="lightskyblue"
+            <View flexWrap="wrap" flexDirection="row" gap="$1.5">
+              <Text color="$color11">
+                We'll redirect you to your chosen PDS
+              </Text>
+              <Pressable
                 onPress={() => {
                   const u = new URL(
                     "https://atproto.academy/docs/glossary#pds-personal-data-server",
                   );
                   Linking.openURL(u.toString());
                 }}
-              />{" "}
-              to sign up.
-            </Text>
-
+              >
+                <CircleHelp size={18} color="lightskyblue" />
+              </Pressable>{" "}
+              <Text color="$color11">to sign up.</Text>
+              <Text color="$color11">
+                Then, log in with the account you just created.
+              </Text>
+            </View>
             <YStack gap="$2" py="$4">
               <Text htmlFor="pdsUrl" color="$color11">
                 PDS URL
@@ -143,7 +135,6 @@ export default function SignUp() {
                 onChangeText={setPDS}
                 backgroundColor="$color2"
                 onSubmitEditing={onEnterPress}
-                defaultValue="https://bsky.social"
               />
             </YStack>
 
