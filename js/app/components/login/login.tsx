@@ -8,7 +8,7 @@ import {
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView } from "react-native";
+import { KeyboardAvoidingView, Linking, Pressable } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   Button,
@@ -23,6 +23,7 @@ import {
 import Loading from "components/loading/loading";
 import { useToastController } from "@tamagui/toast";
 import { useNavigation } from "@react-navigation/native";
+import { CircleHelp } from "@tamagui/lucide-icons";
 
 export default function Login() {
   const dispatch = useAppDispatch();
@@ -118,11 +119,22 @@ export default function Login() {
             <Text fontSize="$9" fontWeight="200">
               Log in
             </Text>
-            <Text color="$color11">
-              Sign in using your handle on the Atmosphere (e.g. your Bluesky
-              handle)
-            </Text>
-
+            <View flexWrap="wrap" flexDirection="row" gap="$1.5">
+              <Text color="$color11">
+                Sign in using your handle on the AT Protocol
+              </Text>
+              <Pressable
+                onPress={() => {
+                  const u = new URL(
+                    "https://atproto.academy/docs/Authentication/why",
+                  );
+                  Linking.openURL(u.toString());
+                }}
+              >
+                <CircleHelp size={18} color="lightskyblue" />
+              </Pressable>
+              <Text color="$color11">(e.g. your Bluesky handle)</Text>
+            </View>
             <YStack gap="$2" py="$4">
               <Text htmlFor="pdsUrl" color="$color11">
                 Handle
@@ -135,7 +147,6 @@ export default function Login() {
                 onSubmitEditing={onEnterPress}
               />
             </YStack>
-
             <XStack justifyContent="space-between">
               <Button
                 onPress={() => navigation.navigate("Signup")}
