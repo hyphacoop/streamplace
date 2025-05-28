@@ -5,12 +5,7 @@ import {
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Linking,
-  Pressable,
-} from "react-native";
+import { KeyboardAvoidingView, Linking, Pressable } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   Button,
@@ -18,7 +13,6 @@ import {
   Input,
   Spinner,
   Text,
-  useTheme,
   View,
   XStack,
   YStack,
@@ -30,18 +24,12 @@ import { CircleHelp } from "@tamagui/lucide-icons";
 
 export default function SignUp() {
   const dispatch = useAppDispatch();
-  const theme = useTheme();
   const userProfile = useAppSelector(selectUserProfile);
   const loginState = useAppSelector(selectLogin);
-  const [open, setOpen] = useState<boolean>(false);
   const [pds, setPDS] = useState<string>("https://bsky.social");
   const isReady = useAppSelector(selectIsReady);
   const toast = useToastController();
   const navigation = useNavigation();
-  const onOpenChange = (open: boolean) => {
-    setOpen(open);
-    Keyboard.dismiss();
-  };
 
   const onSubmit = () => {
     let thisPds = pds;

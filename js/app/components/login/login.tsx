@@ -1,4 +1,3 @@
-import { AtpBaseClient } from "lexicons";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
   login,
@@ -6,54 +5,41 @@ import {
   selectChatProfile,
   selectIsReady,
   selectLogin,
-  selectPDS,
   selectUserProfile,
-  setPDS,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import { Keyboard, KeyboardAvoidingView } from "react-native";
+import { KeyboardAvoidingView } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   Button,
   Form,
-  H3,
-  H5,
   Input,
-  Label,
-  Sheet,
   Spinner,
   Text,
-  useTheme,
   View,
   XStack,
   YStack,
 } from "tamagui";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
 import Loading from "components/loading/loading";
 import { useToastController } from "@tamagui/toast";
 import { useNavigation } from "@react-navigation/native";
-import AQLink from "components/aqlink";
 
 export default function Login() {
   const dispatch = useAppDispatch();
-  const theme = useTheme();
   const chatProfile = useAppSelector(selectChatProfile);
   const userProfile = useAppSelector(selectUserProfile);
-  const pds = useAppSelector(selectPDS);
   const loginState = useAppSelector(selectLogin);
-  const [open, setOpen] = useState(false);
   const [handle, setHandle] = useState("");
   const isReady = useAppSelector(selectIsReady);
   const toast = useToastController();
   const navigation = useNavigation();
-  const onOpenChange = (open: boolean) => {
-    setOpen(open);
-    Keyboard.dismiss();
-  };
 
+  const submit = () => {
+    dispatch(login(handle));
+  };
   const onEnterPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {
-      dispatch(login(handle));
+      submit();
     }
   };
 
@@ -109,12 +95,7 @@ export default function Login() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Form
-        flex={1}
-        onSubmit={async () => {
-          await dispatch(login(handle));
-        }}
-      >
+      <Form flex={1} onSubmit={submit}>
         <View
           f={1}
           jc="center"
