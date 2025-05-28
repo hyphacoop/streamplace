@@ -35,7 +35,9 @@ export default function Login() {
   const navigation = useNavigation();
 
   const submit = () => {
-    dispatch(login(handle));
+    let clean = handle;
+    if (handle.startsWith("@")) clean = handle.slice(1);
+    dispatch(login(clean));
   };
   const onEnterPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {
