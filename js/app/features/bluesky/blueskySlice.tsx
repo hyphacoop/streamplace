@@ -73,8 +73,28 @@ const uploadThumbnail = async (
   customThumbnail?: Blob,
 ) => {
   if (customThumbnail) {
+    let tries = 0;
     try {
-      const thumbnail = await pdsAgent.uploadBlob(customThumbnail);
+      let thumbnail = await pdsAgent.uploadBlob(customThumbnail);
+
+      while (
+        thumbnail.data.blob.size === 0 &&
+        customThumbnail.size !== 0 &&
+        tries < 3
+      ) {
+        console.warn(
+          "Reuploading blob as blob sizes don't match! Blob size recieved is",
+          thumbnail.data.blob.size,
+          "and sent blob size is",
+          customThumbnail.size,
+        );
+        thumbnail = await pdsAgent.uploadBlob(customThumbnail);
+      }
+
+      if (tries === 3) {
+        throw new Error("Could not successfully upload blob (tried thrice)");
+      }
+
       if (thumbnail.success) {
         console.log("Successfully uploaded thumbnail");
         return thumbnail.data.blob;
@@ -476,6 +496,7 @@ export const blueskySlice = createAppSlice({
               );
             }
             const thumbnailBlob = await thumbnailRes.blob();
+            console.log(thumbnailBlob);
             thumbnail = await uploadThumbnail(
               profile.handle,
               u,
