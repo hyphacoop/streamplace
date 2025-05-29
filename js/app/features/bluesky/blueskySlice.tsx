@@ -8,7 +8,7 @@ import {
 } from "@atproto/api";
 import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
-import { hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
+import { hydrate, STORED_KEY_KEY, DID_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import {
   LivestreamViewHydrated,
@@ -36,6 +36,7 @@ import {
   isLink,
   isMention,
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
+import { OAuthSession } from "@atproto/oauth-client";
 
 const initialState: BlueskyState = {
   status: "start",
@@ -68,7 +69,7 @@ const initialState: BlueskyState = {
 const uploadThumbnail = async (
   handle: string,
   u: URL,
-  pdsAgent: Agent,
+  pdsAgent: StreamplaceAgent,
   profile: ProfileViewDetailed,
   customThumbnail?: Blob,
 ) => {
@@ -148,22 +149,31 @@ export const blueskySlice = createAppSlice({
         const { streamplace } = getState() as { streamplace: StreamplaceState };
         const client = await createOAuthClient(streamplace.url);
         const anonPDSAgent = new StreamplaceAgent(streamplace.url);
-        let initResult = await client.init();
-        return { client, initResult, anonPDSAgent };
+        const did = await Storage.getItem(DID_KEY);
+        let session: OAuthSession | null = null;
+        if (did) {
+          try {
+            session = await client.restore(did);
+          } catch (e) {
+            console.error("Error restoring session", e);
+          }
+        }
+        // let initResult = await client.init();
+        return { client, session, anonPDSAgent };
       },
       {
         pending: (state) => {
           // state.status = "loading";
         },
         fulfilled: (state, action) => {
-          const { client, initResult, anonPDSAgent } = action.payload;
+          const { client, session, anonPDSAgent } = action.payload;
           console.log("loadOAuthClient fulfilled", action.payload);
-          if (initResult && "session" in initResult) {
+          if (session) {
             return {
               ...state,
               client: client,
-              oauthSession: initResult.session as any,
-              pdsAgent: new StreamplaceAgent(initResult.session) as any, // idk why this is needed
+              oauthSession: session as any,
+              pdsAgent: new StreamplaceAgent(session) as any, // idk why this is needed
               anonPDSAgent: anonPDSAgent,
             };
           }
@@ -377,17 +387,14 @@ export const blueskySlice = createAppSlice({
           }
           throw new Error("Missing params, got: " + url);
         }
-        const { bluesky } = thunkAPI.getState() as {
-          bluesky: BlueskyState;
+        const { streamplace } = thunkAPI.getState() as {
+          streamplace: StreamplaceState;
         };
-        if (!bluesky.client) {
-          throw new Error("No client");
-        }
+        const client = await createOAuthClient(streamplace.url);
         try {
-          const ret = await bluesky.client.callback(params);
-          await Storage.setItem("did", ret.session.did);
-
-          return ret.session as any;
+          const ret = await client.callback(params);
+          await Storage.setItem(DID_KEY, ret.session.did);
+          return { session: ret.session as any, client };
         } catch (e) {
           let message = e.message;
           while (e.cause) {
@@ -407,8 +414,9 @@ export const blueskySlice = createAppSlice({
           console.log("oauthCallback fulfilled", action.payload);
           return {
             ...state,
-            oauthSession: action.payload as any,
-            pdsAgent: new Agent(action.payload) as any,
+            client: action.payload.client,
+            oauthSession: action.payload.session as any,
+            pdsAgent: new StreamplaceAgent(action.payload.session) as any,
           };
         },
         rejected: (state, action) => {

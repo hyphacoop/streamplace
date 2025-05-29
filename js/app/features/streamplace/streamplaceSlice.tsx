@@ -270,8 +270,11 @@ export const streamplaceSlice = createAppSlice({
         if (!bluesky.pdsAgent) {
           throw new Error("no pdsAgent");
         }
+        if (!bluesky.oauthSession) {
+          throw new Error("no oauthSession");
+        }
         return await bluesky.pdsAgent.place.stream.live.getSegments({
-          userDID: bluesky.oauthSession?.did,
+          userDID: bluesky.oauthSession.did,
         });
       },
       {
