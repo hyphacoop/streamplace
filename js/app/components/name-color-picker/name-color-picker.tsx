@@ -5,7 +5,7 @@ import {
   selectChatProfile,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
-import { PlaceStreamChatProfile } from "lexicons";
+import { PlaceStreamChatProfile } from "streamplace";
 import { useEffect, useState } from "react";
 import { Keyboard } from "react-native";
 import ColorPicker, {

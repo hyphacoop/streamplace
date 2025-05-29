@@ -67,53 +67,45 @@ trouble building the node locally, you can
 [download a production release of Streamplace](https://git.stream.place/streamplace/streamplace/-/releases)
 and configure it to forward to the dev server with a command like:
 
-````shell
+```shell
 curl -O https://git-cloudflare.stream.place/api/v4/projects/1/packages/generic/latest/VERSION/streamplace-VERSION-darwin-arm64.tar.gz
 tar -xzvf streamplace-VERSION-darwin-arm64.tar.gz
 ./streamplace --dev-frontend-proxy=http://127.0.0.1:38081
 ```
 
-Either way, once you have a local Streamplace node running, install the prerequisites with:
+Either way, once you have a local Streamplace node running, install the
+prerequisites with:
 
 ```shell
 pnpm install
-````
-
-#### Web
-
-```shell
-pnpm run app start
 ```
 
-#### iOS
+Then start building all of the packages with:
+
+```shell
+pnpm run start
+```
+
+#### iOS Build
 
 ```shell
 pnpm run app ios
 ```
 
-#### Android
+#### Android Build
 
 ```shell
 pnpm run app android
 ```
 
 You can also specify a physical device with something like
-`pnpm run app ios -d 'Stream’s iPhone'`. Note also that this command runs a full
-native build of the iOS/Android app, which is not necessary in many cases: once
-you have a copy of the `Devplace` app on your device or emulator, you can boot
-the dev server back up with `pnpm run app start`.
+`pnpm run app ios -d 'Stream’s iPhone'`. Note that these commands only run
+native builds; you'll still need the development server booted up with
+`pnpm run start`.
 
 Note also that `react-native-webrtc`, our primary package for streaming in and
 playing back on iOS/Android, doesn't work very well in the iOS Simulator. It may
 work, it may crash. Physical devices preferred when possible!
-
-### Streamplace Desktop
-
-1. `pnpm install`
-2. `pnpm run desktop start`
-
-By default Streamplace Desktop will assume there's a local node to connect to,
-running with something like `make dev && ./build-linux-amd64/streamplace` above.
 
 ### Streamplace Docs
 

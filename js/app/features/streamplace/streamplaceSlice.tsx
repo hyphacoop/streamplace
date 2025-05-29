@@ -2,8 +2,7 @@ import { isWeb } from "tamagui";
 import { createAppSlice } from "../../hooks/createSlice";
 import Storage from "../../storage";
 import { BlueskyState } from "features/bluesky/blueskyTypes";
-import { SegmentView } from "lexicons/types/place/stream/segment";
-import { LivestreamView } from "lexicons/types/place/stream/livestream";
+import { PlaceStreamSegment, PlaceStreamLivestream } from "streamplace";
 import { StreamplaceAgent } from "features/bluesky/agent";
 
 let DEFAULT_URL = process.env.EXPO_PUBLIC_STREAMPLACE_URL as string;
@@ -44,12 +43,12 @@ export interface StreamplaceState {
   identity: Identity | null;
   initialized: boolean;
   recentSegments: {
-    segments: LivestreamView[];
+    segments: PlaceStreamLivestream.LivestreamView[];
     error: string | null;
     loading: boolean;
     firstRequest: boolean;
   };
-  mySegments: SegmentView[];
+  mySegments: PlaceStreamSegment.SegmentView[];
   telemetry: boolean | null;
   userMuted: boolean | null;
   chatWarned: boolean;

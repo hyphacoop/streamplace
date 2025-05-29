@@ -1,5 +1,5 @@
 {
-  "name": "streamplace-desktop",
+  "name": "@streamplace/desktop",
   "productName": "streamplace-desktop",
   "version": "0.6.28",
   "description": "Streamplace Desktop Application",

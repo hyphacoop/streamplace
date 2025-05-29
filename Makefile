@@ -108,16 +108,16 @@ go-lexicons:
 
 .PHONY: js-lexicons
 js-lexicons:
-	node_modules/.bin/lex gen-api ./js/app/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
-		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/app/lexicons/index.ts \
-		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/app/lexicons/types -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyActorDefs\ from\ '.\/defs'/import \{ AppBskyActorDefs } from '@atproto\/api'/" $$(find ./js/app/lexicons -type f) \
+	node_modules/.bin/lex gen-api ./js/streamplace/src/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
+		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/streamplace/src/lexicons/index.ts \
+		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons/types -type f) \
+		&& sed -i.bak "s/import\ \*\ as\ AppBskyActorDefs\ from\ '.\/defs'/import \{ AppBskyActorDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
 		&& find . | grep bak$$ | xargs rm
 
 .PHONY: md-lexicons
