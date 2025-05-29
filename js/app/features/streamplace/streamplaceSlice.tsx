@@ -245,7 +245,7 @@ export const streamplaceSlice = createAppSlice({
           };
         },
         rejected: (state, err) => {
-          console.error("pollSegments rejected", err);
+          // console.error("pollSegments rejected", err);
           return {
             ...state,
             recentSegments: {

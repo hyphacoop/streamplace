@@ -7,6 +7,7 @@ import {
   loadOAuthClient,
   oauthCallback,
   oauthError,
+  selectIsReady,
   selectOAuthSession,
   selectUserProfile,
 } from "./blueskySlice";
@@ -17,9 +18,18 @@ export default function BlueskyProvider({
   children: React.ReactNode;
 }) {
   const dispatch = useAppDispatch();
+  const isReady = useAppSelector(selectIsReady);
   useEffect(() => {
     dispatch(loadOAuthClient());
   }, []);
+  useEffect(() => {
+    if (!isReady) {
+      const handle = setInterval(() => {
+        dispatch(loadOAuthClient());
+      }, 5000);
+      return () => clearInterval(handle);
+    }
+  }, [isReady]);
   const oauthSession = useAppSelector(selectOAuthSession);
   const userProfile = useAppSelector(selectUserProfile);
   const wallet = useWallet();

@@ -37,6 +37,7 @@ import {
   isMention,
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 import { OAuthSession } from "@atproto/oauth-client";
+import error from "components/error/error";
 
 const initialState: BlueskyState = {
   status: "start",
@@ -191,7 +192,7 @@ export const blueskySlice = createAppSlice({
         rejected: (state, { error }) => {
           return {
             ...state,
-            status: "loggedOut",
+            // status: "loggedOut",
           };
         },
       },
