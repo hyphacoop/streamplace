@@ -132,7 +132,6 @@ export const streamplaceSlice = createAppSlice({
     ),
 
     setURL: create.reducer((state, action: { payload: string }) => {
-      console.log("setURL", action);
       Storage.setItem(URL_KEY, action.payload).catch((err) => {
         console.error("setURL error", err);
       });
@@ -212,10 +211,10 @@ export const streamplaceSlice = createAppSlice({
           bluesky: BlueskyState;
         };
 
-        let agent = bluesky.anonPDSAgent;
+        let agent = bluesky.pdsAgent;
 
         if (!agent) {
-          throw new Error("no anonPDSAgent");
+          agent = new StreamplaceAgent(streamplace.url);
         }
 
         let users = await agent.place.stream.live.getLiveUsers();
