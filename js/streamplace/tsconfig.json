@@ -1,0 +1,10 @@
+{
+  "include": [],
+  "references": [{ "path": "../app/tsconfig.base.json" }],
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "es2022",
+    "jsx": "react-jsx",
+    "sourceMap": true
+  }
+}

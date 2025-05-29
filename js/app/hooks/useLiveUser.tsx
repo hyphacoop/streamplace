@@ -1,7 +1,6 @@
 import { selectMySegments } from "features/streamplace/streamplaceSlice";
-import { isRecord } from "lexicons/types/place/stream/segment";
 import { useAppSelector } from "store/hooks";
-import { PlaceStreamSegment } from "lexicons";
+import { PlaceStreamSegment } from "streamplace";
 
 // composite selector that tells us when the current user is live
 export const useLiveUser = (): boolean => {
@@ -9,7 +8,7 @@ export const useLiveUser = (): boolean => {
   if (mySegments.length === 0) {
     return false;
   }
-  if (!isRecord(mySegments[0].record)) {
+  if (!PlaceStreamSegment.isRecord(mySegments[0].record)) {
     return false;
   }
   const record = mySegments[0].record as PlaceStreamSegment.Record;

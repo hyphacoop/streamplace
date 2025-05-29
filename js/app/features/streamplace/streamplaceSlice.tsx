@@ -2,8 +2,7 @@ import { isWeb } from "tamagui";
 import { createAppSlice } from "../../hooks/createSlice";
 import Storage from "../../storage";
 import { BlueskyState } from "features/bluesky/blueskyTypes";
-import { SegmentView } from "lexicons/types/place/stream/segment";
-import { LivestreamView } from "lexicons/types/place/stream/livestream";
+import { PlaceStreamSegment, PlaceStreamLivestream } from "streamplace";
 import { StreamplaceAgent } from "features/bluesky/agent";
 
 let DEFAULT_URL = process.env.EXPO_PUBLIC_STREAMPLACE_URL as string;
@@ -44,12 +43,12 @@ export interface StreamplaceState {
   identity: Identity | null;
   initialized: boolean;
   recentSegments: {
-    segments: LivestreamView[];
+    segments: PlaceStreamLivestream.LivestreamView[];
     error: string | null;
     loading: boolean;
     firstRequest: boolean;
   };
-  mySegments: SegmentView[];
+  mySegments: PlaceStreamSegment.SegmentView[];
   telemetry: boolean | null;
   userMuted: boolean | null;
   chatWarned: boolean;
@@ -133,6 +132,7 @@ export const streamplaceSlice = createAppSlice({
     ),
 
     setURL: create.reducer((state, action: { payload: string }) => {
+      console.log("setURL", action);
       Storage.setItem(URL_KEY, action.payload).catch((err) => {
         console.error("setURL error", err);
       });
@@ -212,10 +212,10 @@ export const streamplaceSlice = createAppSlice({
           bluesky: BlueskyState;
         };
 
-        let agent = bluesky.pdsAgent;
+        let agent = bluesky.anonPDSAgent;
 
         if (!agent) {
-          agent = new StreamplaceAgent(streamplace.url);
+          throw new Error("no anonPDSAgent");
         }
 
         let users = await agent.place.stream.live.getLiveUsers();
