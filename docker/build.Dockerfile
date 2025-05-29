@@ -10,8 +10,6 @@ ENV GO_VERSION 1.24.2
 ENV NODE_VERSION 22.15.0
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt update && apt install -y ca-certificates
-
 ADD docker/sources.list /etc/apt/sources.list
 ADD docker/winehq.key /etc/apt/keyrings/winehq-archive.key
 RUN dpkg --add-architecture i386 && dpkg --add-architecture arm64
@@ -33,11 +31,15 @@ RUN apt update \
   nasm gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-tools zip bison flex expect \
   mono-runtime nuget mono-xsp4 squashfs-tools \
   libc6:arm64 libstdc++6:arm64 \
-  && apt install -y --install-recommends winehq-stable \
   && pip install meson tomli \
   && curl -L --fail https://go.dev/dl/go$GO_VERSION.linux-$TARGETARCH.tar.gz -o go.tar.gz \
   && tar -C /usr/local -xf go.tar.gz \
   && rm go.tar.gz
+
+RUN echo 'deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/winehq-archive.key] https://storage.googleapis.com/streamplace-crap/dl.winehq.org/wine-builds/ubuntu/ jammy main' >> /etc/apt/sources.list \
+  && apt update \
+  && apt install -y --install-recommends winehq-stable
+
 ENV PATH $PATH:/usr/local/go/bin:/root/go/bin:/root/.cargo/bin
 
 RUN export NODEARCH="$TARGETARCH" \
@@ -47,7 +49,7 @@ RUN export NODEARCH="$TARGETARCH" \
   && cp -r node-v$NODE_VERSION-linux-$NODEARCH/* /usr/local \
   && rm -rf node.tar.gz node-v$NODE_VERSION-linux-$NODEARCH
 
-RUN npm install -g yarn
+RUN npm install -g corepack@latest
 
 ARG ANDROID_SDK_VERSION=11076708
 ENV ANDROID_HOME /opt/android-sdk

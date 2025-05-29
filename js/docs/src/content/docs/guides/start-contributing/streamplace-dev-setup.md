@@ -11,9 +11,9 @@ get started:
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/)
-- [Yarn](https://yarnpkg.com/)
-  - A way to install it is with `pnpm/npm install -g yarn` if corepack is not
-    enabled in your node install.
+- [pnpm](https://pnpm.io/)
+  - A way to install it is with `npm install -g pnpm` if corepack is not enabled
+    in your node install.
 - Go (version 1.24)
   - If you use `mise`, you can install latest Go 1.24 with
     `mise install go@prefix:1.24`
@@ -67,60 +67,52 @@ trouble building the node locally, you can
 [download a production release of Streamplace](https://git.stream.place/streamplace/streamplace/-/releases)
 and configure it to forward to the dev server with a command like:
 
-````shell
+```shell
 curl -O https://git-cloudflare.stream.place/api/v4/projects/1/packages/generic/latest/VERSION/streamplace-VERSION-darwin-arm64.tar.gz
 tar -xzvf streamplace-VERSION-darwin-arm64.tar.gz
 ./streamplace --dev-frontend-proxy=http://127.0.0.1:38081
 ```
 
-Either way, once you have a local Streamplace node running, install the prerequisites with:
+Either way, once you have a local Streamplace node running, install the
+prerequisites with:
 
 ```shell
-yarn install
-````
-
-#### Web
-
-```shell
-yarn run app start
+pnpm install
 ```
 
-#### iOS
+Then start building all of the packages with:
 
 ```shell
-yarn run app ios
+pnpm run start
 ```
 
-#### Android
+#### iOS Build
 
 ```shell
-yarn run app android
+pnpm run app ios
+```
+
+#### Android Build
+
+```shell
+pnpm run app android
 ```
 
 You can also specify a physical device with something like
-`yarn run app ios -d 'Stream’s iPhone'`. Note also that this command runs a full
-native build of the iOS/Android app, which is not necessary in many cases: once
-you have a copy of the `Devplace` app on your device or emulator, you can boot
-the dev server back up with `yarn run app start`.
+`pnpm run app ios -d 'Stream’s iPhone'`. Note that these commands only run
+native builds; you'll still need the development server booted up with
+`pnpm run start`.
 
 Note also that `react-native-webrtc`, our primary package for streaming in and
 playing back on iOS/Android, doesn't work very well in the iOS Simulator. It may
 work, it may crash. Physical devices preferred when possible!
-
-### Streamplace Desktop
-
-1. `yarn install`
-2. `yarn run desktop start`
-
-By default Streamplace Desktop will assume there's a local node to connect to,
-running with something like `make dev && ./build-linux-amd64/streamplace` above.
 
 ### Streamplace Docs
 
 You're looking at them. Boot up the dev server with:
 
 ```
-yarn run docs start
+pnpm run docs start
 ```
 
 And you can then access them at

@@ -29,7 +29,7 @@ version:
 
 .PHONY: install
 install:
-	yarn install --inline-builds
+	pnpm install
 
 .PHONY: app-and-node
 app-and-node:
@@ -43,7 +43,7 @@ app-and-node-and-test:
 	$(MAKE) test
 .PHONY: app
 app: schema install
-	yarn run build
+	pnpm run build
 
 .PHONY: node
 node: schema
@@ -51,7 +51,7 @@ node: schema
 	meson compile -C $(BUILDDIR) streamplace
 
 js/app/dist/index.html: install
-	yarn run build
+	pnpm run build
 
 .PHONY: dev-setup
 dev-setup: schema install js/app/dist/index.html
@@ -108,23 +108,29 @@ go-lexicons:
 
 .PHONY: js-lexicons
 js-lexicons:
-	node_modules/.bin/lex gen-api ./js/app/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
-		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/app/lexicons/index.ts \
-		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/app/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/app/lexicons/types -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyActorDefs\ from\ '.\/defs'/import \{ AppBskyActorDefs } from '@atproto\/api'/" $$(find ./js/app/lexicons -type f) \
+	node_modules/.bin/lex gen-api ./js/streamplace/src/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
+		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/streamplace/src/lexicons/index.ts \
+		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons/types -type f) \
+		&& sed -i.bak "s/import\ \*\ as\ AppBskyActorDefs\ from\ '.\/defs'/import \{ AppBskyActorDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
 		&& find . | grep bak$$ | xargs rm
 
 .PHONY: md-lexicons
 md-lexicons:
-	yarn exec lexmd \
-	    lexicons/place/stream \
-		js/docs/src/content/docs/lex-reference \
+
+	pnpm exec lexmd \
+	    ./lexicons \
+		.build/temp \
+		subprojects/atproto/lexicons \
+		js/docs/src/content/docs/lex-reference/openapi.json \
+	&& ls -R .build/temp \
+	&& cp -rf .build/temp/place/stream/* js/docs/src/content/docs/lex-reference/ \
+	&& rm -rf .build/temp \
 	&& $(MAKE) fix
 
 .PHONY: lexgen
@@ -344,8 +350,8 @@ node-all-platforms: app
 .PHONY: desktop-linux
 desktop-linux:
 	cd js/desktop \
-	&& yarn run make --platform linux --arch x64 \
-	&& yarn run make --platform linux --arch arm64 \
+	&& pnpm run make --platform linux --arch x64 \
+	&& pnpm run make --platform linux --arch arm64 \
 	&& cd - \
 	&& mv "js/desktop/out/make/AppImage/x64/Streamplace-$(VERSION_ELECTRON)-x64.AppImage" ./bin/streamplace-desktop-$(VERSION)-linux-amd64.AppImage \
 	&& mv "js/desktop/out/make/AppImage/arm64/Streamplace-$(VERSION_ELECTRON)-arm64.AppImage" ./bin/streamplace-desktop-$(VERSION)-linux-arm64.AppImage
@@ -353,7 +359,7 @@ desktop-linux:
 .PHONY: desktop-windows
 desktop-windows:
 	cd js/desktop \
-	&& yarn run make --platform win32 --arch x64 \
+	&& pnpm run make --platform win32 --arch x64 \
 	&& cd - \
 	&& export SUM=$$(cat ./js/desktop/out/make/squirrel.windows/x64/streamplace_desktop-$(VERSION_ELECTRON)-full.nupkg | openssl sha1 | awk '{ print $$2 }') \
 	&& echo $$SUM > ./bin/streamplace-desktop-$(VERSION)-windows-amd64.nupkg.sha1 \
@@ -409,8 +415,8 @@ node-all-platforms-macos: app
 desktop-macos:
 	export DEBUG="electron-osx-sign*" \
 	&& cd js/desktop \
-	&& yarn run make --platform darwin --arch arm64 \
-	&& yarn run make --platform darwin --arch x64 \
+	&& pnpm run make --platform darwin --arch arm64 \
+	&& pnpm run make --platform darwin --arch x64 \
 	&& cd - \
 	&& mv js/desktop/out/make/Streamplace-$(VERSION_ELECTRON)-x64.dmg ./bin/streamplace-desktop-$(VERSION)-darwin-amd64.dmg \
 	&& mv js/desktop/out/make/Streamplace-$(VERSION_ELECTRON)-arm64.dmg ./bin/streamplace-desktop-$(VERSION)-darwin-arm64.dmg \
@@ -569,7 +575,7 @@ ci-upload-file:
 .PHONY: release
 release: install
 	$(MAKE) lexicons
-	yarn run release
+	pnpm run release
 
 .PHONY: ci-release
 ci-release:
@@ -580,12 +586,12 @@ ci-release:
 .PHONY: check
 check: install
 	$(MAKE) golangci-lint
-	yarn run check
+	pnpm run check
 	if [ "`gofmt -l . | wc -l`" -gt 0 ]; then echo 'gofmt failed, run make fix'; exit 1; fi
 
 .PHONY: fix
 fix:
-	yarn run fix
+	pnpm run fix
 	gofmt -w .
 
 .PHONY: precommit

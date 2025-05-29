@@ -1,4 +1,4 @@
-import { AtpBaseClient } from "lexicons";
+import { AtpBaseClient } from "streamplace";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
   login,

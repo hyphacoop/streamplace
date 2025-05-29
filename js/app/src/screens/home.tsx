@@ -26,10 +26,7 @@ import {
   H3,
   Text,
 } from "tamagui";
-import {
-  LivestreamView,
-  Record as LivestreamRecord,
-} from "lexicons/types/place/stream/livestream";
+import { LivestreamRecord, PlaceStreamLivestream } from "streamplace";
 import { AlertCircle, AlertTriangle } from "@tamagui/lucide-icons";
 
 // as we're not using a specific grid library these are necessary
@@ -50,8 +47,10 @@ type StreamRecord = {
 };
 
 // Function to generate mock data for testing purposes
-function generateMockSegments(count: number): { streams: LivestreamView[] } {
-  const mockSegments: LivestreamView[] = [];
+function generateMockSegments(count: number): {
+  streams: PlaceStreamLivestream.LivestreamView[];
+} {
+  const mockSegments: PlaceStreamLivestream.LivestreamView[] = [];
   const baseDid = "did:plc:mockmockmockmockmockmockmockmockmock";
 
   for (let i = 0; i < count; i++) {
@@ -64,7 +63,7 @@ function generateMockSegments(count: number): { streams: LivestreamView[] } {
         $type: "place.stream.livestream",
         createdAt: new Date().toISOString(),
         title: `Mock Stream ${i + 1}`,
-      } as LivestreamRecord,
+      } as PlaceStreamLivestream.Record,
       author: {
         did: did,
         handle: handle,
@@ -119,7 +118,7 @@ function HomeScreenItem({
   avatarUrl,
   horizontal = false,
 }: {
-  item: LivestreamView;
+  item: PlaceStreamLivestream.LivestreamView;
   media: UseMediaState;
   size: StreamCardSize;
   avatarUrl?: string;
@@ -140,7 +139,9 @@ function HomeScreenItem({
     >
       <StreamCardHorizontal
         size={size}
-        title={(item.record as LivestreamRecord).title || "A livestream!"}
+        title={
+          (item.record as PlaceStreamLivestream.Record).title || "A livestream!"
+        }
         horizontal={horizontal}
         thumbnailUrl={`/api/playback/${user}/stream.png?bweh=${(Date.now() / 120000).toFixed(0)}`}
         avatarUrl={avatarUrl}
@@ -240,7 +241,7 @@ export default function HomeScreen({
   let cutSegs = segments.slice(firstRowCols);
 
   // fill in null data to pad out the list for grid display
-  let segs: (LivestreamView | null)[] = cutSegs.concat(
+  let segs: (PlaceStreamLivestream.LivestreamView | null)[] = cutSegs.concat(
     Array((cols - (segments.length % cols)) % cols).fill(null),
   );
   if (cutSegs.length === 0 && segs.every((s) => s === null) && cols > 0) {
@@ -249,7 +250,7 @@ export default function HomeScreen({
   }
 
   // assemble rows
-  const rows: (LivestreamView | null)[][] = [];
+  const rows: (PlaceStreamLivestream.LivestreamView | null)[][] = [];
   for (let i = 0; i < cutSegs.length; i += cols) {
     let row = cutSegs.slice(i, i + cols);
     // pad the last row with nulls if it's not full

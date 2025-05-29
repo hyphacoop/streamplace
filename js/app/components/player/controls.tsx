@@ -53,7 +53,7 @@ import Loading from "components/loading/loading";
 import Viewers from "components/viewers";
 import { userMute } from "features/streamplace/streamplaceSlice";
 import { Countdown } from "components/countdown";
-import { Rendition } from "lexicons/types/place/stream/defs";
+import { PlaceStreamDefs } from "streamplace";
 import usePlatform from "hooks/usePlatform";
 import { Image } from "tamagui";
 
@@ -625,7 +625,7 @@ function LiveBubbleText() {
 
 function GearMenu(
   props: PlayerProps & {
-    renditions: Rendition[];
+    renditions: PlaceStreamDefs.Rendition[];
     selectedRendition: string;
     protocol: string;
     setSelectedRendition: (rendition: string) => void;

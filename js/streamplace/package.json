@@ -1,0 +1,36 @@
+{
+  "name": "streamplace",
+  "version": "0.0.1",
+  "description": "Live video on the AT Protocol",
+  "main": "dist/index.js",
+  "types": "dist/index.d.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup-node",
+    "postinstall": "cd ../.. && make js-lexicons && cd - && pnpm run build",
+    "start": "tsup-node --watch"
+  },
+  "keywords": [
+    "streamplace",
+    "livepeer",
+    "atproto"
+  ],
+  "author": "Streamplace",
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "@atproto/xrpc": "^0.7.0",
+    "@atproto/lexicon": "^0.4.11",
+    "multiformats": "^9.9.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.3.3",
+    "tsup": "^8.5.0"
+  }
+}
