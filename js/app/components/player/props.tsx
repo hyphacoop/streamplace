@@ -1,5 +1,5 @@
 import { VideoView } from "expo-video";
-import { Rendition } from "lexicons/types/place/stream/defs";
+import { PlaceStreamDefs } from "streamplace";
 
 export enum IngestMediaSource {
   USER = "user",
@@ -36,7 +36,7 @@ export type PlayerProps = {
   ingestAutoStart?: boolean;
   avSyncTest?: boolean;
   offline: boolean;
-  renditions: Rendition[];
+  renditions: PlaceStreamDefs.Rendition[];
   selectedRendition: string;
   muteWasForced: boolean;
   setMuteWasForced: (muteWasForced: boolean) => void;

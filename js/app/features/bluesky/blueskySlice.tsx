@@ -24,7 +24,7 @@ import {
   PlaceStreamChatProfile,
   PlaceStreamKey,
   PlaceStreamLivestream,
-} from "lexicons";
+} from "streamplace";
 import Storage from "storage";
 import { isWeb } from "tamagui";
 import { privateKeyToAccount } from "viem/accounts";

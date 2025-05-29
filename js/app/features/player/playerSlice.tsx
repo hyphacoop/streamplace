@@ -3,32 +3,24 @@ import { createAction } from "@reduxjs/toolkit";
 import { PROTOCOL_HLS, PROTOCOL_WEBRTC } from "components/player/props";
 import { StreamplaceState } from "features/streamplace/streamplaceSlice";
 import { uuidv7 } from "hooks/uuid";
-import { isMessageView } from "lexicons/types/place/stream/chat/defs";
 import { createContext, useContext } from "react";
 import { createAppSlice } from "../../hooks/createSlice";
-import { Record as ChatMessageRecord } from "../../lexicons/types/place/stream/chat/message";
 import {
-  BlockView,
-  isBlockView,
-  isRenditions,
-  Rendition,
-} from "../../lexicons/types/place/stream/defs";
-import {
-  isLivestreamView,
-  isViewerCount,
-  Record as LivestreamRecord,
-  LivestreamView,
-  ViewerCount,
-} from "../../lexicons/types/place/stream/livestream";
-import * as Segment from "../../lexicons/types/place/stream/segment";
+  PlaceStreamSegment,
+  PlaceStreamLivestream,
+  PlaceStreamDefs,
+  PlaceStreamChatDefs,
+  PlaceStreamChatMessage,
+} from "streamplace";
 import { useAppDispatch } from "store/hooks";
 
 export interface PlayerContextType {
   playerId: string | null;
 }
 
-export interface LivestreamViewHydrated extends LivestreamView {
-  record: LivestreamRecord;
+export interface LivestreamViewHydrated
+  extends PlaceStreamLivestream.LivestreamView {
+  record: PlaceStreamLivestream.Record;
 }
 export interface PostViewHydrated extends AppBskyFeedDefs.PostView {
   record: AppBskyFeedPost.Record;
@@ -37,7 +29,7 @@ export interface MessageViewHydrated {
   uri: string;
   cid: string;
   author: Author;
-  record: ChatMessageRecord;
+  record: PlaceStreamChatMessage.Record;
   indexedAt: string;
   chatProfile?: ChatProfile;
   replyTo?: MessageViewHydrated;
@@ -71,8 +63,8 @@ export interface PlayerState {
   chat: { [key: string]: MessageViewHydrated };
   chatList: MessageViewHydrated[];
   livestream: LivestreamViewHydrated | null;
-  segment: Segment.Record | null;
-  renditions: Rendition[];
+  segment: PlaceStreamSegment.Record | null;
+  renditions: PlaceStreamDefs.Rendition[];
   selectedRendition: string | null;
   protocol: string;
   replyToMessage: MessageViewHydrated | null;
@@ -159,7 +151,7 @@ export const usePlayerId = () => {
 const reduceChat = (
   state: PlayerState,
   messages: MessageViewHydrated[],
-  blocks: BlockView[],
+  blocks: PlaceStreamDefs.BlockView[],
 ): PlayerState => {
   state = { ...state } as PlayerState;
   const newChat: { [key: string]: MessageViewHydrated } = { ...state.chat };
@@ -319,7 +311,7 @@ export const playerSlice = createAppSlice({
           },
         ) => {
           for (const message of action.payload.messages) {
-            if (isLivestreamView(message)) {
+            if (PlaceStreamLivestream.isLivestreamView(message)) {
               state = {
                 ...state,
                 [action.payload.playerId]: {
@@ -327,7 +319,7 @@ export const playerSlice = createAppSlice({
                   livestream: message as LivestreamViewHydrated,
                 },
               };
-            } else if (isViewerCount(message)) {
+            } else if (PlaceStreamLivestream.isViewerCount(message)) {
               state = {
                 ...state,
                 [action.payload.playerId]: {
@@ -335,13 +327,13 @@ export const playerSlice = createAppSlice({
                   viewers: message.count,
                 },
               };
-            } else if (isMessageView(message)) {
+            } else if (PlaceStreamChatDefs.isMessageView(message)) {
               // Explicitly map MessageView to MessageViewHydrated
               const hydrated: MessageViewHydrated = {
                 uri: message.uri,
                 cid: message.cid,
                 author: message.author,
-                record: message.record as ChatMessageRecord,
+                record: message.record as PlaceStreamChatMessage.Record,
                 indexedAt: message.indexedAt,
                 chatProfile: (message as any).chatProfile,
                 replyTo: (message as any).replyTo,
@@ -354,16 +346,16 @@ export const playerSlice = createAppSlice({
                   [],
                 ),
               };
-            } else if (Segment.isRecord(message)) {
+            } else if (PlaceStreamSegment.isRecord(message)) {
               state = {
                 ...state,
                 [action.payload.playerId]: {
                   ...state[action.payload.playerId],
-                  segment: message as Segment.Record,
+                  segment: message as PlaceStreamSegment.Record,
                 },
               };
-            } else if (isBlockView(message)) {
-              const block = message as BlockView;
+            } else if (PlaceStreamDefs.isBlockView(message)) {
+              const block = message as PlaceStreamDefs.BlockView;
               state = {
                 ...state,
                 [action.payload.playerId]: reduceChat(
@@ -372,7 +364,7 @@ export const playerSlice = createAppSlice({
                   [block],
                 ),
               };
-            } else if (isRenditions(message)) {
+            } else if (PlaceStreamDefs.isRenditions(message)) {
               state = {
                 ...state,
                 [action.payload.playerId]: {
@@ -449,7 +441,7 @@ export const playerSlice = createAppSlice({
             streamplace: StreamplaceState;
           };
           const res = await fetch(`${streamplace.url}/api/view-count/${user}`);
-          const data = (await res.json()) as ViewerCount;
+          const data = (await res.json()) as PlaceStreamLivestream.ViewerCount;
           return { playerId, count: data.count };
         },
         {
@@ -548,7 +540,7 @@ export const playerSlice = createAppSlice({
           const res = await fetch(
             `${streamplace.url}/api/segment/recent/${user}`,
           );
-          const data = (await res.json()) as Segment.Record;
+          const data = (await res.json()) as PlaceStreamSegment.Record;
           return { playerId, segment: data };
         },
         {
@@ -697,13 +689,13 @@ export const usePlayerLivestream = (): ((state: {
 };
 export const usePlayerSegment = (): ((state: {
   player: PlayersState;
-}) => Segment.Record | null) => {
+}) => PlaceStreamSegment.Record | null) => {
   const playerId = usePlayerId();
   return (state) => state.player[playerId].segment;
 };
 export const usePlayerRenditions = (): ((state: {
   player: PlayersState;
-}) => Rendition[]) => {
+}) => PlaceStreamDefs.Rendition[]) => {
   const playerId = usePlayerId();
   return (state) => state.player[playerId].renditions;
 };
