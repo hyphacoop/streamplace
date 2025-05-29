@@ -163,7 +163,10 @@ export const blueskySlice = createAppSlice({
       },
       {
         pending: (state) => {
-          // state.status = "loading";
+          return {
+            ...state,
+            status: "start",
+          };
         },
         fulfilled: (state, action) => {
           const { client, session, anonPDSAgent } = action.payload;
@@ -171,11 +174,12 @@ export const blueskySlice = createAppSlice({
           if (session) {
             return {
               ...state,
-              client: client,
+              client: client as any,
+              status: "loggedIn",
               oauthSession: session as any,
               pdsAgent: new StreamplaceAgent(session) as any, // idk why this is needed
-              anonPDSAgent: anonPDSAgent,
-            };
+              anonPDSAgent: anonPDSAgent as any,
+            } as any;
           }
           return {
             ...state,
@@ -408,19 +412,27 @@ export const blueskySlice = createAppSlice({
 
       {
         pending: (state) => {
-          // state.status = "loading";
+          return {
+            ...state,
+            status: "start",
+          };
         },
         fulfilled: (state, action) => {
           console.log("oauthCallback fulfilled", action.payload);
           return {
             ...state,
-            client: action.payload.client,
+            client: action.payload.client as any,
             oauthSession: action.payload.session as any,
             pdsAgent: new StreamplaceAgent(action.payload.session) as any,
+            status: "loggedIn",
           };
         },
         rejected: (state, action) => {
           console.error("oauthCallback rejected", action.error);
+          return {
+            ...state,
+            status: "loggedOut",
+          };
         },
       },
     ),
