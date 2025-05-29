@@ -31,7 +31,12 @@ export default defineConfig({
             base: "api",
             label: "Related XRPC API endpoints",
             schema: "./src/content/docs/lex-reference/openapi.json", // or your json generated from swagger
-            sidebarMethodBadges: true,
+            sidebar: {
+              operations: {
+                badges: true,
+                labels: "operationId",
+              },
+            },
           },
         ]),
       ],
