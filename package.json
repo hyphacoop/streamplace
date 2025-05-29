@@ -18,7 +18,7 @@
     "release": "lerna publish --force-publish",
     "precommit": "make precommit",
     "app": "pnpm run -r --stream --filter @streamplace/app... --parallel",
-    "desktop": "pnpm run -r --stream --filter @streamplace/desktop... --parallel",
+    "desktop": "pnpm run -r --stream --filter streamplace-desktop... --parallel",
     "docs": "cd js/docs && pnpm run",
     "start": "pnpm run -r --stream --parallel start"
   },
