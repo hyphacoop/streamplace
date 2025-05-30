@@ -123,8 +123,13 @@ js-lexicons:
 .PHONY: md-lexicons
 md-lexicons:
 	pnpm exec lexmd \
-	    lexicons/place/stream \
-		js/docs/src/content/docs/lex-reference \
+	    ./lexicons \
+		.build/temp \
+		subprojects/atproto/lexicons \
+		js/docs/src/content/docs/lex-reference/openapi.json \
+	&& ls -R .build/temp \
+	&& cp -rf .build/temp/place/stream/* js/docs/src/content/docs/lex-reference/ \
+	&& rm -rf .build/temp \
 	&& $(MAKE) fix
 
 .PHONY: lexgen
