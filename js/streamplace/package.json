@@ -1,6 +1,6 @@
 {
   "name": "streamplace",
-  "version": "0.0.1",
+  "version": "0.6.29",
   "description": "Live video on the AT Protocol",
   "main": "dist/index.js",
   "types": "dist/index.d.js",
@@ -25,12 +25,12 @@
   "license": "MIT",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
-    "@atproto/xrpc": "^0.7.0",
     "@atproto/lexicon": "^0.4.11",
+    "@atproto/xrpc": "^0.7.0",
     "multiformats": "^9.9.0"
   },
   "devDependencies": {
-    "typescript": "~5.3.3",
-    "tsup": "^8.5.0"
+    "tsup": "^8.5.0",
+    "typescript": "~5.3.3"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "streamplace-docs",
   "type": "module",
-  "version": "0.6.28",
+  "version": "0.6.29",
   "scripts": {
     "dev": "astro dev --host 0.0.0.0 --port 38082",
     "start": "astro dev --host 0.0.0.0 --port 38082",
@@ -12,9 +12,9 @@
   "dependencies": {
     "@astrojs/starlight": "^0.34.1",
     "@fontsource/atkinson-hyperlegible-next": "^5.2.2",
+    "@streamplace/app": "workspace:*",
     "astro": "^5.6.1",
     "sharp": "^0.32.5",
-    "@streamplace/app": "workspace:*",
     "starlight-openapi": "^0.17.0",
     "starlight-openapi-rapidoc": "^0.8.1-beta",
     "streamplace": "workspace:*"
