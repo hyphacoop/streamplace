@@ -1,9 +1,5 @@
-import { AtpBaseClient } from "streamplace";
-import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
   login,
-  logout,
-  selectChatProfile,
   selectIsReady,
   selectLogin,
   selectUserProfile,
@@ -26,24 +22,26 @@ import { useToastController } from "@tamagui/toast";
 import { useNavigation } from "@react-navigation/native";
 import { CircleHelp } from "@tamagui/lucide-icons";
 
-export default function Login() {
+export default function SignUp() {
   const dispatch = useAppDispatch();
-  const chatProfile = useAppSelector(selectChatProfile);
   const userProfile = useAppSelector(selectUserProfile);
   const loginState = useAppSelector(selectLogin);
-  const [handle, setHandle] = useState("");
+  const [pds, setPDS] = useState<string>("https://bsky.social");
   const isReady = useAppSelector(selectIsReady);
   const toast = useToastController();
   const navigation = useNavigation();
 
-  const submit = () => {
-    let clean = handle;
-    if (handle.startsWith("@")) clean = handle.slice(1);
-    dispatch(login(clean));
+  const onSubmit = () => {
+    let thisPds = pds;
+    if (thisPds === undefined) {
+      thisPds = "https://bsky.social";
+    }
+    dispatch(login(thisPds));
   };
+
   const onEnterPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {
-      submit();
+      onSubmit();
     }
   };
 
@@ -63,43 +61,19 @@ export default function Login() {
     );
   }
 
-  let rgb =
-    chatProfile.profile?.color &&
-    `rgb(${chatProfile.profile?.color?.red},${chatProfile.profile?.color?.green},${chatProfile.profile?.color?.blue})`;
-
   if (userProfile) {
-    navigation.setOptions({ title: `Account` });
+    // navigate to /login
+    navigation.navigate("Login");
     return (
       <View f={1} jc="center" ai="stretch" gap="$3">
-        <Text textAlign="center" fontSize="$8">
-          Hey, <Text color={rgb || "#bd6e86"}>@{userProfile.handle}</Text>.
-        </Text>
-        <View flexDirection="row" gap="$2" justifyContent="center">
-          <Button
-            onPress={() => dispatch(logout())}
-            maxWidth={300}
-            textAlign="center"
-            marginHorizontal="auto"
-            flexBasis={250}
-          >
-            Log out
-          </Button>
-        </View>
-        <NameColorPicker
-          buttonProps={{
-            textAlign: "center",
-            flexBasis: 250,
-            maxWidth: 300,
-            marginHorizontal: "auto",
-          }}
-        />
+        <Loading />
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Form flex={1} onSubmit={submit}>
+      <Form flex={1} onSubmit={onSubmit}>
         <View
           f={1}
           jc="center"
@@ -118,43 +92,47 @@ export default function Login() {
             gap="$2"
           >
             <Text fontSize="$9" fontWeight="200">
-              Log in
+              Sign up
             </Text>
             <View flexWrap="wrap" flexDirection="row" gap="$1.5">
               <Text color="$color11">
-                Sign in using your handle on the AT Protocol
+                We'll redirect you to your chosen PDS
               </Text>
               <Pressable
                 onPress={() => {
                   const u = new URL(
-                    "https://atproto.academy/docs/Authentication/why",
+                    "https://atproto.academy/docs/glossary#pds-personal-data-server",
                   );
                   Linking.openURL(u.toString());
                 }}
               >
                 <CircleHelp size={18} color="lightskyblue" />
-              </Pressable>
-              <Text color="$color11">(e.g. your Bluesky handle)</Text>
+              </Pressable>{" "}
+              <Text color="$color11">to sign up.</Text>
+              <Text color="$color11">
+                Then, log in with the account you just created.
+              </Text>
             </View>
             <YStack gap="$2" py="$4">
               <Text htmlFor="pdsUrl" color="$color11">
-                Handle
+                PDS URL
               </Text>
               <Input
                 id="pdsUrl"
-                value={handle}
-                onChangeText={setHandle}
+                value={pds}
+                onChangeText={setPDS}
                 backgroundColor="$color2"
                 onSubmitEditing={onEnterPress}
               />
             </YStack>
+
             <XStack justifyContent="space-between">
               <Button
-                onPress={() => navigation.navigate("Signup")}
+                onPress={() => navigation.navigate("Login")}
                 backgroundColor="$gray3"
                 color="$color"
               >
-                Sign Up
+                Log In
               </Button>
               <Form.Trigger asChild>
                 <Button
@@ -164,7 +142,7 @@ export default function Login() {
                   backgroundColor="$accentColor"
                   disabled={loginState.loading}
                 >
-                  <Text>{loginState.loading ? <Spinner /> : `Log in`}</Text>
+                  <Text>{loginState.loading ? <Spinner /> : `Sign up`}</Text>
                 </Button>
               </Form.Trigger>
             </XStack>
