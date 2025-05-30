@@ -19,6 +19,27 @@ const initialState: SidebarState = {
   isLoaded: false,
 };
 
+function verifySidebarState(state: any): SidebarState {
+  const verifiedState: SidebarState = {
+    isCollapsed:
+      typeof state.isCollapsed === "boolean" ? state.isCollapsed : false,
+    isHidden: typeof state.isHidden === "boolean" ? state.isHidden : false,
+    targetWidth:
+      typeof state.targetWidth === "number" ? state.targetWidth : 250,
+    isLoaded: false,
+  };
+
+  if (!verifiedState.isHidden) {
+    if (verifiedState.targetWidth < 64) {
+      verifiedState.targetWidth = 64;
+    }
+  } else {
+    verifiedState.targetWidth = 0;
+  }
+
+  return verifiedState;
+}
+
 export const sidebarSlice = createAppSlice({
   name: "sidebar",
   initialState,
@@ -42,7 +63,8 @@ export const sidebarSlice = createAppSlice({
       async () => {
         const storedStateString = await storage.getItem(SIDEBAR_STORAGE_KEY);
         if (storedStateString) {
-          return JSON.parse(storedStateString) as SidebarState;
+          let state = JSON.parse(storedStateString);
+          return verifySidebarState(state) as SidebarState;
         }
         return null;
       },
