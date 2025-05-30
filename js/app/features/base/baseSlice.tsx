@@ -1,6 +1,7 @@
 import { createAppSlice } from "../../hooks/createSlice";
 import Storage from "../../storage";
 export const STORED_KEY_KEY = "storedKey";
+export const DID_KEY = "did";
 
 export interface StreamKey {
   privateKey: string;
