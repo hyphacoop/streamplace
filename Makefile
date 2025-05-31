@@ -213,8 +213,20 @@ ci: version install app node-all-platforms ci-upload-node
 .PHONY: ci-macos
 ci-macos: version install app node-all-platforms-macos ci-upload-node-macos ios ci-upload-ios
 
-.PHONY: ci-macos
+.PHONY: ci-android
 ci-android: version install android ci-upload-android
+
+.PHONY: ci-android-debug
+ci-android-debug: version install
+	pnpm run app prebuild
+	$(MAKE) android-debug
+	$(MAKE) ci-upload-android-debug
+
+.PHONY: ci-android-release
+ci-android-release: version install
+	pnpm run app prebuild
+	$(MAKE) android-release
+	$(MAKE) ci-upload-android-release
 
 .PHONY: ci-test
 ci-test: app
@@ -344,19 +356,29 @@ node-all-platforms: app
 	$(MAKE) windows-amd64
 	$(MAKE) windows-amd64-startup-test
 	$(MAKE) desktop-linux
-	$(MAKE) desktop-windows
+	$(MAKE) desktop-windows-amd64
 
 .PHONY: desktop-linux
 desktop-linux:
+	$(MAKE) desktop-linux-amd64
+	$(MAKE) desktop-linux-arm64
+
+.PHONY: desktop-linux-amd64
+desktop-linux-amd64:
 	cd js/desktop \
 	&& pnpm run make --platform linux --arch x64 \
+	&& cd - \
+	&& mv "js/desktop/out/make/AppImage/x64/Streamplace-$(VERSION_ELECTRON)-x64.AppImage" ./bin/streamplace-desktop-$(VERSION)-linux-amd64.AppImage
+
+.PHONY: desktop-linux-arm64
+desktop-linux-arm64:
+	cd js/desktop \
 	&& pnpm run make --platform linux --arch arm64 \
 	&& cd - \
-	&& mv "js/desktop/out/make/AppImage/x64/Streamplace-$(VERSION_ELECTRON)-x64.AppImage" ./bin/streamplace-desktop-$(VERSION)-linux-amd64.AppImage \
 	&& mv "js/desktop/out/make/AppImage/arm64/Streamplace-$(VERSION_ELECTRON)-arm64.AppImage" ./bin/streamplace-desktop-$(VERSION)-linux-arm64.AppImage
 
-.PHONY: desktop-windows
-desktop-windows:
+.PHONY: desktop-windows-amd64
+desktop-windows-amd64:
 	cd js/desktop \
 	&& pnpm run make --platform win32 --arch x64 \
 	&& cd - \
@@ -364,6 +386,11 @@ desktop-windows:
 	&& echo $$SUM > ./bin/streamplace-desktop-$(VERSION)-windows-amd64.nupkg.sha1 \
 	&& mv "js/desktop/out/make/squirrel.windows/x64/streamplace_desktop-$(VERSION_ELECTRON)-full.nupkg" ./bin/streamplace-desktop-$(VERSION)-windows-amd64.$$SUM.nupkg \
 	&& mv "js/desktop/out/make/squirrel.windows/x64/Streamplace-$(VERSION_ELECTRON) Setup.exe" ./bin/streamplace-desktop-$(VERSION)-windows-amd64.exe
+
+.PHONY: linux-amd64
+linux-amd64:
+	meson setup --buildtype debugoptimized build-linux-amd64 $(OPTS)
+	meson compile -C build-linux-amd64 archive
 
 .PHONY: linux-arm64
 linux-arm64:
@@ -516,27 +543,29 @@ docker-mistserver:
 .PHONY: ci-upload
 ci-upload: ci-upload-node ci-upload-android
 
-.PHONY: ci-upload-node
-ci-upload-node: node-all-platforms
-	for GOOS in linux; do \
-		for GOARCH in amd64 arm64; do \
-			export file=streamplace-$(VERSION)-$$GOOS-$$GOARCH.tar.gz \
-			&& $(MAKE) ci-upload-file upload_file=$$file; \
-			export file=streamplace-desktop-$(VERSION)-$$GOOS-$$GOARCH.AppImage \
-			&& $(MAKE) ci-upload-file upload_file=$$file; \
-		done \
-	done;
-	for GOOS in windows; do \
-		for GOARCH in amd64; do \
-			export file=streamplace-$(VERSION)-$$GOOS-$$GOARCH.zip \
-			&& $(MAKE) ci-upload-file upload_file=$$file; \
-			export file=streamplace-desktop-$(VERSION)-$$GOOS-$$GOARCH.exe \
-			&& $(MAKE) ci-upload-file upload_file=$$file; \
-			export SUM=$$(cat bin/streamplace-desktop-$(VERSION)-$$GOOS-$$GOARCH.nupkg.sha1) \
-			&& export file=streamplace-desktop-$(VERSION)-$$GOOS-$$GOARCH.$$SUM.nupkg \
-			&& $(MAKE) ci-upload-file upload_file=$$file; \
-		done \
-	done;
+.PHONY: ci-upload-node-linux-amd64
+ci-upload-node-linux-amd64:
+	export file=streamplace-$(VERSION)-linux-amd64.tar.gz \
+	&& $(MAKE) ci-upload-file upload_file=$$file; \
+	export file=streamplace-desktop-$(VERSION)-linux-amd64.AppImage \
+	&& $(MAKE) ci-upload-file upload_file=$$file;
+
+.PHONY: ci-upload-node-linux-arm64
+ci-upload-node-linux-arm64:
+	export file=streamplace-$(VERSION)-linux-arm64.tar.gz \
+	&& $(MAKE) ci-upload-file upload_file=$$file; \
+	export file=streamplace-desktop-$(VERSION)-linux-arm64.AppImage \
+	&& $(MAKE) ci-upload-file upload_file=$$file;
+
+.PHONY: ci-upload-node-windows-amd64
+ci-upload-node-windows-amd64:
+	export file=streamplace-$(VERSION)-windows-amd64.zip \
+	&& $(MAKE) ci-upload-file upload_file=$$file; \
+	export file=streamplace-desktop-$(VERSION)-windows-amd64.exe \
+	&& $(MAKE) ci-upload-file upload_file=$$file; \
+	export SUM=$$(cat bin/streamplace-desktop-$(VERSION)-windows-amd64.nupkg.sha1) \
+	&& export file=streamplace-desktop-$(VERSION)-windows-amd64.$$SUM.nupkg \
+	&& $(MAKE) ci-upload-file upload_file=$$file;
 
 .PHONY: ci-upload-node-macos
 ci-upload-node-macos: node-all-platforms-macos
@@ -553,10 +582,18 @@ ci-upload-node-macos: node-all-platforms-macos
 
 .PHONY: ci-upload-android
 ci-upload-android: android
-	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-release.apk \
-	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-debug.apk \
-	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-release.aab \
+	$(MAKE) ci-upload-android-debug \
+	&& $(MAKE) ci-upload-android-release
+
+.PHONY: ci-upload-android-debug
+ci-upload-android-debug:
+	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-debug.apk \
 	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-debug.aab
+
+.PHONY: ci-upload-android-release
+ci-upload-android-release:
+	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-release.apk \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-android-release.aab
 
 .PHONY: ci-upload-ios
 ci-upload-ios: ios

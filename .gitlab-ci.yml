@@ -52,7 +52,7 @@ builder-rebuild:
       --fail-with-body
       https://retry-gitlab.iameli.workers.dev/
 
-build:
+.build:
   stage: build
   interruptible: true
   image: "$CI_REGISTRY_IMAGE:builder-$DOCKERFILE_HASH"
@@ -60,16 +60,34 @@ build:
   script:
     - rm -rf /usr/x86_64-w64-mingw32/include/d3dcompiler.h /usr/share/mingw-w64/include/d3dcompiler.h /usr/lib/gcc/x86_64-w64-mingw32/10-posix/libssp.dll.a /usr/lib/gcc/x86_64-w64-mingw32/10-posix/libssp-0.dll /usr/lib/gcc/x86_64-w64-mingw32/10-win32/libssp-0.dll /usr/lib/gcc/x86_64-w64-mingw32/10-win32/libssp.dll.a
     - git fetch --unshallow || echo 'already unshallow'
-    - make ci -j$(nproc)
+    - bash -c "make version && make app && make $TARGET && make desktop-$TARGET && make ci-upload-node-$TARGET -j$(nproc)"
   artifacts:
     reports:
       dotenv: .ci/build.env
+
+build-linux-amd64:
+  extends:
+    - .build
+  variables:
+    TARGET: linux-amd64
+
+build-linux-arm64:
+  extends:
+    - .build
+  variables:
+    TARGET: linux-arm64
+
+build-windows-amd64:
+  extends:
+    - .build
+  variables:
+    TARGET: windows-amd64
 
 leak-test-viewers:
   stage: build
   interruptible: true
   needs:
-    - job: build
+    - job: build-linux-amd64
       artifacts: true
     - job: build-bunny
   image:
@@ -91,7 +109,7 @@ leak-test-streamers:
   stage: build
   interruptible: true
   needs:
-    - job: build
+    - job: build-linux-amd64
       artifacts: true
     - job: build-bunny
   image:
@@ -121,30 +139,11 @@ test:
     - git fetch --unshallow || echo 'already unshallow'
     - make ci-test -j$(nproc) && make ci-lexicons
 
-build-docker-amd64:
-  stage: build
-  interruptible: true
-  needs:
-    - job: build
-      artifacts: true
-  image:
-    name: gcr.io/kaniko-project/executor:v1.14.0-debug
-    entrypoint: [""]
-  timeout: 2 hours
-  script:
-    - /kaniko/executor
-      --build-arg TARGETARCH=amd64
-      --build-arg STREAMPLACE_URL=$STREAMPLACE_URL_LINUX_AMD64
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/docker/release.Dockerfile"
-      --destination "$CI_REGISTRY_IMAGE:$STREAMPLACE_BRANCH-amd64"
-      --destination "$CI_REGISTRY_IMAGE:$STREAMPLACE_VERSION-amd64"
-
 build-docker-mistserver:
   stage: build
   interruptible: true
   needs:
-    - job: build
+    - job: build-linux-amd64
       artifacts: true
   image:
     name: gcr.io/kaniko-project/executor:v1.14.0-debug
@@ -159,11 +158,33 @@ build-docker-mistserver:
       --destination "$CI_REGISTRY_IMAGE:$STREAMPLACE_BRANCH-mistserver"
       --destination "$CI_REGISTRY_IMAGE:$STREAMPLACE_VERSION-mistserver"
 
-build-docker-arm64:
+build-docker-amd64:
   stage: build
   interruptible: true
   needs:
-    - job: build
+    - job: build-linux-amd64
+      artifacts: true
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
+  timeout: 2 hours
+  script:
+    - /kaniko/executor
+      --build-arg TARGETARCH=amd64
+      --build-arg STREAMPLACE_URL=$STREAMPLACE_URL_LINUX_AMD64
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/docker/release.Dockerfile"
+      --destination "$CI_REGISTRY_IMAGE:$STREAMPLACE_BRANCH-amd64"
+      --destination "$CI_REGISTRY_IMAGE:$STREAMPLACE_VERSION-amd64"
+
+build-docker-arm64:
+  stage: build
+  interruptible: true
+  tags:
+    - linux
+    - arm64
+  needs:
+    - job: build-linux-arm64
       artifacts: true
   image:
     name: gcr.io/kaniko-project/executor:v1.14.0-debug
@@ -188,7 +209,7 @@ build-docker-manifest:
   needs:
     - job: build-docker-arm64
     - job: build-docker-amd64
-    - job: build
+    - job: build-linux-amd64 # just for the environment variables
       artifacts: true
   before_script:
     - curl -s -L https://github.com/estesp/manifest-tool/releases/download/v2.1.7/binaries-manifest-tool-2.1.7.tar.gz | tar xvz
@@ -202,14 +223,26 @@ build-docker-manifest:
       --tags $STREAMPLACE_BRANCH
       --target $CI_REGISTRY_IMAGE:$STREAMPLACE_VERSION
 
-build-android:
+.build-android:
   stage: build
   interruptible: true
   image: "$CI_REGISTRY_IMAGE:builder-$DOCKERFILE_HASH"
   timeout: 2 hours
   script:
     - git fetch --unshallow || echo 'already unshallow'
-    - make ci-android -j$(nproc)
+    - make $TARGET -j$(nproc)
+
+build-android-debug:
+  extends:
+    - .build-android
+  variables:
+    TARGET: ci-android-debug
+
+build-android-release:
+  extends:
+    - .build-android
+  variables:
+    TARGET: ci-android-release
 
 build-mac:
   stage: build
@@ -260,7 +293,7 @@ windows-selftest:
     - windows
   timeout: 2 hours
   needs:
-    - job: build
+    - job: build-windows-amd64
       artifacts: true
   variables:
     MSYSTEM: "MINGW32"
@@ -274,11 +307,11 @@ release:
   image: "$CI_REGISTRY_IMAGE:builder-$DOCKERFILE_HASH"
   needs:
     - build-mac
-    - build-android
+    - build-android-debug
+    - build-android-release
     - build-docker-amd64
     - build-docker-arm64
     - build-docker-manifest
-    - build
     - test
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
@@ -290,7 +323,7 @@ release:
   interruptible: true
   image:
     name: curlimages/curl
-    entrypoint: ["/bin/sh"]
+    entrypoint: [""]
   variables:
     STATUS_PROJECT: streamplace/streamplace
     STATUS_NAME: git.stream.place
