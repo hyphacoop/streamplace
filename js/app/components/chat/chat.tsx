@@ -20,7 +20,14 @@ import {
   Link,
   Mention,
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
-import { ChatMessageViewHydrated } from "streamplace";
+import { $Typed } from "@atproto/api/src/client/util";
+import ReanimatedSwipeable, {
+  SwipeableRef,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { Button, ScrollView, Sheet, Text, useMedia, View } from "tamagui";
 import { RichtextSegment, segmentize } from "../../utils/facet";
 
@@ -145,7 +152,7 @@ export default function Chat({
             </Sheet.Frame>
           </Sheet>
           <ScrollView
-            paddingHorizontal="$4"
+            marginHorizontal="$2"
             invertStickyHeaders={true}
             ref={scrollRef}
             onContentSizeChange={() => {
@@ -161,9 +168,9 @@ export default function Chat({
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            {chat.map((message) => (
+            {chat.map((message, index) => (
               <ChatMessageRow
-                key={message.cid}
+                key={message.cid + index}
                 message={message}
                 setOpen={setOpen}
                 setMessage={setMessage}
@@ -178,6 +185,35 @@ export default function Chat({
     </View>
   );
 }
+
+const RightAction = (
+  progress: SharedValue<number>,
+  drag: SharedValue<number>,
+) => {
+  const styleAnimation = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: drag.value + 50,
+        },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View style={[styleAnimation, { height: "auto" }]}>
+      <Text
+        width="$4"
+        backgroundColor="rgba(255,255,255,0.5)"
+        borderRadius="$2"
+        pt={"$1"}
+        px={"$1"}
+      >
+        <ReplyAll />
+      </Text>
+    </Animated.View>
+  );
+};
 
 function ChatMessageRow({
   message,
@@ -197,6 +233,17 @@ function ChatMessageRow({
   const [hover, setHover] = useState(false);
   const setReplyToMessage = useSetReplyToMessage();
   const { isWeb } = usePlatform();
+
+  const swipeableRef = useRef<SwipeableRef>(null);
+  const close = () => {
+    let current: any = swipeableRef.current;
+    if (current) {
+      console.log("closing swipeable");
+      current.close();
+    }
+  };
+
+  const currentReplyTo = useAppSelector(useReplyToMessage());
 
   const moderateMessage = () => {
     if (!myStream) {
@@ -220,90 +267,25 @@ function ChatMessageRow({
 
   return (
     <View
-      flexDirection="row"
-      display="block"
-      paddingVertical={isWeb ? 6 : 4} // Adjust padding for web
-      position="relative"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
       onPress={() => {
         if (!isWeb) {
           moderateMessage();
         }
       }}
-      onLongPress={handleReply}
     >
-      {hasReply && (
-        <View
-          position="absolute"
-          left={6}
-          top={-8}
-          width={2}
-          height={16}
-          opacity={0.7}
-        />
-      )}
-      <View flexDirection="column" gap="$1" flex={1}>
-        {/* Reply section */}
-        {hasReply && (
-          <View
-            flexDirection="column"
-            marginBottom="$2"
-            paddingLeft="$3"
-            position="relative"
-          >
-            {/* Vertical reply line */}
-            <View
-              position="absolute"
-              left={6}
-              top={0}
-              bottom={0}
-              width={2}
-              borderRadius={2}
-              backgroundColor="$accentColor"
-              opacity={0.5}
-            />
-            {/* Reply preview */}
-            <View
-              flexDirection="row"
-              alignItems="center"
-              gap="$1"
-              paddingVertical="$1"
-              paddingHorizontal="$2"
-              borderRadius="$2"
-              marginLeft="-$1"
-            >
-              <Text fontSize={12} color={replyToColor} fontWeight="bold">
-                {replyToHandle ? `@${replyToHandle}` : ""}
-              </Text>
-              <Text
-                fontSize={12}
-                color="$color"
-                opacity={0.7}
-                numberOfLines={1}
-                flex={1}
-              >
-                {replyToText || ""}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Message content */}
-        <View flexDirection="row" alignItems="flex-start" gap="$2">
-          <ChatMessageText message={message} chat={chat} />
-        </View>
-      </View>
       <View
         position="absolute"
         flexDirection="row"
         right={0}
-        top={0}
-        bottom={0}
+        top="$-3"
         alignItems="stretch"
         justifyContent="flex-end"
-        gap="$2"
+        gap="$1"
+        px="$1"
+        backgroundColor="rgba(255,255,255,0.5)"
+        borderRadius="$2"
       >
         {isWeb && (
           <TouchableOpacity
@@ -332,6 +314,103 @@ function ChatMessageRow({
           </TouchableOpacity>
         )}
       </View>
+      <ReanimatedSwipeable
+        ref={swipeableRef}
+        renderRightActions={RightAction}
+        overshootRight={false}
+        friction={2}
+        enableTrackpadTwoFingerGesture
+        rightThreshold={40}
+        onSwipeableOpen={(r) => {
+          if (r === "right") {
+            handleReply();
+          }
+          close();
+        }}
+      >
+        <View
+          flexDirection="row"
+          display="block"
+          paddingVertical={isWeb ? 6 : 4} // Adjust padding for web
+          paddingHorizontal={isWeb ? 6 : 4} // Adjust padding for web
+          position="relative"
+          hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+          backgroundColor={
+            currentReplyTo?.cid === message.cid
+              ? "rgba(180,180,255,0.1)"
+              : "transparent"
+          }
+          borderRadius={isWeb ? 4 : 4}
+          onPress={() => {
+            if (!isWeb) {
+              moderateMessage();
+            }
+          }}
+          overflow="visible"
+        >
+          {hasReply && (
+            <View
+              position="absolute"
+              left={6}
+              top={-8}
+              width={2}
+              height={16}
+              opacity={0.7}
+            />
+          )}
+          <View flexDirection="column" gap="$1" flex={1} overflow="visible">
+            {/* Reply section */}
+            {hasReply && (
+              <View
+                flexDirection="column"
+                marginBottom="$2"
+                paddingLeft="$3"
+                position="relative"
+              >
+                {/* Vertical reply line */}
+                <View
+                  position="absolute"
+                  left={6}
+                  top={0}
+                  bottom={0}
+                  width={2}
+                  borderRadius={2}
+                  backgroundColor="$accentColor"
+                  opacity={0.5}
+                />
+                {/* Reply preview */}
+                <View
+                  flexDirection="row"
+                  alignItems="center"
+                  gap="$1"
+                  paddingVertical="$1"
+                  paddingHorizontal="$2"
+                  borderRadius="$2"
+                  marginLeft="-$1"
+                >
+                  <Text fontSize={12} color={replyToColor} fontWeight="bold">
+                    {replyToHandle ? `@${replyToHandle}` : ""}
+                  </Text>
+                  <Text
+                    fontSize={12}
+                    color="$color"
+                    opacity={0.7}
+                    numberOfLines={1}
+                    flex={1}
+                  >
+                    {replyToText || ""}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Message content */}
+            <View flexDirection="row" alignItems="flex-start" gap="$2">
+              <ChatMessageText message={message} chat={chat} />
+            </View>
+          </View>
+        </View>
+      </ReanimatedSwipeable>
     </View>
   );
 }
@@ -481,7 +560,11 @@ const RichTextMessage = ({
 
   let segs = segmentize(text, facets);
 
+<<<<<<< HEAD
   return segs.map((seg, i) =>
     segmentedObject(seg, chat as MessageViewHydrated[], i),
   );
+=======
+  return segs.map((seg, i) => segmentedObject(seg, chat, i));
+>>>>>>> 0d25913a (Add swipe-to-reply gesture + offset hover action box so text is readable)
 };
