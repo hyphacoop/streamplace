@@ -22,7 +22,7 @@ import {
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 import { $Typed } from "@atproto/api/src/client/util";
 import ReanimatedSwipeable, {
-  SwipeableRef,
+  SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
 import Animated, {
   SharedValue,
@@ -234,7 +234,7 @@ function ChatMessageRow({
   const setReplyToMessage = useSetReplyToMessage();
   const { isWeb } = usePlatform();
 
-  const swipeableRef = useRef<SwipeableRef>(null);
+  const swipeableRef = useRef<SwipeableMethods>(null);
   const close = () => {
     let current: any = swipeableRef.current;
     if (current) {
