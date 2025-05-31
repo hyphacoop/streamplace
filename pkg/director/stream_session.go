@@ -239,6 +239,11 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		return fmt.Errorf("no session found for repoDID: %s", repoDID)
 	}
 
+	session, err = ss.op.RefreshIfNeeded(session)
+	if err != nil {
+		return fmt.Errorf("could not refresh session for repoDID: %w", err)
+	}
+
 	ls, err := ss.mod.GetLatestLivestreamForRepo(repoDID)
 	if err != nil {
 		return fmt.Errorf("could not get latest livestream for repoDID: %w", err)
