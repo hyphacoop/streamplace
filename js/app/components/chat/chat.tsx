@@ -238,7 +238,6 @@ function ChatMessageRow({
   const close = () => {
     let current: any = swipeableRef.current;
     if (current) {
-      console.log("closing swipeable");
       current.close();
     }
   };
