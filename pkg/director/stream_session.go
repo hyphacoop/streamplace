@@ -257,6 +257,9 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 	if err != nil {
 		return fmt.Errorf("could not get feed post: %w", err)
 	}
+	if post == nil {
+		return fmt.Errorf("feed post not found for livestream: %w", err)
+	}
 	postView, err := post.ToBskyPostView()
 	if err != nil {
 		return fmt.Errorf("could not convert feed post to bsky post view: %w", err)
