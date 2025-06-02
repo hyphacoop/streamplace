@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import { RefreshCcw, X } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
@@ -6,10 +7,18 @@ import {
   getStreamKeyRecords,
   selectKeyRecords,
 } from "features/bluesky/blueskySlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { PlaceStreamKey } from "streamplace";
-import { Button, ScrollView, Text, View, XStack, YStack } from "tamagui";
+import {
+  Button,
+  ScrollView,
+  Spinner,
+  Text,
+  View,
+  XStack,
+  YStack,
+} from "tamagui";
 import { timeAgo } from "utils/timeAgo";
 
 function KeyRow({
