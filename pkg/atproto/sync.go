@@ -11,6 +11,7 @@ import (
 	"github.com/bluesky-social/indigo/atproto/data"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/integrations/discord"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	notificationpkg "stream.place/streamplace/pkg/notifications"
@@ -129,6 +130,19 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			log.Error(ctx, "failed to convert chat message to streamplace message view", "err", err)
 		}
 		go atsync.Bus.Publish(streamerRepo.DID, scm)
+
+		for _, webhook := range atsync.CLI.DiscordWebhooks {
+			if webhook.DID == streamerRepo.DID && webhook.Type == "chat" {
+				go func() {
+					err := discord.SendChat(ctx, webhook, r, scm)
+					if err != nil {
+						log.Error(ctx, "failed to send livestream to discord", "err", err)
+					} else {
+						log.Log(ctx, "sent livestream to discord", "user", userDID, "webhook", webhook.URL)
+					}
+				}()
+			}
+		}
 
 	case *streamplace.ChatProfile:
 		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
@@ -300,6 +314,41 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 				}
 			} else {
 				log.Log(ctx, "no notifier configured, skipping notifications", "user", userDID, "count", len(notifications), "content", nb)
+			}
+
+			var postView *bsky.FeedDefs_PostView
+			if lsHydrated.Post != nil {
+				postView, err = lsHydrated.Post.ToBskyPostView()
+				if err != nil {
+					log.Error(ctx, "failed to convert livestream post to bsky post view", "err", err)
+				}
+			} else {
+				log.Warn(ctx, "no post found for livestream", "livestream", lsHydrated)
+			}
+
+			var spcp *streamplace.ChatProfile
+			cp, err := atsync.Model.GetChatProfile(ctx, userDID)
+			if err != nil {
+				log.Error(ctx, "failed to get chat profile", "err", err)
+			}
+			if cp != nil {
+				spcp, err = cp.ToStreamplaceChatProfile()
+				if err != nil {
+					log.Error(ctx, "failed to convert chat profile to streamplace chat profile", "err", err)
+				}
+			}
+
+			for _, webhook := range atsync.CLI.DiscordWebhooks {
+				if webhook.DID == userDID && webhook.Type == "livestream" {
+					go func() {
+						err := discord.SendLivestream(ctx, webhook, r, lsv, postView, spcp)
+						if err != nil {
+							log.Error(ctx, "failed to send livestream to discord", "err", err)
+						} else {
+							log.Log(ctx, "sent livestream to discord", "user", userDID, "webhook", webhook.URL)
+						}
+					}()
+				}
 			}
 		}
 
