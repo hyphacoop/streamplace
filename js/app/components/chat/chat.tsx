@@ -274,45 +274,45 @@ function ChatMessageRow({
         }
       }}
     >
-      <View
-        position="absolute"
-        flexDirection="row"
-        right={0}
-        top="$-3"
-        alignItems="stretch"
-        justifyContent="flex-end"
-        gap="$1"
-        px="$1"
-        backgroundColor="rgba(255,255,255,0.5)"
-        borderRadius="$2"
-      >
-        {isWeb && (
-          <TouchableOpacity
-            style={{
-              display: hover ? "flex" : "none",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 4,
-            }}
-            onPress={handleReply}
-          >
+      {isWeb && (
+        <View
+          position="absolute"
+          flexDirection="row"
+          right={0}
+          top="$-3"
+          alignItems="center"
+          justifyContent="center"
+          gap="$2"
+          pl="$2"
+          pr="$1"
+          backgroundColor="rgba(64,64,64,1)"
+          borderRadius="$2"
+          style={{
+            display: hover ? "flex" : "none",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          zi={32}
+        >
+          <Text fontSize="$2">{timeAgo(message.record.createdAt)}</Text>
+          <TouchableOpacity onPress={handleReply}>
             <Reply size={16} />
           </TouchableOpacity>
-        )}
-        {isWeb && myStream && (
-          <TouchableOpacity
-            style={{
-              display: hover ? "flex" : "none",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 4,
-            }}
-            onPress={moderateMessage}
-          >
-            <Settings size={16} />
-          </TouchableOpacity>
-        )}
-      </View>
+          {isWeb && myStream && (
+            <TouchableOpacity
+              style={{
+                display: hover ? "flex" : "none",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 4,
+              }}
+              onPress={moderateMessage}
+            >
+              <Settings size={16} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
       <ReanimatedSwipeable
         ref={swipeableRef}
         renderRightActions={RightAction}
@@ -404,7 +404,24 @@ function ChatMessageRow({
             )}
 
             {/* Message content */}
-            <View flexDirection="row" alignItems="flex-start" gap="$2">
+            <View
+              flexDirection="row"
+              alignItems="flex-start"
+              justifyContent="flex-start"
+              gap="$2"
+            >
+              <Text
+                color="$gray10"
+                fontSize="$2"
+                mt="$0.5"
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                {new Date(message.record.createdAt).toLocaleString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })}
+              </Text>
               <ChatMessageText message={message} chat={chat} />
             </View>
           </View>
@@ -567,3 +584,88 @@ const RichTextMessage = ({
   return segs.map((seg, i) => segmentedObject(seg, chat, i));
 >>>>>>> 0d25913a (Add swipe-to-reply gesture + offset hover action box so text is readable)
 };
+
+export function timeAgo(time: Date | number | string): string {
+  let timestamp: number;
+
+  if (typeof time === "number") {
+    timestamp = time;
+  } else if (typeof time === "string") {
+    timestamp = new Date(time).getTime();
+  } else if (time instanceof Date) {
+    timestamp = time.getTime();
+  } else {
+    timestamp = Date.now();
+  }
+
+  const now = Date.now();
+  let seconds = (now - timestamp) / 1000;
+  let token = "ago";
+  let listChoice = 1;
+
+  if (seconds === 0) {
+    return "Just now";
+  }
+
+  if (seconds < 0) {
+    seconds = Math.abs(seconds);
+    token = "from now";
+    listChoice = 2;
+  }
+
+  // Show time for > 1 hour difference
+  if (seconds > 3600) {
+    const date = new Date(timestamp);
+    // More than 1 day ago/from now: show shortened date + time
+    if (seconds > 86400) {
+      // Example format: "Apr 27, 14:35"
+      return date.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    // Otherwise show only time for > 1 hour
+    return date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  const timeFormats: [number, string, number | string][] = [
+    [60, "seconds", 1], // 60
+    [120, "1 minute ago", "1 minute from now"], // 60*2
+    [3600, "minutes", 60], // 60*60, 60
+    [7200, "1 hour ago", "1 hour from now"], // 60*60*2
+    [86400, "hours", 3600], // 60*60*24, 60*60
+    [172800, "Yesterday", "Tomorrow"], // 60*60*24*2
+    [604800, "days", 86400], // 60*60*24*7, 60*60*24
+    [1209600, "Last week", "Next week"], // 60*60*24*7*2
+    [2419200, "weeks", 604800], // 60*60*24*7*4, 60*60*24*7
+    [4838400, "Last month", "Next month"], // 60*60*24*7*4*2
+    [29030400, "months", 2419200], // 60*60*24*7*4*12, 60*60*24*7*4
+    [58060800, "Last year", "Next year"], // 60*60*24*7*4*12*2
+    [2903040000, "years", 29030400], // 60*60*24*7*4*12*100, 60*60*24*7*4*12
+    [5806080000, "Last century", "Next century"], // 60*60*24*7*4*12*100*2
+    [58060800000, "centuries", 2903040000], // 60*60*24*7*4*12*100*20, 60*60*24*7*4*12*100
+  ];
+
+  for (const format of timeFormats) {
+    if (seconds < format[0]) {
+      if (typeof format[2] === "string") {
+        return format[listChoice] as string;
+      } else {
+        return (
+          Math.floor(seconds / (format[2] as number)) +
+          " " +
+          format[1] +
+          " " +
+          token
+        );
+      }
+    }
+  }
+
+  return new Date(timestamp).toString();
+}
