@@ -13,6 +13,7 @@ export default defineConfig({
         "@fontsource/atkinson-hyperlegible-next/400.css",
         "@fontsource/atkinson-hyperlegible-next/600.css",
         "./src/styles/custom-font-face.css",
+        "./src/styles/pre-first-table-col.css",
       ],
       social: [
         {

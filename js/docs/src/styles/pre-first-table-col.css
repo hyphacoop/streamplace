@@ -1,0 +1,9 @@
+table td:first-child,
+table th:first-child {
+  white-space: pre;
+}
+
+table td,
+table th {
+  min-width: 100px;
+}
