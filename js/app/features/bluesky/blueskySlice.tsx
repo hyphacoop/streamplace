@@ -776,9 +776,22 @@ export const blueskySlice = createAppSlice({
           };
         },
         fulfilled: (state, action) => {
+          let records = state.streamKeysResponse.records
+            ? state.streamKeysResponse.records.records.filter(
+                (r) => r.uri.split("/").pop() !== action.meta.arg.rkey,
+              )
+            : [];
+
           return {
             ...state,
             isDeletingKey: false,
+            streamKeysResponse: {
+              ...state.streamKeysResponse,
+              records: {
+                ...state.streamKeysResponse.records,
+                records,
+              },
+            },
           };
         },
         rejected: (state, action) => {

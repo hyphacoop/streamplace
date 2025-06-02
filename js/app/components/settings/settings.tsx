@@ -21,6 +21,11 @@ export function Settings() {
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
 
+  // are we logged in?
+  const loggedIn = useAppSelector(
+    (state) => state.bluesky.status === "loggedIn",
+  );
+
   const navigate = useNavigation();
 
   // Initialize the override state based on current URL
@@ -144,27 +149,28 @@ export function Settings() {
           </XStack>
         </View>
 
-        {/* Manage Keys Button */}
-        <AQLink
-          to={{
-            screen: "KeyManagement",
-          }}
-        >
-          <View
-            flexDirection="row"
-            gap="$2"
-            alignItems="center"
-            justifyContent="center"
-            borderWidth={1}
-            borderColor="$color.gray3Dark"
-            padding="$2"
-            borderRadius="$4"
-            backgroundColor="$color.gray1Dark"
+        {loggedIn && (
+          <AQLink
+            to={{
+              screen: "KeyManagement",
+            }}
           >
-            <H5>Manage Keys</H5>
-            <ArrowRight size="$1" />
-          </View>
-        </AQLink>
+            <View
+              flexDirection="row"
+              gap="$2"
+              alignItems="center"
+              justifyContent="center"
+              borderWidth={1}
+              borderColor="$color.gray3Dark"
+              padding="$2"
+              borderRadius="$4"
+              backgroundColor="$color.gray1Dark"
+            >
+              <H5>Manage Keys</H5>
+              <ArrowRight size="$1" />
+            </View>
+          </AQLink>
+        )}
       </View>
     </Container>
   );
