@@ -64,6 +64,8 @@ export const sidebarSlice = createAppSlice({
         const storedStateString = await storage.getItem(SIDEBAR_STORAGE_KEY);
         if (storedStateString) {
           let state = JSON.parse(storedStateString);
+          // should never be 'true' on load, component should ALWAYS request to hide sidebar when loaded
+          state.isHidden = false;
           return verifySidebarState(state) as SidebarState;
         }
         return null;
