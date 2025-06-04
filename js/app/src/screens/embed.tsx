@@ -5,14 +5,14 @@ import {
   setSidebarUnhidden,
 } from "features/base/sidebarSlice";
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "store/hooks";
 import { isWeb } from "tamagui";
 import { queryToProps } from "./util";
 
 export default function EmbedScreen({ route }) {
   const { user, protocol, url } = route.params;
   let extraProps: Partial<PlayerProps> = {};
-  let dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   useEffect(() => {
     dispatch(setSidebarHidden());
     () => {
