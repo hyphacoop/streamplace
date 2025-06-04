@@ -1,3 +1,9 @@
+import {
+  useLivestream,
+  useProfile,
+  useSegment,
+  useViewers,
+} from "@streamplace/components";
 import { MessageCircleMore, MessageCircleOff } from "@tamagui/lucide-icons";
 import { useToastController } from "@tamagui/toast";
 import Chat from "components/chat/chat";
@@ -51,11 +57,13 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const player = useAppSelector(usePlayer());
   const profiles = useAppSelector(selectProfiles);
   const toast = useToastController();
+  const viewers = useViewers();
 
   const { src, ...extraProps } = props;
   const dispatch = useAppDispatch();
   const { width, height } = useWindowDimensions();
-  const video = player.segment?.video?.[0];
+  const segment = useSegment();
+  const video = segment?.video?.[0];
   const [videoWidth, setVideoWidth] = useState(0);
   const [videoHeight, setVideoHeight] = useState(0);
   const { keyboardHeight } = useKeyboard();
@@ -68,11 +76,13 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const [currentUserDID, setCurrentUserDID] = useState<string | null>(null);
   const { fullscreen, setFullscreen } = useFullscreen();
 
-  const streamerDID = player.livestream?.author?.did;
-  const streamerProfile = streamerDID ? profiles[streamerDID] : undefined;
+  const livestream = useLivestream();
+  const streamerProfile = useProfile();
+
+  const streamerDID = livestream?.author?.did;
   const streamerHandle = streamerProfile?.handle;
-  const startTime = player.livestream?.record?.createdAt
-    ? new Date(player.livestream?.record?.createdAt)
+  const startTime = livestream?.record?.createdAt
+    ? new Date(livestream?.record?.createdAt)
     : undefined;
 
   // this would all be really easy if i had library that would give me the
@@ -112,14 +122,14 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     // 10 second cut off for segements
     const cuttOffDate = new Date(Date.now() - 10 * 1000);
     // 15 second cut off if segment start time not found
-    const startTime = player.segment?.startTime
-      ? new Date(player.segment?.startTime)
+    const startTime = segment?.startTime
+      ? new Date(segment?.startTime)
       : new Date(Date.now() - 15 * 1000);
 
     if (startTime > cuttOffDate) {
       setOffline(false);
     }
-  }, [player.segment]);
+  }, [segment]);
 
   let slideKeyboard = 0;
   if (isIOS && keyboardHeight > 0) {
@@ -178,7 +188,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                 zIndex: 1000,
               }}
               bubbleProps={{
-                cursor: "pointer",
                 backgroundColor: "$accentBackground",
                 gap: "$3",
                 maxWidth: 400,
@@ -265,7 +274,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                             )
                           }
                           aria-label={`View @${streamerHandle} on Bluesky`}
-                          style={{ cursor: "pointer" }}
                         >
                           {`@${streamerHandle}`}
                         </Text>
@@ -283,7 +291,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                     {startTime instanceof Date && !offline && (
                       <Timer start={startTime} />
                     )}
-                    <Viewers viewers={player.viewers ?? 0} />
+                    <Viewers viewers={viewers ?? 0} />
                     <Button
                       backgroundColor="transparent"
                       onPress={() => setIsChatVisible(!isChatVisible)}
@@ -307,7 +315,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                         : undefined
                     }
                   >
-                    {player.livestream?.record.title}
+                    {livestream?.record.title}
                   </H2>
                 </View>
               </View>
@@ -378,7 +386,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                             )
                           }
                           aria-label={`View @${streamerHandle} on Bluesky`}
-                          style={{ cursor: "pointer" }}
+                          style={{ cursor: isWeb ? "pointer" : undefined }} // iOS literally crashes otherwise idk
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
@@ -395,7 +403,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                     )}
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
-                    <Viewers viewers={player.viewers ?? 0} />
+                    <Viewers viewers={viewers ?? 0} />
                   </View>
                 </View>
                 <View
@@ -405,7 +413,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                   marginTop={-15}
                 >
                   <Text fontSize={18} numberOfLines={1} ellipsizeMode="tail">
-                    {player.livestream?.record.title}
+                    {livestream?.record.title}
                   </Text>
                 </View>
               </View>

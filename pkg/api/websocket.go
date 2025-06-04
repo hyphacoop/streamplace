@@ -22,6 +22,9 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 var pingPeriod = 5 * time.Second
@@ -157,6 +160,22 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 					log.Debug(ctx, "context done, stopping websocket sender")
 					return
 				}
+			}
+		}()
+
+		go func() {
+			profile, err := a.Model.GetRepo(repoDID)
+			if err != nil {
+				log.Error(ctx, "could not get profile", "error", err)
+				return
+			}
+			if profile != nil {
+				p := map[string]any{
+					"$type":  "app.bsky.actor.defs#profileViewBasic",
+					"did":    repoDID,
+					"handle": profile.Handle,
+				}
+				initialBurst <- p
 			}
 		}()
 
