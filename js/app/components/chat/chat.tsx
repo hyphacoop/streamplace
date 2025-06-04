@@ -4,12 +4,11 @@ import {
   useReplyToMessage,
   useSetReplyToMessage,
 } from "@streamplace/components";
-import { Reply, ReplyAll, ReplyAll, Settings, X } from "@tamagui/lucide-icons";
+import { Reply, ReplyAll, Settings, X } from "@tamagui/lucide-icons";
 import {
   createBlockRecord,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
-import { MessageViewHydrated } from "features/player/playerSlice";
 import usePlatform from "hooks/usePlatform";
 import { useEffect, useRef, useState } from "react";
 import { Linking, TouchableOpacity } from "react-native";
@@ -154,7 +153,6 @@ export default function Chat({
           </Sheet>
           <ScrollView
             marginHorizontal="$2"
-            marginHorizontal="$2"
             invertStickyHeaders={true}
             ref={scrollRef}
             onContentSizeChange={() => {
@@ -171,9 +169,7 @@ export default function Chat({
             scrollEventThrottle={16}
           >
             {chat.map((message, index) => (
-            {chat.map((message, index) => (
               <ChatMessageRow
-                key={message.cid + index}
                 key={message.cid + index}
                 message={message}
                 setOpen={setOpen}
@@ -243,16 +239,6 @@ function ChatMessageRow({
     let current: any = swipeableRef.current;
     if (current) {
       console.log("closing swipeable");
-      current.close();
-    }
-  };
-
-  const currentReplyTo = useReplyToMessage();
-
-  const swipeableRef = useRef<SwipeableMethods>(null);
-  const close = () => {
-    let current: any = swipeableRef.current;
-    if (current) {
       current.close();
     }
   };
@@ -417,157 +403,6 @@ function ChatMessageRow({
                 </View>
               </View>
             )}
-    >
-      {isWeb && (
-        <View
-          position="absolute"
-          flexDirection="row"
-          right={0}
-          top="$-3"
-          alignItems="center"
-          justifyContent="center"
-          gap="$2"
-          pl="$2"
-          pr="$1"
-          backgroundColor="rgba(64,64,64,1)"
-          borderRadius="$2"
-          style={{
-            display: hover ? "flex" : "none",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          zi={32}
-        >
-          <Text fontSize="$2">{timeAgo(message.record.createdAt)}</Text>
-          <TouchableOpacity onPress={handleReply}>
-            <Reply size={16} />
-          </TouchableOpacity>
-          {isWeb && myStream && (
-            <TouchableOpacity
-              style={{
-                display: hover ? "flex" : "none",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 4,
-              }}
-              onPress={moderateMessage}
-            >
-              <Settings size={16} />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-      <ReanimatedSwipeable
-        ref={swipeableRef}
-        renderRightActions={RightAction}
-        overshootRight={false}
-        friction={2}
-        enableTrackpadTwoFingerGesture
-        rightThreshold={40}
-        onSwipeableOpen={(r) => {
-          if (r === "right") {
-            handleReply();
-          }
-          close();
-        }}
-      >
-        <View
-          flexDirection="row"
-          display="block"
-          paddingVertical={isWeb ? 6 : 4} // Adjust padding for web
-          paddingHorizontal={isWeb ? 6 : 4} // Adjust padding for web
-          position="relative"
-          hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-          backgroundColor={
-            currentReplyTo?.cid === message.cid
-              ? "rgba(180,180,255,0.1)"
-              : "transparent"
-          }
-          borderRadius={isWeb ? 4 : 4}
-          onPress={() => {
-            if (!isWeb) {
-              moderateMessage();
-            }
-          }}
-          overflow="visible"
-        >
-          {hasReply && (
-            <View
-              position="absolute"
-              left={6}
-              top={-8}
-              width={2}
-              height={16}
-              opacity={0.7}
-            />
-          )}
-          <View flexDirection="column" gap="$1" flex={1} overflow="visible">
-            {/* Reply section */}
-            {hasReply && (
-              <View
-                flexDirection="column"
-                marginBottom="$2"
-                paddingLeft="$3"
-                position="relative"
-              >
-                {/* Vertical reply line */}
-                <View
-                  position="absolute"
-                  left={6}
-                  top={0}
-                  bottom={0}
-                  width={2}
-                  borderRadius={2}
-                  backgroundColor="$accentColor"
-                  opacity={0.5}
-                />
-                {/* Reply preview */}
-                <View
-                  flexDirection="row"
-                  alignItems="center"
-                  gap="$1"
-                  paddingVertical="$1"
-                  paddingHorizontal="$2"
-                  borderRadius="$2"
-                  marginLeft="-$1"
-                >
-                  <Text fontSize={12} color={replyToColor} fontWeight="bold">
-                    {replyToHandle ? `@${replyToHandle}` : ""}
-                  </Text>
-                  <Text
-                    fontSize={12}
-                    color="$color"
-                    opacity={0.7}
-                    numberOfLines={1}
-                    flex={1}
-                  >
-                    {replyToText || ""}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Message content */}
-            <View
-              flexDirection="row"
-              alignItems="flex-start"
-              justifyContent="flex-start"
-              gap="$2"
-            >
-              <Text
-                color="$gray10"
-                fontSize="$2"
-                mt="$0.5"
-                style={{ fontVariantNumeric: "tabular-nums" }}
-              >
-                {new Date(message.record.createdAt).toLocaleString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })}
-              </Text>
-              <ChatMessageText message={message} chat={chat} />
-            </View>
           </View>
         </View>
       </ReanimatedSwipeable>
@@ -666,7 +501,7 @@ const getRgbColor = (color?: { red: number; green: number; blue: number }) =>
 
 const segmentedObject = (
   obj: RichtextSegment,
-  chat: MessageViewHydrated[],
+  chat: ChatMessageViewHydrated[],
   index: number,
 ) => {
   if (obj.features && obj.features.length > 0) {
@@ -721,7 +556,7 @@ const RichTextMessage = ({
   let segs = segmentize(text, facets);
 
   return segs.map((seg, i) =>
-    segmentedObject(seg, chat as MessageViewHydrated[], i),
+    segmentedObject(seg, chat as ChatMessageViewHydrated[], i),
   );
 };
 
