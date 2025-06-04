@@ -238,9 +238,10 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
           >
             <MainView
               width={videoWidth}
-              height={videoHeight}
+              height="100%"
+              maxHeight={videoHeight}
               fs={0}
-              $gtXs={{ fs: 1 }}
+              $gtXs={{ fs: 1, maxHeight: "100%" }}
               zIndex={2}
             >
               <View
@@ -290,7 +291,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                     flexShrink={1}
                     overflow="hidden"
                   >
-                    <Avatar src={avi.avatar} />
+                    <Avatar src={avi?.avatar} />
                     <View
                       flexDirection="column"
                       alignItems="flex-start"
