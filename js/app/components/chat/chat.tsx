@@ -1,26 +1,26 @@
+import {
+  useChat,
+  useProfile,
+  useSetReplyToMessage,
+} from "@streamplace/components";
 import { Reply, Settings, X } from "@tamagui/lucide-icons";
 import {
   createBlockRecord,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
-import {
-  MessageViewHydrated,
-  useChat,
-  usePlayerActions,
-  usePlayerLivestream,
-} from "features/player/playerSlice";
+import { MessageViewHydrated } from "features/player/playerSlice";
 import usePlatform from "hooks/usePlatform";
 import { useEffect, useRef, useState } from "react";
 import { Linking, TouchableOpacity } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 
-import { RichText } from "@atproto/api";
+import { $Typed, RichText } from "@atproto/api";
 import {
   isMention,
   Link,
   Mention,
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
-import { $Typed } from "@atproto/api/src/client/util";
+import { ChatMessageViewHydrated } from "streamplace";
 import { Button, ScrollView, Sheet, Text, useMedia, View } from "tamagui";
 import { RichtextSegment, segmentize } from "../../utils/facet";
 
@@ -32,18 +32,18 @@ export default function Chat({
   setIsChatVisible: (visible: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [modMessage, setMessage] = useState<MessageViewHydrated | null>(null);
+  const [modMessage, setMessage] = useState<ChatMessageViewHydrated | null>(
+    null,
+  );
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const chat = useAppSelector(useChat());
+  const chat = useChat();
   const scrollRef = useRef<ScrollView>(null);
-  const livestream = useAppSelector(usePlayerLivestream());
+  const streamerProfile = useProfile();
   const userProfile = useAppSelector(selectUserProfile);
   const myStream = !!(
     userProfile &&
-    livestream &&
     userProfile.did &&
-    livestream.author.did &&
-    userProfile.did === livestream.author.did
+    userProfile.did === streamerProfile?.did
   );
 
   const handleScroll = (event: any) => {
@@ -187,15 +187,15 @@ function ChatMessageRow({
   replyHandle: _replyHandle,
   chat,
 }: {
-  message: MessageViewHydrated;
+  message: ChatMessageViewHydrated;
   setOpen: (open: boolean) => void;
-  setMessage: (message: MessageViewHydrated) => void;
+  setMessage: (message: ChatMessageViewHydrated) => void;
   myStream: boolean;
   replyHandle?: string;
-  chat: MessageViewHydrated[];
+  chat: ChatMessageViewHydrated[];
 }): JSX.Element {
   const [hover, setHover] = useState(false);
-  const playerActions = usePlayerActions();
+  const setReplyToMessage = useSetReplyToMessage();
   const { isWeb } = usePlatform();
 
   const moderateMessage = () => {
@@ -207,10 +207,10 @@ function ChatMessageRow({
   };
 
   const handleReply = () => {
-    playerActions.setReplyToMessage(message);
+    setReplyToMessage(message);
   };
 
-  const replyTo = message.replyTo as MessageViewHydrated | undefined;
+  const replyTo = message.replyTo as ChatMessageViewHydrated | undefined;
   const hasReply = !!replyTo;
   const replyToHandle = replyTo?.author?.handle;
   const replyToText = replyTo?.record?.text;
@@ -353,8 +353,8 @@ const ChatMessageText = ({
   message,
   chat = [],
 }: {
-  message: MessageViewHydrated;
-  chat?: MessageViewHydrated[];
+  message: ChatMessageViewHydrated;
+  chat?: ChatMessageViewHydrated[];
 }) => {
   const rt = new RichText({ text: message.record.text });
   rt.detectFacetsWithoutResolution();
@@ -464,7 +464,7 @@ const segmentedObject = (
       );
     }
   } else {
-    return <Text>{obj.text}</Text>;
+    return <Text key={`text-${index}`}>{obj.text}</Text>;
   }
 };
 
@@ -475,13 +475,13 @@ const RichTextMessage = ({
 }: {
   text: string;
   facets: Facet[];
-  chat?: MessageViewHydrated[];
+  chat?: ChatMessageViewHydrated[];
 }) => {
   if (!facets?.length) return <Text>{text}</Text>;
 
   let segs = segmentize(text, facets);
 
-  console.log(segs);
-
-  return segs.map((seg, i) => segmentedObject(seg, chat, i));
+  return segs.map((seg, i) =>
+    segmentedObject(seg, chat as MessageViewHydrated[], i),
+  );
 };

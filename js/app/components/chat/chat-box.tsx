@@ -1,5 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
 import {
+  useChat,
+  useCreateChatMessage,
+  useLivestream,
+  useReplyToMessage,
+  useSetReplyToMessage,
+} from "@streamplace/components";
+import {
   Palette,
   SquareArrowOutUpRight,
   X as XIcon,
@@ -9,20 +16,13 @@ import { emojiEmitter } from "components/emoji-picker/emoji-emitter";
 import { EmojiPicker } from "components/emoji-picker/emoji-picker";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
-  chatMessage,
   selectChatProfile,
   selectIsReady,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import {
-  addLocalChatMessage,
   LivestreamViewHydrated,
-  MessageViewHydrated,
-  useChat,
-  usePlayerActions,
   usePlayerId,
-  usePlayerLivestream,
-  useReplyToMessage,
 } from "features/player/playerSlice";
 import {
   chatWarn,
@@ -32,12 +32,13 @@ import { usePreloadEmoji } from "hooks/usePreloadEmoji";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
+import { ChatMessageViewHydrated } from "streamplace";
 import { Button, Form, Input, isWeb, Text, TextArea, View } from "tamagui";
 import EmojiSuggestions, { EmojiSuggestion } from "./emoji-suggestions";
 import MentionSuggestions, { MentionSuggestion } from "./mention-suggestions";
 
 const getParticipantSuggestions = (
-  chat: MessageViewHydrated[],
+  chat: ChatMessageViewHydrated[],
   currentUserDid?: string,
 ) => {
   const participants = new Set<string>();
@@ -76,14 +77,14 @@ export default function ChatBox({
   const chatProfile = useAppSelector(selectChatProfile);
   const chatWarned = useAppSelector(selectChatWarned);
   const loggedOut = isReady && !userProfile;
-  const livestream = useAppSelector(usePlayerLivestream());
-  const chat = useAppSelector(useChat());
+  const livestream = useLivestream();
+  const chat = useChat();
   const textAreaRef = useRef<Input>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigation();
   const playerId = usePlayerId();
-  const playerActions = usePlayerActions();
-  const replyTo = useAppSelector(useReplyToMessage());
+  const replyTo = useReplyToMessage();
+  const setReplyToMessage = useSetReplyToMessage();
   if (isWeb) usePreloadEmoji({ immediate: true });
   const [isTextAreaFocused, setIsTextAreaFocused] = useState(false);
   const [pickerState, setPickerState] = useState({
@@ -309,6 +310,8 @@ export default function ChatBox({
     }
   }, [showSuggestions]);
 
+  const createChatMessage = useCreateChatMessage();
+
   const updateSuggestions = (text: string, cursorPosition: number) => {
     const atIndex = text.lastIndexOf("@", cursorPosition);
 
@@ -385,39 +388,13 @@ export default function ChatBox({
     if (!isWeb) Keyboard.dismiss();
     if (!message.length || !livestream || !userProfile) return;
 
-    // Add local message
-    dispatch(
-      addLocalChatMessage({
-        playerId,
-        message,
-        ...(replyTo ? { replyTo } : {}),
-        author: {
-          did: userProfile.did,
-          handle: userProfile.handle,
-        },
-        chatProfile: chatProfile?.profile?.color
-          ? {
-              color: {
-                red: chatProfile.profile.color.red,
-                green: chatProfile.profile.color.green,
-                blue: chatProfile.profile.color.blue,
-              },
-            }
-          : undefined,
-      }),
-    );
-
-    // Send to server
-    dispatch(
-      chatMessage({
-        text: message,
-        livestream,
-        ...(replyTo ? { replyTo } : {}),
-      }),
-    );
+    createChatMessage({
+      text: message,
+      reply: replyTo ? replyTo : undefined,
+    });
 
     setMessage("");
-    playerActions.setReplyToMessage(null);
+    setReplyToMessage(null);
     setShowSuggestions(false);
     if (isWeb && textAreaRef.current) {
       const textarea = textAreaRef.current as unknown as HTMLTextAreaElement;
@@ -493,7 +470,7 @@ export default function ChatBox({
                 <Button
                   size="$2"
                   circular
-                  onPress={() => playerActions.setReplyToMessage(null)}
+                  onPress={() => setReplyToMessage(null)}
                   backgroundColor="transparent"
                 >
                   <XIcon size={16} />

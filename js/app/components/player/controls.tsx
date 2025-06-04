@@ -1,3 +1,4 @@
+import { useRenditions, useSegment, useViewers } from "@streamplace/components";
 import {
   Antenna,
   CheckCircle,
@@ -20,8 +21,6 @@ import {
   usePlayer,
   usePlayerActions,
   usePlayerProtocol,
-  usePlayerRenditions,
-  usePlayerSegment,
   usePlayerSelectedRendition,
 } from "features/player/playerSlice";
 import { userMute } from "features/streamplace/streamplaceSlice";
@@ -278,7 +277,7 @@ export default function Controls(
     props.setPlayTime(Date.now());
   };
 
-  const player = useAppSelector(usePlayer());
+  const viewers = useViewers();
   const dispatch = useAppDispatch();
   const m = useMedia();
 
@@ -416,7 +415,7 @@ export default function Controls(
           ) : null}
         </Part>
         <Part justifyContent="flex-end">
-          <Viewers viewers={player.viewers ?? 0} />
+          <Viewers viewers={viewers ?? 0} />
         </Part>
       </Bar>
       {props.ingest && <LiveBubble />}
@@ -486,7 +485,7 @@ export default function Controls(
 export function PopoverMenu(props: PlayerProps) {
   const [open, setOpen] = useState(false);
   const media = useMedia();
-  const renditions = useAppSelector(usePlayerRenditions());
+  const renditions = useRenditions();
   const selectedRendition = useAppSelector(usePlayerSelectedRendition());
   const protocol = useAppSelector(usePlayerProtocol());
   const { setSelectedRendition, setProtocol } = usePlayerActions();
@@ -807,7 +806,7 @@ function GearMenu(
 }
 
 export function Offline() {
-  const segment = useAppSelector(usePlayerSegment());
+  const segment = useSegment();
   return (
     <View flex={1} justifyContent="center" alignItems="center">
       <View flexDirection="row">
