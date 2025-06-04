@@ -6,7 +6,7 @@ import { PlayerProps } from "./props";
 import Video from "./video";
 import VideoRetry from "./video-retry";
 
-export default function Fullscreen(props: PlayerProps) {
+export function Fullscreen(props: PlayerProps) {
   const divRef = useRef<TamaguiElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const videoCallback = useCallback((node: HTMLVideoElement | null) => {

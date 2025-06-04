@@ -1,5 +1,4 @@
 import { useRenditions, useSegment } from "@streamplace/components";
-import { usePlayerSelectedRendition } from "features/player/playerSlice";
 import { selectUserMuted } from "features/streamplace/streamplaceSlice";
 import usePlatform from "hooks/usePlatform";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
@@ -7,7 +6,7 @@ import { uuidv7 } from "hooks/uuid";
 import { useEffect, useMemo, useState } from "react";
 import { useAppSelector } from "store/hooks";
 import { Text, View } from "tamagui";
-import Fullscreen from "./fullscreen";
+import { Fullscreen } from "./fullscreen";
 import {
   IngestMediaSource,
   PlayerEvent,
@@ -95,7 +94,7 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   const [lastCheck, setLastCheck] = useState(0);
 
   const renditions = useRenditions();
-  const selectedRendition = useAppSelector(usePlayerSelectedRendition());
+  //const [selectedRendition] = usePlayerSelectedRendition();
 
   useEffect(() => {
     if (playing) {
@@ -147,7 +146,7 @@ export function PlayerInner(props: Partial<PlayerProps>) {
     ingestMediaSource: props.ingestMediaSource ?? IngestMediaSource.USER,
     ingestAutoStart: props.ingestAutoStart ?? false,
     renditions: renditions ?? [],
-    selectedRendition: selectedRendition ?? "source",
+    selectedRendition: "source",
     muteWasForced: muteWasForced,
     setMuteWasForced: setMuteWasForced,
     embedded: props.embedded ?? false,
@@ -168,7 +167,7 @@ export function usePlayerStatus(
     eventType: string,
     meta: { [key: string]: any },
   ) => Promise<void>,
-): [PlayerStatus, (PlayerStatus) => void] {
+): [PlayerStatus, (status: PlayerStatus) => void] {
   const [whatDoing, setWhatDoing] = useState<PlayerStatus>(PlayerStatus.START);
   const [whatDid, setWhatDid] = useState<PlayerStatusTracker>({});
   const [doingSince, setDoingSince] = useState(Date.now());

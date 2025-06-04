@@ -1,4 +1,10 @@
-import { useRenditions, useSegment, useViewers } from "@streamplace/components";
+import {
+  intoPlayerProtocol,
+  usePlayerStore,
+  useRenditions,
+  useSegment,
+  useViewers,
+} from "@streamplace/components";
 import {
   Antenna,
   CheckCircle,
@@ -17,12 +23,6 @@ import {
 import { Countdown } from "components/countdown";
 import Loading from "components/loading/loading";
 import Viewers from "components/viewers";
-import {
-  usePlayer,
-  usePlayerActions,
-  usePlayerProtocol,
-  usePlayerSelectedRendition,
-} from "features/player/playerSlice";
 import { userMute } from "features/streamplace/streamplaceSlice";
 import usePlatform from "hooks/usePlatform";
 import {
@@ -34,7 +34,7 @@ import {
   useState,
 } from "react";
 import { Animated, Easing, Pressable } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useAppDispatch } from "store/hooks";
 import { PlaceStreamDefs } from "streamplace";
 import {
   Adapt,
@@ -486,9 +486,10 @@ export function PopoverMenu(props: PlayerProps) {
   const [open, setOpen] = useState(false);
   const media = useMedia();
   const renditions = useRenditions();
-  const selectedRendition = useAppSelector(usePlayerSelectedRendition());
-  const protocol = useAppSelector(usePlayerProtocol());
-  const { setSelectedRendition, setProtocol } = usePlayerActions();
+  const selectedRendition = usePlayerStore((x) => x.selectedRendition);
+  const setSelectedRendition = usePlayerStore((x) => x.setSelectedRendition);
+  const protocol = usePlayerStore((x) => x.protocol);
+  const setProtocol = usePlayerStore((x) => x.setProtocol);
   const dispatch = useAppDispatch();
   // on android, this appears to lose its context. idk. so we just pass everything through.
   const gearMenu = (
@@ -498,11 +499,11 @@ export function PopoverMenu(props: PlayerProps) {
       selectedRendition={selectedRendition ?? "source"}
       protocol={protocol}
       setSelectedRendition={(rendition) => {
-        dispatch(setSelectedRendition(rendition));
+        setSelectedRendition(rendition);
         setOpen(false);
       }}
       setProtocol={(protocol) => {
-        dispatch(setProtocol(protocol));
+        setProtocol(intoPlayerProtocol(protocol));
         setOpen(false);
       }}
       dispatch={dispatch}
@@ -573,9 +574,8 @@ export function PopoverMenu(props: PlayerProps) {
 }
 
 function LiveBubble() {
-  const player = useAppSelector(usePlayer());
-  const dispatch = useAppDispatch();
-  const { startIngest } = usePlayerActions();
+  const ingestStarting = usePlayerStore((x) => x.ingestStarting);
+  const setIngestStarting = usePlayerStore((x) => x.setIngestStarting);
   return (
     <View
       position="absolute"
@@ -593,7 +593,7 @@ function LiveBubble() {
         paddingLeft="$3"
         paddingRight="$3"
         onPress={() => {
-          dispatch(startIngest(!player.ingestStarting));
+          setIngestStarting(!ingestStarting);
         }}
       >
         <LiveBubbleText />
@@ -603,11 +603,12 @@ function LiveBubble() {
 }
 
 function LiveBubbleText() {
-  const player = useAppSelector(usePlayer());
-  if (!player.ingestStarting) {
+  const ingestStarting = usePlayerStore((x) => x.ingestStarting);
+  const ingestConnectionState = usePlayerStore((x) => x.ingestConnectionState);
+  if (!ingestStarting) {
     return <H3>START STREAMING</H3>;
   }
-  if (player.ingestConnectionState === "connected") {
+  if (ingestConnectionState === "connected") {
     return (
       <>
         <H3>LIVE</H3>

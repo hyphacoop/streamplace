@@ -11,7 +11,6 @@ import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { OAuthSession } from "@atproto/oauth-client";
 import { DID_KEY, hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
-import { PlayersState } from "features/player/playerSlice";
 import {
   setURL,
   StreamplaceState,
@@ -989,10 +988,9 @@ export const blueskySlice = createAppSlice({
         thunkAPI,
       ) => {
         const now = new Date();
-        const { bluesky, streamplace, player } = thunkAPI.getState() as {
+        const { bluesky, streamplace } = thunkAPI.getState() as {
           bluesky: BlueskyState;
           streamplace: StreamplaceState;
-          player: PlayersState;
         };
 
         if (!bluesky.pdsAgent) {

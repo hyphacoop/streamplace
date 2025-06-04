@@ -18,8 +18,7 @@ import Popup from "components/popup";
 import Timer from "components/timer";
 import Viewers from "components/viewers";
 import { useFullscreen } from "contexts/FullscreenContext";
-import { getProfile, selectProfiles } from "features/bluesky/blueskySlice";
-import { usePlayer } from "features/player/playerSlice";
+import { getProfile } from "features/bluesky/blueskySlice";
 import {
   selectTelemetry,
   telemetryOpt,
@@ -56,8 +55,6 @@ export default function Livestream(props: Partial<PlayerProps>) {
 
 export function LivestreamInner(props: Partial<PlayerProps>) {
   const telemetry = useAppSelector(selectTelemetry);
-  const player = useAppSelector(usePlayer());
-  const profiles = useAppSelector(selectProfiles);
   const toast = useToastController();
   const viewers = useViewers();
 

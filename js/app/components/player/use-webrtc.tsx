@@ -1,8 +1,8 @@
+import { usePlayerStore } from "@streamplace/components";
 import {
   createStreamKeyRecord,
   selectStoredKey,
 } from "features/bluesky/blueskySlice";
-import { usePlayerActions } from "features/player/playerSlice";
 import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
@@ -32,6 +32,7 @@ export default function useWebRTC(
       if (!track) {
         return;
       }
+      console.log("event streams", event.streams);
       setMediaStream(event.streams[0]);
     });
     peerConnection.addEventListener("connectionstatechange", (ev) => {
@@ -202,7 +203,9 @@ export function useWebRTCIngest({
   streamKey?: string;
 }): [MediaStream | null, (mediaStream: MediaStream | null) => void] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-  const { ingestConnectionState } = usePlayerActions();
+  const setIngestConnectionState = usePlayerStore(
+    (x) => x.setIngestConnectionState,
+  );
   const dispatch = useAppDispatch();
   const storedKey = streamKey ?? useAppSelector(selectStoredKey)?.privateKey;
   useEffect(() => {
@@ -226,7 +229,7 @@ export function useWebRTCIngest({
       peerConnection.addTrack(track, mediaStream);
     }
     peerConnection.addEventListener("connectionstatechange", (ev) => {
-      dispatch(ingestConnectionState(peerConnection.connectionState));
+      setIngestConnectionState(peerConnection.connectionState);
       console.log("connection state change", peerConnection.connectionState);
       if (peerConnection.connectionState !== "connected") {
         return;

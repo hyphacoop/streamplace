@@ -1,6 +1,5 @@
+import { usePlayerStore } from "@streamplace/components";
 import streamKey from "components/live-dashboard/stream-key";
-import { selectStoredKey } from "features/bluesky/blueskySlice";
-import { usePlayer, usePlayerProtocol } from "features/player/playerSlice";
 import Hls from "hls.js";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import {
@@ -11,7 +10,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useAppDispatch, useAppSelector } from "store/hooks";
 import { View } from "tamagui";
 import { quietReceiver } from "./av-sync";
 import {
@@ -29,7 +27,7 @@ import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 type VideoProps = PlayerProps & { url: string };
 
 export default function WebVideo(props: PlayerProps) {
-  const inProto = useAppSelector(usePlayerProtocol());
+  const inProto = usePlayerStore((x) => x.protocol);
   const { url, protocol } = srcToUrl(props, inProto);
   if (props.ingest) {
     return <WebcamIngestPlayer url={url} {...props} />;
@@ -230,7 +228,7 @@ export function HLSPlayer(props: VideoProps) {
         localRef.current.play();
       });
     }
-  }, [localRef.current]);
+  }, [props.url]);
   return <VideoElement {...props} ref={refCallback} />;
 }
 
@@ -316,9 +314,7 @@ export function WebRTCPlayer(props: VideoProps) {
 }
 
 export function WebcamIngestPlayer(props: VideoProps) {
-  const dispatch = useAppDispatch();
-  const player = useAppSelector(usePlayer());
-  const storedKey = useAppSelector(selectStoredKey);
+  const ingestStarting = usePlayerStore((x) => x.ingestStarting);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null,
   );
@@ -369,7 +365,7 @@ export function WebcamIngestPlayer(props: VideoProps) {
   }, [props.ingestMediaSource]);
 
   useEffect(() => {
-    if (!player.ingestStarting && !props.ingestAutoStart) {
+    if (!ingestStarting && !props.ingestAutoStart) {
       setRemoteMediaStream(null);
       return;
     }
@@ -380,12 +376,7 @@ export function WebcamIngestPlayer(props: VideoProps) {
       return;
     }
     setRemoteMediaStream(localMediaStream);
-  }, [
-    localMediaStream,
-    player.ingestStarting,
-    streamKey,
-    props.ingestAutoStart,
-  ]);
+  }, [localMediaStream, ingestStarting, streamKey, props.ingestAutoStart]);
 
   useEffect(() => {
     if (!videoElement) {

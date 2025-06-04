@@ -1,8 +1,7 @@
+import { usePlayerProtocol } from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
-import { usePlayerProtocol } from "features/player/playerSlice";
 import React, { useEffect } from "react";
 import { MediaStream, RTCView } from "react-native-webrtc";
-import { useAppSelector } from "store/hooks";
 import { View } from "tamagui";
 import { PlayerProps, PlayerStatus, PROTOCOL_WEBRTC } from "./props";
 import { srcToUrl } from "./shared";
@@ -15,7 +14,7 @@ import useWebRTC from "./use-webrtc";
 export default function NativeVideo(
   props: PlayerProps & { nativeVideoRef: React.RefObject<VideoView> },
 ) {
-  const protocol = useAppSelector(usePlayerProtocol());
+  const protocol = usePlayerProtocol()[0];
   if (protocol === PROTOCOL_WEBRTC) {
     return <NativeWHEP {...props} />;
   }

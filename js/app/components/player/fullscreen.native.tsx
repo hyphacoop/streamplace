@@ -1,14 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
+import { PlayerProtocol, usePlayerProtocol } from "@streamplace/components";
 import { VideoView } from "expo-video";
-import { usePlayerProtocol } from "features/player/playerSlice";
 import { useEffect, useRef, useState } from "react";
 import { BackHandler, Dimensions, StatusBar, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSelector } from "store/hooks";
 import { View } from "tamagui";
 import Controls from "./controls";
 import PlayerLoading from "./player-loading";
-import { PlayerProps, PROTOCOL_WEBRTC } from "./props";
+import { PlayerProps } from "./props";
 import VideoRetry from "./video-retry";
 import Video from "./video.native";
 
@@ -20,7 +19,7 @@ export default function Fullscreen(props: PlayerProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
-  const protocol = useAppSelector(usePlayerProtocol());
+  const protocol = usePlayerProtocol()[0];
 
   // Re-calculate dimensions on orientation change
   useEffect(() => {
@@ -79,9 +78,9 @@ export default function Fullscreen(props: PlayerProps) {
     };
   }, [props.fullscreen, navigation]);
 
-  const setFullscreen = (on) => {
+  const setFullscreen = (on: boolean) => {
     // For WebRTC, use custom fullscreen implementation
-    if (protocol === PROTOCOL_WEBRTC) {
+    if (protocol === PlayerProtocol.PLAYER_PROTOCOL_WEBRTC) {
       props.setFullscreen(on);
       return;
     }
@@ -96,7 +95,7 @@ export default function Fullscreen(props: PlayerProps) {
     }
   };
 
-  if (props.fullscreen && protocol === PROTOCOL_WEBRTC) {
+  if (props.fullscreen && protocol === PlayerProtocol.PLAYER_PROTOCOL_WEBRTC) {
     // Determine if we're in landscape mode
     const isLandscape = dimensions.width > dimensions.height;
 
