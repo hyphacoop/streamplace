@@ -24,6 +24,7 @@ import {
   selectTelemetry,
   telemetryOpt,
 } from "features/streamplace/streamplaceSlice";
+import useAvatars from "hooks/useAvatars";
 import { useKeyboard } from "hooks/useKeyboard";
 import usePlatform from "hooks/usePlatform";
 import { useCallback, useEffect, useState } from "react";
@@ -85,6 +86,10 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const startTime = livestream?.record?.createdAt
     ? new Date(livestream?.record?.createdAt)
     : undefined;
+
+  const didArr = livestream?.author?.did ? [livestream?.author?.did] : [];
+
+  const avi = useAvatars(didArr)[didArr[0]];
 
   // this would all be really easy if i had library that would give me the
   // safe area view height and width but i don't. so let's measure
@@ -285,7 +290,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                     flexShrink={1}
                     overflow="hidden"
                   >
-                    <Avatar src={streamerProfile?.avatar} />
+                    <Avatar src={avi.avatar} />
                     <View
                       flexDirection="column"
                       alignItems="flex-start"
@@ -337,7 +342,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                         minWidth={0}
                         flexShrink={1}
                       >
-                        {player.livestream?.record.title}
+                        {livestream?.record.title}
                       </Text>
                     </View>
                   </View>
@@ -352,7 +357,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                   {startTime instanceof Date && !offline && (
                     <Timer start={startTime} />
                   )}
-                  <Viewers viewers={player.viewers ?? 0} />
+                  <Viewers viewers={viewers ?? 0} />
                   <Button
                     backgroundColor="transparent"
                     onPress={() => setIsChatVisible(!isChatVisible)}
