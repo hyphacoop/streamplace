@@ -25,6 +25,7 @@ export function Player(
 ) {
   return (
     <PlayerProvider {...props}>
+      <PropUpFullscreen setFullscreen={props.setFullscreen} />
       <PlayerInner {...props} />
     </PlayerProvider>
   );
@@ -40,6 +41,8 @@ export function PropUpFullscreen(props: {
       props.setFullscreen(fullscreen);
     }
   }, [fullscreen, props.setFullscreen]);
+
+  return <></>;
 }
 
 export function PlayerInner(props: Partial<PlayerProps>) {

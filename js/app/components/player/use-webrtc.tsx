@@ -18,12 +18,6 @@ export default function useWebRTC(
   const lastChange = useRef<number>(0);
 
   useEffect(() => {
-    // Check if WebRTC is supported
-    if (!window.RTCPeerConnection) {
-      console.error("WebRTC is not supported in this browser");
-      return;
-    }
-
     const peerConnection = new RTCPeerConnection({
       bundlePolicy: "max-bundle",
     });
@@ -36,35 +30,21 @@ export default function useWebRTC(
     peerConnection.addEventListener("track", (event) => {
       const track = event.track;
       if (!track) {
-        console.warn("Received track event but no track available");
         return;
       }
-      if (event.streams && event.streams.length > 0) {
-        setMediaStream(event.streams[0]);
-      } else {
-        console.warn("Track event received but no streams available");
-      }
+      setMediaStream(event.streams[0]);
     });
     peerConnection.addEventListener("connectionstatechange", (ev) => {
+      console.log("connection state change", peerConnection.connectionState);
       if (peerConnection.connectionState === "closed") {
-        console.warn("ah ! connection stuck !");
         setStuck(true);
-      } else if (peerConnection.connectionState === "failed") {
-        console.error("Connection failed");
-        setStuck(true);
-      } else if (peerConnection.connectionState === "connected") {
-        setStuck(false);
-      } else if (peerConnection.connectionState === "connecting") {
-        console.log("Connecting to webrtc...");
+      }
+      if (peerConnection.connectionState !== "connected") {
+        return;
       }
     });
     peerConnection.addEventListener("negotiationneeded", (ev) => {
-      negotiateConnectionWithClientOffer(peerConnection, endpoint).catch(
-        (error) => {
-          console.warn("Connection negotiation failed:", error);
-          setStuck(true);
-        },
-      );
+      negotiateConnectionWithClientOffer(peerConnection, endpoint);
     });
 
     const handle = setInterval(async () => {
@@ -146,6 +126,7 @@ export async function negotiateConnectionWithClientOffer(
        * This specifies how the client should communicate,
        * and what kind of media client and server have negotiated to exchange.
        */
+      console.log("POSTing SDP offer", endpoint);
       let response = await postSDPOffer(`${endpoint}`, ofr.sdp, bearerToken);
       if (response.status === 201) {
         let answerSDP = await response.text();
@@ -162,13 +143,10 @@ export async function negotiateConnectionWithClientOffer(
         );
       } else {
         const errorMessage = await response.text();
-        console.error(
-          "Server error response:",
-          `${response.status} ${errorMessage}`,
-        );
+        console.error(errorMessage);
       }
     } catch (e) {
-      console.error("posting sdp offer failed:", e);
+      console.error(`posting sdp offer failed: ${e}`);
     }
 
     /** Limit reconnection attempts to at-most once every 5 seconds */
@@ -225,6 +203,7 @@ export function useWebRTCIngest({
   streamKey?: string;
 }): [MediaStream | null, (mediaStream: MediaStream | null) => void] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const ingestConnectionState = usePlayerStore((x) => x.ingestConnectionState);
   const setIngestConnectionState = usePlayerStore(
     (x) => x.setIngestConnectionState,
   );

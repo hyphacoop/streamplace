@@ -17,7 +17,7 @@ import Video from "./video.native";
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-export default function Fullscreen(props: { src: string; playerId?: string }) {
+export function Fullscreen(props: { src: string; playerId?: string }) {
   const ref = useRef<VideoView>(null);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -28,6 +28,12 @@ export default function Fullscreen(props: { src: string; playerId?: string }) {
   const fullscreen = usePlayerStore((x) => x.fullscreen);
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
   const handle = useLivestreamStore((x) => x.profile?.handle);
+
+  const setSrc = usePlayerStore((x) => x.setSrc);
+
+  useEffect(() => {
+    setSrc(props.src);
+  }, [props.src]);
 
   // Re-calculate dimensions on orientation change
   useEffect(() => {
@@ -171,7 +177,7 @@ export default function Fullscreen(props: { src: string; playerId?: string }) {
   return (
     <>
       <PlayerLoading />
-      <Controls name={handle || "Streaming"} playerId={props.playerId} />
+      <Controls name={handle || ""} playerId={props.playerId} />
       <VideoRetry>
         <Video />
       </VideoRetry>

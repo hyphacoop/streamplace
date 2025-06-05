@@ -18,6 +18,10 @@ import Popup from "components/popup";
 import Timer from "components/timer";
 import Viewers from "components/viewers";
 import { useFullscreen } from "contexts/FullscreenContext";
+import {
+  setSidebarHidden,
+  setSidebarUnhidden,
+} from "features/base/sidebarSlice";
 import { getProfile } from "features/bluesky/blueskySlice";
 import {
   selectTelemetry,
@@ -76,8 +80,12 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const { fullscreen, setFullscreen } = useFullscreen();
 
   useEffect(() => {
-    setFullscreen(fullscreen);
-  }, [fullscreen]);
+    if (fullscreen) {
+      dispatch(setSidebarHidden());
+    } else {
+      dispatch(setSidebarUnhidden());
+    }
+  }, [setFullscreen]);
 
   const livestream = useLivestream();
   const streamerProfile = useProfile();
@@ -231,7 +239,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
               <Player
                 telemetry={telemetry === true}
                 src={src}
-                fullscreen={fullscreen}
                 setFullscreen={setFullscreen}
                 {...extraProps}
               />
@@ -256,6 +263,9 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                       gap="$2"
                       minWidth={0}
                     >
+                      <Text>
+                        {fullscreen ? "yes fullscreen" : "no fullscreen"}
+                      </Text>
                       {streamerDID && !streamerHandle ? (
                         // Skeleton loader for handle
                         <Text>&nbsp;</Text>
