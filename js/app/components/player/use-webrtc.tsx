@@ -18,6 +18,12 @@ export default function useWebRTC(
   const lastChange = useRef<number>(0);
 
   useEffect(() => {
+    // Check if WebRTC is supported
+    if (!window.RTCPeerConnection) {
+      console.error("WebRTC is not supported in this browser");
+      return;
+    }
+
     const peerConnection = new RTCPeerConnection({
       bundlePolicy: "max-bundle",
     });
@@ -30,22 +36,35 @@ export default function useWebRTC(
     peerConnection.addEventListener("track", (event) => {
       const track = event.track;
       if (!track) {
+        console.warn("Received track event but no track available");
         return;
       }
-      console.log("event streams", event.streams);
-      setMediaStream(event.streams[0]);
+      if (event.streams && event.streams.length > 0) {
+        setMediaStream(event.streams[0]);
+      } else {
+        console.warn("Track event received but no streams available");
+      }
     });
     peerConnection.addEventListener("connectionstatechange", (ev) => {
-      console.log("connection state change", peerConnection.connectionState);
       if (peerConnection.connectionState === "closed") {
+        console.warn("ah ! connection stuck !");
         setStuck(true);
-      }
-      if (peerConnection.connectionState !== "connected") {
-        return;
+      } else if (peerConnection.connectionState === "failed") {
+        console.error("Connection failed");
+        setStuck(true);
+      } else if (peerConnection.connectionState === "connected") {
+        setStuck(false);
+      } else if (peerConnection.connectionState === "connecting") {
+        console.log("Connecting to webrtc...");
       }
     });
     peerConnection.addEventListener("negotiationneeded", (ev) => {
-      negotiateConnectionWithClientOffer(peerConnection, endpoint);
+      negotiateConnectionWithClientOffer(peerConnection, endpoint).catch(
+        (error) => {
+          console.warn("Connection negotiation failed:", error);
+          setStuck(true);
+        },
+      );
     });
 
     const handle = setInterval(async () => {
@@ -143,10 +162,13 @@ export async function negotiateConnectionWithClientOffer(
         );
       } else {
         const errorMessage = await response.text();
-        console.error(errorMessage);
+        console.error(
+          "Server error response:",
+          `${response.status} ${errorMessage}`,
+        );
       }
     } catch (e) {
-      console.error(`posting sdp offer failed: ${e}`);
+      console.error("posting sdp offer failed:", e);
     }
 
     /** Limit reconnection attempts to at-most once every 5 seconds */

@@ -1,42 +1,60 @@
-import { usePlayerProtocol } from "@streamplace/components";
+import {
+  PlayerProtocol,
+  PlayerStatus,
+  usePlayerStore,
+} from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
 import React, { useEffect } from "react";
 import { MediaStream, RTCView } from "react-native-webrtc";
 import { View } from "tamagui";
-import { PlayerProps, PlayerStatus, PROTOCOL_WEBRTC } from "./props";
 import { srcToUrl } from "./shared";
 import useWebRTC from "./use-webrtc";
 
-// export function Player() {
-//   return <View f={1}></View>;
-// }
+const PROTOCOL_WEBRTC = "webrtc";
 
-export default function NativeVideo(
-  props: PlayerProps & { nativeVideoRef: React.RefObject<VideoView> },
-) {
-  const protocol = usePlayerProtocol()[0];
-  if (protocol === PROTOCOL_WEBRTC) {
+export default function NativeVideo(props: {
+  name: string;
+  src: string;
+  playerId?: string;
+  nativeVideoRef: React.RefObject<VideoView>;
+  telemetry?: boolean;
+  avSyncTest?: boolean;
+  forceProtocol?: string;
+}) {
+  const protocol = usePlayerStore((x) => x.protocol);
+
+  if (protocol === PlayerProtocol.PLAYER_PROTOCOL_WEBRTC) {
     return <NativeWHEP {...props} />;
   }
-  const { url } = srcToUrl(props, protocol);
+
+  const selectedRendition = usePlayerStore((x) => x.selectedRendition);
+  const { url } = srcToUrl({ src: props.src, selectedRendition }, protocol);
+  const setStatus = usePlayerStore((x) => x.setStatus);
+  const muted = usePlayerStore((x) => x.muted);
+  const volume = usePlayerStore((x) => x.volume);
+  const setFullscreen = usePlayerStore((x) => x.setFullscreen);
+  const fullscreen = usePlayerStore((x) => x.fullscreen);
+  const playerEvent = usePlayerStore((x) => x.playerEvent);
+
   useEffect(() => {
     return () => {
-      props.setStatus(PlayerStatus.START);
+      setStatus(PlayerStatus.START);
     };
-  }, []);
+  }, [setStatus]);
+
   const player = useVideoPlayer(url, (player) => {
     player.loop = true;
-    player.muted = props.muted;
+    player.muted = muted;
     player.play();
   });
 
   useEffect(() => {
-    player.muted = props.muted;
-  }, [props.muted, player]);
+    player.muted = muted;
+  }, [muted, player]);
 
   useEffect(() => {
-    player.volume = props.volume;
-  }, [props.volume, player]);
+    player.volume = volume;
+  }, [volume, player]);
 
   useEffect(() => {
     const subs = (
@@ -51,16 +69,16 @@ export default function NativeVideo(
     ).map((evType) => {
       const now = new Date();
       return player.addListener(evType, (...args) => {
-        props.playerEvent(now.toISOString(), evType, { args: args });
+        playerEvent(now.toISOString(), evType, { args: args });
       });
     });
 
     subs.push(
       player.addListener("playingChange", (newIsPlaying) => {
         if (newIsPlaying) {
-          props.setStatus(PlayerStatus.PLAYING);
+          setStatus(PlayerStatus.PLAYING);
         } else {
-          props.setStatus(PlayerStatus.WAITING);
+          setStatus(PlayerStatus.WAITING);
         }
       }),
     );
@@ -70,7 +88,7 @@ export default function NativeVideo(
         sub.remove();
       }
     };
-  }, [player]);
+  }, [player, playerEvent, setStatus]);
 
   return (
     <VideoView
@@ -78,49 +96,70 @@ export default function NativeVideo(
       ref={props.nativeVideoRef}
       player={player}
       allowsFullscreen
-      nativeControls={props.fullscreen}
+      nativeControls={fullscreen}
       onFullscreenEnter={() => {
-        props.setFullscreen(true);
+        setFullscreen(true);
       }}
       onFullscreenExit={() => {
-        props.setFullscreen(false);
+        setFullscreen(false);
       }}
       allowsPictureInPicture
     />
   );
 }
 
-export function NativeWHEP(props: PlayerProps) {
-  const { url } = srcToUrl(props, PROTOCOL_WEBRTC);
+export function NativeWHEP(props: {
+  name: string;
+  src: string;
+  playerId?: string;
+  telemetry?: boolean;
+  avSyncTest?: boolean;
+  forceProtocol?: string;
+}) {
+  const selectedRendition = usePlayerStore((x) => x.selectedRendition);
+  const { url } = srcToUrl(
+    { src: props.src, selectedRendition },
+    PROTOCOL_WEBRTC,
+  );
   const [stream, stuck] = useWebRTC(url);
+
+  const setStatus = usePlayerStore((x) => x.setStatus);
+  const muted = usePlayerStore((x) => x.muted);
+  const volume = usePlayerStore((x) => x.volume);
+
   useEffect(() => {
     if (stuck) {
-      props.setStatus(PlayerStatus.STALLED);
+      setStatus(PlayerStatus.STALLED);
     } else {
-      props.setStatus(PlayerStatus.PLAYING);
+      setStatus(PlayerStatus.PLAYING);
     }
-  }, [stuck]);
+  }, [stuck, setStatus]);
+
   const mediaStream = stream as unknown as MediaStream;
+
   useEffect(() => {
     if (!mediaStream) {
-      props.setStatus(PlayerStatus.WAITING);
+      setStatus(PlayerStatus.WAITING);
       return;
     }
-    props.setStatus(PlayerStatus.PLAYING);
-  }, [mediaStream]);
+    setStatus(PlayerStatus.PLAYING);
+  }, [mediaStream, setStatus]);
+
   useEffect(() => {
     if (!mediaStream) {
       return;
     }
     mediaStream.getTracks().forEach((track) => {
       if (track.kind === "audio") {
-        track._setVolume(props.muted ? 0 : props.volume);
+        track._setVolume(muted ? 0 : volume);
       }
     });
-  }, [mediaStream, props.muted, props.volume]);
+  }, [mediaStream, muted, volume]);
+
   if (!mediaStream) {
     return <View></View>;
   }
+
   return (
     <RTCView
       mirror={false}

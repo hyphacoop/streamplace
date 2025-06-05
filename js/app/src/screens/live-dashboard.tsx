@@ -109,15 +109,13 @@ export default function LiveDashboard() {
                 { label: "Create", value: "create" },
                 { label: "Update", value: "update" },
               ]}
-              disabledValues={playerId ? [] : ["update"]}
+              disabledValues={isLive ? [] : ["update"]}
               selectedValue={page}
               setSelectedValue={setPage}
               maxWidth={250}
               width="100%"
             />
-            {page === "update" ? (
-              <UpdateLivestream playerId={playerId} />
-            ) : null}
+            {page === "update" && isLive ? <UpdateLivestream /> : null}
             {page === "create" ? <CreateLivestream /> : null}
           </View>
         </View>

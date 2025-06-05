@@ -4,9 +4,22 @@ export enum PlayerProtocol {
   PLAYER_PROTOCOL_PROGRESSIVE_MP4 = "progressive-mp4",
   PLAYER_PROTOCOL_PROGRESSIVE_WEBM = "progressive-webm",
 }
-export interface PlayersState {
-  [key: string]: PlayerState;
+
+export enum PlayerStatus {
+  START = "start",
+  PLAYING = "playing",
+  STALLED = "stalled",
+  SUSPEND = "suspend",
+  WAITING = "waiting",
+  PAUSE = "pause",
+  MUTE = "mute",
 }
+
+export enum IngestMediaSource {
+  USER = "user",
+  DISPLAY = "display",
+}
+
 export interface PlayerState {
   id: string;
   selectedRendition: string;
@@ -20,15 +33,111 @@ export interface PlayerState {
   /** Function to set the ingestStarting flag */
   setIngestStarting: (ingestStarting: boolean) => void;
 
+  /** Ingest stream key for the current player */
+  ingestStreamKey: string;
+
+  /** Function to set the ingest stream key */
+  setIngestStreamKey: (ingestStreamKey: string) => void;
+
   /** Current connection state of ingest RTP/RTC peer connection */
   ingestConnectionState: RTCPeerConnectionState | null;
 
   /** Function to update the ingest connection state */
   setIngestConnectionState: (state: RTCPeerConnectionState | null) => void;
 
+  ingestMediaSource?: IngestMediaSource;
+  setIngestMediaSource?: (source: IngestMediaSource) => void;
+
+  ingestAutoStart?: boolean;
+  setIngestAutoStart?: (autoStart: boolean) => void;
+
   /** Timestamp (number) when ingest started, or null if not started */
   ingestStarted: number | null;
 
   /** Function to set the ingestStarted timestamp */
   setIngestStarted: (timestamp: number | null) => void;
+
+  /** Player muted state */
+  muted: boolean;
+
+  /** Function to set the muted state */
+  setMuted: (isMuted: boolean) => void;
+
+  /** Player volume level (0.0 to 1.0) */
+  volume: number;
+
+  /** Function to set the volume level */
+  setVolume: (volume: number) => void;
+
+  /** Player fullscreen state */
+  fullscreen: boolean;
+
+  /** Function to set the fullscreen state */
+  setFullscreen: (isFullscreen: boolean) => void;
+
+  /** Current player status */
+  status: PlayerStatus;
+
+  /** Function to update the player status */
+  setStatus: (status: PlayerStatus) => void;
+
+  /** Current playback time in seconds */
+  playTime: number;
+
+  /** Function to set the current playback time */
+  setPlayTime: (playTime: number) => void;
+
+  /** Flag indicating if player is in offline state */
+  offline: boolean;
+
+  /** Function to set the offline state */
+  setOffline: (offline: boolean) => void;
+  /** Reference to the video element for direct manipulation (used for PiP) */
+  videoRef:
+    | React.MutableRefObject<HTMLVideoElement | null>
+    | ((instance: HTMLVideoElement | null) => void)
+    | null
+    | undefined;
+
+  /** Function to set the video reference */
+  setVideoRef: (
+    videoRef:
+      | React.MutableRefObject<HTMLVideoElement | null>
+      | ((instance: HTMLVideoElement | null) => void)
+      | null
+      | undefined,
+  ) => void;
+
+  /** Flag indicating if player is in Picture-in-Picture mode */
+  pipMode: boolean;
+
+  /** Function to set the Picture-in-Picture mode */
+  setPipMode: (pipMode: boolean) => void;
+
+  /** Flag indicating if mute was forced by system (e.g., autoplay policy) */
+  muteWasForced: boolean;
+
+  /** Function to set the muteWasForced flag */
+  setMuteWasForced: (muteWasForced: boolean) => void;
+
+  /** Flag indicating if the player is embedded in another context */
+  embedded: boolean;
+
+  /** Function to set the embedded flag */
+  setEmbedded: (embedded: boolean) => void;
+
+  /** Flag indicating if player controls should be shown */
+  showControls: boolean;
+  controlsTimeout?: NodeJS.Timeout | undefined;
+
+  /** Function to set the showControls flag */
+  setShowControls: (showControls: boolean) => void;
+
+  playerEvent: (
+    time: string,
+    eventType: string,
+    meta: { [key: string]: any },
+  ) => void;
+
+  setUserInteraction: () => void;
 }

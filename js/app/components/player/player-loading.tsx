@@ -1,18 +1,22 @@
+import { PlayerStatus, usePlayerStore } from "@streamplace/components";
 import { Play } from "@tamagui/lucide-icons";
 import KeepAwake from "components/keep-awake";
 import { Spinner } from "components/loading/loading";
 import { useTheme, View } from "tamagui";
-import { PlayerProps, PlayerStatus } from "./props";
 
-export default function PlayerLoading(props: PlayerProps) {
+export default function PlayerLoading(props: { name: string }) {
+  const status = usePlayerStore((x) => x.status);
   const theme = useTheme();
-  if (props.status === PlayerStatus.PLAYING) {
+
+  if (status === PlayerStatus.PLAYING) {
     return <KeepAwake />;
   }
+
   let spinner = <Spinner></Spinner>;
-  if (props.status === PlayerStatus.PAUSE) {
+  if (status === PlayerStatus.PAUSE) {
     spinner = <Play size="$12" color={theme.accentColor.val} />;
   }
+
   return (
     <View
       position="absolute"

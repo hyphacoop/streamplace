@@ -1,8 +1,11 @@
 import { createContext } from "react";
-import { PlayerStore } from "./player-store";
+import { StoreApi } from "zustand";
+import { PlayerState } from "./player-state";
 
 type PlayerContextType = {
-  store: PlayerStore;
+  players: Record<string, StoreApi<PlayerState>>;
+  createPlayer: (id?: string) => string;
+  removePlayer: (id: string) => void;
 };
 
 export const PlayerContext = createContext<PlayerContextType | null>(null);

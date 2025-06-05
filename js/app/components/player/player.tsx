@@ -1,9 +1,12 @@
-import { useRenditions, useSegment } from "@streamplace/components";
+import {
+  getFirstPlayerID,
+  useRenditions,
+  useSegment,
+} from "@streamplace/components";
 import { selectUserMuted } from "features/streamplace/streamplaceSlice";
 import usePlatform from "hooks/usePlatform";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { uuidv7 } from "hooks/uuid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "store/hooks";
 import { Text, View } from "tamagui";
 import { Fullscreen } from "./fullscreen";
@@ -36,7 +39,8 @@ export function PlayerInner(props: Partial<PlayerProps>) {
     );
   }
   const userMuted = useAppSelector(selectUserMuted);
-  const playerId = useMemo(() => props.playerId ?? uuidv7(), [props.playerId]);
+  // Will get the first player ID from the store
+  const playerId = getFirstPlayerID();
   const [muted, setMuted] = useState(userMuted ?? false);
   const [volume, setVolume] = useState(1.0);
 
@@ -94,7 +98,6 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   const [lastCheck, setLastCheck] = useState(0);
 
   const renditions = useRenditions();
-  //const [selectedRendition] = usePlayerSelectedRendition();
 
   useEffect(() => {
     if (playing) {

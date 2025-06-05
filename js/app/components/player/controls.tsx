@@ -24,7 +24,6 @@ import { Countdown } from "components/countdown";
 import Loading from "components/loading/loading";
 import Viewers from "components/viewers";
 import { userMute } from "features/streamplace/streamplaceSlice";
-import usePlatform from "hooks/usePlatform";
 import {
   Dispatch,
   Fragment,
@@ -33,7 +32,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Animated, Easing, Pressable } from "react-native";
+import { Animated, Platform, Pressable } from "react-native";
 import { useAppDispatch } from "store/hooks";
 import { PlaceStreamDefs } from "streamplace";
 import {
@@ -54,227 +53,209 @@ import {
   XStack,
   YGroup,
 } from "tamagui";
-import { PlayerProps, PROTOCOL_HLS, PROTOCOL_WEBRTC } from "./props";
+
+const PROTOCOL_HLS = "hls";
+// const PROTOCOL_PROGRESSIVE_MP4 = "progressive-mp4";
+// const PROTOCOL_PROGRESSIVE_WEBM = "progressive-webm";
+const PROTOCOL_WEBRTC = "webrtc";
 
 const Bar = (props) => (
   <XStack
-    height={50}
-    backgroundColor="rgba(0,0,0,0.8)"
-    justifyContent="space-between"
-    alignItems="stretch"
-    flex-direction="row"
-    animation="quick"
-    animateOnly={["opacity"]}
+    paddingLeft="$3"
+    paddingRight="$3"
+    paddingTop="$3"
+    paddingBottom="$3"
+    backgroundColor="rgba(0,0,0,0.5)"
+    position="relative"
+    minHeight={60}
     {...props}
   />
 );
 
 const Part = (props) => (
-  <View
-    alignItems="stretch"
+  <XStack
+    flex={1}
+    alignItems="center"
     justifyContent="center"
-    flexDirection="row"
-    flexBasis={0}
-    flexGrow={1}
+    pointerEvents="auto"
     {...props}
   />
 );
 
-const VolumeSlider = ({
-  volume,
-  setVolume,
-  muted,
-  setMuted,
-  showControls,
-}: {
+const VolumeSlider = (props: {
   volume: number;
   setVolume: (volume: number) => void;
   muted: boolean;
-  setMuted: (muted: boolean) => void;
   showControls: boolean;
+  setMuted: (muted: boolean) => void;
 }) => {
-  const [hovered, setHovered] = useState(false);
-  const [sliderValue, setSliderValue] = useState(volume);
-  const { isWeb } = usePlatform();
-  const sliderRef = useRef(null);
-  const iconRef = useRef(null);
-  const lastVolumeRef = useRef(volume || 1);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const hideTimer = useRef<NodeJS.Timeout | null>(null);
+  const [volumeVisible, setVolumeVisible] = useState(false);
+  const [volumeSliderWidth, setVolumeSliderWidth] = useState(0);
+  const [localVolume, setLocalVolume] = useState(props.volume);
+  const sliderWidth = volumeVisible ? volumeSliderWidth : 0;
+  const sliderOpacity = volumeVisible ? 1 : 0;
+
+  const volumeSliderRef = useRef<HTMLDivElement>(null);
+
+  const fadeAnim = useRef(new Animated.Value(sliderOpacity)).current;
+  const widthAnim = useRef(new Animated.Value(sliderWidth)).current;
 
   useEffect(() => {
-    if (hovered && showControls) {
+    Animated.parallel([
       Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }).start();
-    } else {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        delay: 150,
-        duration: 150,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }).start();
-    }
-  }, [hovered, showControls, fadeAnim]);
+        toValue: sliderOpacity,
+        duration: 175,
+        useNativeDriver: false,
+      }),
+      Animated.timing(widthAnim, {
+        toValue: sliderWidth,
+        duration: 175,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [fadeAnim, widthAnim, sliderOpacity, sliderWidth]);
 
-  // Update slider value when volume or mute changes
   useEffect(() => {
-    if (muted) {
-      setSliderValue(0);
-    } else {
-      setSliderValue(volume);
+    if (volumeSliderRef.current) {
+      const rect = volumeSliderRef.current.getBoundingClientRect();
+      setVolumeSliderWidth(rect.width);
     }
-  }, [volume, muted]);
+  }, [volumeSliderRef]);
 
-  // Remember last non-zero volume
   useEffect(() => {
-    if (!muted && volume > 0) {
-      lastVolumeRef.current = volume;
-    }
-  }, [volume, muted]);
+    setLocalVolume(props.volume);
+  }, [props.volume]);
 
-  // Handle volume slider value change
-  const handleValueChange = (value) => {
-    const newValue = value[0];
-    setSliderValue(newValue);
-    if (newValue === 0) {
-      setMuted(true);
-    } else {
-      setVolume(newValue);
-      if (muted) {
-        setMuted(false);
-      }
-    }
-  };
+  const handleVolumeChange = useCallback(
+    (volume: number[]) => {
+      const newVolume = volume[0];
+      setLocalVolume(newVolume);
+      props.setVolume(newVolume);
+    },
+    [props.setVolume],
+  );
 
-  // Handle icon click to toggle mute/unmute
-  const handleIconClick = (e) => {
-    e.stopPropagation();
-    if (muted) {
-      setMuted(false);
-      setVolume(lastVolumeRef.current || 1);
-    } else {
-      setMuted(true);
-    }
-  };
-
-  const handleMouseEnter = () => {
-    if (hideTimer.current) {
-      clearTimeout(hideTimer.current);
-      hideTimer.current = null;
-    }
-    setHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    hideTimer.current = setTimeout(() => setHovered(false), 300);
-  };
-
-  if (!isWeb) {
-    return (
-      <View paddingLeft="$5" paddingRight="$3" justifyContent="center">
-        <Pressable onPress={handleIconClick}>
-          {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </Pressable>
-      </View>
-    );
-  }
+  const handleMuteToggle = useCallback(() => {
+    props.setMuted(!props.muted);
+  }, [props.muted, props.setMuted]);
 
   return (
-    <View
-      style={{
-        position: "relative",
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+    <XStack
+      alignItems="center"
+      onPointerEnter={() => setVolumeVisible(true)}
+      onPointerLeave={() => setVolumeVisible(false)}
+      height={50}
+      paddingRight="$3"
     >
-      <View
-        paddingLeft="$5"
-        paddingRight="$2"
-        justifyContent="center"
-        ref={iconRef}
-      >
-        <Pressable onPress={handleIconClick}>
-          {muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </Pressable>
-      </View>
-      <Animated.View
-        ref={sliderRef}
+      <Pressable
+        onPress={handleMuteToggle}
         style={{
-          position: "absolute",
-          left: "100%",
-          top: "50%",
-          transform: [{ translateY: "-50%" }],
-          marginLeft: 2,
-          borderRadius: 8,
-          padding: 0,
-          zIndex: 10,
-          minWidth: 100,
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          opacity: fadeAnim,
-          pointerEvents: hovered && showControls ? "auto" : "none",
+          justifyContent: "center",
+          height: "100%",
         }}
       >
-        <Slider
-          size="$2"
-          orientation="horizontal"
-          width={70}
-          value={[sliderValue]}
-          onValueChange={handleValueChange}
-          min={0}
-          max={1}
-          step={0.01}
-          py={16}
+        <View paddingLeft="$3" paddingRight="$3" justifyContent="center">
+          <Text>{props.muted ? <VolumeX /> : <Volume2 />}</Text>
+        </View>
+      </Pressable>
+      {Platform.OS === "web" && (
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            width: widthAnim,
+          }}
         >
-          <Slider.Track backgroundColor="$gray8" height={4} mx={0}>
-            <Slider.TrackActive backgroundColor="$gray5" />
-          </Slider.Track>
-          <Slider.Thumb circular index={0} size="$1" backgroundColor="white" />
-        </Slider>
-      </Animated.View>
-    </View>
+          <View
+            ref={volumeSliderRef}
+            width={120}
+            paddingRight="$3"
+            justifyContent="center"
+            zi={20}
+          >
+            <Slider
+              size="$2"
+              value={[localVolume]}
+              max={1}
+              step={0.01}
+              onValueChange={handleVolumeChange}
+              zi={20}
+            >
+              <Slider.Track>
+                <Slider.TrackActive />
+              </Slider.Track>
+              <Slider.Thumb circular index={0} />
+            </Slider>
+          </View>
+        </Animated.View>
+      )}
+    </XStack>
   );
 };
 
-function isRefObject(ref: any): ref is { current: HTMLVideoElement | null } {
+function isRefObject(
+  ref: any,
+): ref is
+  | React.RefObject<HTMLVideoElement>
+  | React.MutableRefObject<HTMLVideoElement | null> {
   return ref && typeof ref === "object" && "current" in ref;
 }
 
-export default function Controls(
-  props: PlayerProps & {
-    videoRef?:
-      | React.RefObject<HTMLVideoElement>
-      | React.MutableRefObject<HTMLVideoElement | null>
-      | ((instance: HTMLVideoElement | null) => void);
-  },
-) {
+export default function Controls(props: { name: string; playerId?: string }) {
+  const playerId = props.playerId;
+
+  // Get all state from the player store
+  const muted = usePlayerStore((state) => state.muted, playerId);
+  const setMuted = usePlayerStore((state) => state.setMuted, playerId);
+  const volume = usePlayerStore((state) => state.volume, playerId);
+  const setVolume = usePlayerStore((state) => state.setVolume, playerId);
+  const fullscreen = usePlayerStore((state) => state.fullscreen, playerId);
+  const setFullscreen = usePlayerStore(
+    (state) => state.setFullscreen,
+    playerId,
+  );
+  const showControls = usePlayerStore((state) => state.showControls, playerId);
+  const setShowControls = usePlayerStore(
+    (state) => state.setShowControls,
+    playerId,
+  );
+  const playTime = usePlayerStore((state) => state.playTime, playerId);
+  const setPlayTime = usePlayerStore((state) => state.setPlayTime, playerId);
+  const offline = usePlayerStore((state) => state.offline, playerId);
+  const muteWasForced = usePlayerStore(
+    (state) => state.muteWasForced,
+    playerId,
+  );
+  const setMuteWasForced = usePlayerStore(
+    (state) => state.setMuteWasForced,
+    playerId,
+  );
+  const embedded = usePlayerStore((state) => state.embedded, playerId);
+  const videoRef = usePlayerStore((state) => state.videoRef, playerId);
+  const pipMode = usePlayerStore((state) => state.pipMode, playerId);
+  const setPipMode = usePlayerStore((state) => state.setPipMode, playerId);
+  const setUserInteraction = usePlayerStore(
+    (state) => state.setUserInteraction,
+    playerId,
+  );
+  const ingestStarting = usePlayerStore(
+    (state) => state.ingestStarting,
+    playerId,
+  );
+  const ingestStreamKey = usePlayerStore(
+    (state) => state.ingestStreamKey,
+    playerId,
+  );
+
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // useEffect(() => {
-  //   Animated.timing(fadeAnim, {
-  //     toValue: props.showControls ? 1 : 1,
-  //     duration: 175,
-  //     useNativeDriver: false,
-  //   }).start();
-  // }, [fadeAnim, props.showControls]);
-
   let cursor = {};
-  if (props.fullscreen && !props.showControls) {
+  if (fullscreen && !showControls) {
     cursor = { cursor: "none" };
   }
 
   const onPress = () => {
-    props.userInteraction();
-    props.setPlayTime(Date.now());
+    setUserInteraction();
+    setPlayTime(Date.now());
   };
 
   const viewers = useViewers();
@@ -286,8 +267,8 @@ export default function Controls(
 
   useEffect(() => {
     let video: HTMLVideoElement | null = null;
-    if (isRefObject(props.videoRef)) {
-      video = props.videoRef.current;
+    if (isRefObject(videoRef)) {
+      video = videoRef.current;
     }
     if (video) {
       setPipSupported(
@@ -297,12 +278,12 @@ export default function Controls(
     } else {
       setPipSupported(false);
     }
-  }, [props.videoRef, props.ingest]);
+  }, [videoRef, ingestStreamKey]);
 
   useEffect(() => {
     let video: HTMLVideoElement | null = null;
-    if (isRefObject(props.videoRef)) {
-      video = props.videoRef.current;
+    if (isRefObject(videoRef)) {
+      video = videoRef.current;
     }
     if (!video) return;
     function onEnter() {
@@ -315,23 +296,26 @@ export default function Controls(
     video.addEventListener("leavepictureinpicture", onLeave);
     return () => {
       if (video) {
-        // ts is mad if we don't check this
         video.removeEventListener("enterpictureinpicture", onEnter);
         video.removeEventListener("leavepictureinpicture", onLeave);
       }
     };
-  }, [props.videoRef]);
+  }, [videoRef]);
 
   const handlePip = useCallback(() => {
     let video: HTMLVideoElement | null = null;
-    if (isRefObject(props.videoRef)) {
-      video = props.videoRef.current;
+    if (isRefObject(videoRef)) {
+      video = videoRef.current;
     }
     if (!video) return;
     video.requestPictureInPicture().catch((err) => {
       console.error("Failed to enter Picture-in-Picture mode", err);
     });
-  }, [props.videoRef]);
+  }, [videoRef]);
+
+  const userInteraction = () => {
+    setUserInteraction();
+  };
 
   return (
     <View
@@ -341,23 +325,23 @@ export default function Controls(
       zIndex={999}
       flexDirection="column"
       justifyContent="space-between"
-      onPointerMove={props.userInteraction}
-      onTouchStart={props.userInteraction}
+      onPointerMove={userInteraction}
+      onTouchStart={userInteraction}
       onPress={onPress}
       {...cursor}
     >
-      {props.muteWasForced && (
+      {muteWasForced && (
         <View
           position="absolute"
           left={0}
           bottom={0}
           padding={20}
-          opacity={props.showControls ? 0 : 1}
+          opacity={showControls ? 0 : 1}
         >
           <VolumeX size={60} color="red" />
         </View>
       )}
-      {!props.offline ? null : (
+      {!offline ? null : (
         <View
           position="absolute"
           width="100%"
@@ -368,31 +352,21 @@ export default function Controls(
           alignItems="center"
           zIndex={1000}
         >
-          <Offline />
+          <Text>
+            <Offline />
+          </Text>
         </View>
       )}
-      {/* <Animated.View
-        // onPointerMove={props.userInteraction}
-        // onTouchStart={props.userInteraction}
-        style={{
-          flex: 1,
-          opacity: fadeAnim,
-          width: "100%",
-          height: "100%",
-          flexDirection: "column",
-          justifyContent: "space-between",
-        }}
-      > */}
       <Bar
-        opacity={props.showControls ? (props.fullscreen ? 0 : 1) : 0}
-        cursor={props.embedded ? "pointer" : undefined}
+        opacity={showControls ? (fullscreen ? 0 : 1) : 0}
+        cursor={embedded ? "pointer" : undefined}
         onPress={() => {
-          if (props.embedded) {
+          if (embedded) {
             // Open the current URL in a new window
             const u = new URL(window.location.href);
             u.pathname = u.pathname.replace("/embed", "");
             window.open(u.toString(), "_blank");
-            props.setMuted(true);
+            setMuted(true);
           }
         }}
       >
@@ -404,7 +378,7 @@ export default function Controls(
           </View>
         </Part>
         <Part>
-          {props.embedded && m.gtXs ? (
+          {embedded && m.gtXs ? (
             <>
               <Image
                 src={require("../../assets/images/cube_small.png")}
@@ -418,26 +392,26 @@ export default function Controls(
           <Viewers viewers={viewers ?? 0} />
         </Part>
       </Bar>
-      {props.ingest && <LiveBubble />}
-      <Bar opacity={props.showControls ? 1 : 0}>
+      {ingestStreamKey ? <LiveBubble playerId={playerId} /> : null}
+      <Bar opacity={showControls ? 1 : 0}>
         <Part justifyContent="flex-start">
           <VolumeSlider
-            volume={props.volume}
+            volume={volume}
             setVolume={(vol) => {
-              props.setVolume(vol);
-              props.setMuteWasForced(false);
+              setVolume(vol);
+              setMuteWasForced(false);
             }}
-            muted={props.muted}
-            showControls={props.showControls}
+            muted={muted}
+            showControls={showControls}
             setMuted={(muted) => {
               dispatch(userMute(muted));
-              props.setMuteWasForced(false);
-              props.setMuted(muted);
+              setMuteWasForced(false);
+              setMuted(muted);
             }}
           />
         </Part>
         <Part justifyContent="flex-end">
-          <PopoverMenu {...props} />
+          <PopoverMenu playerId={playerId} />
           {pipSupported && (
             <Pressable
               onPress={handlePip}
@@ -469,32 +443,39 @@ export default function Controls(
             style={{
               justifyContent: "center",
             }}
-            onPress={() => props.setFullscreen(!props.fullscreen)}
+            onPress={() => setFullscreen(!fullscreen)}
           >
             <View paddingLeft="$3" paddingRight="$5" justifyContent="center">
-              {props.fullscreen ? <Minimize /> : <Maximize />}
+              {fullscreen ? <Minimize /> : <Maximize />}
             </View>
           </Pressable>
         </Part>
       </Bar>
-      {/* </Animated.View> */}
     </View>
   );
 }
 
-export function PopoverMenu(props: PlayerProps) {
+export function PopoverMenu(props: { playerId?: string }) {
+  const playerId = props.playerId;
   const [open, setOpen] = useState(false);
   const media = useMedia();
   const renditions = useRenditions();
-  const selectedRendition = usePlayerStore((x) => x.selectedRendition);
-  const setSelectedRendition = usePlayerStore((x) => x.setSelectedRendition);
-  const protocol = usePlayerStore((x) => x.protocol);
-  const setProtocol = usePlayerStore((x) => x.setProtocol);
+  const selectedRendition = usePlayerStore(
+    (x) => x.selectedRendition,
+    playerId,
+  );
+  const setSelectedRendition = usePlayerStore(
+    (x) => x.setSelectedRendition,
+    playerId,
+  );
+  const protocol = usePlayerStore((x) => x.protocol, playerId);
+  const setProtocol = usePlayerStore((x) => x.setProtocol, playerId);
+  const showControls = usePlayerStore((x) => x.showControls, playerId);
   const dispatch = useAppDispatch();
-  // on android, this appears to lose its context. idk. so we just pass everything through.
+
   const gearMenu = (
     <GearMenu
-      {...props}
+      playerId={playerId}
       renditions={renditions}
       selectedRendition={selectedRendition ?? "source"}
       protocol={protocol}
@@ -509,11 +490,13 @@ export function PopoverMenu(props: PlayerProps) {
       dispatch={dispatch}
     />
   );
+
   useEffect(() => {
-    if (!media.sm && props.showControls === false) {
+    if (!media.sm && showControls === false) {
       setOpen(false);
     }
-  }, [props.showControls, media.sm]);
+  }, [showControls, media.sm]);
+
   return (
     <Popover
       size="$5"
@@ -573,9 +556,14 @@ export function PopoverMenu(props: PlayerProps) {
   );
 }
 
-function LiveBubble() {
-  const ingestStarting = usePlayerStore((x) => x.ingestStarting);
-  const setIngestStarting = usePlayerStore((x) => x.setIngestStarting);
+function LiveBubble(props: { playerId?: string }) {
+  const playerId = props.playerId;
+  const ingestStarting = usePlayerStore((x) => x.ingestStarting, playerId);
+  const setIngestStarting = usePlayerStore(
+    (x) => x.setIngestStarting,
+    playerId,
+  );
+
   return (
     <View
       position="absolute"
@@ -596,15 +584,20 @@ function LiveBubble() {
           setIngestStarting(!ingestStarting);
         }}
       >
-        <LiveBubbleText />
+        <LiveBubbleText playerId={playerId} />
       </Button>
     </View>
   );
 }
 
-function LiveBubbleText() {
-  const ingestStarting = usePlayerStore((x) => x.ingestStarting);
-  const ingestConnectionState = usePlayerStore((x) => x.ingestConnectionState);
+function LiveBubbleText(props: { playerId?: string }) {
+  const playerId = props.playerId;
+  const ingestStarting = usePlayerStore((x) => x.ingestStarting, playerId);
+  const ingestConnectionState = usePlayerStore(
+    (x) => x.ingestConnectionState,
+    playerId,
+  );
+
   if (!ingestStarting) {
     return <H3>START STREAMING</H3>;
   }
@@ -625,16 +618,15 @@ function LiveBubbleText() {
   return <Loading />;
 }
 
-function GearMenu(
-  props: PlayerProps & {
-    renditions: PlaceStreamDefs.Rendition[];
-    selectedRendition: string;
-    protocol: string;
-    setSelectedRendition: (rendition: string) => void;
-    setProtocol: (protocol: string) => void;
-    dispatch: Dispatch<any>;
-  },
-) {
+function GearMenu(props: {
+  playerId?: string;
+  renditions: PlaceStreamDefs.Rendition[];
+  selectedRendition: string;
+  protocol: string;
+  setSelectedRendition: (rendition: string) => void;
+  setProtocol: (protocol: string) => void;
+  dispatch: Dispatch<any>;
+}) {
   const [menu, setMenu] = useState("root");
   const {
     renditions,
@@ -694,38 +686,10 @@ function GearMenu(
               subTitle="HTTP Live Streaming"
               icon={Star}
               iconAfter={protocol === PROTOCOL_HLS ? CheckCircle : Circle}
-              onPress={() => dispatch(setProtocol(PROTOCOL_HLS))}
+              onPress={() => setProtocol(PROTOCOL_HLS)}
             />
           </YGroup.Item>
           <Separator />
-          {/* <YGroup.Item>
-            <ListItem
-              hoverTheme
-              pressTheme
-              title="Progressive MP4"
-              subTitle="MP4 but loooong"
-              icon={Shell}
-              iconAfter={
-                protocol === PROTOCOL_PROGRESSIVE_MP4 ? CheckCircle : Circle
-              }
-              onPress={() => dispatch(setProtocol(PROTOCOL_PROGRESSIVE_MP4))}
-            />
-          </YGroup.Item>
-          <Separator />
-          <YGroup.Item>
-            <ListItem
-              hoverTheme
-              pressTheme
-              title="Progressive WebM"
-              subTitle="WebM but loooong"
-              icon={Squirrel}
-              iconAfter={
-                protocol === PROTOCOL_PROGRESSIVE_WEBM ? CheckCircle : Circle
-              }
-              onPress={() => dispatch(setProtocol(PROTOCOL_PROGRESSIVE_WEBM))}
-            />
-          </YGroup.Item>
-          <Separator /> */}
           <YGroup.Item>
             <ListItem
               hoverTheme
@@ -761,7 +725,7 @@ function GearMenu(
                   subTitle="Automatic with HLS"
                   icon={Star}
                   iconAfter={
-                    props.selectedRendition === "auto" ? CheckCircle : Circle
+                    selectedRendition === "auto" ? CheckCircle : Circle
                   }
                   onPress={() => setSelectedRendition("auto")}
                 />
@@ -776,9 +740,7 @@ function GearMenu(
               title="Source"
               subTitle="Original quality"
               icon={Star}
-              iconAfter={
-                props.selectedRendition === "source" ? CheckCircle : Circle
-              }
+              iconAfter={selectedRendition === "source" ? CheckCircle : Circle}
               onPress={() => setSelectedRendition("source")}
             />
           </YGroup.Item>
