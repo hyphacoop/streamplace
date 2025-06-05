@@ -1,5 +1,4 @@
 import { useLivestreamStore, usePlayerStore } from "@streamplace/components";
-import { useFullscreen } from "contexts/FullscreenContext";
 import { useEffect, useRef } from "react";
 import { TamaguiElement, View } from "tamagui";
 import Controls from "./controls";
@@ -11,17 +10,13 @@ export function Fullscreen(props: { playerId: string; src: string }) {
   const playerId = props.playerId;
   const protocol = usePlayerStore((x) => x.protocol, playerId);
   const fullscreen = usePlayerStore((x) => x.fullscreen, playerId);
+  const setFullscreen = usePlayerStore((x) => x.setFullscreen, playerId);
   const setSrc = usePlayerStore((x) => x.setSrc);
-  const { setFullscreen } = useFullscreen();
 
   const handle = useLivestreamStore((x) => x.profile?.handle);
 
   const divRef = useRef<TamaguiElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    setFullscreen(fullscreen);
-  }, [fullscreen]);
 
   useEffect(() => {
     setSrc(props.src);

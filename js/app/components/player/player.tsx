@@ -18,12 +18,28 @@ import PlayerProvider from "./provider";
 
 const OFFLINE_THRESHOLD = 10000;
 
-export function Player(props: Partial<PlayerProps>) {
+export function Player(
+  props: Partial<PlayerProps> & {
+    setFullscreen?: (fullscreen: boolean) => void;
+  },
+) {
   return (
     <PlayerProvider {...props}>
       <PlayerInner {...props} />
     </PlayerProvider>
   );
+}
+
+export function PropUpFullscreen(props: {
+  setFullscreen?: (fullscreen: boolean) => void;
+}) {
+  const fullscreen = usePlayerStore((x) => x.fullscreen);
+
+  useEffect(() => {
+    if (props.setFullscreen) {
+      props.setFullscreen(fullscreen);
+    }
+  }, [fullscreen, props.setFullscreen]);
 }
 
 export function PlayerInner(props: Partial<PlayerProps>) {
