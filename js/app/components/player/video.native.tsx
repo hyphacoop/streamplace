@@ -1,10 +1,6 @@
-import {
-  PlayerProtocol,
-  PlayerStatus,
-  usePlayerStore,
-} from "@streamplace/components";
+import { PlayerStatus, usePlayerStore } from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { MediaStream, RTCView } from "react-native-webrtc";
 import { View } from "tamagui";
 import { srcToUrl } from "./shared";
@@ -12,23 +8,21 @@ import useWebRTC from "./use-webrtc";
 
 const PROTOCOL_WEBRTC = "webrtc";
 
-export default function NativeVideo(props: {
-  name: string;
-  src: string;
-  playerId?: string;
-  nativeVideoRef: React.RefObject<VideoView>;
-  telemetry?: boolean;
-  avSyncTest?: boolean;
-  forceProtocol?: string;
-}) {
+export default function VideoNative() {
+  const protocol = usePlayerStore((x) => x.protocol);
+  if (protocol === PROTOCOL_WEBRTC) {
+    return <NativeWHEP />;
+  } else {
+    return <NativeVideo />;
+  }
+}
+
+export function NativeVideo() {
   const protocol = usePlayerStore((x) => x.protocol);
 
-  if (protocol === PlayerProtocol.PLAYER_PROTOCOL_WEBRTC) {
-    return <NativeWHEP {...props} />;
-  }
-
   const selectedRendition = usePlayerStore((x) => x.selectedRendition);
-  const { url } = srcToUrl({ src: props.src, selectedRendition }, protocol);
+  const src = usePlayerStore((x) => x.src);
+  const { url } = srcToUrl({ src: src, selectedRendition }, protocol);
   const setStatus = usePlayerStore((x) => x.setStatus);
   const muted = usePlayerStore((x) => x.muted);
   const volume = usePlayerStore((x) => x.volume);
@@ -93,7 +87,7 @@ export default function NativeVideo(props: {
   return (
     <VideoView
       style={{ flex: 1, backgroundColor: "#111" }}
-      ref={props.nativeVideoRef}
+      //ref={props.nativeVideoRef}
       player={player}
       allowsFullscreen
       nativeControls={fullscreen}
@@ -108,19 +102,10 @@ export default function NativeVideo(props: {
   );
 }
 
-export function NativeWHEP(props: {
-  name: string;
-  src: string;
-  playerId?: string;
-  telemetry?: boolean;
-  avSyncTest?: boolean;
-  forceProtocol?: string;
-}) {
+export function NativeWHEP() {
   const selectedRendition = usePlayerStore((x) => x.selectedRendition);
-  const { url } = srcToUrl(
-    { src: props.src, selectedRendition },
-    PROTOCOL_WEBRTC,
-  );
+  const src = usePlayerStore((x) => x.src);
+  const { url } = srcToUrl({ src: src, selectedRendition }, PROTOCOL_WEBRTC);
   const [stream, stuck] = useWebRTC(url);
 
   const setStatus = usePlayerStore((x) => x.setStatus);

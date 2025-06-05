@@ -1,5 +1,9 @@
 import { useNavigation } from "@react-navigation/native";
-import { PlayerProtocol, usePlayerStore } from "@streamplace/components";
+import {
+  PlayerProtocol,
+  useLivestreamStore,
+  usePlayerStore,
+} from "@streamplace/components";
 import { VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import { BackHandler, Dimensions, StatusBar, StyleSheet } from "react-native";
@@ -13,25 +17,17 @@ import Video from "./video.native";
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-export default function Fullscreen(props: {
-  name: string;
-  src: string;
-  playerId?: string;
-  telemetry?: boolean;
-  avSyncTest?: boolean;
-  forceProtocol?: string;
-}) {
+export default function Fullscreen(props: { src: string; playerId?: string }) {
   const ref = useRef<VideoView>(null);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
 
-  const playerId = props.playerId;
-
   // Get state from player store
   const protocol = usePlayerStore((x) => x.protocol);
   const fullscreen = usePlayerStore((x) => x.fullscreen);
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
+  const handle = useLivestreamStore((x) => x.profile?.handle);
 
   // Re-calculate dimensions on orientation change
   useEffect(() => {
@@ -161,24 +157,11 @@ export default function Fullscreen(props: {
             },
           ]}
         >
-          <VideoRetry
-            name={props.name}
-            src={props.src}
-            telemetry={props.telemetry}
-            avSyncTest={props.avSyncTest}
-            forceProtocol={props.forceProtocol}
-          >
-            <Video
-              name={props.name}
-              src={props.src}
-              nativeVideoRef={ref}
-              telemetry={props.telemetry}
-              avSyncTest={props.avSyncTest}
-              forceProtocol={props.forceProtocol}
-            />
+          <VideoRetry>
+            <Video />
           </VideoRetry>
-          <PlayerLoading name={props.name} />
-          <Controls name={props.name} />
+          <PlayerLoading />
+          <Controls name={handle || "Streaming"} playerId={props.playerId} />
         </View>
       </View>
     );
@@ -187,23 +170,10 @@ export default function Fullscreen(props: {
   // Normal non-fullscreen mode
   return (
     <>
-      <PlayerLoading name={props.name} />
-      <Controls name={props.name} />
-      <VideoRetry
-        name={props.name}
-        src={props.src}
-        telemetry={props.telemetry}
-        avSyncTest={props.avSyncTest}
-        forceProtocol={props.forceProtocol}
-      >
-        <Video
-          name={props.name}
-          src={props.src}
-          nativeVideoRef={ref}
-          telemetry={props.telemetry}
-          avSyncTest={props.avSyncTest}
-          forceProtocol={props.forceProtocol}
-        />
+      <PlayerLoading />
+      <Controls name={handle || "Streaming"} playerId={props.playerId} />
+      <VideoRetry>
+        <Video />
       </VideoRetry>
     </>
   );

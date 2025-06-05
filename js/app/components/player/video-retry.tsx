@@ -1,15 +1,7 @@
 import { PlayerStatus, usePlayerStore } from "@streamplace/components";
 import React, { useEffect, useState } from "react";
 
-export default function VideoRetry(props: {
-  name: string;
-  src: string;
-  playerId?: string;
-  telemetry?: boolean;
-  avSyncTest?: boolean;
-  forceProtocol?: string;
-  children: React.ReactNode;
-}) {
+export default function VideoRetry(props: { children: React.ReactNode }) {
   const [resetTime, setResetTime] = useState<number>(Date.now());
   const [retryCount, setRetryCount] = useState(0);
 

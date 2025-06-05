@@ -20,6 +20,9 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     setProtocol: (protocol: PlayerProtocol) =>
       set((state) => ({ ...state, protocol: protocol })),
 
+    src: "",
+    setSrc: (src: string) => set(() => ({ src })),
+
     ingestStarting: false,
     setIngestStarting: (ingestStarting: boolean) =>
       set(() => ({ ingestStarting })),

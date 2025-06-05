@@ -4,7 +4,7 @@ import KeepAwake from "components/keep-awake";
 import { Spinner } from "components/loading/loading";
 import { useTheme, View } from "tamagui";
 
-export default function PlayerLoading(props: { name: string }) {
+export default function PlayerLoading() {
   const status = usePlayerStore((x) => x.status);
   const theme = useTheme();
 

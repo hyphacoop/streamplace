@@ -1,17 +1,14 @@
 import {
   getFirstPlayerID,
-  useRenditions,
+  usePlayerStore,
   useSegment,
 } from "@streamplace/components";
-import { selectUserMuted } from "features/streamplace/streamplaceSlice";
 import usePlatform from "hooks/usePlatform";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
-import { useAppSelector } from "store/hooks";
 import { Text, View } from "tamagui";
 import { Fullscreen } from "./fullscreen";
 import {
-  IngestMediaSource,
   PlayerEvent,
   PlayerProps,
   PlayerStatus,
@@ -19,7 +16,6 @@ import {
 } from "./props";
 import PlayerProvider from "./provider";
 
-const HIDE_CONTROLS_AFTER = 2000;
 const OFFLINE_THRESHOLD = 10000;
 
 export function Player(props: Partial<PlayerProps>) {
@@ -31,6 +27,16 @@ export function Player(props: Partial<PlayerProps>) {
 }
 
 export function PlayerInner(props: Partial<PlayerProps>) {
+  // Will get the first player ID from the store
+  const playerId = getFirstPlayerID();
+
+  const { url } = useStreamplaceNode();
+  const info = usePlatform();
+
+  const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
+
+  const setOffline = usePlayerStore((x) => x.setOffline);
+
   if (typeof props.src !== "string") {
     return (
       <View>
@@ -38,29 +44,6 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       </View>
     );
   }
-  const userMuted = useAppSelector(selectUserMuted);
-  // Will get the first player ID from the store
-  const playerId = getFirstPlayerID();
-  const [muted, setMuted] = useState(userMuted ?? false);
-  const [volume, setVolume] = useState(1.0);
-
-  const [showControls, setShowControls] = useState(true);
-  const [touchTime, setTouchTime] = useState(0);
-  useEffect(() => {
-    // Use setTimeout to update the message after 2000 milliseconds (2 seconds)
-    const timeoutId = setTimeout(() => {
-      setShowControls(false);
-    }, HIDE_CONTROLS_AFTER);
-
-    // Cleanup function to clear the timeout if the component unmounts
-    return () => clearTimeout(timeoutId);
-  }, [touchTime]);
-  const userInteraction = () => {
-    setTouchTime(Date.now());
-    setShowControls(true);
-  };
-  const { url } = useStreamplaceNode();
-  const info = usePlatform();
   const playerEvent = async (
     time: string,
     eventType: string,
@@ -87,17 +70,9 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       console.error("error sending player telemetry", e);
     }
   };
-  const [status, setStatus] = usePlayerStatus(playerEvent);
-  const [playTime, setPlayTime] = useState(0);
-  const [fullscreen, setFullscreen] = useState(false);
-
-  const [offline, setOffline] = useState(true);
-  const playing = status === PlayerStatus.PLAYING;
 
   const segment = useSegment();
   const [lastCheck, setLastCheck] = useState(0);
-
-  const renditions = useRenditions();
 
   useEffect(() => {
     if (playing) {
@@ -124,41 +99,9 @@ export function PlayerInner(props: Partial<PlayerProps>) {
     return () => clearTimeout(handle);
   }, [segment, playing, lastCheck]);
 
-  const [muteWasForced, setMuteWasForced] = useState(false);
-
-  const childProps: PlayerProps = {
-    playerId: playerId,
-    ingest: props.ingest,
-    name: props.ingest ? "Go Live" : props.name || props.src,
-    telemetry: props.telemetry ?? false,
-    src: props.src,
-    muted: muted,
-    volume: volume,
-    setMuted: setMuted,
-    setVolume: setVolume,
-    setFullscreen: setFullscreen,
-    fullscreen: fullscreen,
-    offline: offline,
-    showControls: props.showControls ?? showControls,
-    userInteraction: userInteraction,
-    playerEvent: playerEvent,
-    status: status,
-    setStatus: setStatus,
-    playTime: playTime,
-    setPlayTime: setPlayTime,
-    ingestMediaSource: props.ingestMediaSource ?? IngestMediaSource.USER,
-    ingestAutoStart: props.ingestAutoStart ?? false,
-    renditions: renditions ?? [],
-    selectedRendition: "source",
-    muteWasForced: muteWasForced,
-    setMuteWasForced: setMuteWasForced,
-    embedded: props.embedded ?? false,
-    videoRef: props.videoRef,
-    ...props,
-  };
   return (
     <View f={1} justifyContent="center" position="relative">
-      <Fullscreen {...childProps}></Fullscreen>
+      <Fullscreen playerId={playerId} src={props.src}></Fullscreen>
     </View>
   );
 }

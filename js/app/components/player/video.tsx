@@ -14,7 +14,6 @@ import { Text, View } from "tamagui";
 import { quietReceiver } from "./av-sync";
 import {
   IngestMediaSource,
-  PlayerProps,
   PlayerStatus,
   PROTOCOL_HLS,
   PROTOCOL_PROGRESSIVE_MP4,
@@ -31,24 +30,23 @@ import { checkWebRTCSupport } from "./webrtc-primitives";
 
 type VideoProps = { url: string };
 
-export default function WebVideo(props: PlayerProps) {
+export default function WebVideo() {
   const inProto = usePlayerStore((x) => x.protocol);
+  const isIngesting = usePlayerStore((x) => x.ingestConnectionState !== null);
   const selectedRendition = usePlayerStore((x) => x.selectedRendition);
-  const { url, protocol } = srcToUrl(
-    { src: props.src, selectedRendition },
-    inProto,
-  );
-  if (props.ingest) {
-    return <WebcamIngestPlayer url={url} {...props} />;
+  const src = usePlayerStore((x) => x.src);
+  const { url, protocol } = srcToUrl({ src: src, selectedRendition }, inProto);
+  if (isIngesting) {
+    return <WebcamIngestPlayer url={url} />;
   }
   if (protocol === PROTOCOL_PROGRESSIVE_MP4) {
-    return <ProgressiveMP4Player url={url} {...props} />;
+    return <ProgressiveMP4Player url={url} />;
   } else if (protocol === PROTOCOL_PROGRESSIVE_WEBM) {
-    return <ProgressiveWebMPlayer url={url} {...props} />;
+    return <ProgressiveWebMPlayer url={url} />;
   } else if (protocol === PROTOCOL_HLS) {
-    return <HLSPlayer url={url} {...props} />;
+    return <HLSPlayer url={url} />;
   } else if (protocol === PROTOCOL_WEBRTC) {
-    return <WebRTCPlayer url={url} {...props} />;
+    return <WebRTCPlayer url={url} />;
   } else {
     throw new Error(`unknown playback protocol ${inProto}`);
   }
@@ -103,7 +101,7 @@ const VideoElement = forwardRef(
               localVideoRef.current
                 .play()
                 .then(() => {
-                  console.log("muted video");
+                  console.log("muted video, forced");
                   setMuteWasForced(true);
                 })
                 .catch((err) => {
@@ -321,15 +319,9 @@ export function WebRTCPlayer({ url }: { url: string }) {
 
   useEffect(() => {
     if (stuck && status === PlayerStatus.PLAYING) {
-      console.log(
-        "WebRTC Player - Connection stuck, setting status to STALLED",
-      );
       setStatus(PlayerStatus.STALLED);
     }
     if (!stuck && mediaStream) {
-      console.log(
-        "WebRTC Player - Connection unstuck, setting status to PLAYING",
-      );
       setStatus(PlayerStatus.PLAYING);
     }
   }, [stuck, status, mediaStream]);

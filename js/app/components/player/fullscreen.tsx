@@ -1,27 +1,31 @@
-import { usePlayerStore } from "@streamplace/components";
-import { useCallback, useEffect, useRef } from "react";
+import { useLivestreamStore, usePlayerStore } from "@streamplace/components";
+import { useFullscreen } from "contexts/FullscreenContext";
+import { useEffect, useRef } from "react";
 import { TamaguiElement, View } from "tamagui";
 import Controls from "./controls";
 import PlayerLoading from "./player-loading";
-import { PlayerProps } from "./props";
 import Video from "./video";
 import VideoRetry from "./video-retry";
 
-export function Fullscreen(props: PlayerProps) {
+export function Fullscreen(props: { playerId: string; src: string }) {
   const playerId = props.playerId;
   const protocol = usePlayerStore((x) => x.protocol, playerId);
   const fullscreen = usePlayerStore((x) => x.fullscreen, playerId);
+  const setSrc = usePlayerStore((x) => x.setSrc);
+  const { setFullscreen } = useFullscreen();
+
+  const handle = useLivestreamStore((x) => x.profile?.handle);
 
   const divRef = useRef<TamaguiElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const videoCallback = useCallback((node: HTMLVideoElement | null) => {
-    videoRef.current = node;
-    if (typeof props.videoRef === "function") {
-      props.videoRef(node);
-    } else if (props.videoRef) {
-      props.videoRef.current = node;
-    }
-  }, []);
+
+  useEffect(() => {
+    setFullscreen(fullscreen);
+  }, [fullscreen]);
+
+  useEffect(() => {
+    setSrc(props.src);
+  }, [props.src]);
 
   useEffect(() => {
     if (!divRef.current) {
@@ -45,7 +49,7 @@ export function Fullscreen(props: PlayerProps) {
               await videoRef.current.requestFullscreen();
             }
           }
-          props.setFullscreen(true);
+          setFullscreen(true);
         } catch (e) {
           console.error("fullscreen failed", e.message);
         }
@@ -58,7 +62,7 @@ export function Fullscreen(props: PlayerProps) {
             console.error("fullscreen exit failed", e.message);
           }
         }
-        props.setFullscreen(false);
+        setFullscreen(false);
       }
     })();
   }, [fullscreen, protocol]);
@@ -66,7 +70,7 @@ export function Fullscreen(props: PlayerProps) {
   useEffect(() => {
     const listener = () => {
       console.log("fullscreenchange", document.fullscreenElement);
-      props.setFullscreen(!!document.fullscreenElement);
+      setFullscreen(!!document.fullscreenElement);
     };
     document.body.addEventListener("fullscreenchange", listener);
     document.body.addEventListener("webkitfullscreenchange", listener);
@@ -78,10 +82,10 @@ export function Fullscreen(props: PlayerProps) {
 
   return (
     <View flex={1} ref={divRef}>
-      <PlayerLoading {...props}></PlayerLoading>
-      <Controls {...props} />
-      <VideoRetry {...props}>
-        <Video {...props} videoRef={videoCallback} />
+      <PlayerLoading />
+      <Controls name={handle || "Streaming"} playerId={props.playerId} />
+      <VideoRetry>
+        <Video />
       </VideoRetry>
     </View>
   );

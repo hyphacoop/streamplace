@@ -27,6 +27,12 @@ export interface PlayerState {
   protocol: PlayerProtocol;
   setProtocol: (protocol: PlayerProtocol) => void;
 
+  /** Source */
+  src: string;
+
+  /** Function to set the source URL */
+  setSrc: (src: string) => void;
+
   /** Flag indicating if ingest (stream input) is currently starting */
   ingestStarting: boolean;
 
