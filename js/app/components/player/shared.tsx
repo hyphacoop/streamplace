@@ -1,16 +1,12 @@
+import { PlayerProtocol } from "@streamplace/components";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useMemo } from "react";
 
-const PROTOCOL_HLS = "hls";
-const PROTOCOL_PROGRESSIVE_MP4 = "progressive-mp4";
-const PROTOCOL_PROGRESSIVE_WEBM = "progressive-webm";
-const PROTOCOL_WEBRTC = "webrtc";
-
 const protocolSuffixes = {
-  m3u8: PROTOCOL_HLS,
-  mp4: PROTOCOL_PROGRESSIVE_MP4,
-  webm: PROTOCOL_PROGRESSIVE_WEBM,
-  webrtc: PROTOCOL_WEBRTC,
+  m3u8: PlayerProtocol.HLS,
+  mp4: PlayerProtocol.PROGRESSIVE_MP4,
+  webm: PlayerProtocol.PROGRESSIVE_WEBM,
+  webrtc: PlayerProtocol.WEBRTC,
 };
 
 export function srcToUrl(
@@ -18,7 +14,7 @@ export function srcToUrl(
     src: string;
     selectedRendition?: string;
   },
-  protocol: string,
+  protocol: PlayerProtocol,
 ): {
   url: string;
   protocol: string;
@@ -38,17 +34,17 @@ export function srcToUrl(
       }
     }
     let outUrl: string;
-    if (protocol === PROTOCOL_HLS) {
+    if (protocol === PlayerProtocol.HLS) {
       if (props.selectedRendition === "auto") {
         outUrl = `${url}/api/playback/${props.src}/hls/index.m3u8`;
       } else {
         outUrl = `${url}/api/playback/${props.src}/hls/index.m3u8?rendition=${props.selectedRendition || "source"}`;
       }
-    } else if (protocol === PROTOCOL_PROGRESSIVE_MP4) {
+    } else if (protocol === PlayerProtocol.PROGRESSIVE_MP4) {
       outUrl = `${url}/api/playback/${props.src}/stream.mp4`;
-    } else if (protocol === PROTOCOL_PROGRESSIVE_WEBM) {
+    } else if (protocol === PlayerProtocol.PROGRESSIVE_WEBM) {
       outUrl = `${url}/api/playback/${props.src}/stream.webm`;
-    } else if (protocol === PROTOCOL_WEBRTC) {
+    } else if (protocol === PlayerProtocol.WEBRTC) {
       outUrl = `${url}/api/playback/${props.src}/webrtc?rendition=${props.selectedRendition || "source"}`;
     } else {
       throw new Error(`unknown playback protocol: ${protocol}`);

@@ -1,8 +1,10 @@
 import { useContext } from "react";
 import { createStore, StoreApi, useStore } from "zustand";
+import { useStreamplaceStore } from "../streamplace-store";
 import { PlayerContext } from "./context";
 import {
   IngestMediaSource,
+  PlayerEvent,
   PlayerProtocol,
   PlayerState,
   PlayerStatus,
@@ -16,7 +18,7 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     selectedRendition: "source",
     setSelectedRendition: (rendition: string) =>
       set((state) => ({ ...state, selectedRendition: rendition })),
-    protocol: PlayerProtocol.PLAYER_PROTOCOL_WEBRTC,
+    protocol: PlayerProtocol.WEBRTC,
     setProtocol: (protocol: PlayerProtocol) =>
       set((state) => ({ ...state, protocol: protocol })),
 
@@ -30,10 +32,6 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     ingestMediaSource: undefined,
     setIngestMediaSource: (ingestMediaSource: IngestMediaSource | undefined) =>
       set(() => ({ ingestMediaSource })),
-
-    ingestStreamKey: "",
-    setIngestStreamKey: (ingestStreamKey: string) =>
-      set(() => ({ ingestStreamKey })),
 
     ingestConnectionState: null,
     setIngestConnectionState: (
@@ -91,14 +89,38 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     setShowControls: (showControls: boolean) =>
       set({ showControls, controlsTimeout: undefined }),
 
+    telemetry: true,
+    setTelemetry: (telemetry: boolean) => set(() => ({ telemetry })),
+
     playerEvent: async (
       time: string,
       eventType: string,
       meta: { [key: string]: any },
-    ) => {
-      // just log for now, can be replaced with actual event handling
-      console.log(`Player Event: ${eventType} at ${time}`, meta);
-    },
+    ) =>
+      set((x) => {
+        const url = useStreamplaceStore((x) => x.url);
+        if (x.telemetry !== true) {
+          return {};
+        }
+        const data: PlayerEvent = {
+          time: time,
+          playerId: x.id,
+          eventType: eventType,
+          meta: {
+            ...meta,
+          },
+        };
+        try {
+          // fetch url from sp provider
+          fetch(`${url}/api/player-event`, {
+            method: "POST",
+            body: JSON.stringify(data),
+          });
+        } catch (e) {
+          console.error("error sending player telemetry", e);
+        }
+        return {};
+      }),
 
     setUserInteraction: () =>
       set((p) => {
@@ -174,12 +196,12 @@ export const usePlayerProtocol = (
 export const intoPlayerProtocol = (protocol: string): PlayerProtocol => {
   switch (protocol) {
     case "hls":
-      return PlayerProtocol.PLAYER_PROTOCOL_HLS;
+      return PlayerProtocol.HLS;
     case "progressive-mp4":
-      return PlayerProtocol.PLAYER_PROTOCOL_PROGRESSIVE_MP4;
+      return PlayerProtocol.PROGRESSIVE_MP4;
     case "progressive-webm":
-      return PlayerProtocol.PLAYER_PROTOCOL_PROGRESSIVE_WEBM;
+      return PlayerProtocol.PROGRESSIVE_WEBM;
     default:
-      return PlayerProtocol.PLAYER_PROTOCOL_WEBRTC;
+      return PlayerProtocol.WEBRTC;
   }
 };

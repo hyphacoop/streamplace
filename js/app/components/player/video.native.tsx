@@ -1,4 +1,8 @@
-import { PlayerStatus, usePlayerStore } from "@streamplace/components";
+import {
+  PlayerProtocol,
+  PlayerStatus,
+  usePlayerStore,
+} from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
 import { useEffect } from "react";
 import { MediaStream, RTCView } from "react-native-webrtc";
@@ -6,11 +10,9 @@ import { View } from "tamagui";
 import { srcToUrl } from "./shared";
 import useWebRTC from "./use-webrtc";
 
-const PROTOCOL_WEBRTC = "webrtc";
-
 export default function VideoNative() {
   const protocol = usePlayerStore((x) => x.protocol);
-  if (protocol === PROTOCOL_WEBRTC) {
+  if (protocol === PlayerProtocol.WEBRTC) {
     return <NativeWHEP />;
   } else {
     return <NativeVideo />;
@@ -105,7 +107,10 @@ export function NativeVideo() {
 export function NativeWHEP() {
   const selectedRendition = usePlayerStore((x) => x.selectedRendition);
   const src = usePlayerStore((x) => x.src);
-  const { url } = srcToUrl({ src: src, selectedRendition }, PROTOCOL_WEBRTC);
+  const { url } = srcToUrl(
+    { src: src, selectedRendition },
+    PlayerProtocol.WEBRTC,
+  );
   const [stream, stuck] = useWebRTC(url);
 
   const setStatus = usePlayerStore((x) => x.setStatus);

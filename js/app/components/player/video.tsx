@@ -1,4 +1,9 @@
-import { usePlayerStore } from "@streamplace/components";
+import {
+  IngestMediaSource,
+  PlayerProtocol,
+  PlayerStatus,
+  usePlayerStore,
+} from "@streamplace/components";
 import streamKey from "components/live-dashboard/stream-key";
 import Hls from "hls.js";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
@@ -12,14 +17,6 @@ import {
 } from "react";
 import { Text, View } from "tamagui";
 import { quietReceiver } from "./av-sync";
-import {
-  IngestMediaSource,
-  PlayerStatus,
-  PROTOCOL_HLS,
-  PROTOCOL_PROGRESSIVE_MP4,
-  PROTOCOL_PROGRESSIVE_WEBM,
-  PROTOCOL_WEBRTC,
-} from "./props";
 import { srcToUrl } from "./shared";
 import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 import {
@@ -39,20 +36,19 @@ export default function WebVideo() {
   if (isIngesting) {
     return <WebcamIngestPlayer url={url} />;
   }
-  if (protocol === PROTOCOL_PROGRESSIVE_MP4) {
+  if (protocol === PlayerProtocol.PROGRESSIVE_MP4) {
     return <ProgressiveMP4Player url={url} />;
-  } else if (protocol === PROTOCOL_PROGRESSIVE_WEBM) {
+  } else if (protocol === PlayerProtocol.PROGRESSIVE_WEBM) {
     return <ProgressiveWebMPlayer url={url} />;
-  } else if (protocol === PROTOCOL_HLS) {
+  } else if (protocol === PlayerProtocol.HLS) {
     return <HLSPlayer url={url} />;
-  } else if (protocol === PROTOCOL_WEBRTC) {
+  } else if (protocol === PlayerProtocol.WEBRTC) {
     return <WebRTCPlayer url={url} />;
   } else {
     throw new Error(`unknown playback protocol ${inProto}`);
   }
 }
 
-const POLL_INTERVAL = 5000;
 const updateEvents = {
   playing: true,
   waiting: true,
@@ -122,6 +118,7 @@ const VideoElement = forwardRef(
     useEffect(() => {
       if (localVideoRef.current) {
         localVideoRef.current.volume = volume;
+        console.log("Setting volume to", volume);
       }
     }, [volume]);
 
@@ -457,7 +454,6 @@ export function WebRTCPlayer({ url }: { url: string }) {
 
 export function WebcamIngestPlayer(props: VideoProps) {
   const ingestStarting = usePlayerStore((x) => x.ingestStarting);
-  const ingestStreamKey = usePlayerStore((x) => x.ingestStreamKey);
   const ingestMediaSource = usePlayerStore((x) => x.ingestMediaSource);
   const ingestAutoStart = usePlayerStore((x) => x.ingestAutoStart);
 
@@ -474,9 +470,9 @@ export function WebcamIngestPlayer(props: VideoProps) {
   const [localMediaStream, setLocalMediaStream] = useState<MediaStream | null>(
     null,
   );
+  // we assign a stream key in the webrtcingest hook
   const [remoteMediaStream, setRemoteMediaStream] = useWebRTCIngest({
     endpoint: `${url}/api/ingest/webrtc`,
-    streamKey: ingestStreamKey === "" ? undefined : ingestStreamKey,
   });
 
   useEffect(() => {

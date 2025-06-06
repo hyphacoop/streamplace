@@ -1,8 +1,8 @@
 export enum PlayerProtocol {
-  PLAYER_PROTOCOL_WEBRTC = "webrtc",
-  PLAYER_PROTOCOL_HLS = "hls",
-  PLAYER_PROTOCOL_PROGRESSIVE_MP4 = "progressive-mp4",
-  PLAYER_PROTOCOL_PROGRESSIVE_WEBM = "progressive-webm",
+  WEBRTC = "webrtc",
+  HLS = "hls",
+  PROGRESSIVE_MP4 = "progressive-mp4",
+  PROGRESSIVE_WEBM = "progressive-webm",
 }
 
 export enum PlayerStatus {
@@ -14,6 +14,8 @@ export enum PlayerStatus {
   PAUSE = "pause",
   MUTE = "mute",
 }
+
+export type PlayerStatusTracker = Partial<Record<PlayerStatus, number>>;
 
 export enum IngestMediaSource {
   USER = "user",
@@ -38,12 +40,6 @@ export interface PlayerState {
 
   /** Function to set the ingestStarting flag */
   setIngestStarting: (ingestStarting: boolean) => void;
-
-  /** Ingest stream key for the current player */
-  ingestStreamKey: string;
-
-  /** Function to set the ingest stream key */
-  setIngestStreamKey: (ingestStreamKey: string) => void;
 
   /** Current connection state of ingest RTP/RTC peer connection */
   ingestConnectionState: RTCPeerConnectionState | null;
@@ -139,6 +135,9 @@ export interface PlayerState {
   /** Function to set the showControls flag */
   setShowControls: (showControls: boolean) => void;
 
+  telemetry: boolean;
+  setTelemetry: (telemetry: boolean) => void;
+
   playerEvent: (
     time: string,
     eventType: string,
@@ -147,3 +146,11 @@ export interface PlayerState {
 
   setUserInteraction: () => void;
 }
+
+export type PlayerEvent = {
+  id?: string;
+  time: string;
+  playerId: string;
+  eventType: string;
+  meta: { [key: string]: any };
+};

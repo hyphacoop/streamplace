@@ -232,10 +232,6 @@ export default function Controls(props: { name: string; playerId?: string }) {
     (state) => state.setUserInteraction,
     playerId,
   );
-  const ingestStreamKey = usePlayerStore(
-    (state) => state.ingestStreamKey,
-    playerId,
-  );
   const isIngesting = usePlayerStore((x) => x.ingestConnectionState !== null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -270,7 +266,7 @@ export default function Controls(props: { name: string; playerId?: string }) {
     } else {
       setPipSupported(false);
     }
-  }, [videoRef, ingestStreamKey]);
+  }, [videoRef]);
 
   useEffect(() => {
     let video: HTMLVideoElement | null = null;

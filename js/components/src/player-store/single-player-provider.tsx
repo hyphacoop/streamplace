@@ -25,7 +25,7 @@ interface SinglePlayerProviderProps {
 export const SinglePlayerProvider: React.FC<SinglePlayerProviderProps> = ({
   children,
   playerId: providedPlayerId,
-  protocol = PlayerProtocol.PLAYER_PROTOCOL_WEBRTC,
+  protocol = PlayerProtocol.WEBRTC,
   rendition = "auto",
 }) => {
   const { players, createPlayer } = usePlayerContext();

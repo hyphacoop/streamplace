@@ -1,19 +1,14 @@
 import {
   getFirstPlayerID,
+  PlayerStatus,
+  PlayerStatusTracker,
   usePlayerStore,
   useSegment,
 } from "@streamplace/components";
-import usePlatform from "hooks/usePlatform";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { Text, View } from "tamagui";
 import { Fullscreen } from "./fullscreen";
-import {
-  PlayerEvent,
-  PlayerProps,
-  PlayerStatus,
-  PlayerStatusTracker,
-} from "./props";
+import { PlayerProps } from "./props";
 import PlayerProvider from "./provider";
 
 const OFFLINE_THRESHOLD = 10000;
@@ -49,8 +44,6 @@ export function PropUpFullscreen(props: {
 export function PlayerInner(props: Partial<PlayerProps>) {
   // Will get the first player ID from the store
   const playerId = getFirstPlayerID();
-  const { url } = useStreamplaceNode();
-  const info = usePlatform();
 
   const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
 
@@ -68,32 +61,6 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       </View>
     );
   }
-  const playerEvent = async (
-    time: string,
-    eventType: string,
-    meta: { [key: string]: any },
-  ) => {
-    if (props.telemetry !== true) {
-      return;
-    }
-    const data: PlayerEvent = {
-      time: time,
-      playerId: playerId,
-      eventType: eventType,
-      meta: {
-        ...meta,
-        ...info,
-      },
-    };
-    try {
-      await fetch(`${url}/api/player-event`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-    } catch (e) {
-      console.error("error sending player telemetry", e);
-    }
-  };
 
   const segment = useSegment();
   const [lastCheck, setLastCheck] = useState(0);

@@ -95,7 +95,7 @@ export function Fullscreen(props: { src: string; playerId?: string }) {
   // Handle fullscreen state changes for native video players
   useEffect(() => {
     // For WebRTC, we handle fullscreen manually via the custom implementation
-    if (protocol === PlayerProtocol.PLAYER_PROTOCOL_WEBRTC) {
+    if (protocol === PlayerProtocol.WEBRTC) {
       return;
     }
 
@@ -109,7 +109,7 @@ export function Fullscreen(props: { src: string; playerId?: string }) {
     }
   }, [fullscreen, protocol]);
 
-  if (fullscreen && protocol === PlayerProtocol.PLAYER_PROTOCOL_WEBRTC) {
+  if (fullscreen && protocol === PlayerProtocol.WEBRTC) {
     // Determine if we're in landscape mode
     const isLandscape = dimensions.width > dimensions.height;
 

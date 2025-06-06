@@ -263,9 +263,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                       gap="$2"
                       minWidth={0}
                     >
-                      <Text>
-                        {fullscreen ? "yes fullscreen" : "no fullscreen"}
-                      </Text>
                       {streamerDID && !streamerHandle ? (
                         // Skeleton loader for handle
                         <Text>&nbsp;</Text>
