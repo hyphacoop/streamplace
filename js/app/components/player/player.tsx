@@ -1,5 +1,7 @@
 import {
   getFirstPlayerID,
+  LivestreamProvider,
+  PlayerProvider,
   PlayerStatus,
   PlayerStatusTracker,
   usePlayerStore,
@@ -9,7 +11,6 @@ import { useEffect, useState } from "react";
 import { Text, View } from "tamagui";
 import { Fullscreen } from "./fullscreen";
 import { PlayerProps } from "./props";
-import PlayerProvider from "./provider";
 
 const OFFLINE_THRESHOLD = 10000;
 
@@ -19,10 +20,12 @@ export function Player(
   },
 ) {
   return (
-    <PlayerProvider {...props}>
-      <PropUpFullscreen setFullscreen={props.setFullscreen} />
-      <PlayerInner {...props} />
-    </PlayerProvider>
+    <LivestreamProvider src={props.src ?? ""}>
+      <PlayerProvider>
+        <PropUpFullscreen setFullscreen={props.setFullscreen} />
+        <PlayerInner {...props} />
+      </PlayerProvider>
+    </LivestreamProvider>
   );
 }
 

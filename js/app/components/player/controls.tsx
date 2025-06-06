@@ -23,7 +23,6 @@ import {
 import { Countdown } from "components/countdown";
 import Loading from "components/loading/loading";
 import Viewers from "components/viewers";
-import { userMute } from "features/streamplace/streamplaceSlice";
 import {
   Dispatch,
   Fragment,
@@ -83,19 +82,19 @@ const Part = (props) => (
 );
 
 const VolumeSlider = (props: {
-  volume: number;
-  setVolume: (volume: number) => void;
-  muted: boolean;
   showControls: boolean;
-  setMuted: (muted: boolean) => void;
+  playerId: string | undefined;
 }) => {
+  const muted = usePlayerStore((state) => state.muted, props.playerId);
+  const setMuted = usePlayerStore((state) => state.setMuted, props.playerId);
+  const volume = usePlayerStore((state) => state.volume, props.playerId);
+  const setVolume = usePlayerStore((state) => state.setVolume, props.playerId);
+
   const [volumeVisible, setVolumeVisible] = useState(false);
   const [volumeSliderWidth, setVolumeSliderWidth] = useState(0);
-  const [localVolume, setLocalVolume] = useState(props.volume);
+  const [localVolume, setLocalVolume] = useState(volume);
   const sliderWidth = volumeVisible ? volumeSliderWidth : 0;
   const sliderOpacity = volumeVisible ? 1 : 0;
-
-  const isIngesting = usePlayerStore((x) => x.ingestConnectionState !== null);
 
   const volumeSliderRef = useRef<HTMLDivElement>(null);
 
@@ -125,21 +124,21 @@ const VolumeSlider = (props: {
   }, [volumeSliderRef]);
 
   useEffect(() => {
-    setLocalVolume(props.volume);
-  }, [props.volume]);
+    setLocalVolume(volume);
+  }, [volume]);
 
   const handleVolumeChange = useCallback(
     (volume: number[]) => {
       const newVolume = volume[0];
       setLocalVolume(newVolume);
-      props.setVolume(newVolume);
+      setVolume(newVolume);
     },
-    [props.setVolume],
+    [setVolume],
   );
 
   const handleMuteToggle = useCallback(() => {
-    props.setMuted(!props.muted);
-  }, [props.muted, props.setMuted]);
+    setMuted(!muted);
+  }, [muted, setMuted]);
 
   return (
     <XStack
@@ -157,7 +156,7 @@ const VolumeSlider = (props: {
         }}
       >
         <View paddingLeft="$3" paddingRight="$3" justifyContent="center">
-          <Text>{props.muted ? <VolumeX /> : <Volume2 />}</Text>
+          <Text>{muted ? <VolumeX /> : <Volume2 />}</Text>
         </View>
       </Pressable>
       {Platform.OS === "web" && (
@@ -205,25 +204,17 @@ function isRefObject(
 export default function Controls(props: { name: string; playerId?: string }) {
   const playerId = props.playerId;
 
-  // Get all state from the player store
-  const muted = usePlayerStore((state) => state.muted, playerId);
-  const setMuted = usePlayerStore((state) => state.setMuted, playerId);
-  const volume = usePlayerStore((state) => state.volume, playerId);
-  const setVolume = usePlayerStore((state) => state.setVolume, playerId);
   const fullscreen = usePlayerStore((state) => state.fullscreen, playerId);
   const setFullscreen = usePlayerStore(
     (state) => state.setFullscreen,
     playerId,
   );
+  const setMuted = usePlayerStore((state) => state.setMuted, props.playerId);
   const showControls = usePlayerStore((state) => state.showControls, playerId);
   const setPlayTime = usePlayerStore((state) => state.setPlayTime, playerId);
   const offline = usePlayerStore((state) => state.offline, playerId);
   const muteWasForced = usePlayerStore(
     (state) => state.muteWasForced,
-    playerId,
-  );
-  const setMuteWasForced = usePlayerStore(
-    (state) => state.setMuteWasForced,
     playerId,
   );
   const embedded = usePlayerStore((state) => state.embedded, playerId);
@@ -247,7 +238,6 @@ export default function Controls(props: { name: string; playerId?: string }) {
   };
 
   const viewers = useViewers();
-  const dispatch = useAppDispatch();
   const m = useMedia();
 
   const [pipSupported, setPipSupported] = useState(false);
@@ -383,20 +373,7 @@ export default function Controls(props: { name: string; playerId?: string }) {
       {isIngesting && <LiveBubble playerId={playerId} />}
       <Bar opacity={showControls ? 1 : 0}>
         <Part justifyContent="flex-start">
-          <VolumeSlider
-            volume={volume}
-            setVolume={(vol) => {
-              setVolume(vol);
-              setMuteWasForced(false);
-            }}
-            muted={muted}
-            showControls={showControls}
-            setMuted={(muted) => {
-              dispatch(userMute(muted));
-              setMuteWasForced(false);
-              setMuted(muted);
-            }}
-          />
+          <VolumeSlider showControls={showControls} playerId={playerId} />
         </Part>
         <Part justifyContent="flex-end">
           <PopoverMenu playerId={playerId} />

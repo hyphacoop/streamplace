@@ -47,10 +47,12 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
       set(() => ({ ingestStarted: timestamp })),
 
     muted: false,
-    setMuted: (isMuted: boolean) => set(() => ({ muted: isMuted })),
+    setMuted: (isMuted: boolean) =>
+      set(() => ({ muted: isMuted, muteWasForced: false })),
 
     volume: 1.0,
-    setVolume: (volume: number) => set(() => ({ volume })),
+    setVolume: (volume: number) =>
+      set(() => ({ volume, muteWasForced: false })),
 
     fullscreen: false,
     setFullscreen: (isFullscreen: boolean) =>
@@ -77,6 +79,8 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     pipMode: false,
     setPipMode: (pipMode: boolean) => set(() => ({ pipMode })),
 
+    // * Whether mute was forced by the browser or not for autoplay
+    // * Will get set to 'false' if the user has interacted with the volume
     muteWasForced: false,
     setMuteWasForced: (muteWasForced: boolean) =>
       set(() => ({ muteWasForced })),

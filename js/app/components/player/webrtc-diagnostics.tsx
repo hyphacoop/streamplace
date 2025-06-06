@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export interface WebRTCDiagnostics {
+  done: boolean;
   browserSupport: boolean;
   rtcPeerConnection: boolean;
   rtcSessionDescription: boolean;
@@ -12,6 +13,7 @@ export interface WebRTCDiagnostics {
 
 export function useWebRTCDiagnostics(): WebRTCDiagnostics {
   const [diagnostics, setDiagnostics] = useState<WebRTCDiagnostics>({
+    done: false,
     browserSupport: false,
     rtcPeerConnection: false,
     rtcSessionDescription: false,
@@ -29,6 +31,7 @@ export function useWebRTCDiagnostics(): WebRTCDiagnostics {
     if (typeof window === "undefined") {
       errors.push("Running in non-browser environment");
       setDiagnostics({
+        done: false,
         browserSupport: false,
         rtcPeerConnection: false,
         rtcSessionDescription: false,
@@ -99,6 +102,7 @@ export function useWebRTCDiagnostics(): WebRTCDiagnostics {
     const browserSupport = rtcPeerConnection && rtcSessionDescription;
 
     setDiagnostics({
+      done: true,
       browserSupport,
       rtcPeerConnection,
       rtcSessionDescription,

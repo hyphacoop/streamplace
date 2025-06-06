@@ -16,7 +16,6 @@ import {
   useState,
 } from "react";
 import { Text, View } from "tamagui";
-import { quietReceiver } from "./av-sync";
 import { srcToUrl } from "./shared";
 import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 import {
@@ -97,7 +96,7 @@ const VideoElement = forwardRef(
               localVideoRef.current
                 .play()
                 .then(() => {
-                  console.log("muted video, forced");
+                  console.warn("Browser forced video to start muted");
                   setMuteWasForced(true);
                 })
                 .catch((err) => {
@@ -249,25 +248,11 @@ export function HLSPlayer(props: VideoProps) {
   return <VideoElement {...props} ref={refCallback} />;
 }
 
-export function WebRTCPlayer({ url }: { url: string }) {
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
-    null,
-  );
+export function WebRTCPlayer(props: VideoProps) {
   const [webrtcError, setWebrtcError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] =
-    useState<string>("initializing");
-  const diagnostics = useWebRTCDiagnostics();
-
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-
-  const videoRef = usePlayerStore((x) => x.videoRef);
-  const setVideoRef = usePlayerStore((x) => x.setVideoRef);
-
-  const status = usePlayerStore((x) => x.status);
   const setStatus = usePlayerStore((x) => x.setStatus);
-
-  const playerEvent = usePlayerStore((x) => x.playerEvent);
-
+  const setProtocol = usePlayerStore((x) => x.setProtocol);
+  const diagnostics = useWebRTCDiagnostics();
   // Check WebRTC compatibility on component mount
   useEffect(() => {
     try {
@@ -288,6 +273,78 @@ export function WebRTCPlayer({ url }: { url: string }) {
       setWebrtcError(diagnostics.errors.join(", "));
     }
   }, [diagnostics]);
+
+  if (!diagnostics.done) return <></>;
+
+  if (webrtcError) {
+    setProtocol(PlayerProtocol.HLS);
+    return (
+      <View
+        backgroundColor="#111"
+        alignItems="center"
+        justifyContent="center"
+        f={1}
+        padding="$4"
+      >
+        <View
+          backgroundColor="$red10"
+          padding="$3"
+          borderRadius="$4"
+          maxWidth={400}
+        >
+          <View marginBottom="$2">
+            <Text fontSize="$8" fontWeight="bold" color="white">
+              WebRTC Not Supported
+            </Text>
+          </View>
+          <Text fontSize="$4" color="white" lineHeight="$1" marginBottom="$3">
+            {webrtcError}
+          </Text>
+          {diagnostics.errors.length > 0 && (
+            <View>
+              <Text
+                fontSize="$4"
+                fontWeight="bold"
+                color="white"
+                marginBottom="$2"
+              >
+                Technical Details:
+              </Text>
+              {diagnostics.errors.map((error, index) => (
+                <Text key={index} fontSize="$3" color="white" marginBottom="$1">
+                  • {error}
+                </Text>
+              ))}
+            </View>
+          )}
+          <Text fontSize="$3">
+            • To use WebRTC, you may need to disable any blocking extensions or
+            update your browser.
+          </Text>
+          <Text mt="$2">Switching to HLS...</Text>
+        </View>
+      </View>
+    );
+  }
+  return <WebRTCPlayerInner url={props.url} />;
+}
+
+export function WebRTCPlayerInner({ url }: { url: string }) {
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
+    null,
+  );
+  const [connectionStatus, setConnectionStatus] =
+    useState<string>("initializing");
+
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const videoRef = usePlayerStore((x) => x.videoRef);
+  const setVideoRef = usePlayerStore((x) => x.setVideoRef);
+
+  const status = usePlayerStore((x) => x.status);
+  const setStatus = usePlayerStore((x) => x.setStatus);
+
+  const playerEvent = usePlayerStore((x) => x.playerEvent);
 
   const handleRef = useCallback((node: HTMLVideoElement | null) => {
     if (node) {
@@ -357,15 +414,16 @@ export function WebRTCPlayer({ url }: { url: string }) {
     };
   }, [mediaStream]);
 
-  useEffect(() => {
-    // if (!props.avSyncTest) {
-    //   return;
-    // }
-    if (!mediaStream) {
-      return;
-    }
-    quietReceiver(mediaStream, playerEvent);
-  }, [mediaStream]);
+  // Test not working right now
+  // useEffect(() => {
+  //   if (!props.avSyncTest) {
+  //     return;
+  //   }
+  //   if (!mediaStream) {
+  //     return;
+  //   }
+  //   quietReceiver(mediaStream, playerEvent);
+  // }, [mediaStream, props.avSyncTest, playerEvent]);
 
   useEffect(() => {
     if (!videoElement) {
@@ -375,7 +433,7 @@ export function WebRTCPlayer({ url }: { url: string }) {
   }, [videoElement, mediaStream]);
 
   // Show loading/connection status when no media stream is available
-  if (!mediaStream && !webrtcError) {
+  if (!mediaStream) {
     return (
       <View
         backgroundColor="#111"
@@ -402,53 +460,6 @@ export function WebRTCPlayer({ url }: { url: string }) {
       </View>
     );
   }
-
-  // Show error message if WebRTC is not supported
-  if (webrtcError) {
-    return (
-      <View
-        backgroundColor="#111"
-        alignItems="center"
-        justifyContent="center"
-        f={1}
-        padding="$4"
-      >
-        <View
-          backgroundColor="$red10"
-          padding="$3"
-          borderRadius="$4"
-          maxWidth={400}
-        >
-          <View marginBottom="$2">
-            <Text fontSize="$6" fontWeight="bold" color="white">
-              WebRTC Not Supported
-            </Text>
-          </View>
-          <Text fontSize="$4" color="white" lineHeight="$1" marginBottom="$3">
-            {webrtcError}
-          </Text>
-          {diagnostics.errors.length > 0 && (
-            <View>
-              <Text
-                fontSize="$4"
-                fontWeight="bold"
-                color="white"
-                marginBottom="$2"
-              >
-                Technical Details:
-              </Text>
-              {diagnostics.errors.map((error, index) => (
-                <Text key={index} fontSize="$3" color="white" marginBottom="$1">
-                  • {error}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
-      </View>
-    );
-  }
-
   return <VideoElement url={url} ref={handleRef} />;
 }
 

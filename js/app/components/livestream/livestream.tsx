@@ -1,4 +1,5 @@
 import {
+  LivestreamProvider,
   useLivestream,
   useProfile,
   useSegment,
@@ -13,7 +14,6 @@ import Avatar from "components/home/avatar";
 import Loading from "components/loading/loading";
 import { Player } from "components/player/player";
 import { PlayerProps } from "components/player/props";
-import PlayerProvider from "components/player/provider";
 import Popup from "components/popup";
 import Timer from "components/timer";
 import Viewers from "components/viewers";
@@ -50,10 +50,14 @@ import {
 } from "tamagui";
 
 export default function Livestream(props: Partial<PlayerProps>) {
+  if (props.src === undefined) {
+    console.error("Livestream: src prop is required");
+    return <Text>Source is undefined</Text>;
+  }
   return (
-    <PlayerProvider {...props}>
+    <LivestreamProvider src={props.src} {...props}>
       <LivestreamInner {...props} />
-    </PlayerProvider>
+    </LivestreamProvider>
   );
 }
 
