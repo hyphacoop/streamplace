@@ -33,6 +33,7 @@ export function Player(
 
 export function PropUpFullscreen(props: {
   setFullscreen?: (fullscreen: boolean) => void;
+  ingest?: boolean;
 }) {
   const fullscreen = usePlayerStore((x) => x.fullscreen);
 
@@ -48,13 +49,17 @@ export function PropUpFullscreen(props: {
 export function PlayerInner(props: Partial<PlayerProps>) {
   // Will get the first player ID from the store
   const playerId = getFirstPlayerID();
-
   const { url } = useStreamplaceNode();
   const info = usePlatform();
 
   const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
 
   const setOffline = usePlayerStore((x) => x.setOffline);
+  const setIngest = usePlayerStore((x) => x.setIngestConnectionState);
+
+  useEffect(() => {
+    setIngest(props.ingest ? "new" : null);
+  }, []);
 
   if (typeof props.src !== "string") {
     return (

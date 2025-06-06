@@ -476,7 +476,7 @@ export function WebcamIngestPlayer(props: VideoProps) {
   );
   const [remoteMediaStream, setRemoteMediaStream] = useWebRTCIngest({
     endpoint: `${url}/api/ingest/webrtc`,
-    streamKey: ingestStreamKey,
+    streamKey: ingestStreamKey === "" ? undefined : ingestStreamKey,
   });
 
   useEffect(() => {

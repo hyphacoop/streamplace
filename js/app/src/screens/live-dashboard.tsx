@@ -35,7 +35,6 @@ export default function LiveDashboard() {
     null,
   );
 
-  const [playerId, setPlayerId] = useState<string | null>(null);
   const [page, setPage] = useState<"update" | "create">("create");
 
   const videoRef = useCallback((node: HTMLVideoElement | null) => {
@@ -62,7 +61,6 @@ export default function LiveDashboard() {
         src={userProfile.did}
         name={userProfile.handle}
         videoRef={videoRef}
-        setPlayerId={setPlayerId}
       />
     );
   } else if (streamSource === StreamSource.Start) {

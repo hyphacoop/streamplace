@@ -95,6 +95,8 @@ const VolumeSlider = (props: {
   const sliderWidth = volumeVisible ? volumeSliderWidth : 0;
   const sliderOpacity = volumeVisible ? 1 : 0;
 
+  const isIngesting = usePlayerStore((x) => x.ingestConnectionState !== null);
+
   const volumeSliderRef = useRef<HTMLDivElement>(null);
 
   const fadeAnim = useRef(new Animated.Value(sliderOpacity)).current;
@@ -214,11 +216,6 @@ export default function Controls(props: { name: string; playerId?: string }) {
     playerId,
   );
   const showControls = usePlayerStore((state) => state.showControls, playerId);
-  const setShowControls = usePlayerStore(
-    (state) => state.setShowControls,
-    playerId,
-  );
-  const playTime = usePlayerStore((state) => state.playTime, playerId);
   const setPlayTime = usePlayerStore((state) => state.setPlayTime, playerId);
   const offline = usePlayerStore((state) => state.offline, playerId);
   const muteWasForced = usePlayerStore(
@@ -231,20 +228,15 @@ export default function Controls(props: { name: string; playerId?: string }) {
   );
   const embedded = usePlayerStore((state) => state.embedded, playerId);
   const videoRef = usePlayerStore((state) => state.videoRef, playerId);
-  const pipMode = usePlayerStore((state) => state.pipMode, playerId);
-  const setPipMode = usePlayerStore((state) => state.setPipMode, playerId);
   const setUserInteraction = usePlayerStore(
     (state) => state.setUserInteraction,
-    playerId,
-  );
-  const ingestStarting = usePlayerStore(
-    (state) => state.ingestStarting,
     playerId,
   );
   const ingestStreamKey = usePlayerStore(
     (state) => state.ingestStreamKey,
     playerId,
   );
+  const isIngesting = usePlayerStore((x) => x.ingestConnectionState !== null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -392,7 +384,7 @@ export default function Controls(props: { name: string; playerId?: string }) {
           <Viewers viewers={viewers ?? 0} />
         </Part>
       </Bar>
-      {ingestStreamKey ? <LiveBubble playerId={playerId} /> : null}
+      {isIngesting && <LiveBubble playerId={playerId} />}
       <Bar opacity={showControls ? 1 : 0}>
         <Part justifyContent="flex-start">
           <VolumeSlider
@@ -601,6 +593,7 @@ function LiveBubbleText(props: { playerId?: string }) {
   if (!ingestStarting) {
     return <H3>START STREAMING</H3>;
   }
+  console.log("ingest connection state", ingestConnectionState);
   if (ingestConnectionState === "connected") {
     return (
       <>

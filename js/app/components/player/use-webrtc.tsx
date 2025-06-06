@@ -207,7 +207,8 @@ export function useWebRTCIngest({
     (x) => x.setIngestConnectionState,
   );
   const dispatch = useAppDispatch();
-  const storedKey = streamKey ?? useAppSelector(selectStoredKey)?.privateKey;
+  const storedKey = useAppSelector(selectStoredKey)?.privateKey;
+  console.log(storedKey);
   useEffect(() => {
     if (storedKey) {
       return;
