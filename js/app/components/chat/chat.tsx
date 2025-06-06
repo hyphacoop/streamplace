@@ -1,14 +1,14 @@
 import {
   useChat,
   useProfile,
+  useReplyToMessage,
   useSetReplyToMessage,
 } from "@streamplace/components";
-import { Reply, Settings, X } from "@tamagui/lucide-icons";
+import { Reply, ReplyAll, Settings, X } from "@tamagui/lucide-icons";
 import {
   createBlockRecord,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
-import { MessageViewHydrated } from "features/player/playerSlice";
 import usePlatform from "hooks/usePlatform";
 import { useEffect, useRef, useState } from "react";
 import { Linking, TouchableOpacity } from "react-native";
@@ -20,6 +20,13 @@ import {
   Link,
   Mention,
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
+import ReanimatedSwipeable, {
+  SwipeableMethods,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { ChatMessageViewHydrated } from "streamplace";
 import { Button, ScrollView, Sheet, Text, useMedia, View } from "tamagui";
 import { RichtextSegment, segmentize } from "../../utils/facet";
@@ -145,7 +152,7 @@ export default function Chat({
             </Sheet.Frame>
           </Sheet>
           <ScrollView
-            paddingHorizontal="$4"
+            marginHorizontal="$2"
             invertStickyHeaders={true}
             ref={scrollRef}
             onContentSizeChange={() => {
@@ -161,9 +168,9 @@ export default function Chat({
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            {chat.map((message) => (
+            {chat.map((message, index) => (
               <ChatMessageRow
-                key={message.cid}
+                key={message.cid + index}
                 message={message}
                 setOpen={setOpen}
                 setMessage={setMessage}
@@ -178,6 +185,35 @@ export default function Chat({
     </View>
   );
 }
+
+const RightAction = (
+  _progress: SharedValue<number>,
+  drag: SharedValue<number>,
+) => {
+  const styleAnimation = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: drag.value + 50,
+        },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View style={[styleAnimation, { height: "auto" }]}>
+      <Text
+        width="$4"
+        backgroundColor="rgba(255,255,255,0.5)"
+        borderRadius="$2"
+        pt={"$1"}
+        px={"$1"}
+      >
+        <ReplyAll />
+      </Text>
+    </Animated.View>
+  );
+};
 
 function ChatMessageRow({
   message,
@@ -197,6 +233,16 @@ function ChatMessageRow({
   const [hover, setHover] = useState(false);
   const setReplyToMessage = useSetReplyToMessage();
   const { isWeb } = usePlatform();
+
+  const swipeableRef = useRef<SwipeableMethods>(null);
+  const close = () => {
+    let current: any = swipeableRef.current;
+    if (current) {
+      current.close();
+    }
+  };
+
+  const currentReplyTo = useReplyToMessage();
 
   const moderateMessage = () => {
     if (!myStream) {
@@ -220,118 +266,145 @@ function ChatMessageRow({
 
   return (
     <View
-      flexDirection="row"
-      display="block"
-      paddingVertical={isWeb ? 6 : 4} // Adjust padding for web
-      position="relative"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
       onPress={() => {
         if (!isWeb) {
           moderateMessage();
         }
       }}
-      onLongPress={handleReply}
     >
-      {hasReply && (
+      {isWeb && (
         <View
           position="absolute"
-          left={6}
-          top={-8}
-          width={2}
-          height={16}
-          opacity={0.7}
-        />
+          flexDirection="row"
+          right={0}
+          top="$-3"
+          alignItems="center"
+          justifyContent="center"
+          gap="$2"
+          pl="$2"
+          pr="$1"
+          backgroundColor="rgba(64,64,64,1)"
+          borderRadius="$2"
+          style={{
+            display: hover ? "flex" : "none",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          zi={32}
+        >
+          <Text fontSize="$2">{timeAgo(message.record.createdAt)}</Text>
+          <TouchableOpacity onPress={handleReply}>
+            <Reply size={16} />
+          </TouchableOpacity>
+          {isWeb && myStream && (
+            <TouchableOpacity
+              style={{
+                display: hover ? "flex" : "none",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 4,
+              }}
+              onPress={moderateMessage}
+            >
+              <Settings size={16} />
+            </TouchableOpacity>
+          )}
+        </View>
       )}
-      <View flexDirection="column" gap="$1" flex={1}>
-        {/* Reply section */}
-        {hasReply && (
-          <View
-            flexDirection="column"
-            marginBottom="$2"
-            paddingLeft="$3"
-            position="relative"
-          >
-            {/* Vertical reply line */}
+      <ReanimatedSwipeable
+        ref={swipeableRef}
+        renderRightActions={RightAction}
+        overshootRight={false}
+        friction={2}
+        enableTrackpadTwoFingerGesture
+        rightThreshold={40}
+        onSwipeableOpen={(r) => {
+          if (r === "right") {
+            handleReply();
+          }
+          close();
+        }}
+      >
+        <View
+          flexDirection="row"
+          display="block"
+          paddingVertical={isWeb ? 6 : 4} // Adjust padding for web
+          paddingHorizontal={isWeb ? 6 : 4} // Adjust padding for web
+          position="relative"
+          hoverStyle={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+          backgroundColor={
+            currentReplyTo?.cid === message.cid
+              ? "rgba(180,180,255,0.1)"
+              : "transparent"
+          }
+          borderRadius={isWeb ? 4 : 4}
+          onPress={() => {
+            if (!isWeb) {
+              moderateMessage();
+            }
+          }}
+          overflow="visible"
+        >
+          {hasReply && (
             <View
               position="absolute"
               left={6}
-              top={0}
-              bottom={0}
+              top={-8}
               width={2}
-              borderRadius={2}
-              backgroundColor="$accentColor"
-              opacity={0.5}
+              height={16}
+              opacity={0.7}
             />
-            {/* Reply preview */}
-            <View
-              flexDirection="row"
-              alignItems="center"
-              gap="$1"
-              paddingVertical="$1"
-              paddingHorizontal="$2"
-              borderRadius="$2"
-              marginLeft="-$1"
-            >
-              <Text fontSize={12} color={replyToColor} fontWeight="bold">
-                {replyToHandle ? `@${replyToHandle}` : ""}
-              </Text>
-              <Text
-                fontSize={12}
-                color="$color"
-                opacity={0.7}
-                numberOfLines={1}
-                flex={1}
+          )}
+          <View flexDirection="column" gap="$1" flex={1} overflow="visible">
+            {/* Reply section */}
+            {hasReply && (
+              <View
+                flexDirection="column"
+                marginBottom="$2"
+                paddingLeft="$3"
+                position="relative"
               >
-                {replyToText || ""}
-              </Text>
-            </View>
+                {/* Vertical reply line */}
+                <View
+                  position="absolute"
+                  left={6}
+                  top={0}
+                  bottom={0}
+                  width={2}
+                  borderRadius={2}
+                  backgroundColor="$accentColor"
+                  opacity={0.5}
+                />
+                {/* Reply preview */}
+                <View
+                  flexDirection="row"
+                  alignItems="center"
+                  gap="$1"
+                  paddingVertical="$1"
+                  paddingHorizontal="$2"
+                  borderRadius="$2"
+                  marginLeft="-$1"
+                >
+                  <Text fontSize={12} color={replyToColor} fontWeight="bold">
+                    {replyToHandle ? `@${replyToHandle}` : ""}
+                  </Text>
+                  <Text
+                    fontSize={12}
+                    color="$color"
+                    opacity={0.7}
+                    numberOfLines={1}
+                    flex={1}
+                  >
+                    {replyToText || ""}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
-        )}
-
-        {/* Message content */}
-        <View flexDirection="row" alignItems="flex-start" gap="$2">
-          <ChatMessageText message={message} chat={chat} />
         </View>
-      </View>
-      <View
-        position="absolute"
-        flexDirection="row"
-        right={0}
-        top={0}
-        bottom={0}
-        alignItems="stretch"
-        justifyContent="flex-end"
-        gap="$2"
-      >
-        {isWeb && (
-          <TouchableOpacity
-            style={{
-              display: hover ? "flex" : "none",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 4,
-            }}
-            onPress={handleReply}
-          >
-            <Reply size={16} />
-          </TouchableOpacity>
-        )}
-        {isWeb && myStream && (
-          <TouchableOpacity
-            style={{
-              display: hover ? "flex" : "none",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 4,
-            }}
-            onPress={moderateMessage}
-          >
-            <Settings size={16} />
-          </TouchableOpacity>
-        )}
-      </View>
+      </ReanimatedSwipeable>
     </View>
   );
 }
@@ -427,7 +500,7 @@ const getRgbColor = (color?: { red: number; green: number; blue: number }) =>
 
 const segmentedObject = (
   obj: RichtextSegment,
-  chat: MessageViewHydrated[],
+  chat: ChatMessageViewHydrated[],
   index: number,
 ) => {
   if (obj.features && obj.features.length > 0) {
@@ -482,6 +555,91 @@ const RichTextMessage = ({
   let segs = segmentize(text, facets);
 
   return segs.map((seg, i) =>
-    segmentedObject(seg, chat as MessageViewHydrated[], i),
+    segmentedObject(seg, chat as ChatMessageViewHydrated[], i),
   );
 };
+
+export function timeAgo(time: Date | number | string): string {
+  let timestamp: number;
+
+  if (typeof time === "number") {
+    timestamp = time;
+  } else if (typeof time === "string") {
+    timestamp = new Date(time).getTime();
+  } else if (time instanceof Date) {
+    timestamp = time.getTime();
+  } else {
+    timestamp = Date.now();
+  }
+
+  const now = Date.now();
+  let seconds = (now - timestamp) / 1000;
+  let token = "ago";
+  let listChoice = 1;
+
+  if (seconds === 0) {
+    return "Just now";
+  }
+
+  if (seconds < 0) {
+    seconds = Math.abs(seconds);
+    token = "from now";
+    listChoice = 2;
+  }
+
+  // Show time for > 1 hour difference
+  if (seconds > 3600) {
+    const date = new Date(timestamp);
+    // More than 1 day ago/from now: show shortened date + time
+    if (seconds > 86400) {
+      // Example format: "Apr 27, 14:35"
+      return date.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    // Otherwise show only time for > 1 hour
+    return date.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  const timeFormats: [number, string, number | string][] = [
+    [60, "seconds", 1], // 60
+    [120, "1 minute ago", "1 minute from now"], // 60*2
+    [3600, "minutes", 60], // 60*60, 60
+    [7200, "1 hour ago", "1 hour from now"], // 60*60*2
+    [86400, "hours", 3600], // 60*60*24, 60*60
+    [172800, "Yesterday", "Tomorrow"], // 60*60*24*2
+    [604800, "days", 86400], // 60*60*24*7, 60*60*24
+    [1209600, "Last week", "Next week"], // 60*60*24*7*2
+    [2419200, "weeks", 604800], // 60*60*24*7*4, 60*60*24*7
+    [4838400, "Last month", "Next month"], // 60*60*24*7*4*2
+    [29030400, "months", 2419200], // 60*60*24*7*4*12, 60*60*24*7*4
+    [58060800, "Last year", "Next year"], // 60*60*24*7*4*12*2
+    [2903040000, "years", 29030400], // 60*60*24*7*4*12*100, 60*60*24*7*4*12
+    [5806080000, "Last century", "Next century"], // 60*60*24*7*4*12*100*2
+    [58060800000, "centuries", 2903040000], // 60*60*24*7*4*12*100*20, 60*60*24*7*4*12*100
+  ];
+
+  for (const format of timeFormats) {
+    if (seconds < format[0]) {
+      if (typeof format[2] === "string") {
+        return format[listChoice] as string;
+      } else {
+        return (
+          Math.floor(seconds / (format[2] as number)) +
+          " " +
+          format[1] +
+          " " +
+          token
+        );
+      }
+    }
+  }
+
+  return new Date(timestamp).toString();
+}

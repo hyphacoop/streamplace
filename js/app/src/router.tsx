@@ -84,16 +84,16 @@ import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from "react-native-reanimated";
+store.dispatch(loadStateFromStorage());
 
+const Stack = createNativeStackNavigator();
+
+// disabled strict b/c chat swipeable triggers it a LOT and the resulting logging
 // slows down the whole app
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
   strict: false,
 });
-
-store.dispatch(loadStateFromStorage());
-
-const Stack = createNativeStackNavigator();
 
 type HomeStackParamList = {
   StreamList: undefined;
