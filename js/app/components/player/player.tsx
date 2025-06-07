@@ -53,6 +53,8 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   const setOffline = usePlayerStore((x) => x.setOffline);
   const setIngest = usePlayerStore((x) => x.setIngestConnectionState);
 
+  const clearControlsTimeout = usePlayerStore((x) => x.clearControlsTimeout);
+
   useEffect(() => {
     setIngest(props.ingest ? "new" : null);
   }, []);
@@ -64,6 +66,12 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       </View>
     );
   }
+
+  useEffect(() => {
+    return () => {
+      clearControlsTimeout();
+    };
+  }, []);
 
   const segment = useSegment();
   const [lastCheck, setLastCheck] = useState(0);

@@ -144,6 +144,8 @@ export interface PlayerState {
     meta: { [key: string]: any },
   ) => void;
 
+  clearControlsTimeout: () => void;
+
   setUserInteraction: () => void;
 }
 

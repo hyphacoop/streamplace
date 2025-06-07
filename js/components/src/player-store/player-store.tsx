@@ -126,6 +126,16 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
         return {};
       }),
 
+    // Clear the controls timeout, if it exists.
+    // Should be called on player unmount.
+    clearControlsTimeout: () =>
+      set((state) => {
+        if (state.controlsTimeout) {
+          clearTimeout(state.controlsTimeout);
+        }
+        return { controlsTimeout: undefined };
+      }),
+
     setUserInteraction: () =>
       set((p) => {
         // controls timeout
