@@ -22,6 +22,9 @@ flagbuilder = custom_target(
   output: ['flagbuilder'],
   command: [prog_go, 'build', '-o', '@OUTPUT0@', '@INPUT@'],
   build_always_stale: true,
+  env: {
+    'CGO_ENABLED': '0',
+  },
 )
 
 flags = custom_target(
@@ -32,7 +35,9 @@ flags = custom_target(
   build_always_stale: true,
 )
 
-version_cmd = run_command(prog_go, 'run', 'pkg/config/git/git.go', '-v', check: true)
+version_cmd = run_command(prog_go, 'run', 'pkg/config/git/git.go', '-v', check: true, env: {
+  'CGO_ENABLED': '0',
+})
 version = version_cmd.stdout().strip()
 
 streamplace_go = custom_target(
@@ -250,14 +255,44 @@ pkg.generate(
   description: 'all streamplace dependencies bundled for easy inclusion',
 )
 
-streamplace = executable(
-  'streamplace',
-  ['cmd/streamplace/streamplace.c', libstreamplace],
-  dependencies: [
-    streamplace_deps,
-  ],
-  link_with: [c2pa_go_dep],
-)
+if build_machine.system() == 'linux' and host_machine.system() == 'darwin'
+  # this only exists to convince meson to build all of the streamplace dependencies
+  # the real binary comes from the `go build` command below
+  cstreamplace = executable(
+    'cstreamplace',
+    ['cmd/streamplace/streamplace.c', libstreamplace],
+    dependencies: [
+      streamplace_deps,
+    ],
+    link_with: [c2pa_go_dep],
+  )
+
+  streamplace = custom_target(
+    'streamplace',
+    input: [cstreamplace, flags],
+    output: ['streamplace'],
+    command: [
+      prog_go,
+      'build',
+      '-o', '@OUTPUT0@',
+      '-tags', 'netgo',
+      'streamplace.go',
+      '@INPUT1@'
+    ],
+    build_always_stale: true,
+    env: env,
+  )
+else
+  streamplace = executable(
+    'streamplace',
+    ['cmd/streamplace/streamplace.c', libstreamplace],
+    dependencies: [
+      streamplace_deps,
+    ],
+    link_with: [c2pa_go_dep],
+  )
+endif
+
 
 if not meson.is_cross_build()
   test(
