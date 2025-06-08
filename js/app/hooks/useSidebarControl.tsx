@@ -58,7 +58,6 @@ export function useSidebarControl(): UseSidebarOutput {
   const isActive = useIsLargeScreen();
   useEffect(() => {
     if (isActive) {
-      if (!isHidden && targetWidth < 64) targetWidth == 64;
       // Only animate if the sidebar is active
       animatedWidth.value = withTiming(targetWidth, { duration: 250 });
     } else {
