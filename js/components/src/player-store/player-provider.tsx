@@ -7,11 +7,13 @@ import { makePlayerStore } from "./player-store";
 interface PlayerProviderProps {
   children: React.ReactNode;
   initialPlayers?: string[];
+  defaultId?: string;
 }
 
 export const PlayerProvider: React.FC<PlayerProviderProps> = ({
   children,
   initialPlayers = [],
+  defaultId = Math.random().toString(36).slice(8),
 }) => {
   const [players, setPlayers] = useState<Record<string, StoreApi<PlayerState>>>(
     () => {
@@ -23,7 +25,6 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({
 
       // Always create at least one player by default
       if (initialPlayers.length === 0) {
-        const defaultId = Math.random().toString(36).slice(8);
         initialPlayerStores[defaultId] = makePlayerStore(defaultId);
       }
 

@@ -2,6 +2,7 @@ import {
   PlayerProtocol,
   PlayerStatus,
   usePlayerStore,
+  useStreamplaceStore,
 } from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
 import { useEffect } from "react";
@@ -31,6 +32,7 @@ export function NativeVideo() {
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
   const fullscreen = usePlayerStore((x) => x.fullscreen);
   const playerEvent = usePlayerStore((x) => x.playerEvent);
+  const spurl = useStreamplaceStore((x) => x.url);
 
   useEffect(() => {
     return () => {
@@ -65,7 +67,7 @@ export function NativeVideo() {
     ).map((evType) => {
       const now = new Date();
       return player.addListener(evType, (...args) => {
-        playerEvent(now.toISOString(), evType, { args: args });
+        playerEvent(spurl, now.toISOString(), evType, { args: args });
       });
     });
 

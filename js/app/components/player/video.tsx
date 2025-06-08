@@ -3,6 +3,7 @@ import {
   PlayerProtocol,
   PlayerStatus,
   usePlayerStore,
+  useStreamplaceStore,
 } from "@streamplace/components";
 import streamKey from "components/live-dashboard/stream-key";
 import Hls from "hls.js";
@@ -60,6 +61,7 @@ const updateEvents = {
 const VideoElement = forwardRef(
   (props: VideoProps, ref: ForwardedRef<HTMLVideoElement | null>) => {
     const x = usePlayerStore((x) => x);
+    const url = useStreamplaceStore((x) => x.url);
     const playerEvent = usePlayerStore((x) => x.playerEvent);
     const setMuted = usePlayerStore((x) => x.setMuted);
     const setMuteWasForced = usePlayerStore((x) => x.setMuteWasForced);
@@ -75,7 +77,8 @@ const VideoElement = forwardRef(
       if (updateEvents[evType]) {
         x.setStatus(evType);
       }
-      playerEvent(now.toISOString(), evType, {});
+      console.log("Sending", evType, "status to", url);
+      playerEvent(url, now.toISOString(), evType, {});
     };
     const [firstAttempt, setFirstAttempt] = useState(true);
 
@@ -345,6 +348,7 @@ export function WebRTCPlayerInner({ url }: { url: string }) {
   const setStatus = usePlayerStore((x) => x.setStatus);
 
   const playerEvent = usePlayerStore((x) => x.playerEvent);
+  const spurl = useStreamplaceStore((x) => x.url);
 
   const handleRef = useCallback((node: HTMLVideoElement | null) => {
     if (node) {
@@ -386,7 +390,7 @@ export function WebRTCPlayerInner({ url }: { url: string }) {
     }
     const evt = (evType) => (e) => {
       console.log("webrtc event", evType);
-      playerEvent(new Date().toISOString(), evType, {});
+      playerEvent(spurl, new Date().toISOString(), evType, {});
     };
     const active = evt("active");
     const inactive = evt("inactive");

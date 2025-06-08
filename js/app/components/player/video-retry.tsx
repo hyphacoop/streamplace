@@ -1,4 +1,8 @@
-import { PlayerStatus, usePlayerStore } from "@streamplace/components";
+import {
+  PlayerStatus,
+  usePlayerStore,
+  useStreamplaceStore,
+} from "@streamplace/components";
 import React, { useEffect, useState } from "react";
 
 export default function VideoRetry(props: { children: React.ReactNode }) {
@@ -7,6 +11,8 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
 
   const status = usePlayerStore((x) => x.status);
   const playerEvent = usePlayerStore((x) => x.playerEvent);
+
+  const spurl = useStreamplaceStore((x) => x.url);
 
   const isPlaying = status === PlayerStatus.PLAYING;
 
@@ -24,7 +30,7 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
       // console.log(`retrying (attempt ${retryCount + 1}, delay: ${delay}ms)`);
       setResetTime(Date.now());
       setRetryCount((prev) => prev + 1);
-      playerEvent(new Date().toISOString(), "retry", {
+      playerEvent(spurl, new Date().toISOString(), "retry", {
         delay,
       });
     }, delay);

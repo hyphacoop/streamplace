@@ -139,6 +139,7 @@ export interface PlayerState {
   setTelemetry: (telemetry: boolean) => void;
 
   playerEvent: (
+    url: string,
     time: string,
     eventType: string,
     meta: { [key: string]: any },

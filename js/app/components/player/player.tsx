@@ -6,6 +6,7 @@ import {
   PlayerStatusTracker,
   usePlayerStore,
   useSegment,
+  useStreamplaceStore,
 } from "@streamplace/components";
 import { useEffect, useState } from "react";
 import { Text, View } from "tamagui";
@@ -21,7 +22,7 @@ export function Player(
 ) {
   return (
     <LivestreamProvider src={props.src ?? ""}>
-      <PlayerProvider>
+      <PlayerProvider defaultId={props.playerId || undefined}>
         <PropUpFullscreen setFullscreen={props.setFullscreen} />
         <PlayerInner {...props} />
       </PlayerProvider>
@@ -54,6 +55,9 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   const setIngest = usePlayerStore((x) => x.setIngestConnectionState);
 
   const clearControlsTimeout = usePlayerStore((x) => x.clearControlsTimeout);
+
+  // Will call back every few seconds to send health updates
+  usePlayerStatus();
 
   useEffect(() => {
     setIngest(props.ingest ? "new" : null);
@@ -109,13 +113,10 @@ export function PlayerInner(props: Partial<PlayerProps>) {
 }
 
 const POLL_INTERVAL = 5000;
-export function usePlayerStatus(
-  playerEvent: (
-    time: string,
-    eventType: string,
-    meta: { [key: string]: any },
-  ) => Promise<void>,
-): [PlayerStatus, (status: PlayerStatus) => void] {
+export function usePlayerStatus(): [PlayerStatus] {
+  const playerStatus = usePlayerStore((x) => x.status);
+  const url = useStreamplaceStore((x) => x.url);
+  const playerEvent = usePlayerStore((x) => x.playerEvent);
   const [whatDoing, setWhatDoing] = useState<PlayerStatus>(PlayerStatus.START);
   const [whatDid, setWhatDid] = useState<PlayerStatusTracker>({});
   const [doingSince, setDoingSince] = useState(Date.now());
@@ -129,14 +130,15 @@ export function usePlayerStatus(
     };
     return ret;
   };
-  const updateStatus = (status: PlayerStatus) => {
+  // callback to update the status
+  useEffect(() => {
     const now = new Date();
-    if (status !== whatDoing) {
+    if (playerStatus !== whatDoing) {
       setWhatDid(updateWhatDid(now));
-      setWhatDoing(status);
+      setWhatDoing(playerStatus);
       setDoingSince(now.getTime());
     }
-  };
+  }, [playerStatus]);
 
   useEffect(() => {
     if (lastUpdated === 0) {
@@ -146,7 +148,7 @@ export function usePlayerStatus(
     const fullWhatDid = updateWhatDid(now);
     setWhatDid({} as PlayerStatusTracker);
     setDoingSince(now.getTime());
-    playerEvent(now.toISOString(), "aq-played", {
+    playerEvent(url, now.toISOString(), "aq-played", {
       whatHappened: fullWhatDid,
     });
   }, [lastUpdated]);
@@ -157,5 +159,5 @@ export function usePlayerStatus(
     }, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, []);
-  return [whatDoing, updateStatus];
+  return [whatDoing];
 }

@@ -1,5 +1,6 @@
 export type PlayerProps = {
   name: string;
+  playerId?: string;
   src: string;
   muted: boolean;
   telemetry: boolean;

@@ -1,6 +1,5 @@
 import { useContext } from "react";
 import { createStore, StoreApi, useStore } from "zustand";
-import { useStreamplaceStore } from "../streamplace-store";
 import { PlayerContext } from "./context";
 import {
   IngestMediaSource,
@@ -97,15 +96,12 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     setTelemetry: (telemetry: boolean) => set(() => ({ telemetry })),
 
     playerEvent: async (
+      url: string,
       time: string,
       eventType: string,
       meta: { [key: string]: any },
     ) =>
       set((x) => {
-        const url = useStreamplaceStore((x) => x.url);
-        if (x.telemetry !== true) {
-          return {};
-        }
         const data: PlayerEvent = {
           time: time,
           playerId: x.id,
