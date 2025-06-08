@@ -119,9 +119,7 @@ func ConcatBin(ctx context.Context, segCh <-chan *segchanman.Seg) (*gst.Bin, err
 				}
 				err := addConcatDemuxer(ctx, bin, seg, syncPadVideoSink, syncPadAudioSink)
 				if err != nil {
-					log.Error(ctx, "failed to add concat demuxer", "error", err)
-					bin.Error(err.Error(), err)
-					return
+					panic(fmt.Errorf("failed to add concat demuxer: %w", err))
 				}
 			case <-ctx.Done():
 				return
