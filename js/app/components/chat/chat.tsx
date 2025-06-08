@@ -273,45 +273,45 @@ function ChatMessageRow({
         }
       }}
     >
-      {isWeb && (
-        <View
-          position="absolute"
-          flexDirection="row"
-          right={0}
-          top="$-3"
-          alignItems="center"
-          justifyContent="center"
-          gap="$2"
-          pl="$2"
-          pr="$1"
-          backgroundColor="rgba(64,64,64,1)"
-          borderRadius="$2"
-          style={{
-            display: hover ? "flex" : "none",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          zi={32}
-        >
-          <Text fontSize="$2">{timeAgo(message.record.createdAt)}</Text>
-          <TouchableOpacity onPress={handleReply}>
+      <View
+        position="absolute"
+        flexDirection="row"
+        right={0}
+        top="$-3"
+        alignItems="stretch"
+        justifyContent="flex-end"
+        gap="$1"
+        px="$1"
+        backgroundColor="rgba(255,255,255,0.5)"
+        borderRadius="$2"
+      >
+        {isWeb && (
+          <TouchableOpacity
+            style={{
+              display: hover ? "flex" : "none",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 4,
+            }}
+            onPress={handleReply}
+          >
             <Reply size={16} />
           </TouchableOpacity>
-          {isWeb && myStream && (
-            <TouchableOpacity
-              style={{
-                display: hover ? "flex" : "none",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 4,
-              }}
-              onPress={moderateMessage}
-            >
-              <Settings size={16} />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+        )}
+        {isWeb && myStream && (
+          <TouchableOpacity
+            style={{
+              display: hover ? "flex" : "none",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 4,
+            }}
+            onPress={moderateMessage}
+          >
+            <Settings size={16} />
+          </TouchableOpacity>
+        )}
+      </View>
       <ReanimatedSwipeable
         ref={swipeableRef}
         renderRightActions={RightAction}
