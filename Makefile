@@ -210,29 +210,8 @@ all: version install app test node-all-platforms android
 .PHONY: ci
 ci: version install app node-all-platforms ci-upload-node
 
-.PHONY: ci-ios
-ci-ios: version install app
-	$(MAKE) ios
-	$(MAKE) ci-upload-ios
-
-.PHONY: ci-desktop-darwin
-ci-desktop-darwin: version install
-	./util/mac-codesign.sh \
-	&& for arch in amd64 arm64; do \
-		curl -v --fail-with-body -O "$$CI_API_V4_URL/projects/$$CI_PROJECT_ID/packages/generic/$(BRANCH)/$(VERSION)/streamplace-$(VERSION)-darwin-$$arch.tar.gz" || exit 1 \
-		&& tar -xzvf streamplace-$(VERSION)-darwin-$$arch.tar.gz \
-		&& ./streamplace --version \
-		&& ./streamplace self-test \
-		&& mkdir -p build-darwin-$$arch \
-		&& mv ./streamplace ./build-darwin-$$arch/streamplace; \
-	done \
-	&& $(MAKE) desktop-darwin \
-	&& for arch in amd64 arm64; do \
-		export file=streamplace-desktop-$(VERSION)-darwin-$$arch.zip \
-		&& $(MAKE) ci-upload-file upload_file=$$file \
-		&& export file=streamplace-desktop-$(VERSION)-darwin-$$arch.dmg \
-		&& $(MAKE) ci-upload-file upload_file=$$file; \
-	done
+.PHONY: ci-macos
+ci-macos: version install app node-all-platforms-macos ci-upload-node-macos ios ci-upload-ios
 
 .PHONY: ci-android
 ci-android: version install android ci-upload-android
@@ -435,40 +414,31 @@ windows-amd64-meson-setup:
 windows-amd64-startup-test:
 	bash -c 'set -euo pipefail && unbuffer wine64 ./build-windows-amd64/streamplace.exe self-test | cat'
 
-.PHONY: darwin-amd64
-darwin-amd64:
-	export CC=x86_64-apple-darwin24.4-clang \
-	&& export CROSS_COMPILE=1 \
-	&& meson setup --buildtype debugoptimized --cross-file util/osxcross-darwin-amd64.ini build-darwin-amd64 $(OPTS) \
-	&& meson compile -C build-darwin-amd64 streamplace \
-	&& ./util/osxcross-codesign.sh ./build-darwin-amd64/streamplace \
-	&& mkdir -p bin \
-	&& cd build-darwin-amd64 \
-	&& tar -czvf ../bin/streamplace-$(VERSION)-darwin-amd64.tar.gz ./streamplace \
-	&& cd -
-
-.PHONY: desktop-darwin-amd64
-desktop-darwin-amd64:
-	echo "TODO"
-
-.PHONY: darwin-amd64
-darwin-arm64:
-	export CC=aarch64-apple-darwin24.4-clang \
-	&& export CROSS_COMPILE=1 \
-	&& meson setup --buildtype debugoptimized --cross-file util/osxcross-darwin-arm64.ini build-darwin-arm64 $(OPTS) \
-	&& meson compile -C build-darwin-arm64 streamplace \
-	&& ./util/osxcross-codesign.sh ./build-darwin-arm64/streamplace \
-	&& mkdir -p bin \
-	&& cd build-darwin-arm64 \
+.PHONY: node-all-platforms-macos
+node-all-platforms-macos: app
+	meson setup --buildtype debugoptimized build-darwin-arm64 $(OPTS)
+	meson compile -C build-darwin-arm64
+	./util/mac-codesign.sh ./build-darwin-arm64/streamplace
+	cd build-darwin-arm64 \
 	&& tar -czvf ../bin/streamplace-$(VERSION)-darwin-arm64.tar.gz ./streamplace \
 	&& cd -
+	./build-darwin-arm64/streamplace --version
+	./build-darwin-arm64/streamplace self-test
+	$(MAKE) link-test-macos
+	rustup target add x86_64-apple-darwin
+	meson setup --buildtype debugoptimized --cross-file util/darwin-amd64-apple.ini build-darwin-amd64 $(OPTS)
+	meson compile -C build-darwin-amd64
+	./util/mac-codesign.sh ./build-darwin-amd64/streamplace
+	cd build-darwin-amd64 \
+	&& tar -czvf ../bin/streamplace-$(VERSION)-darwin-amd64.tar.gz ./streamplace \
+	&& cd -
+	./build-darwin-amd64/streamplace --version
+	./build-darwin-arm64/streamplace self-test
+	$(MAKE) desktop-macos
+	meson test -C build-darwin-arm64 go-tests
 
-.PHONY: desktop-darwin-arm64
-desktop-darwin-arm64:
-	echo "TODO"
-
-.PHONY: desktop-darwin
-desktop-darwin:
+.PHONY: desktop-macos
+desktop-macos:
 	export DEBUG="electron-osx-sign*" \
 	&& cd js/desktop \
 	&& pnpm run make --platform darwin --arch arm64 \
@@ -517,10 +487,9 @@ docker-build: docker-build-builder docker-build-in-container
 .PHONY: docker-test
 docker-test: docker-build-builder docker-test-in-container
 
-BUILDER_TARGET?=builder
 .PHONY: docker-build-builder
 docker-build-builder:
-	podman build --target=$(BUILDER_TARGET) --os=linux --arch=amd64 -f docker/build.Dockerfile -t dist.stream.place/streamplace/streamplace:$(BUILDER_TARGET) .
+	podman build --target=builder --os=linux --arch=amd64 -f docker/build.Dockerfile -t dist.stream.place/streamplace/streamplace:builder .
 
 .PHONY: golangci-lint-container
 golangci-lint-container: docker-build-builder
@@ -586,16 +555,6 @@ ci-upload-node-linux-arm64:
 	export file=streamplace-$(VERSION)-linux-arm64.tar.gz \
 	&& $(MAKE) ci-upload-file upload_file=$$file; \
 	export file=streamplace-desktop-$(VERSION)-linux-arm64.AppImage \
-	&& $(MAKE) ci-upload-file upload_file=$$file;
-
-.PHONY: ci-upload-node-darwin-arm64
-ci-upload-node-darwin-arm64:
-	export file=streamplace-$(VERSION)-darwin-arm64.tar.gz \
-	&& $(MAKE) ci-upload-file upload_file=$$file;
-
-.PHONY: ci-upload-node-darwin-amd64
-ci-upload-node-darwin-amd64:
-	export file=streamplace-$(VERSION)-darwin-amd64.tar.gz \
 	&& $(MAKE) ci-upload-file upload_file=$$file;
 
 .PHONY: ci-upload-node-windows-amd64

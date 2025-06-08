@@ -27,7 +27,6 @@ builder:
     entrypoint: [""]
   variables:
     FQ_IMAGE_NAME: "$DOCKER_REPO:builder-$DOCKERFILE_HASH"
-    TARGET: builder
   timeout: 2 hours
   script:
     - mkdir -p /kaniko/.docker
@@ -39,11 +38,8 @@ builder:
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/docker/build.Dockerfile"
       --destination "$FQ_IMAGE_NAME"
-      --target "$TARGET"
 
 builder-rebuild:
-  tags:
-    - tiny-job
   stage: build
   allow_failure: true
   interruptible: true
@@ -93,18 +89,6 @@ build-windows-amd64:
     - .build
   variables:
     TARGET: windows-amd64
-
-build-darwin-arm64:
-  extends:
-    - .build
-  variables:
-    TARGET: darwin-arm64
-
-build-darwin-amd64:
-  extends:
-    - .build
-  variables:
-    TARGET: darwin-amd64
 
 leak-test-viewers:
   stage: build
@@ -277,7 +261,7 @@ build-android-release:
   variables:
     TARGET: ci-android-release
 
-.build-on-mac:
+build-mac:
   stage: build
   interruptible: true
   image: macos-sonoma-xcode-big
@@ -315,23 +299,7 @@ build-android-release:
       && python3 -m virtualenv ~/venv
       && source ~/venv/bin/activate
       && python3 -m pip install meson
-      && ${=COMMAND}
-    # ^^ zsh-ism for running command with spaces
-
-build-ios:
-  extends:
-    - .build-on-mac
-  variables:
-    COMMAND: make ci-ios -j16
-
-build-desktop-darwin:
-  extends:
-    - .build-on-mac
-  needs:
-    - build-darwin-amd64
-    - build-darwin-arm64
-  variables:
-    COMMAND: make ci-desktop-darwin
+      && make ci-macos -j16
 
 windows-selftest:
   interruptible: true
@@ -355,8 +323,7 @@ release:
   interruptible: true
   image: "$DOCKER_REPO:builder-$DOCKERFILE_HASH"
   needs:
-    - build-darwin-amd64
-    - build-darwin-arm64
+    - build-mac
     - build-android-debug
     - build-android-release
     - build-docker-amd64
