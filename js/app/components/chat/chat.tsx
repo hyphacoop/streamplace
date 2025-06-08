@@ -1,9 +1,10 @@
 import {
   useChat,
   useProfile,
+  useReplyToMessage,
   useSetReplyToMessage,
 } from "@streamplace/components";
-import { Reply, Settings, X } from "@tamagui/lucide-icons";
+import { Reply, ReplyAll, Settings, X } from "@tamagui/lucide-icons";
 import {
   createBlockRecord,
   selectUserProfile,
@@ -27,6 +28,7 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { ChatMessageViewHydrated } from "streamplace";
 import { Button, ScrollView, Sheet, Text, useMedia, View } from "tamagui";
 import { RichtextSegment, segmentize } from "../../utils/facet";
 
@@ -237,12 +239,11 @@ function ChatMessageRow({
   const close = () => {
     let current: any = swipeableRef.current;
     if (current) {
-      console.log("closing swipeable");
       current.close();
     }
   };
 
-  const currentReplyTo = useAppSelector(useReplyToMessage());
+  const currentReplyTo = useReplyToMessage();
 
   const moderateMessage = () => {
     if (!myStream) {
@@ -554,13 +555,7 @@ const RichTextMessage = ({
 
   let segs = segmentize(text, facets);
 
-<<<<<<< HEAD
-  return segs.map((seg, i) =>
-    segmentedObject(seg, chat as ChatMessageViewHydrated[], i),
-  );
-=======
   return segs.map((seg, i) => segmentedObject(seg, chat, i));
->>>>>>> 0d25913a (Add swipe-to-reply gesture + offset hover action box so text is readable)
 };
 
 export function timeAgo(time: Date | number | string): string {
