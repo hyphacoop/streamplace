@@ -20,7 +20,6 @@ import {
   Link,
   Mention,
 } from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
-import { $Typed } from "@atproto/api/src/client/util";
 import ReanimatedSwipeable, {
   SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
