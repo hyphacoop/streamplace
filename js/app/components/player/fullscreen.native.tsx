@@ -1,26 +1,39 @@
 import { useNavigation } from "@react-navigation/native";
+import {
+  PlayerProtocol,
+  useLivestreamStore,
+  usePlayerStore,
+} from "@streamplace/components";
 import { VideoView } from "expo-video";
-import { usePlayerProtocol } from "features/player/playerSlice";
 import { useEffect, useRef, useState } from "react";
 import { BackHandler, Dimensions, StatusBar, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSelector } from "store/hooks";
 import { View } from "tamagui";
 import Controls from "./controls";
 import PlayerLoading from "./player-loading";
-import { PlayerProps, PROTOCOL_WEBRTC } from "./props";
 import VideoRetry from "./video-retry";
 import Video from "./video.native";
 
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-export default function Fullscreen(props: PlayerProps) {
+export function Fullscreen(props: { src: string; playerId?: string }) {
   const ref = useRef<VideoView>(null);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
-  const protocol = useAppSelector(usePlayerProtocol());
+
+  // Get state from player store
+  const protocol = usePlayerStore((x) => x.protocol);
+  const fullscreen = usePlayerStore((x) => x.fullscreen);
+  const setFullscreen = usePlayerStore((x) => x.setFullscreen);
+  const handle = useLivestreamStore((x) => x.profile?.handle);
+
+  const setSrc = usePlayerStore((x) => x.setSrc);
+
+  useEffect(() => {
+    setSrc(props.src);
+  }, [props.src]);
 
   // Re-calculate dimensions on orientation change
   useEffect(() => {
@@ -40,7 +53,7 @@ export default function Fullscreen(props: PlayerProps) {
 
   // Hide status bar when in fullscreen mode
   useEffect(() => {
-    if (props.fullscreen) {
+    if (fullscreen) {
       StatusBar.setHidden(true);
       console.log("setting sidebar hidden");
 
@@ -53,7 +66,7 @@ export default function Fullscreen(props: PlayerProps) {
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
         () => {
-          props.setFullscreen(false);
+          setFullscreen(false);
           return true;
         },
       );
@@ -77,31 +90,32 @@ export default function Fullscreen(props: PlayerProps) {
         headerShown: true,
       });
     };
-  }, [props.fullscreen, navigation]);
+  }, [fullscreen, navigation, setFullscreen]);
 
-  const setFullscreen = (on) => {
-    // For WebRTC, use custom fullscreen implementation
-    if (protocol === PROTOCOL_WEBRTC) {
-      props.setFullscreen(on);
+  // Handle fullscreen state changes for native video players
+  useEffect(() => {
+    // For WebRTC, we handle fullscreen manually via the custom implementation
+    if (protocol === PlayerProtocol.WEBRTC) {
       return;
     }
 
-    // For HLS and other protocols, use native fullscreen
+    // For HLS and other protocols, sync with native fullscreen
     if (ref.current) {
-      if (on) {
+      if (fullscreen) {
         ref.current.enterFullscreen();
       } else {
         ref.current.exitFullscreen();
       }
     }
-  };
+  }, [fullscreen, protocol]);
 
-  if (props.fullscreen && protocol === PROTOCOL_WEBRTC) {
+  if (fullscreen && protocol === PlayerProtocol.WEBRTC) {
     // Determine if we're in landscape mode
     const isLandscape = dimensions.width > dimensions.height;
 
     // Calculate video container dimensions based on screen size and orientation
-    let videoWidth, videoHeight;
+    let videoWidth: number;
+    let videoHeight: number;
 
     if (isLandscape) {
       // In landscape, account for safe areas and use available height
@@ -149,11 +163,11 @@ export default function Fullscreen(props: PlayerProps) {
             },
           ]}
         >
-          <VideoRetry {...props}>
-            <Video {...props} nativeVideoRef={ref} />
+          <VideoRetry>
+            <Video />
           </VideoRetry>
-          <PlayerLoading {...props} />
-          <Controls {...props} setFullscreen={setFullscreen} />
+          <PlayerLoading />
+          <Controls name={handle || "Streaming"} playerId={props.playerId} />
         </View>
       </View>
     );
@@ -162,10 +176,10 @@ export default function Fullscreen(props: PlayerProps) {
   // Normal non-fullscreen mode
   return (
     <>
-      <PlayerLoading {...props}></PlayerLoading>
-      <Controls {...props} setFullscreen={setFullscreen} />
-      <VideoRetry {...props}>
-        <Video {...props} nativeVideoRef={ref} />
+      <PlayerLoading />
+      <Controls name={handle || ""} playerId={props.playerId} />
+      <VideoRetry>
+        <Video />
       </VideoRetry>
     </>
   );

@@ -1,15 +1,20 @@
-import { usePlayerSelectedRendition } from "features/player/playerSlice";
+import {
+  PlayerStatus,
+  usePlayerStore,
+  useStreamplaceStore,
+} from "@streamplace/components";
 import React, { useEffect, useState } from "react";
-import { useAppSelector } from "store/hooks";
-import { PlayerProps, PlayerStatus } from "./props";
 
-export default function VideoRetry(
-  props: PlayerProps & { children: React.ReactNode },
-) {
+export default function VideoRetry(props: { children: React.ReactNode }) {
   const [resetTime, setResetTime] = useState<number>(Date.now());
   const [retryCount, setRetryCount] = useState(0);
-  const isPlaying = props.status === PlayerStatus.PLAYING;
-  const selectedRendition = useAppSelector(usePlayerSelectedRendition());
+
+  const status = usePlayerStore((x) => x.status);
+  const playerEvent = usePlayerStore((x) => x.playerEvent);
+
+  const spurl = useStreamplaceStore((x) => x.url);
+
+  const isPlaying = status === PlayerStatus.PLAYING;
 
   useEffect(() => {
     if (isPlaying) {
@@ -25,17 +30,13 @@ export default function VideoRetry(
       // console.log(`retrying (attempt ${retryCount + 1}, delay: ${delay}ms)`);
       setResetTime(Date.now());
       setRetryCount((prev) => prev + 1);
-      props.playerEvent(new Date().toISOString(), "retry", {
+      playerEvent(spurl, new Date().toISOString(), "retry", {
         delay,
       });
     }, delay);
 
     return () => clearTimeout(handle);
-  }, [isPlaying, resetTime, retryCount]);
+  }, [isPlaying, resetTime, retryCount, playerEvent]);
 
-  return (
-    <React.Fragment key={`${selectedRendition}-${resetTime}`}>
-      {props.children}
-    </React.Fragment>
-  );
+  return <React.Fragment>{props.children}</React.Fragment>;
 }

@@ -11,11 +11,7 @@ import { ScrollView } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Button, H3, Label, Paragraph, Text, TextArea, View } from "tamagui";
 
-export default function UpdateLivestream({
-  playerId,
-}: {
-  playerId: string | null;
-}) {
+export default function UpdateLivestream() {
   const dispatch = useAppDispatch();
   const toast = useToastController();
   const userIsLive = useLiveUser();
@@ -42,16 +38,16 @@ export default function UpdateLivestream({
   }, [newLivestream?.error]);
   const disabled = !userIsLive || loading || title === "";
 
-  if (!playerId) {
-    return (
-      <View justifyContent="center" alignContent="center">
-        <Text>
-          Couldn't get the player ID. You may not have created an initial
-          livestream record.
-        </Text>
-      </View>
-    );
-  }
+  // if (!playerId) {
+  //   return (
+  //     <View justifyContent="center" alignContent="center">
+  //       <Text>
+  //         Couldn't get the player ID. You may not have created an initial
+  //         livestream record.
+  //       </Text>
+  //     </View>
+  //   );
+  // }
 
   const handleSubmit = async () => {
     setLoading(true);

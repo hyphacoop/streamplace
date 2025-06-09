@@ -5,7 +5,6 @@ import { baseSlice } from "features/base/baseSlice";
 import { sidebarSlice } from "features/base/sidebarSlice";
 import { blueskySlice } from "features/bluesky/blueskySlice";
 import { platformSlice } from "features/platform/platformSlice";
-import { playerSlice } from "features/player/playerSlice";
 import { streamplaceSlice } from "features/streamplace/streamplaceSlice";
 
 import { listenerMiddleware } from "./listener";
@@ -14,7 +13,6 @@ const rootReducer = combineSlices(
   blueskySlice,
   streamplaceSlice,
   platformSlice,
-  playerSlice,
   sidebarSlice,
   baseSlice,
 );

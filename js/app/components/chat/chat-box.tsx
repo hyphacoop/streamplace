@@ -21,10 +21,6 @@ import {
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import {
-  LivestreamViewHydrated,
-  usePlayerId,
-} from "features/player/playerSlice";
-import {
   chatWarn,
   selectChatWarned,
 } from "features/streamplace/streamplaceSlice";
@@ -32,7 +28,7 @@ import { usePreloadEmoji } from "hooks/usePreloadEmoji";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { ChatMessageViewHydrated } from "streamplace";
+import { ChatMessageViewHydrated, LivestreamViewHydrated } from "streamplace";
 import { Button, Form, Input, isWeb, Text, TextArea, View } from "tamagui";
 import EmojiSuggestions, { EmojiSuggestion } from "./emoji-suggestions";
 import MentionSuggestions, { MentionSuggestion } from "./mention-suggestions";
@@ -82,7 +78,6 @@ export default function ChatBox({
   const textAreaRef = useRef<Input>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigation();
-  const playerId = usePlayerId();
   const replyTo = useReplyToMessage();
   const setReplyToMessage = useSetReplyToMessage();
   if (isWeb) usePreloadEmoji({ immediate: true });

@@ -1,6 +1,6 @@
+import { LivestreamProvider } from "@streamplace/components";
 import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
-import PlayerProvider from "components/player/provider";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useAppSelector } from "store/hooks";
 import { View } from "tamagui";
@@ -12,7 +12,7 @@ export default function PopoutChat({ route }) {
   }
   const profile = useAppSelector(selectUserProfile);
   return (
-    <PlayerProvider src={user}>
+    <LivestreamProvider src={user}>
       <View position="relative" f={1}>
         <View
           f={1}
@@ -25,6 +25,6 @@ export default function PopoutChat({ route }) {
           {profile && <ChatBox isPopout={true} />}
         </View>
       </View>
-    </PlayerProvider>
+    </LivestreamProvider>
   );
 }

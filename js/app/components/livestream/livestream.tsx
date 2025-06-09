@@ -1,4 +1,5 @@
 import {
+  LivestreamProvider,
   useLivestream,
   useProfile,
   useSegment,
@@ -13,13 +14,15 @@ import Avatar from "components/home/avatar";
 import Loading from "components/loading/loading";
 import { Player } from "components/player/player";
 import { PlayerProps } from "components/player/props";
-import PlayerProvider from "components/player/provider";
 import Popup from "components/popup";
 import Timer from "components/timer";
 import Viewers from "components/viewers";
 import { useFullscreen } from "contexts/FullscreenContext";
-import { getProfile, selectProfiles } from "features/bluesky/blueskySlice";
-import { usePlayer } from "features/player/playerSlice";
+import {
+  setSidebarHidden,
+  setSidebarUnhidden,
+} from "features/base/sidebarSlice";
+import { getProfile } from "features/bluesky/blueskySlice";
 import {
   selectTelemetry,
   telemetryOpt,
@@ -47,17 +50,19 @@ import {
 } from "tamagui";
 
 export default function Livestream(props: Partial<PlayerProps>) {
+  if (props.src === undefined) {
+    console.error("Livestream: src prop is required");
+    return <Text>Source is undefined</Text>;
+  }
   return (
-    <PlayerProvider {...props}>
+    <LivestreamProvider src={props.src} {...props}>
       <LivestreamInner {...props} />
-    </PlayerProvider>
+    </LivestreamProvider>
   );
 }
 
 export function LivestreamInner(props: Partial<PlayerProps>) {
   const telemetry = useAppSelector(selectTelemetry);
-  const player = useAppSelector(usePlayer());
-  const profiles = useAppSelector(selectProfiles);
   const toast = useToastController();
   const viewers = useViewers();
 
@@ -77,6 +82,14 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const [offline, setOffline] = useState(true);
   const [currentUserDID, setCurrentUserDID] = useState<string | null>(null);
   const { fullscreen, setFullscreen } = useFullscreen();
+
+  useEffect(() => {
+    if (fullscreen) {
+      dispatch(setSidebarHidden());
+    } else {
+      dispatch(setSidebarUnhidden());
+    }
+  }, [setFullscreen]);
 
   const livestream = useLivestream();
   const streamerProfile = useProfile();
@@ -151,23 +164,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     }
   };
 
-  if (fullscreen) {
-    return (
-      <RNView style={{ flex: 1 }}>
-        <Player
-          telemetry={telemetry === true}
-          src={src}
-          fullscreen={fullscreen}
-          setFullscreen={setFullscreen}
-          {...extraProps}
-        />
-      </RNView>
-    );
-  }
-
-  // if < xs, then regular view else ScrollView
   const MainView = width < 660 ? View : ScrollView;
-
   return (
     <RNView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }} onLayout={onOuterLayout}>
@@ -245,9 +242,9 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
               zIndex={2}
             >
               <View
-                maxHeight={height * 0.95}
-                $gtLg={{ maxHeight: height * 0.9 }}
-                $gtXxl={{ maxHeight: height * 0.85 }}
+                maxHeight={height}
+                $gtLg={{ maxHeight: height }}
+                $gtXxl={{ maxHeight: height }}
                 $platform-ios={{
                   height: videoHeight,
                 }}
@@ -417,7 +414,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     </RNView>
   );
 }
-
 async function getCurrentUserDID(): Promise<string | null> {
   try {
     const did = await storage.getItem(
