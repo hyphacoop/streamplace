@@ -450,30 +450,6 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
-          name="KeyManagement"
-          component={KeyManager}
-          options={{
-            drawerLabel: () => <Text>Key Manager</Text>,
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-        <Drawer.Screen
-          name="KeyManagement"
-          component={KeyManager}
-          options={{
-            drawerLabel: () => <Text>Key Manager</Text>,
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-        <Drawer.Screen
-          name="KeyManagement"
-          component={KeyManager}
-          options={{
-            drawerLabel: () => <Text>Key Manager</Text>,
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-        <Drawer.Screen
           name="Support"
           component={SupportScreen}
           options={{
