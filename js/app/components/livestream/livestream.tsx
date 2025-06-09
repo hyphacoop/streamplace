@@ -9,6 +9,7 @@ import { useToastController } from "@tamagui/toast";
 import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
 import FollowButton from "components/follow-button";
+import Avatar from "components/home/avatar";
 import Loading from "components/loading/loading";
 import { Player } from "components/player/player";
 import { PlayerProps } from "components/player/props";
@@ -23,6 +24,7 @@ import {
   selectTelemetry,
   telemetryOpt,
 } from "features/streamplace/streamplaceSlice";
+import useAvatars from "hooks/useAvatars";
 import { useKeyboard } from "hooks/useKeyboard";
 import usePlatform from "hooks/usePlatform";
 import { useCallback, useEffect, useState } from "react";
@@ -36,9 +38,9 @@ import storage from "storage";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   Button,
-  H2,
   H3,
   isWeb,
+  ScrollView,
   Text,
   useWindowDimensions,
   View,
@@ -84,6 +86,10 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
   const startTime = livestream?.record?.createdAt
     ? new Date(livestream?.record?.createdAt)
     : undefined;
+
+  const didArr = livestream?.author?.did ? [livestream?.author?.did] : [];
+
+  const avi = useAvatars(didArr)[didArr[0]];
 
   // this would all be really easy if i had library that would give me the
   // safe area view height and width but i don't. so let's measure
@@ -159,6 +165,9 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     );
   }
 
+  // if < xs, then regular view else ScrollView
+  const MainView = width < 660 ? View : ScrollView;
+
   return (
     <RNView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }} onLayout={onOuterLayout}>
@@ -227,99 +236,145 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
             $gtXs={{ flexDirection: "row" }}
             zIndex={2}
           >
-            <View
+            <MainView
               width={videoWidth}
-              height={videoHeight}
-              maxHeight="100%"
+              height="100%"
+              maxHeight={videoHeight}
               fs={0}
-              $gtXs={{ fs: 1 }}
+              $gtXs={{ fs: 1, maxHeight: "100%" }}
               zIndex={2}
             >
-              <Player
-                telemetry={telemetry === true}
-                src={src}
-                fullscreen={fullscreen}
-                setFullscreen={setFullscreen}
-                {...extraProps}
-              />
               <View
-                height={100}
+                maxHeight={height * 0.95}
+                $gtLg={{ maxHeight: height * 0.9 }}
+                $gtXxl={{ maxHeight: height * 0.85 }}
+                $platform-ios={{
+                  height: videoHeight,
+                }}
+              >
+                <Player
+                  telemetry={telemetry === true}
+                  src={src}
+                  fullscreen={fullscreen}
+                  setFullscreen={setFullscreen}
+                  {...extraProps}
+                />
+              </View>
+              <View
                 fg={0}
-                p="$4"
-                display="none"
-                flexDirection="column"
-                $gtXs={{ display: "flex" }}
+                px="$4"
+                py="$2"
+                flexDirection="row"
+                justifyContent="space-between"
+                maxWidth="100%"
+                bg="$black3"
+                borderBottomWidth="$0.5"
+                borderTopWidth="$0.5"
+                borderColor="$black5"
+                $gtXs={{
+                  bg: "$colorTransparent",
+                  py: "$4",
+                  borderBottomWidth: 0,
+                  borderTopWidth: 0,
+                }}
               >
                 <View
                   flexDirection="row"
-                  alignItems="center"
+                  alignItems="flex-start"
                   justifyContent="space-between"
-                  width="100%"
                 >
                   <View
                     flexDirection="row"
                     alignItems="center"
-                    gap="$2"
+                    gap="$3"
                     minWidth={0}
+                    flexShrink={1}
+                    overflow="hidden"
                   >
-                    {streamerDID && !streamerHandle ? (
-                      // Skeleton loader for handle
-                      <Text>&nbsp;</Text>
-                    ) : (
-                      streamerHandle && (
-                        <Text
-                          onPress={() =>
-                            Linking.openURL(
-                              `https://bsky.app/profile/${streamerHandle}`,
-                            )
-                          }
-                          aria-label={`View @${streamerHandle} on Bluesky`}
-                        >
-                          {`@${streamerHandle}`}
-                        </Text>
-                      )
-                    )}
-                    {streamerDID && streamerHandle && currentUserDID && (
-                      <FollowButton
-                        streamerDID={streamerDID}
-                        currentUserDID={currentUserDID}
-                        onFollowChange={handleFollowChange}
-                      />
-                    )}
-                  </View>
-                  <View flexDirection="row" alignItems="center" gap="$2">
-                    {startTime instanceof Date && !offline && (
-                      <Timer start={startTime} />
-                    )}
-                    <Viewers viewers={viewers ?? 0} />
-                    <Button
-                      backgroundColor="transparent"
-                      onPress={() => setIsChatVisible(!isChatVisible)}
-                      marginLeft="$2"
+                    <Avatar src={avi?.avatar} />
+                    <View
+                      flexDirection="column"
+                      alignItems="flex-start"
+                      gap="$2"
+                      minWidth={0}
+                      overflow="hidden"
                     >
-                      {isChatVisible ? (
-                        <MessageCircleOff size={22} />
-                      ) : (
-                        <MessageCircleMore size={22} />
-                      )}
-                    </Button>
+                      <View
+                        flexDirection="row"
+                        alignItems="center"
+                        flexShrink={1}
+                        minWidth={0}
+                      >
+                        {streamerDID && !streamerHandle ? (
+                          // Skeleton loader for handle
+                          <Text>&nbsp;</Text>
+                        ) : (
+                          streamerHandle && (
+                            <Text
+                              onPress={() =>
+                                Linking.openURL(
+                                  `https://bsky.app/profile/${streamerHandle}`,
+                                )
+                              }
+                              hoverStyle={{
+                                color: "$blue11",
+                              }}
+                              aria-label={`View @${streamerHandle} on Bluesky`}
+                              style={{ cursor: "pointer" }}
+                              ellipse={true}
+                            >
+                              {`@${streamerHandle}`}
+                            </Text>
+                          )
+                        )}
+                        {streamerDID && streamerHandle && currentUserDID && (
+                          <FollowButton
+                            streamerDID={streamerDID}
+                            currentUserDID={currentUserDID}
+                            onFollowChange={handleFollowChange}
+                          />
+                        )}
+                      </View>
+                      <Text
+                        fontSize="$6"
+                        numberOfLines={1}
+                        ellipse={true}
+                        maxWidth="100%"
+                        minWidth={0}
+                        flexShrink={1}
+                      >
+                        {livestream?.record.title}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-                <View width="100%" marginTop={4}>
-                  <H2
-                    maxWidth="100%"
-                    lineHeight={32}
-                    numberOfLines={
-                      typeof window !== "undefined" && window.innerWidth < 600
-                        ? 1
-                        : undefined
-                    }
+                <View
+                  flexDirection="row"
+                  alignItems="center"
+                  gap="$2"
+                  display="none"
+                  $gtXs={{ display: "flex" }}
+                >
+                  {startTime instanceof Date && !offline && (
+                    <Timer start={startTime} />
+                  )}
+                  <Viewers viewers={viewers ?? 0} />
+                  <Button
+                    backgroundColor="transparent"
+                    onPress={() => setIsChatVisible(!isChatVisible)}
+                    marginLeft="$2"
+                    display="none"
+                    $gtXs={{ display: "flex" }}
                   >
-                    {livestream?.record.title}
-                  </H2>
+                    {isChatVisible ? (
+                      <MessageCircleOff size={22} />
+                    ) : (
+                      <MessageCircleMore size={22} />
+                    )}
+                  </Button>
                 </View>
               </View>
-            </View>
+            </MainView>
 
             <View
               f={1}
@@ -345,78 +400,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                   : undefined
               }
             >
-              {/* Native potrait view: first row = handle/follow/viewers, second row = title */}
-              <View
-                $gtXs={{ display: "none" }}
-                flexDirection="column"
-                borderBottomColor="#666"
-                borderBottomWidth={1}
-                borderTopColor="#666"
-                borderTopWidth={1}
-                zIndex={1}
-              >
-                <View
-                  flexDirection="row"
-                  alignItems="center"
-                  gap="$2"
-                  paddingTop="$1"
-                  paddingBottom="$1"
-                  paddingLeft="$3"
-                  paddingRight="$3"
-                  justifyContent="space-between"
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      flex: 1,
-                      gap: 8,
-                      minWidth: 0,
-                    }}
-                  >
-                    {streamerDID && !streamerHandle ? (
-                      // Skeleton loader for handle
-                      <Text>&nbsp;</Text>
-                    ) : (
-                      streamerHandle && (
-                        <Text
-                          onPress={() =>
-                            Linking.openURL(
-                              `https://bsky.app/profile/${streamerHandle}`,
-                            )
-                          }
-                          aria-label={`View @${streamerHandle} on Bluesky`}
-                          style={{ cursor: isWeb ? "pointer" : undefined }} // iOS literally crashes otherwise idk
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {`@${streamerHandle}`}
-                        </Text>
-                      )
-                    )}
-                    {streamerDID && streamerHandle && currentUserDID && (
-                      <FollowButton
-                        streamerDID={streamerDID}
-                        currentUserDID={currentUserDID}
-                        onFollowChange={handleFollowChange}
-                      />
-                    )}
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Viewers viewers={viewers ?? 0} />
-                  </View>
-                </View>
-                <View
-                  paddingLeft="$3"
-                  paddingRight="$3"
-                  paddingBottom="$3"
-                  marginTop={-15}
-                >
-                  <Text fontSize={18} numberOfLines={1} ellipsizeMode="tail">
-                    {livestream?.record.title}
-                  </Text>
-                </View>
-              </View>
               <Chat
                 isChatVisible={isChatVisible}
                 setIsChatVisible={setIsChatVisible}
