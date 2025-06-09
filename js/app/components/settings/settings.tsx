@@ -1,3 +1,7 @@
+import { useNavigation } from "@react-navigation/native";
+import { ArrowRight } from "@tamagui/lucide-icons";
+import AQLink from "components/aqlink";
+import Container from "components/container";
 import {
   DEFAULT_URL,
   selectTelemetry,
@@ -6,9 +10,8 @@ import {
 } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
-import { Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, Form, H3, Input, Text, View, XStack, isWeb } from "tamagui";
+import { Button, H3, H5, Input, Switch, Text, View, XStack } from "tamagui";
 import { Updates } from "./updates";
 
 export function Settings() {
@@ -18,12 +21,19 @@ export function Settings() {
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
 
+  // are we logged in?
+  const loggedIn = useAppSelector(
+    (state) => state.bluesky.status === "loggedIn",
+  );
+
+  const navigate = useNavigation();
+
   // Initialize the override state based on current URL
   useEffect(() => {
     setOverrideEnabled(url !== defaultUrl);
   }, [url, defaultUrl]);
 
-  const onSubmit = () => {
+  const onSubmitUrl = () => {
     if (newUrl) {
       dispatch(setURL(newUrl));
       setNewUrl("");
@@ -39,116 +49,129 @@ export function Settings() {
 
   const telemetry = useAppSelector(selectTelemetry);
 
+  const handleTelemetryToggle = (checked: boolean) => {
+    dispatch(telemetryOpt(checked));
+  };
+
   return (
-    <View f={1} alignItems="stretch" justifyContent="center" fg={1}>
-      <Updates />
-      <Form
-        fg={1}
-        flexBasis={0}
-        alignItems="center"
-        justifyContent="center"
-        padding="$4"
-        onSubmit={onSubmit}
+    <Container alignItems="center" justifyContent="center">
+      <View
+        f={1}
+        alignItems="stretch"
+        justifyContent="flex-start"
+        mt="$8"
+        maxWidth={500}
+        $platform-web={{ width: "100%" }}
+        gap="$6"
       >
-        <View
-          alignItems="center"
-          justifyContent="center"
-          gap="$2"
-          fg={1}
-          flexBasis={0}
-          backgroundColor="rgba(0, 0, 0, 0.1)"
-        >
-          <XStack alignItems="center" justifyContent="space-around">
-            <View>
-              <XStack width={isWeb ? "100%" : "75%"}>
-                <H3 fontSize="$8">Use custom node</H3>
-                <Switch
-                  accessibilityLabel="Use custom node"
-                  accessibilityHint="Toggle to use a custom node"
-                  style={{
-                    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
-                    marginLeft: 20,
-                    marginTop: isWeb ? 8 : 4,
-                  }}
-                  value={overrideEnabled}
-                  onValueChange={handleToggleOverride}
-                />
-              </XStack>
-              <Text
-                fontSize="$6"
-                color="$gray10"
-                style={{ opacity: overrideEnabled ? 0 : 1 }}
-                numberOfLines={1}
-                ellipsizeMode="middle"
-                maxWidth={280}
+        <View maxHeight={200}>
+          <Updates />
+        </View>
+
+        <View alignItems="center" justifyContent="center" gap="$4">
+          <XStack
+            alignItems="stretch"
+            justifyContent="space-between"
+            width="100%"
+            flexDirection="column"
+          >
+            <View
+              flexDirection="row"
+              alignItems="center"
+              justifyContent="space-between"
+              flex={1}
+            >
+              <View flex={1} pr="$3">
+                <H3 fontSize="$7">Use Custom Node</H3>
+                <Text fontSize="$5" color="$gray10">
+                  Default: {url}
+                </Text>
+              </View>
+              <Switch
+                size="small"
+                checked={overrideEnabled}
+                onCheckedChange={handleToggleOverride}
               >
-                Default node: {url}
-              </Text>
+                <Switch.Thumb animation="bouncy" />
+              </Switch>
             </View>
           </XStack>
 
+          {/* Custom URL Input Row */}
           <XStack
-            alignItems="stretch"
+            alignItems="center" // Changed to center
             gap="$2"
-            width={isWeb ? "100%" : "75%"}
             style={{
               opacity: overrideEnabled ? 1 : 0,
-              marginTop: -15,
+              height: overrideEnabled ? "auto" : 0, // Collapse when hidden
+              overflow: "hidden", // Hide overflow when collapsed
+              transition: "opacity 0.2s ease-in-out, height 0.2s ease-in-out",
             }}
           >
             <Input
               value={newUrl}
               flex={1}
-              size="$3"
-              placeholder={url}
-              onChangeText={(t) => setNewUrl(t)}
-              onSubmitEditing={onSubmit}
+              size="$4"
+              placeholder={url || "Enter custom node URL"}
+              onChangeText={setNewUrl}
+              onSubmitEditing={onSubmitUrl}
               textContentType="URL"
               autoCapitalize="none"
               autoCorrect={false}
+              keyboardType="url"
             />
-            <Form.Trigger asChild>
-              <Button size="$3">SAVE</Button>
-            </Form.Trigger>
+            <Button size="$4" onPress={onSubmitUrl}>
+              <Text>SAVE</Text>
+            </Button>
           </XStack>
         </View>
-      </Form>
-      <View
-        alignItems="center"
-        justifyContent="center"
-        gap="$2"
-        fg={1}
-        flexBasis={0}
-      >
-        <XStack alignItems="center" gap="$6">
-          <View>
-            <H3 fontSize="$8">Player Telemetry</H3>
-            <Text
-              fontSize="$6"
-              color="$gray10"
-              style={{ position: "absolute", bottom: -15 }}
+
+        <View alignItems="center" justifyContent="center" gap="$4">
+          <XStack
+            alignItems="center"
+            justifyContent="space-between"
+            width="100%"
+          >
+            <View flex={1} pr="$3">
+              <H3 fontSize="$7">Player Telemetry</H3>
+              <Text fontSize="$5" color="$gray10">
+                Optional
+              </Text>
+            </View>
+            <Switch
+              size="$3"
+              checked={telemetry === true}
+              onCheckedChange={handleTelemetryToggle}
+              theme="purple"
             >
-              Optional
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="Player Telemetry"
-            accessibilityHint="Toggle to enable player telemetry"
-            style={{
-              transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
-              marginTop: isWeb ? 0 : 8,
+              <Switch.Thumb animation="bouncy" />
+            </Switch>
+          </XStack>
+        </View>
+
+        {loggedIn && (
+          <AQLink
+            to={{
+              screen: "KeyManagement",
             }}
-            value={telemetry === true}
-            onValueChange={(checked) => {
-              if (checked === true) {
-                dispatch(telemetryOpt(true));
-              } else {
-                dispatch(telemetryOpt(false));
-              }
-            }}
-          />
-        </XStack>
+          >
+            <View
+              flexDirection="row"
+              gap="$2"
+              alignItems="center"
+              justifyContent="center"
+              borderWidth={1}
+              borderColor="$color.gray3Dark"
+              padding="$2"
+              borderRadius="$4"
+              backgroundColor="$color.gray1Dark"
+            >
+              <H5>Manage Keys</H5>
+              <ArrowRight size="$1" />
+            </View>
+          </AQLink>
+        )}
       </View>
-    </View>
+    </Container>
   );
 }

@@ -36,7 +36,6 @@ export default function LiveDashboard() {
   );
 
   const [playerId, setPlayerId] = useState<string | null>(null);
-
   const [page, setPage] = useState<"update" | "create">("create");
 
   const videoRef = useCallback((node: HTMLVideoElement | null) => {

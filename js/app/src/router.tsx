@@ -73,6 +73,7 @@ import SupportScreen from "./screens/support";
 
 // probabl should move this
 import SignUp from "components/login/signup";
+import KeyManager from "components/settings/key-manager";
 import { loadStateFromStorage } from "features/base/sidebarSlice";
 import { store } from "store/store";
 import HomeScreen from "./screens/home";
@@ -102,6 +103,7 @@ type RootStackParamList = {
   Multi: { config: string };
   Support: undefined;
   Settings: undefined;
+  KeyManagement: undefined;
   GoLive: undefined;
   LiveDashboard: undefined;
   Login: undefined;
@@ -135,6 +137,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Multi: "multi/:config",
       Support: "support",
       Settings: "settings",
+      KeyManagement: "key-management",
       GoLive: "golive",
       LiveDashboard: "live",
       Login: "login",
@@ -430,6 +433,14 @@ export function StreamplaceDrawer() {
           }}
         />
 
+        <Drawer.Screen
+          name="KeyManagement"
+          component={KeyManager}
+          options={{
+            drawerLabel: () => <Text>Key Manager</Text>,
+            drawerItemStyle: { display: "none" },
+          }}
+        />
         <Drawer.Screen
           name="Support"
           component={SupportScreen}
