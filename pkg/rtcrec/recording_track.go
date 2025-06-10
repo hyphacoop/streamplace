@@ -13,10 +13,6 @@ type RecordingTrackRemote struct {
 	pc     *RecordingPeerConnection
 }
 
-func (t *RecordingTrackRemote) do(f func()) {
-	go f()
-}
-
 func (t *RecordingTrackRemote) Read(p []byte) (n int, attrs interceptor.Attributes, err error) {
 	n, attrs, err = t.track.Read(p)
 	now := time.Now()

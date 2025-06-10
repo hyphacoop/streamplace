@@ -40,7 +40,7 @@ func (pc *ReplayPeerConnection) wait(label string, t time.Time) <-chan time.Time
 }
 
 func (pc *ReplayPeerConnection) Close() error {
-	// todo: implment stopping here
+	// todo: implement stopping here
 	return nil
 }
 

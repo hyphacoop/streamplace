@@ -52,6 +52,11 @@ func (pc *RecordingPeerConnection) Do(f func()) {
 }
 
 func (pc *RecordingPeerConnection) Close() error {
+	pc.Do(func() {
+		// This is sloppy but there might be other goroutines still writing so let's chill for a sec
+		time.Sleep(10 * time.Second)
+		pc.file.Close()
+	})
 	return pc.pionpc.Close()
 }
 
