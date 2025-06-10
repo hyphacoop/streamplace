@@ -49,10 +49,12 @@ type Model interface {
 	GetRepoByHandle(handle string) (*Repo, error)
 	GetRepoByHandleOrDID(arg string) (*Repo, error)
 	GetRepoBySigningKey(signingKey string) (*Repo, error)
+	GetAllRepos() ([]Repo, error)
 	UpdateRepo(repo *Repo) error
 
 	UpdateSigningKey(key *SigningKey) error
 	GetSigningKey(ctx context.Context, did, repoDID string) (*SigningKey, error)
+	GetSigningKeyByRKey(ctx context.Context, rkey string) (*SigningKey, error)
 	GetSigningKeysForRepo(repoDID string) ([]SigningKey, error)
 
 	CreateFollow(ctx context.Context, userDID, rev string, follow *bsky.GraphFollow) error
