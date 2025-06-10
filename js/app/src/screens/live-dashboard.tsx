@@ -7,17 +7,20 @@ import StreamKeyScreen from "components/live-dashboard/stream-key";
 import Waiting from "components/live-dashboard/waiting";
 import Loading from "components/loading/loading";
 import { Player } from "components/player/player";
+import Popup from "components/popup";
 import ButtonSelector from "components/ui/button-selector";
 import { VideoElementProvider } from "contexts/VideoElementContext";
 import {
+  createServerSettingsRecord,
+  getServerSettingsFromPDS,
   selectIsReady,
+  selectServerSettings,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
-import { selectTelemetry } from "features/streamplace/streamplaceSlice";
 import { useLiveUser } from "hooks/useLiveUser";
-import React, { useCallback, useState } from "react";
-import { useAppSelector } from "store/hooks";
-import { Button, H6, isWeb, Text, View } from "tamagui";
+import React, { useCallback, useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "store/hooks";
+import { Button, H3, H6, isWeb, Text, View } from "tamagui";
 
 enum StreamSource {
   Start,
@@ -29,11 +32,26 @@ export default function LiveDashboard() {
   const isReady = useAppSelector(selectIsReady);
   const userProfile = useAppSelector(selectUserProfile);
   const [streamSource, setStreamSource] = useState(StreamSource.Start);
+  const serverSettings = useAppSelector(selectServerSettings);
   const isLive = useLiveUser();
-  const telemetry = useAppSelector(selectTelemetry);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null,
   );
+  const [gotSettings, setGotSettings] = useState(false);
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    if (isReady) {
+      (async () => {
+        await dispatch(getServerSettingsFromPDS());
+        setGotSettings(true);
+      })();
+    }
+  }, [isReady]);
+
+  let madeChoiceAboutDebugRecording = true;
+  if (gotSettings && serverSettings?.debugRecording === undefined) {
+    madeChoiceAboutDebugRecording = false;
+  }
 
   const [page, setPage] = useState<"update" | "create">("create");
 
@@ -57,7 +75,6 @@ export default function LiveDashboard() {
   if (isLive && streamSource !== StreamSource.Camera) {
     topPane = (
       <Player
-        telemetry={telemetry === true}
         src={userProfile.did}
         name={userProfile.handle}
         videoRef={videoRef}
@@ -93,6 +110,7 @@ export default function LiveDashboard() {
       </Button>
     );
   }
+
   return (
     <LivestreamProvider src={userProfile.did}>
       <VideoElementProvider videoElement={videoElement}>
@@ -116,6 +134,7 @@ export default function LiveDashboard() {
             {page === "update" && isLive ? <UpdateLivestream /> : null}
             {page === "create" ? <CreateLivestream /> : null}
           </View>
+          {madeChoiceAboutDebugRecording ? null : <DebugRecordingPopup />}
         </View>
       </VideoElementProvider>
     </LivestreamProvider>
@@ -134,6 +153,47 @@ const elems = [
     to: StreamSource.StreamKey,
   },
 ];
+
+export function DebugRecordingPopup() {
+  const dispatch = useAppDispatch();
+  const serverSettings = useAppSelector(selectServerSettings) || {};
+  const opt = (choice) => () =>
+    dispatch(
+      createServerSettingsRecord({
+        ...serverSettings,
+        debugRecording: choice,
+      }),
+    );
+  return (
+    <Popup
+      onClose={opt(false)}
+      containerProps={{
+        bottom: "$8",
+        zIndex: 1000,
+      }}
+      bubbleProps={{
+        backgroundColor: "$accentBackground",
+        gap: "$3",
+        maxWidth: 400,
+      }}
+    >
+      <H3 textAlign="center">Debug Recording</H3>
+      <Text>
+        Streamplace is beta software and it helps us to archive livestreams so
+        we can later use them for debugging. Would you like to opt in to debug
+        recording?
+      </Text>
+      <View flexDirection="row" gap="$2" f={1}>
+        <Button f={3} backgroundColor="$accentColor" onPress={opt(true)}>
+          Allow
+        </Button>
+        <Button f={3} onPress={opt(false)}>
+          Don't Allow
+        </Button>
+      </View>
+    </Popup>
+  );
+}
 
 export function StreamSourcePicker({
   onPick,

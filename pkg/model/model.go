@@ -92,6 +92,10 @@ type Model interface {
 	UpdateOAuthSession(id string, session *oatproxy.OAuthSession) error
 	ListOAuthSessions() ([]oatproxy.OAuthSession, error)
 	GetSessionByDID(did string) (*oatproxy.OAuthSession, error)
+
+	UpdateServerSettings(ctx context.Context, settings *ServerSettings) error
+	GetServerSettings(ctx context.Context, server string, repoDID string) (*ServerSettings, error)
+	DeleteServerSettings(ctx context.Context, server string, repoDID string) error
 }
 
 func MakeDB(dbURL string) (Model, error) {
@@ -151,6 +155,7 @@ func MakeDB(dbURL string) (Model, error) {
 		ChatMessage{},
 		ChatProfile{},
 		oatproxy.OAuthSession{},
+		ServerSettings{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {
