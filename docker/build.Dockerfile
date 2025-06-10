@@ -34,6 +34,7 @@ RUN apt update \
   nasm gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64-tools zip bison flex expect \
   mono-runtime nuget mono-xsp4 squashfs-tools \
   libc6:arm64 libstdc++6:arm64 \
+  cmake libssl-dev libssl-dev:arm64 \
   && pip install meson tomli \
   && curl -L --fail https://go.dev/dl/go$GO_VERSION.linux-$TARGETARCH.tar.gz -o go.tar.gz \
   && tar -C /usr/local -xf go.tar.gz \
@@ -94,10 +95,10 @@ RUN curl -L https://github.com/golangci/golangci-lint/releases/download/v2.1.6/g
 
 WORKDIR /osxcross
 
-RUN git clone https://github.com/tpoechtrager/osxcross.git . \
-    && git checkout 2.0-llvm-based
+RUN git clone https://github.com/tpoechtrager/osxcross.git .
 # RUN UNATTENDED=1 ./build_apple_clang.sh
-RUN curl -L --fail https://github.com/joseluisq/macosx-sdks/releases/download/15.4/MacOSX15.4.sdk.tar.xz -o /osxcross/tarballs/MacOSX15.4.sdk.tar.xz
+ENV MAC_SDK_VERSION 15.4
+RUN curl -L --fail https://github.com/joseluisq/macosx-sdks/releases/download/$MAC_SDK_VERSION/MacOSX$MAC_SDK_VERSION.sdk.tar.xz -o /osxcross/tarballs/MacOSX$MAC_SDK_VERSION.sdk.tar.xz
 RUN UNATTENDED=1 ./build.sh
 RUN cargo install apple-codesign
 ENV PATH /osxcross/target/bin:$PATH

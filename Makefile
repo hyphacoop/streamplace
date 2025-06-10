@@ -353,6 +353,8 @@ BASE_OPTS = \
 		-D "gst-plugins-bad:glib_assert=false" \
 		-D "gst-plugins-base:glib_assert=false" \
 		-D "gst-plugins-ugly:glib_assert=false" \
+		-D "gst-plugins-good:adaptivedemux2=disabled" \
+		-D "gstreamer:registry=false" \
 		-D "glib:glib_assert=false"
 
 OPTS = \
@@ -438,8 +440,14 @@ windows-amd64-startup-test:
 .PHONY: darwin-amd64
 darwin-amd64:
 	export CC=x86_64-apple-darwin24.4-clang \
+	&& export CC_X86_64_APPLE_DARWIN=x86_64-apple-darwin24.4-clang \
+	&& export CXX_X86_64_APPLE_DARWIN=x86_64-apple-darwin24.4-clang++ \
+	&& export AR_X86_64_APPLE_DARWIN=x86_64-apple-darwin24.4-ar \
+	&& export CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER=x86_64-apple-darwin24.4-clang \
+	&& export LD=x86_64-apple-darwin24.4-ld \
 	&& export CROSS_COMPILE=1 \
 	&& meson setup --buildtype debugoptimized --cross-file util/osxcross-darwin-amd64.ini build-darwin-amd64 $(OPTS) \
+	&& meson compile -C build-darwin-amd64 subprojects/glib-2.82.4/gio/gioenumtypes_h \
 	&& meson compile -C build-darwin-amd64 streamplace \
 	&& ./util/osxcross-codesign.sh ./build-darwin-amd64/streamplace \
 	&& mkdir -p bin \
@@ -454,6 +462,11 @@ desktop-darwin-amd64:
 .PHONY: darwin-amd64
 darwin-arm64:
 	export CC=aarch64-apple-darwin24.4-clang \
+	&& export CC_AARCH64_APPLE_DARWIN=aarch64-apple-darwin24.4-clang \
+	&& export CXX_AARCH64_APPLE_DARWIN=aarch64-apple-darwin24.4-clang++ \
+	&& export AR_AARCH64_APPLE_DARWIN=aarch64-apple-darwin24.4-ar \
+	&& export CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER=aarch64-apple-darwin24.4-clang \
+	&& export LD=aarch64-apple-darwin24.4-ld \
 	&& export CROSS_COMPILE=1 \
 	&& meson setup --buildtype debugoptimized --cross-file util/osxcross-darwin-arm64.ini build-darwin-arm64 $(OPTS) \
 	&& meson compile -C build-darwin-arm64 streamplace \
