@@ -199,6 +199,9 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                 $platform-ios={{
                   height: videoHeight,
                 }}
+                $platform-android={{
+                  height: videoHeight,
+                }}
               >
                 <Player
                   src={src}
