@@ -110,6 +110,16 @@ export interface PlayerState {
       | undefined,
   ) => void;
 
+  /** Player element width (CSS value or number) */
+  playerWidth?: string | number;
+  /** Function to set the player width */
+  setPlayerWidth: (width: number) => void;
+
+  /** Player element height (CSS value or number) */
+  playerHeight?: string | number;
+  /** Function to set the player height */
+  setPlayerHeight: (height: number) => void;
+
   /** Flag indicating if player is in Picture-in-Picture mode */
   pipMode: boolean;
 

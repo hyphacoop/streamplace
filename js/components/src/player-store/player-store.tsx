@@ -78,6 +78,12 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     pipMode: false,
     setPipMode: (pipMode: boolean) => set(() => ({ pipMode })),
 
+    // Player element width/height setters for global sync
+    playerWidth: undefined,
+    setPlayerWidth: (playerWidth: number) => set(() => ({ playerWidth })),
+    playerHeight: undefined,
+    setPlayerHeight: (playerHeight: number) => set(() => ({ playerHeight })),
+
     // * Whether mute was forced by the browser or not for autoplay
     // * Will get set to 'false' if the user has interacted with the volume
     muteWasForced: false,
