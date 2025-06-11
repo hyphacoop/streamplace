@@ -268,7 +268,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                               }}
                               aria-label={`View @${streamerHandle} on Bluesky`}
                               // TODO: re-add on New Architecture
-                              //style={{ cursor: "pointer" }}
+                              style={isWeb ? { cursor: "pointer" } : {}}
                               ellipse={true}
                             >
                               {`@${streamerHandle}`}
