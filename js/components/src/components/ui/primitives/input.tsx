@@ -328,7 +328,7 @@ const primitiveStyles = StyleSheet.create({
   },
   inputError: {
     borderColor: "#ef4444",
-    borderWidth: 2,
+    borderWidth: 1,
   },
   inputDisabled: {
     backgroundColor: "#f3f4f6",
@@ -350,11 +350,11 @@ const primitiveStyles = StyleSheet.create({
   },
   containerFocused: {
     borderColor: "#3b82f6",
-    borderWidth: 2,
+    borderWidth: 1,
   },
   containerError: {
     borderColor: "#ef4444",
-    borderWidth: 2,
+    borderWidth: 1,
   },
   containerDisabled: {
     backgroundColor: "#f3f4f6",

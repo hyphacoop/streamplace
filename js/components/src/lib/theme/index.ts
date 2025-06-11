@@ -36,7 +36,6 @@ export {
 
 // Utility atoms
 export {
-  atoms,
   borders,
   getPlatformTypography,
   iconSizes,
@@ -45,4 +44,5 @@ export {
 } from "./atoms";
 
 // Convenience re-exports
+export * as atoms from "./atoms";
 export * as tokens from "./tokens";

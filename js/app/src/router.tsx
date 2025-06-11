@@ -83,6 +83,7 @@ import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from "react-native-reanimated";
+import MobileStream from "./screens/mobile-stream";
 store.dispatch(loadStateFromStorage());
 
 const Stack = createNativeStackNavigator();
@@ -115,6 +116,7 @@ type RootStackParamList = {
   Download: undefined;
   PopoutChat: { user: string };
   Embed: { user: string };
+  MobileStream: { user: string };
 };
 
 declare global {
@@ -149,6 +151,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Download: "download",
       PopoutChat: "chat-popout/:user",
       Embed: "embed/:user",
+      MobileStream: "mobile/:user",
     },
   },
 };
@@ -526,6 +529,14 @@ export function StreamplaceDrawer() {
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
             headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="MobileStream"
+          component={MobileStream}
+          options={{
+            headerTitle: "Stream",
+            title: "Streamplace Stream",
           }}
         />
       </Drawer.Navigator>

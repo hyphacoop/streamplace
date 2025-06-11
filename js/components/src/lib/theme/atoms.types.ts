@@ -83,16 +83,6 @@ export type RadiusAtoms = {
   right: PairifiedBorderRadius;
 };
 
-// Size utilities types
-export type SizeAtoms = {
-  width: PairifiedSpacing;
-  height: PairifiedSpacing;
-  minWidth: PairifiedSpacing;
-  minHeight: PairifiedSpacing;
-  maxWidth: PairifiedSpacing;
-  maxHeight: PairifiedSpacing;
-};
-
 export type PercentSizeValues = {
   10: StyleValue;
   20: StyleValue;
@@ -110,13 +100,14 @@ export type PercentSizeValues = {
   100: StyleValue;
 };
 
-export type PercentSizeAtoms = {
-  width: PercentSizeValues;
-  height: PercentSizeValues;
-  minWidth: PercentSizeValues;
-  minHeight: PercentSizeValues;
-  maxWidth: PercentSizeValues;
-  maxHeight: PercentSizeValues;
+// Size utilities types
+export type SizeAtoms = {
+  width: PairifiedSpacing & { percent: PercentSizeValues };
+  height: PairifiedSpacing & { percent: PercentSizeValues };
+  minWidth: PairifiedSpacing & { percent: PercentSizeValues };
+  minHeight: PairifiedSpacing & { percent: PercentSizeValues };
+  maxWidth: PairifiedSpacing & { percent: PercentSizeValues };
+  maxHeight: PairifiedSpacing & { percent: PercentSizeValues };
 };
 
 // Flex utilities types
@@ -249,7 +240,6 @@ export type Atoms = {
   textColors: PairifiedColors;
   spacingAtoms: SpacingAtoms;
   sizes: SizeAtoms;
-  percentSizes: PercentSizeAtoms;
   flex: FlexAtoms;
   opacity: OpacityAtoms;
   zIndex: ZIndexAtoms;

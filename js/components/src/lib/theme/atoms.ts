@@ -221,16 +221,6 @@ export const backgrounds = pairify(rawColors, "backgroundColor");
 // Text color utilities
 export const textColors = pairify(rawColors, "color");
 
-// Size utilities (width and height)
-export const sizes = {
-  width: pairify(spacing, "width"),
-  height: pairify(spacing, "height"),
-  minWidth: pairify(spacing, "minWidth"),
-  minHeight: pairify(spacing, "minHeight"),
-  maxWidth: pairify(spacing, "maxWidth"),
-  maxHeight: pairify(spacing, "maxHeight"),
-};
-
 // Percentage-based sizes
 const percentageSizes = {
   "10": "10%",
@@ -249,13 +239,32 @@ const percentageSizes = {
   "100": "100%",
 } as const;
 
-export const percentSizes = {
-  width: pairify(percentageSizes, "width"),
-  height: pairify(percentageSizes, "height"),
-  minWidth: pairify(percentageSizes, "minWidth"),
-  minHeight: pairify(percentageSizes, "minHeight"),
-  maxWidth: pairify(percentageSizes, "maxWidth"),
-  maxHeight: pairify(percentageSizes, "maxHeight"),
+// Size utilities (width and height)
+export const sizes = {
+  width: {
+    ...pairify(spacing, "width"),
+    percent: pairify(percentageSizes, "width"),
+  },
+  height: {
+    ...pairify(spacing, "height"),
+    percent: pairify(percentageSizes, "height"),
+  },
+  minWidth: {
+    ...pairify(spacing, "minWidth"),
+    percent: pairify(percentageSizes, "minWidth"),
+  },
+  minHeight: {
+    ...pairify(spacing, "minHeight"),
+    percent: pairify(percentageSizes, "minHeight"),
+  },
+  maxWidth: {
+    ...pairify(spacing, "maxWidth"),
+    percent: pairify(percentageSizes, "maxWidth"),
+  },
+  maxHeight: {
+    ...pairify(spacing, "maxHeight"),
+    percent: pairify(percentageSizes, "maxHeight"),
+  },
 };
 
 // Flex utilities
@@ -695,7 +704,6 @@ export const atoms = {
   textColors,
   spacingAtoms,
   sizes,
-  percentSizes,
   flex,
   opacity,
   zIndex,

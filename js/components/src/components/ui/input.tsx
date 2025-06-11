@@ -341,7 +341,7 @@ function createStyles(theme: any) {
     // Focus styles
     focusedContainer: {
       borderColor: theme.colors.primary,
-      borderWidth: 2,
+      borderWidth: 1,
     },
   });
 }
