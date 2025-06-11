@@ -8,7 +8,7 @@ import {
 } from "@atproto/api";
 import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
-import { OAuthSession } from "@atproto/oauth-client";
+import { OAuthSession } from "@streamplace/atproto-oauth-client-react-native";
 import { DID_KEY, hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import {
