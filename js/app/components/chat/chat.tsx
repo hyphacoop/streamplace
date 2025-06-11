@@ -385,7 +385,6 @@ function ChatMessageRow({
                   paddingVertical="$1"
                   paddingHorizontal="$2"
                   borderRadius="$2"
-                  marginLeft="-$1"
                 >
                   <Text fontSize={12} color={replyToColor} fontWeight="bold">
                     {replyToHandle ? `@${replyToHandle}` : ""}
