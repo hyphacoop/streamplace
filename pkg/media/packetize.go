@@ -109,6 +109,14 @@ func Packetize(ctx context.Context, seg *segchanman.Seg) (*PacketizedSegment, er
 
 			videoOutput = append(videoOutput, samples)
 
+			// clockTime := buffer.Duration()
+			// dur := clockTime.AsDuration()
+			// if dur != nil {
+			// 	log.Log(ctx, "video duration", "duration", *dur)
+			// } else {
+			// 	log.Error(ctx, "no video duration", "samples", len(samples))
+			// }
+
 			return gst.FlowOK
 		},
 		EOSFunc: func(sink *app.Sink) {
@@ -144,7 +152,10 @@ func Packetize(ctx context.Context, seg *segchanman.Seg) (*PacketizedSegment, er
 			if dur != nil {
 				segDur += *dur
 			} else {
-				return gst.FlowOK
+				log.Log(ctx, "no audio duration", "samples", len(samples))
+				err := fmt.Errorf("no audio duration")
+				pipeline.Error(err.Error(), err)
+				return gst.FlowError
 			}
 
 			return gst.FlowOK

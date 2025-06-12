@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
+	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/media/segchanman"
 )
@@ -19,6 +20,19 @@ func TestPacketize(t *testing.T) {
 	defer checkGStreamerLeaks(t, before)
 	ignore := goleak.IgnoreCurrent()
 	defer goleak.VerifyNone(t, ignore)
+
+	g, _ := errgroup.WithContext(context.Background())
+	for range streamplaceTestCount {
+		g.Go(func() error {
+			innerTestPacketize(t)
+			return nil
+		})
+	}
+	err := g.Wait()
+	require.NoError(t, err)
+}
+
+func innerTestPacketize(t *testing.T) {
 	filename := getFixture("sample-segment.mp4")
 	inputFile, err := os.Open(filename)
 	require.NoError(t, err)

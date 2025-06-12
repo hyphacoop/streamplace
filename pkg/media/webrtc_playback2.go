@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
+	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/spmetrics"
 )
@@ -118,46 +119,72 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 				}
 			}()
 
+			lastPacketTime := time.Now()
+
+			p1 := <-packetQueue
+			p2 := <-packetQueue
+			bufPacketQueue := make(chan *PacketizedSegment, 1024)
+			go func() {
+				bufPacketQueue <- p1
+				bufPacketQueue <- p2
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case packet := <-packetQueue:
+						bufPacketQueue <- packet
+					}
+				}
+			}()
+
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case packet := <-packetQueue:
+				case packet := <-bufPacketQueue:
 					videoDur := packet.Duration / time.Duration(len(packet.Video))
 					audioDur := packet.Duration / time.Duration(len(packet.Audio))
-					go func() {
+					g, _ := errgroup.WithContext(ctx)
+
+					g.Go(func() error {
 						for _, video := range packet.Video {
+							// log.Log(ctx, "writing video sample", "duration", videoDur)
 							err := videoTrack.WriteSample(media.Sample{Data: video, Duration: videoDur})
 							if err != nil {
-								log.Error(ctx, "failed to write video sample", "error", err)
-								cancel()
-								return
+								return fmt.Errorf("failed to write video sample: %w", err)
 							}
 
 							select {
 							case <-ctx.Done():
-								return
+								return nil
 							case <-time.After(videoDur):
 								continue
 							}
 						}
-					}()
-					go func() {
+						return nil
+					})
+					g.Go(func() error {
+						log.Log(ctx, "time since last packet", "time", time.Since(lastPacketTime))
 						for _, audio := range packet.Audio {
 							err := audioTrack.WriteSample(media.Sample{Data: audio, Duration: audioDur})
 							if err != nil {
-								log.Error(ctx, "failed to write audio sample", "error", err)
-								cancel()
-								return
+								return fmt.Errorf("failed to write audio sample: %w", err)
 							}
 							select {
 							case <-ctx.Done():
-								return
+								return nil
 							case <-time.After(audioDur):
 								continue
 							}
 						}
-					}()
+						lastPacketTime = time.Now()
+						return nil
+					})
+
+					if err := g.Wait(); err != nil {
+						log.Error(ctx, "failed to write samples", "error", err)
+						cancel()
+					}
 				}
 			}
 		}()
