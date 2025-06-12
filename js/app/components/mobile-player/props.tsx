@@ -8,9 +8,4 @@ export type PlayerProps = {
   setFullscreen: (isFullscreen: boolean) => void;
   ingest?: boolean;
   embedded?: boolean;
-  videoRef:
-    | React.MutableRefObject<HTMLVideoElement | null>
-    | ((instance: HTMLVideoElement | null) => void)
-    | null
-    | undefined;
 };

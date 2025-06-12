@@ -32,7 +32,6 @@ export function Player(
       <PlayerProvider defaultId={props.playerId || undefined}>
         <PropUpFullscreen setFullscreen={props.setFullscreen} />
         <PlayerInner {...props} />
-        <MobileUi />
       </PlayerProvider>
     </LivestreamProvider>
   );
@@ -133,11 +132,14 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   }, [segment, playing, lastCheck]);
 
   return (
-    <View
-      style={[zIndex[10], flex.values[1], w.percent[100], layout.flex.center]}
-    >
-      <Fullscreen playerId={playerId} src={props.src}></Fullscreen>
-    </View>
+    <>
+      <View
+        style={[zIndex[0], flex.values[1], w.percent[100], layout.flex.center]}
+      >
+        <Fullscreen playerId={playerId} src={props.src}></Fullscreen>
+      </View>
+      <MobileUi playerId={playerId} />
+    </>
   );
 }
 

@@ -8,7 +8,8 @@ import {
 import { Text, View } from "@streamplace/components/src/components/ui/index";
 import { mt } from "@streamplace/components/src/lib/theme/atoms";
 import Hls from "hls.js";
-import { forwardRef, useEffect, useRef, useState } from "react";
+import useStreamplaceNode from "hooks/useStreamplaceNode";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { srcToUrl } from "../player/shared";
 import useWebRTC, { useWebRTCIngest } from "../player/use-webrtc";
 import {
@@ -17,7 +18,6 @@ import {
 } from "../player/webrtc-diagnostics";
 import { checkWebRTCSupport } from "../player/webrtc-primitives";
 
-// Helper to assign a video element to a ref of either type
 function assignVideoRef(
   ref:
     | React.MutableRefObject<HTMLVideoElement | null>
@@ -36,7 +36,6 @@ type VideoProps = {
   videoRef?: React.RefObject<HTMLVideoElement>;
 };
 
-// Hook to get live video element dimensions
 function useVideoDimensions(videoRef: React.RefObject<HTMLVideoElement>) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -52,11 +51,9 @@ function useVideoDimensions(videoRef: React.RefObject<HTMLVideoElement>) {
 
     updateSize();
 
-    // Observe element resize
     const observer = new window.ResizeObserver(updateSize);
     observer.observe(videoRef.current);
 
-    // Listen for loadedmetadata and resize events
     videoRef.current.addEventListener("loadedmetadata", updateSize);
     videoRef.current.addEventListener("resize", updateSize);
 
@@ -79,7 +76,6 @@ export default function WebVideo() {
   const setPlayerHeight = usePlayerStore((x) => x.setPlayerHeight);
   const { url, protocol } = srcToUrl({ src: src, selectedRendition }, inProto);
 
-  // We'll use a ref to the video element to get its dimensions
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const dimensions = useVideoDimensions(videoRef);
 
@@ -90,7 +86,6 @@ export default function WebVideo() {
     }
   }, [dimensions, setPlayerWidth, setPlayerHeight]);
 
-  // Pass videoRef to all player components
   const playerProps = { url, videoRef };
 
   return (
@@ -150,7 +145,6 @@ const VideoElement = forwardRef<
   };
   const [firstAttempt, setFirstAttempt] = useState(true);
 
-  // Use the passed-in ref if available, otherwise fallback to local ref
   const localVideoRef = props.videoRef ?? useRef<HTMLVideoElement | null>(null);
 
   const canPlayThrough = (e) => {
@@ -190,13 +184,11 @@ const VideoElement = forwardRef<
     }
   }, [volume]);
 
-  // Keep the playerStore videoRef in sync for PiP
   useEffect(() => {
     console.log(localVideoRef.current?.width, localVideoRef.current?.height);
     setVideoRef(localVideoRef);
   }, [setVideoRef, localVideoRef]);
 
-  // Assign both the forwarded ref and the local ref
   const handleVideoRef = (videoElement: HTMLVideoElement | null) => {
     if (typeof ref === "function") {
       ref(videoElement);
@@ -454,18 +446,23 @@ export function WebRTCPlayerInner({
   return <VideoElement url={url} ref={videoRef} />;
 }
 
-export function WebcamIngestPlayer(
-  props: VideoProps & { videoRef?: React.RefObject<HTMLVideoElement> },
-) {
+export function WebcamIngestPlayer(props: VideoProps) {
   const ingestStarting = usePlayerStore((x) => x.ingestStarting);
   const ingestMediaSource = usePlayerStore((x) => x.ingestMediaSource);
   const ingestAutoStart = usePlayerStore((x) => x.ingestAutoStart);
 
-  const streamKey = null;
+  let streamKey = null;
 
-  const localVideoRef = props.videoRef ?? useRef<HTMLVideoElement | null>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
+    null,
+  );
+  const handleRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node) {
+      setVideoElement(node);
+    }
+  }, []);
 
-  const url = useStreamplaceStore((x) => x.url);
+  const { url } = useStreamplaceNode();
   const [localMediaStream, setLocalMediaStream] = useState<MediaStream | null>(
     null,
   );
@@ -492,8 +489,8 @@ export function WebcamIngestPlayer(
         .getUserMedia({
           audio: true,
           video: {
-            width: { min: 200, ideal: 1920, max: 3840 },
-            height: { min: 200, ideal: 1080, max: 2160 },
+            width: { min: 200, ideal: 1080, max: 2160 },
+            height: { min: 200, ideal: 1920, max: 3840 },
           },
         })
         .then((stream) => {
@@ -513,21 +510,18 @@ export function WebcamIngestPlayer(
     if (!localMediaStream) {
       return;
     }
-    if (!streamKey) {
-      return;
-    }
     setRemoteMediaStream(localMediaStream);
-  }, [localMediaStream, ingestStarting, streamKey, ingestAutoStart]);
+  }, [localMediaStream, ingestStarting, ingestAutoStart]);
 
   useEffect(() => {
-    if (!localVideoRef.current) {
+    if (!videoElement) {
       return;
     }
     if (!localMediaStream) {
       return;
     }
-    localVideoRef.current.srcObject = localMediaStream;
-  }, [localMediaStream]);
+    videoElement.srcObject = localMediaStream;
+  }, [videoElement, localMediaStream]);
 
-  return <VideoElement {...props} videoRef={localVideoRef} />;
+  return <VideoElement {...props} ref={handleRef} />;
 }

@@ -83,6 +83,7 @@ import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from "react-native-reanimated";
+import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
 store.dispatch(loadStateFromStorage());
 
@@ -117,6 +118,7 @@ type RootStackParamList = {
   PopoutChat: { user: string };
   Embed: { user: string };
   MobileStream: { user: string };
+  MobileGoLive: undefined;
 };
 
 declare global {
@@ -152,6 +154,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       PopoutChat: "chat-popout/:user",
       Embed: "embed/:user",
       MobileStream: "mobile/:user",
+      MobileGoLive: "mobile-golive",
     },
   },
 };
@@ -537,6 +540,14 @@ export function StreamplaceDrawer() {
           options={{
             headerTitle: "Stream",
             title: "Streamplace Stream",
+          }}
+        />
+        <Drawer.Screen
+          name="MobileGoLive"
+          component={MobileGoLive}
+          options={{
+            headerTitle: "Go Live",
+            title: "Go live",
           }}
         />
       </Drawer.Navigator>
