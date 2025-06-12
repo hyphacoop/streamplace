@@ -1,0 +1,194 @@
+package media
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/go-gst/go-gst/gst"
+	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/media/segchanman"
+)
+
+type PacketizedSegment struct {
+	Video    [][]byte
+	Audio    [][]byte
+	Duration time.Duration
+}
+
+// take in a segment and return a bunch of packets suitable for webrtc
+func Packetize(ctx context.Context, seg *segchanman.Seg) (*PacketizedSegment, error) {
+
+	pipelineSlice := []string{
+		"h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink sync=false name=videoappsink",
+		"opusparse name=audioparse ! appsink sync=false name=audioappsink",
+	}
+
+	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err) //nolint:all
+	}
+
+	demuxBin, err := ConcatDemuxBin(ctx, seg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create concat bin: %w", err)
+	}
+
+	err = pipeline.Add(demuxBin.Element)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add demux bin to bin: %w", err)
+	}
+
+	demuxBinPadVideoSrc := demuxBin.GetStaticPad("video_0")
+	if demuxBinPadVideoSrc == nil {
+		return nil, fmt.Errorf("failed to get demux bin video src pad")
+	}
+
+	demuxBinPadAudioSrc := demuxBin.GetStaticPad("audio_0")
+	if demuxBinPadAudioSrc == nil {
+		return nil, fmt.Errorf("failed to get demux bin audio src pad")
+	}
+
+	videoParse, err := pipeline.GetElementByName("videoparse")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get video parse element: %w", err)
+	}
+
+	audioParse, err := pipeline.GetElementByName("audioparse")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get audio parse element: %w", err)
+	}
+
+	linked := demuxBinPadVideoSrc.Link(videoParse.GetStaticPad("sink"))
+	if linked != gst.PadLinkOK {
+		return nil, fmt.Errorf("failed to link demux bin video src pad to video parse element: %v", linked)
+	}
+
+	linked = demuxBinPadAudioSrc.Link(audioParse.GetStaticPad("sink"))
+	if linked != gst.PadLinkOK {
+		return nil, fmt.Errorf("failed to link demux bin audio src pad to audio parse element: %v", linked)
+	}
+
+	videoSink, err := pipeline.GetElementByName("videoappsink")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get video appsink element: %w", err)
+	}
+	if videoSink == nil {
+		return nil, fmt.Errorf("failed to get video appsink element")
+	}
+
+	audioSink, err := pipeline.GetElementByName("audioappsink")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get audio appsink element: %w", err)
+	}
+	if audioSink == nil {
+		return nil, fmt.Errorf("failed to get audio appsink element")
+	}
+
+	videoOutput := [][]byte{}
+	audioOutput := [][]byte{}
+	// eosCh := make(chan struct{})
+
+	videoappsink := app.SinkFromElement(videoSink)
+	videoappsink.SetCallbacks(&app.SinkCallbacks{
+		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
+			sample := sink.PullSample()
+			if sample == nil {
+				return gst.FlowEOS
+			}
+
+			buffer := sample.GetBuffer()
+			if buffer == nil {
+				return gst.FlowError
+			}
+
+			samples := buffer.Map(gst.MapRead).Bytes()
+			defer buffer.Unmap()
+
+			videoOutput = append(videoOutput, samples)
+
+			return gst.FlowOK
+		},
+		EOSFunc: func(sink *app.Sink) {
+			log.Debug(ctx, "videoappsink EOSFunc")
+			// go func() {
+			// 	eosCh <- struct{}{}
+			// }()
+		},
+	})
+
+	segDur := time.Duration(0)
+
+	audioappsink := app.SinkFromElement(audioSink)
+	audioappsink.SetCallbacks(&app.SinkCallbacks{
+		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
+			sample := sink.PullSample()
+			if sample == nil {
+				return gst.FlowEOS
+			}
+
+			buffer := sample.GetBuffer()
+			if buffer == nil {
+				return gst.FlowError
+			}
+
+			samples := buffer.Map(gst.MapRead).Bytes()
+			defer buffer.Unmap()
+
+			audioOutput = append(audioOutput, samples)
+
+			clockTime := buffer.Duration()
+			dur := clockTime.AsDuration()
+			if dur != nil {
+				segDur += *dur
+			} else {
+				return gst.FlowOK
+			}
+
+			return gst.FlowOK
+		},
+		EOSFunc: func(sink *app.Sink) {
+			log.Debug(ctx, "audioappsink EOSFunc")
+			// go func() {
+			// 	eosCh <- struct{}{}
+			// }()
+		},
+	})
+
+	busErr := make(chan error)
+	go func() {
+		err := HandleBusMessages(ctx, pipeline)
+		if err != nil {
+			log.Log(ctx, "pipeline error", "error", err)
+		}
+		busErr <- err
+	}()
+
+	err = pipeline.SetState(gst.StatePlaying)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set pipeline to playing state: %w", err)
+	}
+
+	defer func() {
+		err = pipeline.SetState(gst.StateNull)
+		if err != nil {
+			log.Error(ctx, "failed to set pipeline to null state", "error", err)
+		}
+	}()
+
+	// <-eosCh
+	// <-eosCh
+
+	err = <-busErr
+	if err != nil {
+		return nil, fmt.Errorf("pipeline error: %w", err)
+	}
+
+	return &PacketizedSegment{
+		Video:    videoOutput,
+		Audio:    audioOutput,
+		Duration: segDur,
+	}, nil
+}
