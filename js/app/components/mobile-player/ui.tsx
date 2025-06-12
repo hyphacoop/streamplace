@@ -12,7 +12,9 @@ import {
 import { ChevronLeft } from "@tamagui/lucide-icons";
 import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
+import { createLivestreamRecord } from "features/bluesky/blueskySlice";
 import useAvatars from "hooks/useAvatars";
+import { useCaptureVideoFrame } from "hooks/useCaptureVideoFrame";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Image, Pressable } from "react-native";
 
@@ -27,9 +29,11 @@ export function MobileUi({ playerId }: { playerId: string }) {
   const [title, setTitle] = useState("");
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [recordSubmitted, setRecordSubmitted] = useState(false);
 
   const navigation = useNavigation();
   const avatars = useAvatars([profile?.did!])[profile?.did!];
+  const captureFrame = useCaptureVideoFrame();
 
   const isPlayerRatioGreater = pWidth / pHeight > width / height;
   const isSelfAndNotLive = ingest === "new";
@@ -98,6 +102,22 @@ export function MobileUi({ playerId }: { playerId: string }) {
     chatOpacity,
   ]);
 
+  const handleSubmit = async () => {
+    try {
+      const thumbnailToUse = await captureFrame(1280, 0.85);
+      dispatch(
+        createLivestreamRecord({
+          title,
+          customThumbnail: thumbnailToUse || undefined,
+        }),
+      );
+    } catch (error) {
+      console.error("Error creating livestream:", error);
+    } finally {
+      setRecordSubmitted(false);
+    }
+  };
+
   const toggleGoLive = () => {
     if (!ingestStarting) {
       if (title.trim() === "") {
@@ -106,6 +126,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
       }
       setShowCountdown(true);
       setIngestStarting(true);
+      handleSubmit();
       setCountdown(3);
       return;
     }
@@ -224,4 +245,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
       )}
     </>
   );
+}
+function dispatch(arg0: any) {
+  throw new Error("Function not implemented.");
 }
