@@ -5,7 +5,12 @@ import { layout } from "@streamplace/components/src/lib/theme";
 import {
   gap,
   h,
+  mt,
+  p,
   position,
+  px,
+  py,
+  sizes,
   w,
   zIndex,
 } from "@streamplace/components/src/lib/theme/atoms";
@@ -14,26 +19,25 @@ import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
 import { createLivestreamRecord } from "features/bluesky/blueskySlice";
 import useAvatars from "hooks/useAvatars";
-import { useCaptureVideoFrame } from "hooks/useCaptureVideoFrame";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Image, Pressable } from "react-native";
+import { useAppDispatch } from "store/hooks";
 
 export function MobileUi({ playerId }: { playerId: string }) {
   const ingest = usePlayerStore((x) => x.ingestConnectionState);
-  const isLive = ingest === "connected";
   const profile = useLivestreamStore((x) => x.profile);
   const pHeight = Number(usePlayerStore((x) => x.playerHeight)) || 0;
   const pWidth = Number(usePlayerStore((x) => x.playerWidth)) || 0;
   const { width, height } = Dimensions.get("window");
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState<string | undefined>();
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [recordSubmitted, setRecordSubmitted] = useState(false);
 
   const navigation = useNavigation();
   const avatars = useAvatars([profile?.did!])[profile?.did!];
-  const captureFrame = useCaptureVideoFrame();
+  //const captureFrame = useCaptureVideoFrame();
 
   const isPlayerRatioGreater = pWidth / pHeight > width / height;
   const isSelfAndNotLive = ingest === "new";
@@ -49,6 +53,8 @@ export function MobileUi({ playerId }: { playerId: string }) {
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const inputOpacity = useRef(new Animated.Value(1)).current;
   const chatOpacity = useRef(new Animated.Value(0)).current;
+
+  const dispatch = useAppDispatch();
 
   // Countdown effect with fade out on expand
   useEffect(() => {
@@ -104,11 +110,14 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   const handleSubmit = async () => {
     try {
-      const thumbnailToUse = await captureFrame(1280, 0.85);
+      if (!title) {
+        return console.warn("Title cannot be empty");
+      }
+      //const thumbnailToUse = await captureFrame(1280, 0.85);
       dispatch(
         createLivestreamRecord({
           title,
-          customThumbnail: thumbnailToUse || undefined,
+          customThumbnail: undefined, // thumbnailToUse || undefined,
         }),
       );
     } catch (error) {
@@ -120,7 +129,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   const toggleGoLive = () => {
     if (!ingestStarting) {
-      if (title.trim() === "") {
+      if (!title) {
         console.warn("Title cannot be empty when starting a stream.");
         return;
       }
@@ -172,7 +181,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
             style={{
               width: 32,
               height: 32,
-              borderRadius: 16,
+              borderRadius: 999,
               backgroundColor: "green",
             }}
           />
@@ -187,17 +196,60 @@ export function MobileUi({ playerId }: { playerId: string }) {
             position.bottom[0],
             zIndex[10],
             w.percent[100],
+            layout.flex.center,
             { opacity: inputOpacity },
           ]}
         >
-          <Input value={title} onChange={(e) => setTitle(e)} />
-          {ingestStarting ? (
-            <Text>Starting your stream...</Text>
-          ) : (
-            <Pressable onPress={toggleGoLive}>
-              <Text>Go Live Button</Text>
-            </Pressable>
-          )}
+          <View
+            style={[
+              layout.flex.column,
+              gap.all[2],
+              { padding: 10 },
+              sizes.maxWidth[80],
+            ]}
+          >
+            <View backgroundColor="rgba(64,64,64,0.8)" borderRadius={12}>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e)}
+                placeholder="Enter stream title"
+              />
+            </View>
+            {ingestStarting ? (
+              <Text>Starting your stream...</Text>
+            ) : (
+              <View style={[layout.flex.center]}>
+                <Pressable
+                  onPress={toggleGoLive}
+                  style={[
+                    px[4],
+                    py[2],
+                    layout.flex.row,
+                    layout.flex.center,
+                    gap.all[1],
+                    {
+                      backgroundColor: "rgba(64,64,64, 0.8)",
+                      borderRadius: 12,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      p[2],
+                      {
+                        backgroundColor: "rgba(256,0,0, 0.8)",
+                        borderRadius: 12,
+                      },
+                    ]}
+                  />
+                  <Text center>Go Live</Text>
+                </Pressable>
+                <Text color="muted" size="xs" style={[mt[2]]}>
+                  We'll announce that you're live on Bluesky.
+                </Text>
+              </View>
+            )}
+          </View>
         </Animated.View>
       ) : (
         <Animated.View
@@ -245,7 +297,4 @@ export function MobileUi({ playerId }: { playerId: string }) {
       )}
     </>
   );
-}
-function dispatch(arg0: any) {
-  throw new Error("Function not implemented.");
 }
