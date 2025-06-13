@@ -157,7 +157,12 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     }
   };
 
-  const MainView = width < 660 ? View : ScrollView;
+  // if width <600px or if in horizontal mode, use View, otherwise use ScrollView
+  const MainView =
+    (width < height && width < 980) || fullscreen ? View : ScrollView;
+
+  const dir = width < height && width < 980 ? "column" : "row";
+
   return (
     <RNView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }} onLayout={onOuterLayout}>
@@ -180,23 +185,26 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
           <View
             f={1}
             opacity={videoWidth === 0 ? 0 : 1}
-            flexDirection="column"
-            $gtXs={{ flexDirection: "row" }}
+            flexDirection={dir}
             zIndex={2}
           >
             <MainView
               width={videoWidth}
               height="100%"
               maxHeight={videoHeight}
+              maxWidth={videoWidth}
               fs={0}
               $gtXs={{ fs: 1, maxHeight: "100%" }}
               zIndex={2}
             >
               <View
-                maxHeight={height}
-                $gtLg={{ maxHeight: height }}
-                $gtXxl={{ maxHeight: height }}
+                maxHeight={fullscreen ? height : height * 0.88}
+                $gtLg={{ maxHeight: fullscreen ? height : height * 0.95 }}
+                $gtXxl={{ maxHeight: fullscreen ? height : height * 0.9 }}
                 $platform-ios={{
+                  height: videoHeight,
+                }}
+                $platform-android={{
                   height: videoHeight,
                 }}
               >
@@ -207,158 +215,173 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                   {...extraProps}
                 />
               </View>
-              <View
-                fg={0}
-                px="$4"
-                py="$2"
-                flexDirection="row"
-                justifyContent="space-between"
-                maxWidth="100%"
-                bg="$black3"
-                borderBottomWidth="$0.5"
-                borderTopWidth="$0.5"
-                borderColor="$black5"
-                $gtXs={{
-                  bg: "$colorTransparent",
-                  py: "$4",
-                  borderBottomWidth: 0,
-                  borderTopWidth: 0,
-                }}
-              >
+              {!fullscreen && (
                 <View
+                  fg={0}
+                  px="$4"
+                  py="$3"
                   flexDirection="row"
-                  alignItems="flex-start"
                   justifyContent="space-between"
+                  maxWidth="100%"
+                  borderBottomWidth="$0.5"
+                  borderTopWidth="$0.5"
+                  borderColor="$black5"
+                  style={
+                    dir === "row"
+                      ? {
+                          backgroundColor: "$colorTransparent",
+                          paddingHorizontal: 6,
+                          borderBottomWidth: 0,
+                          borderTopWidth: 0,
+                        }
+                      : {
+                          backgroundColor: "#121212",
+                        }
+                  }
                 >
                   <View
                     flexDirection="row"
-                    alignItems="center"
-                    gap="$3"
-                    minWidth={0}
-                    flexShrink={1}
-                    overflow="hidden"
+                    alignItems="flex-start"
+                    justifyContent="space-between"
                   >
-                    <Avatar src={avi?.avatar} />
                     <View
-                      flexDirection="column"
-                      alignItems="flex-start"
-                      gap="$2"
+                      flexDirection="row"
+                      alignItems="center"
+                      gap="$3"
                       minWidth={0}
+                      flexShrink={1}
                       overflow="hidden"
                     >
+                      <Avatar src={avi?.avatar} />
                       <View
-                        flexDirection="row"
-                        alignItems="center"
-                        flexShrink={1}
+                        flexDirection="column"
+                        alignItems="flex-start"
+                        gap="$2"
                         minWidth={0}
-                      >
-                        {streamerDID && !streamerHandle ? (
-                          // Skeleton loader for handle
-                          <Text>&nbsp;</Text>
-                        ) : (
-                          streamerHandle && (
-                            <Text
-                              onPress={() =>
-                                Linking.openURL(
-                                  `https://bsky.app/profile/${streamerHandle}`,
-                                )
-                              }
-                              hoverStyle={{
-                                color: "$blue11",
-                              }}
-                              aria-label={`View @${streamerHandle} on Bluesky`}
-                              // TODO: re-add on New Architecture
-                              style={isWeb ? { cursor: "pointer" } : {}}
-                              ellipse={true}
-                            >
-                              {`@${streamerHandle}`}
-                            </Text>
-                          )
-                        )}
-                        {streamerDID && streamerHandle && currentUserDID && (
-                          <FollowButton
-                            streamerDID={streamerDID}
-                            currentUserDID={currentUserDID}
-                            onFollowChange={handleFollowChange}
-                          />
-                        )}
-                      </View>
-                      <Text
-                        fontSize="$6"
-                        numberOfLines={1}
-                        ellipse={true}
+                        flexShrink={1}
                         maxWidth="100%"
-                        minWidth={0}
-                        flexShrink={1}
+                        overflow="hidden"
                       >
-                        {livestream?.record.title}
-                      </Text>
+                        <View
+                          flexDirection="row"
+                          alignItems="center"
+                          flexShrink={1}
+                          minWidth={0}
+                        >
+                          {streamerDID && !streamerHandle ? (
+                            // Skeleton loader for handle
+                            <Text>&nbsp;</Text>
+                          ) : (
+                            streamerHandle && (
+                              <Text
+                                onPress={() =>
+                                  Linking.openURL(
+                                    `https://bsky.app/profile/${streamerHandle}`,
+                                  )
+                                }
+                                hoverStyle={{
+                                  color: "$blue11",
+                                }}
+                                aria-label={`View @${streamerHandle} on Bluesky`}
+                                style={isWeb ? { cursor: "pointer" } : {}}
+                                ellipse={true}
+                              >
+                                {`@${streamerHandle}`}
+                              </Text>
+                            )
+                          )}
+                          {streamerDID && streamerHandle && currentUserDID && (
+                            <FollowButton
+                              streamerDID={streamerDID}
+                              currentUserDID={currentUserDID}
+                              onFollowChange={handleFollowChange}
+                            />
+                          )}
+                        </View>
+                        <Text
+                          fontSize="$6"
+                          numberOfLines={1}
+                          ellipse={true}
+                          maxWidth="100%"
+                          minWidth={0}
+                          flexShrink={1}
+                        >
+                          {livestream?.record.title}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-                <View
-                  flexDirection="row"
-                  alignItems="center"
-                  gap="$2"
-                  display="none"
-                  $gtXs={{ display: "flex" }}
-                >
-                  {startTime instanceof Date && !offline && (
-                    <Timer start={startTime} />
-                  )}
-                  <Viewers viewers={viewers ?? 0} />
-                  <Button
-                    backgroundColor="transparent"
-                    onPress={() => setIsChatVisible(!isChatVisible)}
-                    marginLeft="$2"
+                  <View
+                    flexDirection="row"
+                    alignItems="center"
+                    gap="$2"
                     display="none"
                     $gtXs={{ display: "flex" }}
                   >
-                    {isChatVisible ? (
-                      <MessageCircleOff size={22} />
-                    ) : (
-                      <MessageCircleMore size={22} />
+                    {startTime instanceof Date && !offline && (
+                      <Timer start={startTime} />
                     )}
-                  </Button>
+                    <Viewers viewers={viewers ?? 0} />
+                    <Button
+                      backgroundColor="transparent"
+                      onPress={() => setIsChatVisible(!isChatVisible)}
+                      marginLeft="$2"
+                      style={{ display: dir === "row" ? "hidden" : "flex" }}
+                    >
+                      {isChatVisible ? (
+                        <MessageCircleOff size={22} />
+                      ) : (
+                        <MessageCircleMore size={22} />
+                      )}
+                    </Button>
+                  </View>
                 </View>
-              </View>
+              )}
             </MainView>
 
-            <View
-              f={1}
-              fg={1}
-              zIndex={1}
-              $gtXs={{
-                width: isChatVisible ? 380 : 0,
-                fb: isChatVisible ? 380 : 0,
-                fs: 0,
-                borderLeftColor: "#666",
-                borderLeftWidth: isChatVisible ? 1 : 0,
-                overflow: "hidden",
-              }}
-              backgroundColor="$background2"
-              animation={"quick"}
-              transform={
-                isIOS
-                  ? [
-                      {
-                        translateY: slideKeyboard,
-                      },
-                    ]
-                  : undefined
-              }
-            >
-              <Chat
-                isChatVisible={isChatVisible}
-                setIsChatVisible={setIsChatVisible}
-              />
-              <View>
-                <ChatBox
+            {!fullscreen && (
+              <View
+                fg={1}
+                fs={1}
+                zIndex={1}
+                backgroundColor="$background2"
+                animation={"quick"}
+                pt="$11"
+                transform={
+                  isIOS
+                    ? [
+                        {
+                          translateY: slideKeyboard,
+                        },
+                      ]
+                    : undefined
+                }
+                style={
+                  dir === "row"
+                    ? {
+                        paddingTop: 0,
+                        width: isChatVisible ? 380 : 0,
+                        flexBasis: isChatVisible ? 380 : 0,
+                        flexShrink: 1,
+                        borderLeftColor: "#666",
+                        borderLeftWidth: isChatVisible ? 1 : 0,
+                        overflow: "hidden",
+                      }
+                    : {}
+                }
+              >
+                <Chat
                   isChatVisible={isChatVisible}
                   setIsChatVisible={setIsChatVisible}
                 />
+                <View>
+                  <ChatBox
+                    isChatVisible={isChatVisible}
+                    setIsChatVisible={setIsChatVisible}
+                  />
+                </View>
               </View>
-            </View>
+            )}
           </View>
         </RNView>
       </SafeAreaView>
