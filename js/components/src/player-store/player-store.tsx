@@ -32,6 +32,10 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     setIngestMediaSource: (ingestMediaSource: IngestMediaSource | undefined) =>
       set(() => ({ ingestMediaSource })),
 
+    ingestCamera: "user",
+    setIngestCamera: (ingestCamera: "user" | "environment") =>
+      set(() => ({ ingestCamera })),
+
     ingestConnectionState: null,
     setIngestConnectionState: (
       ingestConnectionState: RTCPeerConnectionState | null,

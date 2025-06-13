@@ -50,6 +50,9 @@ export interface PlayerState {
   ingestMediaSource?: IngestMediaSource;
   setIngestMediaSource?: (source: IngestMediaSource) => void;
 
+  ingestCamera: "user" | "environment";
+  setIngestCamera: (camera: "user" | "environment") => void;
+
   ingestAutoStart?: boolean;
   setIngestAutoStart?: (autoStart: boolean) => void;
 

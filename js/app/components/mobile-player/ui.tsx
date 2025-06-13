@@ -14,7 +14,7 @@ import {
   w,
   zIndex,
 } from "@streamplace/components/src/lib/theme/atoms";
-import { ChevronLeft } from "@tamagui/lucide-icons";
+import { ChevronLeft, SwitchCamera } from "@tamagui/lucide-icons";
 import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
 import { createLivestreamRecord } from "features/bluesky/blueskySlice";
@@ -37,6 +37,8 @@ export function MobileUi({ playerId }: { playerId: string }) {
   const profile = useLivestreamStore((x) => x.profile);
   const pHeight = Number(usePlayerStore((x) => x.playerHeight)) || 0;
   const pWidth = Number(usePlayerStore((x) => x.playerWidth)) || 0;
+  const ingestCamera = usePlayerStore((x) => x.ingestCamera, playerId);
+  const setIngestCamera = usePlayerStore((x) => x.setIngestCamera, playerId);
   const { width, height } = Dimensions.get("window");
 
   const [title, setTitle] = useState<string | undefined>();
@@ -167,41 +169,64 @@ export function MobileUi({ playerId }: { playerId: string }) {
     };
   }, []);
 
+  const doSetIngestCamera = () => {
+    setIngestCamera(ingestCamera === "user" ? "environment" : "user");
+  };
+
   return (
     <>
-      <View
-        style={[
-          {
-            padding: 10,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            borderRadius: 8,
-          },
-          layout.position.absolute,
-          zIndex[40],
-        ]}
-      >
-        <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
-          <Pressable
-            onPress={() => {
-              navigation.canGoBack()
-                ? navigation.goBack()
-                : navigation.navigate("Home", { screen: "StreamList" });
-            }}
-          >
-            <ChevronLeft />
+      <View style={[layout.position.absolute, h.percent[100], w.percent[100]]}>
+        <View
+          style={[
+            {
+              padding: 6.5,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              borderRadius: 8,
+            },
+            layout.position.absolute,
+            position.left[1],
+            position.top[1],
+          ]}
+        >
+          <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
+            <Pressable
+              onPress={() => {
+                navigation.canGoBack()
+                  ? navigation.goBack()
+                  : navigation.navigate("Home", { screen: "StreamList" });
+              }}
+            >
+              <ChevronLeft />
+            </Pressable>
+            <Image
+              source={avatars?.avatar || require("assets/images/goose.png")}
+              width={32}
+              height={32}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 999,
+                backgroundColor: "green",
+              }}
+            />
+            <Text>{profile?.handle}</Text>
+          </View>
+        </View>
+        <View
+          style={[
+            {
+              padding: 10,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              borderRadius: 8,
+            },
+            layout.position.absolute,
+            position.right[1],
+            position.top[1],
+          ]}
+        >
+          <Pressable onPress={doSetIngestCamera}>
+            <SwitchCamera />
           </Pressable>
-          <Image
-            source={avatars?.avatar || require("assets/images/goose.png")}
-            width={32}
-            height={32}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 999,
-              backgroundColor: "green",
-            }}
-          />
-          <Text>{profile?.handle}</Text>
         </View>
       </View>
       {isSelfAndNotLive ? (

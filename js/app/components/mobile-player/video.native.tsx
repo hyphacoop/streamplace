@@ -237,6 +237,8 @@ export function NativeIngestPlayer() {
   const setStatus = useIngestPlayerStore((x) => x.setStatus);
   const setVideoRef = usePlayerStore((x) => x.setVideoRef);
 
+  const ingestCamera = useIngestPlayerStore((x) => x.ingestCamera);
+
   useEffect(() => {
     setStatus(IngestPlayerStatus.PLAYING);
   }, [setStatus]);
@@ -280,6 +282,7 @@ export function NativeIngestPlayer() {
             // channelCount: false,
           },
           video: {
+            facingMode: ingestCamera,
             deviceId: "video-1",
             width: { min: 200, ideal: 1080, max: 2160 },
             height: { min: 200, ideal: 1920, max: 3840 },
@@ -292,7 +295,7 @@ export function NativeIngestPlayer() {
           console.error("error getting user media", e);
         });
     }
-  }, [ingestMediaSource]);
+  }, [ingestMediaSource, ingestCamera]);
 
   useEffect(() => {
     if (!ingestStarting && !ingestAutoStart) {
