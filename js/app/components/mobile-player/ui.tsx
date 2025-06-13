@@ -22,7 +22,14 @@ import useAvatars from "hooks/useAvatars";
 import { useKeyboard } from "hooks/useKeyboard";
 import { useOuterAndInnerDimensions } from "hooks/useOuterAndInnerDimensions";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Image, Platform, Pressable } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+} from "react-native";
 import { useAppDispatch } from "store/hooks";
 
 export function MobileUi({ playerId }: { playerId: string }) {
@@ -67,12 +74,11 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   // Countdown effect with fade out on expand
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (showCountdown && countdown > 0) {
       // Fade out input area
       Animated.timing(inputOpacity, {
         toValue: 0,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }).start();
 
@@ -83,18 +89,16 @@ export function MobileUi({ playerId }: { playerId: string }) {
       Animated.parallel([
         Animated.timing(scaleAnim, {
           toValue: 1.5,
-          duration: 700,
+          duration: 1000,
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 700,
+          duration: 1000,
           useNativeDriver: true,
         }),
       ]).start(() => {
-        timer = setTimeout(() => {
-          setCountdown((c) => c - 1);
-        }, 100);
+        setCountdown((c) => c - 1);
       });
     } else if (showCountdown && countdown === 0) {
       setShowCountdown(false);
@@ -106,7 +110,6 @@ export function MobileUi({ playerId }: { playerId: string }) {
         useNativeDriver: true,
       }).start();
     }
-    return () => clearTimeout(timer);
   }, [
     showCountdown,
     countdown,
@@ -141,6 +144,10 @@ export function MobileUi({ playerId }: { playerId: string }) {
       if (!title) {
         console.warn("Title cannot be empty when starting a stream.");
         return;
+      }
+      // if keyboard is open, close it
+      if (Platform.OS === "ios" && keyboardHeight > 0) {
+        Keyboard.dismiss();
       }
       setShowCountdown(true);
       setIngestStarting(true);
@@ -223,6 +230,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
                 value={title}
                 onChange={(e) => setTitle(e)}
                 placeholder="Enter stream title"
+                onEndEditing={Keyboard.dismiss}
               />
             </View>
             {ingestStarting ? (
