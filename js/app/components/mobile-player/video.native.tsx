@@ -280,7 +280,7 @@ export function NativeIngestPlayer() {
             // channelCount: false,
           },
           video: {
-            deviceId: "1",
+            deviceId: "video-1",
             width: { min: 200, ideal: 1080, max: 2160 },
             height: { min: 200, ideal: 1920, max: 3840 },
           },
@@ -326,7 +326,8 @@ export function NativeIngestPlayer() {
       objectFit={"cover"}
       streamURL={localMediaStream.toURL()}
       zOrder={0}
-      style={{ width: "100%", height: "100%", backgroundColor: "green" }}
+      // width is set to 5000 to ensure it fills the screen
+      style={{ minWidth: "100%", minHeight: "100%", flex: 1 }}
     />
   );
 }
