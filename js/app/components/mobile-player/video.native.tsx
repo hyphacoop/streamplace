@@ -12,12 +12,20 @@ import { View } from "tamagui";
 import { srcToUrl } from "../player/shared";
 import useWebRTC from "../player/use-webrtc";
 
+// Add NativeIngestPlayer to the switch below!
 export default function VideoNative() {
   const protocol = usePlayerStore((x) => x.protocol);
+  const ingest = usePlayerStore((x) => x.ingestConnectionState) != null;
 
   return (
     <View>
-      {protocol === PlayerProtocol.WEBRTC ? <NativeWHEP /> : <NativeVideo />}
+      {ingest ? (
+        <NativeIngestPlayer />
+      ) : protocol === PlayerProtocol.WEBRTC ? (
+        <NativeWHEP />
+      ) : (
+        <NativeVideo />
+      )}
     </View>
   );
 }
@@ -208,5 +216,117 @@ export function NativeWHEP() {
         onLayout={handleLayout}
       />
     </>
+  );
+}
+
+import {
+  IngestMediaSource,
+  PlayerStatus as IngestPlayerStatus,
+  usePlayerStore as useIngestPlayerStore,
+} from "@streamplace/components";
+import streamKey from "components/live-dashboard/stream-key";
+import useStreamplaceNode from "hooks/useStreamplaceNode";
+import { RTCView as RTCViewIngest } from "react-native-webrtc";
+import { useWebRTCIngest } from "../player/use-webrtc";
+import { mediaDevices, WebRTCMediaStream } from "./webrtc-primitives.native";
+
+export function NativeIngestPlayer() {
+  const ingestStarting = useIngestPlayerStore((x) => x.ingestStarting);
+  const ingestMediaSource = useIngestPlayerStore((x) => x.ingestMediaSource);
+  const ingestAutoStart = useIngestPlayerStore((x) => x.ingestAutoStart);
+  const setStatus = useIngestPlayerStore((x) => x.setStatus);
+  const setVideoRef = usePlayerStore((x) => x.setVideoRef);
+
+  useEffect(() => {
+    setStatus(IngestPlayerStatus.PLAYING);
+  }, [setStatus]);
+
+  useEffect(() => {
+    if (typeof setVideoRef === "function") {
+      setVideoRef(null);
+    }
+  }, [setVideoRef]);
+
+  const { url } = useStreamplaceNode();
+  const [lms, setLocalMediaStream] = useState<WebRTCMediaStream | null>(null);
+  const [, setRemoteMediaStream] = useWebRTCIngest({
+    endpoint: `${url}/api/ingest/webrtc`,
+  });
+
+  // Use lms directly as localMediaStream
+  const localMediaStream = lms;
+
+  useEffect(() => {
+    if (ingestMediaSource === IngestMediaSource.DISPLAY) {
+      mediaDevices
+        .getDisplayMedia()
+        .then((stream: WebRTCMediaStream) => {
+          console.log("display media", stream);
+          setLocalMediaStream(stream);
+        })
+        .catch((e: any) => {
+          console.log("error getting display media", e);
+          console.error("error getting display media", e);
+        });
+    } else {
+      mediaDevices
+        .getUserMedia({
+          audio: {
+            // deviceId: "audio-1",
+            echoCancellation: true,
+            autoGainControl: true,
+            noiseSuppression: true,
+            // latency: false,
+            // channelCount: false,
+          },
+          video: {
+            deviceId: "1",
+            width: { min: 200, ideal: 1080, max: 2160 },
+            height: { min: 200, ideal: 1920, max: 3840 },
+          },
+        })
+        .then((stream: WebRTCMediaStream) => {
+          setLocalMediaStream(stream);
+        })
+        .catch((e: any) => {
+          console.error("error getting user media", e);
+        });
+    }
+  }, [ingestMediaSource]);
+
+  useEffect(() => {
+    if (!ingestStarting && !ingestAutoStart) {
+      setRemoteMediaStream(null);
+      return;
+    }
+    if (!localMediaStream) {
+      return;
+    }
+    if (!streamKey) {
+      return;
+    }
+    console.log("setting remote media stream", localMediaStream);
+    // @ts-expect-error: WebRTCMediaStream may not have all MediaStream properties, but is compatible for our use
+    setRemoteMediaStream(localMediaStream);
+  }, [
+    localMediaStream,
+    ingestStarting,
+    streamKey,
+    ingestAutoStart,
+    setRemoteMediaStream,
+  ]);
+
+  if (!localMediaStream) {
+    return null;
+  }
+
+  return (
+    <RTCViewIngest
+      mirror={true}
+      objectFit={"cover"}
+      streamURL={localMediaStream.toURL()}
+      zOrder={0}
+      style={{ width: "100%", height: "100%", backgroundColor: "green" }}
+    />
   );
 }

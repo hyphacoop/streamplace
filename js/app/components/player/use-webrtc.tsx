@@ -11,8 +11,6 @@ export default function useWebRTC(
   endpoint: string,
 ): [MediaStream | null, boolean] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-  const [frames, setFrames] = useState<number>(0);
-  const [audioFrames, setAudioFrames] = useState<number>(0);
   const [stuck, setStuck] = useState<boolean>(false);
 
   const lastChange = useRef<number>(0);
@@ -34,7 +32,7 @@ export default function useWebRTC(
       }
       setMediaStream(event.streams[0]);
     });
-    peerConnection.addEventListener("connectionstatechange", (ev) => {
+    peerConnection.addEventListener("connectionstatechange", () => {
       console.log("connection state change", peerConnection.connectionState);
       if (peerConnection.connectionState === "closed") {
         setStuck(true);
@@ -43,33 +41,32 @@ export default function useWebRTC(
         return;
       }
     });
-    peerConnection.addEventListener("negotiationneeded", (ev) => {
+    peerConnection.addEventListener("negotiationneeded", () => {
       negotiateConnectionWithClientOffer(peerConnection, endpoint);
     });
 
+    let lastFramesReceived = 0;
+    let lastAudioFramesReceived = 0;
+
     const handle = setInterval(async () => {
       const stats = await peerConnection.getStats();
-      stats.forEach((stat, k) => {
+      stats.forEach((stat) => {
         const mediaType = stat.mediaType /* web */ ?? stat.kind; /* native */
         if (stat.type === "inbound-rtp" && mediaType === "audio") {
-          const audioFramesReceived = stat.lastPacketReceivedTimestamp; // stat becomes inacessible after this call
-          setAudioFrames((oldAudioFrames: number) => {
-            if (oldAudioFrames !== audioFramesReceived) {
-              lastChange.current = Date.now();
-              setStuck(false);
-            }
-            return audioFramesReceived;
-          });
+          const audioFramesReceived = stat.lastPacketReceivedTimestamp;
+          if (lastAudioFramesReceived !== audioFramesReceived) {
+            lastAudioFramesReceived = audioFramesReceived;
+            lastChange.current = Date.now();
+            setStuck(false);
+          }
         }
         if (stat.type === "inbound-rtp" && mediaType === "video") {
-          const framesReceived = stat.framesReceived; // stat becomes inacessible after this call
-          setFrames((oldFrames) => {
-            if (oldFrames !== framesReceived) {
-              lastChange.current = Date.now();
-              setStuck(false);
-            }
-            return framesReceived;
-          });
+          const framesReceived = stat.framesReceived;
+          if (lastFramesReceived !== framesReceived) {
+            lastFramesReceived = framesReceived;
+            lastChange.current = Date.now();
+            setStuck(false);
+          }
         }
       });
       if (Date.now() - lastChange.current > 2000) {
@@ -196,10 +193,8 @@ async function waitToCompleteICEGathering(peerConnection: RTCPeerConnection) {
 
 export function useWebRTCIngest({
   endpoint,
-  streamKey,
 }: {
   endpoint: string;
-  streamKey?: string;
 }): [MediaStream | null, (mediaStream: MediaStream | null) => void] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const ingestConnectionState = usePlayerStore((x) => x.ingestConnectionState);
@@ -208,7 +203,10 @@ export function useWebRTCIngest({
   );
   const dispatch = useAppDispatch();
   const storedKey = useAppSelector(selectStoredKey)?.privateKey;
-  console.log(storedKey);
+
+  const [retryTime, setRetryTime] = useState<number>(0);
+
+  console.log({ storedKey });
   useEffect(() => {
     if (storedKey) {
       return;
@@ -227,13 +225,20 @@ export function useWebRTCIngest({
       bundlePolicy: "max-bundle",
     });
     for (const track of mediaStream.getTracks()) {
+      console.log(
+        "adding track",
+        track.kind,
+        track.label,
+        track.enabled,
+        track.readyState,
+      );
       peerConnection.addTrack(track, mediaStream);
     }
     peerConnection.addEventListener("connectionstatechange", (ev) => {
       setIngestConnectionState(peerConnection.connectionState);
       console.log("connection state change", peerConnection.connectionState);
-      if (peerConnection.connectionState !== "connected") {
-        return;
+      if (peerConnection.connectionState === "failed") {
+        setRetryTime(Date.now());
       }
     });
     peerConnection.addEventListener("negotiationneeded", (ev) => {
@@ -243,6 +248,6 @@ export function useWebRTCIngest({
     return () => {
       peerConnection.close();
     };
-  }, [endpoint, mediaStream, storedKey]);
+  }, [endpoint, mediaStream, storedKey, retryTime]);
   return [mediaStream, setMediaStream];
 }
