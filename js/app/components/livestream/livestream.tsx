@@ -157,7 +157,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     }
   };
 
-  // if width <600px or if in horizontal mode, use View, otherwise use ScrollView
   const MainView =
     (width < height && width < 980) || fullscreen ? View : ScrollView;
 
@@ -190,7 +189,6 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
           >
             <MainView
               width={videoWidth}
-              height="100%"
               maxHeight={videoHeight}
               maxWidth={videoWidth}
               fs={0}
@@ -347,6 +345,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                 backgroundColor="$background2"
                 animation={"quick"}
                 pt="$11"
+                $gtXs={{ pt: 0 }}
                 transform={
                   isIOS
                     ? [
@@ -361,6 +360,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                     ? {
                         paddingTop: 0,
                         width: isChatVisible ? 380 : 0,
+                        minWidth: isChatVisible ? 380 : 0,
                         flexBasis: isChatVisible ? 380 : 0,
                         flexShrink: 1,
                         borderLeftColor: "#666",
