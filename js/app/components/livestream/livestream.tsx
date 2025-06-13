@@ -157,8 +157,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
     }
   };
 
-  const MainView =
-    (width < height && width < 980) || fullscreen ? View : ScrollView;
+  const MainView = width < height && width < 980 ? View : ScrollView;
 
   const dir = width < height && width < 980 ? "column" : "row";
 
