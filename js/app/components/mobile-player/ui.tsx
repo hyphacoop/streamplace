@@ -19,8 +19,10 @@ import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
 import { createLivestreamRecord } from "features/bluesky/blueskySlice";
 import useAvatars from "hooks/useAvatars";
+import { useKeyboard } from "hooks/useKeyboard";
+import { useOuterAndInnerDimensions } from "hooks/useOuterAndInnerDimensions";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Image, Pressable } from "react-native";
+import { Animated, Dimensions, Image, Platform, Pressable } from "react-native";
 import { useAppDispatch } from "store/hooks";
 
 export function MobileUi({ playerId }: { playerId: string }) {
@@ -47,6 +49,13 @@ export function MobileUi({ playerId }: { playerId: string }) {
     (x) => x.setIngestStarting,
     playerId,
   );
+
+  const { keyboardHeight } = useKeyboard();
+  let { outerHeight, innerHeight } = useOuterAndInnerDimensions();
+  let slideKeyboard = 0;
+  if (Platform.OS === "ios" && keyboardHeight > 0) {
+    slideKeyboard = -keyboardHeight + (outerHeight - innerHeight);
+  }
 
   // Animation values
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -198,6 +207,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
             w.percent[100],
             layout.flex.center,
             { opacity: inputOpacity },
+            { transform: [{ translateY: slideKeyboard }] },
           ]}
         >
           <View
