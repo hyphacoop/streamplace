@@ -539,6 +539,7 @@ export function StreamplaceDrawer() {
           component={MobileStream}
           options={{
             headerTitle: "Stream",
+            drawerItemStyle: { display: "none" },
             title: "Streamplace Stream",
           }}
         />
@@ -548,6 +549,7 @@ export function StreamplaceDrawer() {
           options={{
             headerTitle: "Go Live",
             title: "Go live",
+            headerShown: false,
           }}
         />
       </Drawer.Navigator>
