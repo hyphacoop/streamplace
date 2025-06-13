@@ -147,7 +147,7 @@ export function Fullscreen(props: { src: string; playerId?: string }) {
         style={[
           styles.fullscreenContainer,
           {
-            width: isLandscape ? dimensions.width + 40 : dimensions.width,
+            width: dimensions.width,
             height: dimensions.height,
           },
         ]}
@@ -156,7 +156,7 @@ export function Fullscreen(props: { src: string; playerId?: string }) {
           style={[
             styles.videoContainer,
             {
-              width: isLandscape ? videoWidth + 40 : videoWidth,
+              width: videoWidth,
               height: videoHeight,
               left: leftPosition,
               top: topPosition,
@@ -194,7 +194,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: "#000",
     zIndex: 9999,
-    elevation: 9999,
     margin: 0,
     padding: 0,
     justifyContent: "center",
