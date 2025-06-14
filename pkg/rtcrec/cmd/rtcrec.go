@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"time"
 
@@ -31,8 +32,10 @@ func Start() error {
 }
 
 func Trim() error {
-	var duration time.Duration
-	flag.DurationVar(&duration, "duration", 0, "duration to trim off the front")
+	var startDuration time.Duration
+	flag.DurationVar(&startDuration, "start", 0, "timestamp where we should start our clip")
+	var endDuration time.Duration
+	flag.DurationVar(&endDuration, "end", 0, "timestamp where we should end our clip")
 	var inPath string
 	flag.StringVar(&inPath, "in-path", "", "path to the file to decode")
 	var outPath string
@@ -41,8 +44,8 @@ func Trim() error {
 	if err != nil {
 		return err
 	}
-	if duration == 0 {
-		return fmt.Errorf("duration is required")
+	if startDuration == 0 && endDuration == 0 {
+		return fmt.Errorf("start or end duration is required (otherwise, you know, the cp command is right there)")
 	}
 	if inPath == "" {
 		return fmt.Errorf("in-path is required")
@@ -68,7 +71,15 @@ func Trim() error {
 	if err != nil {
 		return err
 	}
-	var cutoff *time.Time
+	var startCutoff *time.Time
+	var endCutoff *time.Time
+	if startDuration == 0 {
+		startCutoff = &time.Time{}
+	}
+	if endDuration == 0 {
+		t := time.Unix(math.MaxInt64, 0)
+		endCutoff = &t
+	}
 	included := 0
 	dropped := 0
 	for {
@@ -76,23 +87,29 @@ func Trim() error {
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		if cutoff == nil {
-			t := ev.Time.Add(duration)
-			cutoff = &t
+		if startCutoff == nil {
+			t := ev.Time.Add(startDuration)
+			startCutoff = &t
+		}
+		if endCutoff == nil {
+			t := ev.Time.Add(endDuration)
+			endCutoff = &t
 		}
 		// we only rewrite trackread events
 		if ev.TrackRead == nil {
-			// included++
-			encoder.Event(*ev)
+			if ev.Time.Before(*endCutoff) {
+				// included++
+				encoder.Event(*ev)
+			}
 			continue
 		}
-		if ev.Time.Before(*cutoff) {
+		if ev.Time.Before(*startCutoff) || ev.Time.After(*endCutoff) {
 			// fmt.Printf("dropped: %s < %s\n", ev.Time.Format(time.RFC3339Nano), cutoff.Format(time.RFC3339Nano))
 			dropped++
 			continue
 		}
 		included++
-		ev.Time = ev.Time.Add(-duration)
+		ev.Time = ev.Time.Add(-startDuration)
 		encoder.Event(*ev)
 	}
 	fmt.Printf("included: %d, dropped: %d\n", included, dropped)

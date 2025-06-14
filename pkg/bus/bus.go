@@ -20,6 +20,9 @@ func NewBus() *Bus {
 }
 
 func (b *Bus) Subscribe(user string) <-chan Message {
+	if b == nil {
+		return make(<-chan Message)
+	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	ch := make(chan Message, 100)
@@ -28,6 +31,9 @@ func (b *Bus) Subscribe(user string) <-chan Message {
 }
 
 func (b *Bus) Unsubscribe(user string, ch <-chan Message) {
+	if b == nil {
+		return
+	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 

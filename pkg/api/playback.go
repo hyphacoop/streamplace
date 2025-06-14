@@ -224,7 +224,7 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 			errors.WriteHTTPInternalServerError(w, "unable to create peer connection", err)
 			return
 		}
-		answer, err := a.MediaManager.WebRTCIngest(ctx, &offer, mediaSigner, pc)
+		answer, err := a.MediaManager.WebRTCIngest(ctx, &offer, mediaSigner, pc, make(chan struct{}))
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "error playing back", err)
 			return

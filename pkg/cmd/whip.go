@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"github.com/pion/webrtc/v4"
 	pionmedia "github.com/pion/webrtc/v4/pkg/media"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/crypto/spkey"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
@@ -137,11 +137,7 @@ func (w *WHIPClient) WHIP(ctx context.Context) error {
 		if w.StreamKey != "" {
 			streamKey = w.StreamKey
 		} else {
-			priv, err := atcrypto.GeneratePrivateKeyK256()
-			if err != nil {
-				return err
-			}
-			pub, err := priv.PublicKey()
+			priv, pub, err := spkey.GenerateStreamKey()
 			if err != nil {
 				return err
 			}
