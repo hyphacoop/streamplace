@@ -1,5 +1,4 @@
 import { useURL } from "expo-linking";
-import useWallet from "hooks/useWallet";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
@@ -31,7 +30,6 @@ export default function BlueskyProvider({
   }, [isReady]);
   const oauthSession = useAppSelector(selectOAuthSession);
   const userProfile = useAppSelector(selectUserProfile);
-  const wallet = useWallet();
 
   const [lastLink, setLastLink] = useState<string | null>(null);
   const url = useURL();
@@ -52,6 +50,6 @@ export default function BlueskyProvider({
     if (oauthSession && !userProfile) {
       dispatch(getProfile(oauthSession.did));
     }
-  }, [oauthSession, userProfile, wallet.address]);
+  }, [oauthSession, userProfile]);
   return <>{children}</>;
 }

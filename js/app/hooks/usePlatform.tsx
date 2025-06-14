@@ -1,6 +1,6 @@
 import { IsPlatform } from "./usePlatform.shared";
 // it's only for setting defaults, i promise!
-import uaParser from "ua-parser-js";
+import * as UAParser from "ua-parser-js";
 import { topSafeHeight } from "./platform";
 
 function supportsHLS() {
@@ -15,7 +15,7 @@ let ua;
 
 export default function usePlatform(): IsPlatform {
   if (!ua) {
-    const parser = uaParser.UAParser;
+    const parser = UAParser.UAParser;
     ua = parser(navigator.userAgent);
   }
   const electron = typeof window["SP_ELECTRON"] !== "undefined";
