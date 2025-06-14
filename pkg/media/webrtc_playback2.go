@@ -78,6 +78,7 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 
 		started := time.Now()
 		elapsed := time.Duration(0)
+		latency := time.Duration(0)
 
 		go func() {
 			for {
@@ -106,6 +107,7 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 						log.Error(ctx, "failed to packetize segment", "error", err)
 						continue
 					}
+					latency += packet.Duration
 					packetQueue <- packet
 				}
 			}
@@ -142,48 +144,68 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 				case <-ctx.Done():
 					return
 				case packet := <-bufPacketQueue:
-					videoDur := packet.Duration / time.Duration(len(packet.Video))
-					audioDur := packet.Duration / time.Duration(len(packet.Audio))
+					latency -= packet.Duration
+					log.Warn(ctx, "latency", "latency", latency)
+					var videoDur time.Duration
+					var audioDur time.Duration
+					if len(packet.Video) > 0 {
+						videoDur = packet.Duration / time.Duration(len(packet.Video))
+					}
+					if len(packet.Audio) > 0 {
+						audioDur = packet.Duration / time.Duration(len(packet.Audio))
+					}
 					g, _ := errgroup.WithContext(ctx)
 
-					g.Go(func() error {
-						for _, video := range packet.Video {
-							// log.Log(ctx, "writing video sample", "duration", videoDur)
-							err := videoTrack.WriteSample(media.Sample{Data: video, Duration: videoDur})
-							if err != nil {
-								return fmt.Errorf("failed to write video sample: %w", err)
-							}
+					if videoDur > 0 {
+						g.Go(func() error {
+							ticker := time.NewTicker(videoDur)
+							defer ticker.Stop()
+							for _, video := range packet.Video {
+								// log.Log(ctx, "writing video sample", "duration", videoDur)
+								err := videoTrack.WriteSample(media.Sample{Data: video, Duration: videoDur})
+								if err != nil {
+									return fmt.Errorf("failed to write video sample: %w", err)
+								}
 
-							select {
-							case <-ctx.Done():
-								return nil
-							case <-time.After(videoDur):
-								continue
+								select {
+								case <-ctx.Done():
+									return nil
+								case <-ticker.C:
+									continue
+								}
 							}
-						}
-						return nil
-					})
-					g.Go(func() error {
-						log.Log(ctx, "time since last packet", "time", time.Since(lastPacketTime))
-						for _, audio := range packet.Audio {
-							err := audioTrack.WriteSample(media.Sample{Data: audio, Duration: audioDur})
-							if err != nil {
-								return fmt.Errorf("failed to write audio sample: %w", err)
+							return nil
+						})
+					} else {
+						log.Warn(ctx, "no video samples to write")
+					}
+					if audioDur > 0 {
+						g.Go(func() error {
+							ticker := time.NewTicker(audioDur)
+							defer ticker.Stop()
+							log.Log(ctx, "time since last packet", "time", time.Since(lastPacketTime))
+							for _, audio := range packet.Audio {
+								err := audioTrack.WriteSample(media.Sample{Data: audio, Duration: audioDur})
+								if err != nil {
+									return fmt.Errorf("failed to write audio sample: %w", err)
+								}
+								select {
+								case <-ctx.Done():
+									return nil
+								case <-ticker.C:
+									continue
+								}
 							}
-							select {
-							case <-ctx.Done():
-								return nil
-							case <-time.After(audioDur):
-								continue
-							}
-						}
-						lastPacketTime = time.Now()
-						return nil
-					})
+							lastPacketTime = time.Now()
+							return nil
+						})
 
-					if err := g.Wait(); err != nil {
-						log.Error(ctx, "failed to write samples", "error", err)
-						cancel()
+						if err := g.Wait(); err != nil {
+							log.Error(ctx, "failed to write samples", "error", err)
+							cancel()
+						}
+					} else {
+						log.Warn(ctx, "no audio samples to write")
 					}
 				}
 			}

@@ -33,7 +33,7 @@ func NewRecordingPeerConnection(ctx context.Context, cli config.CLI, user string
 		return nil, fmt.Errorf("failed to create data file: %w", err)
 	}
 	log.Log(ctx, "logging webrtc session to file", "file", f.Name())
-	stream, err := NewRecorderStream(f)
+	stream, err := MakeWebRTCEncoder(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create recorder stream: %w", err)
 	}
