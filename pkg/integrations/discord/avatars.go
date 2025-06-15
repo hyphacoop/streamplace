@@ -2,6 +2,7 @@ package discord
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/bluesky-social/indigo/api/bsky"
@@ -19,6 +20,10 @@ var avatarCacheMutex = sync.Mutex{}
 func getAvatarURL(ctx context.Context, r *model.Repo) (string, error) {
 	avatarCacheMutex.Lock()
 	defer avatarCacheMutex.Unlock()
+
+	if r == nil || r.DID == "" {
+		return "", fmt.Errorf("repo or DID is nil or empty")
+	}
 
 	if avatar, ok := avatarCache[r.DID]; ok {
 		return avatar, nil
