@@ -137,7 +137,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			for _, webhook := range atsync.CLI.DiscordWebhooks {
 				if webhook.DID == rec.Streamer && webhook.Type == "chat" {
 					go func() {
-						err := discord.SendChat(ctx, webhook, r, scm)
+						err := discord.SendChat(ctx, webhook, repo, scm)
 						if err != nil {
 							log.Error(ctx, "failed to send livestream to discord", "err", err)
 						} else {
