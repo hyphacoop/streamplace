@@ -3,6 +3,7 @@ import { useLivestreamStore, usePlayerStore } from "@streamplace/components";
 import { Input, Text, View } from "@streamplace/components/src/components/ui";
 import { layout } from "@streamplace/components/src/lib/theme";
 import {
+  borderRadius,
   gap,
   h,
   mt,
@@ -52,6 +53,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   const isPlayerRatioGreater = pWidth / pHeight > width / height;
   const isSelfAndNotLive = ingest === "new";
+  const isNotLive = ingest !== null && ingest !== "new";
 
   const ingestStarting = usePlayerStore((x) => x.ingestStarting, playerId);
   const setIngestStarting = usePlayerStore(
@@ -70,7 +72,9 @@ export function MobileUi({ playerId }: { playerId: string }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const inputOpacity = useRef(new Animated.Value(1)).current;
-  const chatOpacity = useRef(new Animated.Value(0)).current;
+  const chatOpacity = useRef(
+    new Animated.Value(isSelfAndNotLive ? 0 : 1),
+  ).current;
 
   const dispatch = useAppDispatch();
 
@@ -124,16 +128,19 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   const handleSubmit = async () => {
     try {
-      if (!title) {
-        return console.warn("Title cannot be empty");
+      if (title) {
+        // wait ~2 sec for the thumbnail to propogate
+        setTimeout(
+          () =>
+            dispatch(
+              createLivestreamRecord({
+                title,
+                customThumbnail: undefined, // thumbnailToUse || undefined,
+              }),
+            ),
+          2000,
+        );
       }
-      //const thumbnailToUse = await captureFrame(1280, 0.85);
-      dispatch(
-        createLivestreamRecord({
-          title,
-          customThumbnail: undefined, // thumbnailToUse || undefined,
-        }),
-      );
     } catch (error) {
       console.error("Error creating livestream:", error);
     } finally {
@@ -212,22 +219,24 @@ export function MobileUi({ playerId }: { playerId: string }) {
             <Text>{profile?.handle}</Text>
           </View>
         </View>
-        <View
-          style={[
-            {
-              padding: 10,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              borderRadius: 8,
-            },
-            layout.position.absolute,
-            position.right[1],
-            position.top[1],
-          ]}
-        >
-          <Pressable onPress={doSetIngestCamera}>
-            <SwitchCamera />
-          </Pressable>
-        </View>
+        {isNotLive && (
+          <View
+            style={[
+              {
+                padding: 10,
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                borderRadius: 8,
+              },
+              layout.position.absolute,
+              position.right[1],
+              position.top[1],
+            ]}
+          >
+            <Pressable onPress={doSetIngestCamera}>
+              <SwitchCamera />
+            </Pressable>
+          </View>
+        )}
       </View>
       {isSelfAndNotLive ? (
         <Animated.View
@@ -246,8 +255,8 @@ export function MobileUi({ playerId }: { playerId: string }) {
             style={[
               layout.flex.column,
               gap.all[2],
-              { padding: 10 },
               sizes.maxWidth[80],
+              { padding: 10 },
             ]}
           >
             <View backgroundColor="rgba(64,64,64,0.8)" borderRadius={12}>
@@ -305,10 +314,16 @@ export function MobileUi({ playerId }: { playerId: string }) {
             zIndex[10],
             w.percent[100],
             { opacity: chatOpacity },
+            { transform: [{ translateY: slideKeyboard }] },
           ]}
         >
           <Chat isChatVisible={true} setIsChatVisible={() => true} />
-          <ChatBox />
+          <View style={[layout.flex.column, gap.all[2], { padding: 10 }]}>
+            <ChatBox
+              isChatVisible={true}
+              chatBoxStyle={{ borderRadius: borderRadius.xl }}
+            />
+          </View>
         </Animated.View>
       )}
       {showCountdown && (

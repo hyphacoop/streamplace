@@ -885,24 +885,44 @@ export const blueskySlice = createAppSlice({
           }
         } else {
           // No custom thumbnail: fetch the server-side image and upload it
+          // try thrice lel
+          let tries = 0;
           try {
-            const thumbnailRes = await fetch(
-              `${u.protocol}//${u.host}/api/playback/${profile.handle}/stream.png`,
-            );
-            if (!thumbnailRes.ok) {
-              throw new Error(
-                `Failed to fetch thumbnail: ${thumbnailRes.status})`,
-              );
+            for (; tries < 3; tries++) {
+              try {
+                console.log(
+                  `Fetching thumbnail from ${u.protocol}//${u.host}/api/playback/${profile.handle}/stream.png`,
+                );
+                const thumbnailRes = await fetch(
+                  `${u.protocol}//${u.host}/api/playback/${profile.handle}/stream.png`,
+                );
+                if (!thumbnailRes.ok) {
+                  throw new Error(
+                    `Failed to fetch thumbnail: ${thumbnailRes.status})`,
+                  );
+                }
+                const thumbnailBlob = await thumbnailRes.blob();
+                console.log(thumbnailBlob);
+                thumbnail = await uploadThumbnail(
+                  profile.handle,
+                  u,
+                  bluesky.pdsAgent,
+                  profile,
+                  thumbnailBlob,
+                );
+              } catch (e) {
+                console.warn(
+                  `Failed to fetch thumbnail, retrying (${tries + 1}/3): ${e}`,
+                );
+                // Wait 1 second before retrying
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                if (tries === 2) {
+                  throw new Error(
+                    `Failed to fetch thumbnail after 3 tries: ${e}`,
+                  );
+                }
+              }
             }
-            const thumbnailBlob = await thumbnailRes.blob();
-            console.log(thumbnailBlob);
-            thumbnail = await uploadThumbnail(
-              profile.handle,
-              u,
-              bluesky.pdsAgent,
-              profile,
-              thumbnailBlob,
-            );
           } catch (e) {
             throw new Error(`Thumbnail upload failed ${e}`);
           }
