@@ -1,37 +1,31 @@
 import { useNavigation } from "@react-navigation/native";
 import { useLivestreamStore, usePlayerStore } from "@streamplace/components";
-import { Input, Text, View } from "@streamplace/components/src/components/ui";
+import { Text, Toast, View } from "@streamplace/components/src/components/ui";
 import { layout } from "@streamplace/components/src/lib/theme";
 import {
-  borderRadius,
+  borders,
+  colors,
   gap,
   h,
-  mt,
-  p,
   position,
-  px,
-  py,
-  sizes,
   w,
-  zIndex,
 } from "@streamplace/components/src/lib/theme/atoms";
-import { ChevronLeft, SwitchCamera } from "@tamagui/lucide-icons";
-import Chat from "components/chat/chat";
-import ChatBox from "components/chat/chat-box";
 import { createLivestreamRecord } from "features/bluesky/blueskySlice";
 import useAvatars from "hooks/useAvatars";
 import { useKeyboard } from "hooks/useKeyboard";
 import { useOuterAndInnerDimensions } from "hooks/useOuterAndInnerDimensions";
-import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Image,
-  Keyboard,
-  Platform,
-  Pressable,
-} from "react-native";
+import { useSegmentTiming } from "hooks/useSegmentTiming";
+import { ChevronLeft, SwitchCamera } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import { Dimensions, Image, Keyboard, Platform, Pressable } from "react-native";
 import { useAppDispatch } from "store/hooks";
+import { ChatPanel } from "./ui/chat";
+import { CountdownOverlay } from "./ui/countdown";
+import { InputPanel } from "./ui/input";
+import { MetricsPanel } from "./ui/metrics";
+import ViewerContextMenu from "./ui/viewer-context-menu";
+
+// Dropdown imports
 
 export function MobileUi({ playerId }: { playerId: string }) {
   const ingest = usePlayerStore((x) => x.ingestConnectionState);
@@ -44,16 +38,19 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   const [title, setTitle] = useState<string | undefined>();
   const [showCountdown, setShowCountdown] = useState(false);
-  const [countdown, setCountdown] = useState(3);
   const [recordSubmitted, setRecordSubmitted] = useState(false);
 
+  // Dropdown state for quality and latency
+  const [quality, setQuality] = useState("auto");
+  const [lowLatency, setLowLatency] = useState(true); // true = WebRTC (Low), false = HLS (High)
+
   const navigation = useNavigation();
-  const avatars = useAvatars([profile?.did!])[profile?.did!];
+  const avatars = useAvatars(profile ? [profile?.did] : []);
   //const captureFrame = useCaptureVideoFrame();
 
   const isPlayerRatioGreater = pWidth / pHeight > width / height;
   const isSelfAndNotLive = ingest === "new";
-  const isNotLive = ingest !== null && ingest !== "new";
+  const isLive = ingest !== null && ingest !== "new";
 
   const ingestStarting = usePlayerStore((x) => x.ingestStarting, playerId);
   const setIngestStarting = usePlayerStore(
@@ -68,78 +65,23 @@ export function MobileUi({ playerId }: { playerId: string }) {
     slideKeyboard = -keyboardHeight + (outerHeight - innerHeight);
   }
 
-  // Animation values
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-  const inputOpacity = useRef(new Animated.Value(1)).current;
-  const chatOpacity = useRef(
-    new Animated.Value(isSelfAndNotLive ? 0 : 1),
-  ).current;
+  const { segmentDeltas, mean, range, connectionQuality } = useSegmentTiming();
 
   const dispatch = useAppDispatch();
-
-  // Countdown effect with fade out on expand
-  useEffect(() => {
-    if (showCountdown && countdown > 0) {
-      // Fade out input area
-      Animated.timing(inputOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-
-      // Reset animation values
-      scaleAnim.setValue(1);
-      opacityAnim.setValue(1);
-
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 1.5,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setCountdown((c) => c - 1);
-      });
-    } else if (showCountdown && countdown === 0) {
-      setShowCountdown(false);
-      setCountdown(3);
-      // Fade in chat
-      Animated.timing(chatOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [
-    showCountdown,
-    countdown,
-    setIngestStarting,
-    scaleAnim,
-    opacityAnim,
-    inputOpacity,
-    chatOpacity,
-  ]);
 
   const handleSubmit = async () => {
     try {
       if (title) {
         // wait ~2 sec for the thumbnail to propogate
-        setTimeout(
-          () =>
-            dispatch(
-              createLivestreamRecord({
-                title,
-                customThumbnail: undefined, // thumbnailToUse || undefined,
-              }),
-            ),
-          2000,
-        );
+        setTimeout(() => {
+          dispatch(
+            createLivestreamRecord({
+              title,
+              customThumbnail: undefined, // thumbnailToUse || undefined,
+            }),
+          ),
+            setRecordSubmitted(true);
+        }, 3000);
       }
     } catch (error) {
       console.error("Error creating livestream:", error);
@@ -150,10 +92,6 @@ export function MobileUi({ playerId }: { playerId: string }) {
 
   const toggleGoLive = () => {
     if (!ingestStarting) {
-      if (!title) {
-        console.warn("Title cannot be empty when starting a stream.");
-        return;
-      }
       // if keyboard is open, close it
       if (Platform.OS === "ios" && keyboardHeight > 0) {
         Keyboard.dismiss();
@@ -161,7 +99,6 @@ export function MobileUi({ playerId }: { playerId: string }) {
       setShowCountdown(true);
       setIngestStarting(true);
       handleSubmit();
-      setCountdown(3);
       return;
     }
     setIngestStarting(false);
@@ -187,7 +124,7 @@ export function MobileUi({ playerId }: { playerId: string }) {
           style={[
             {
               padding: 6.5,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
               borderRadius: 8,
             },
             layout.position.absolute,
@@ -206,20 +143,28 @@ export function MobileUi({ playerId }: { playerId: string }) {
               <ChevronLeft />
             </Pressable>
             <Image
-              source={avatars?.avatar || require("assets/images/goose.png")}
+              source={
+                profile?.did
+                  ? { url: avatars[profile?.did]?.avatar }
+                  : require("assets/images/goose.png")
+              }
               width={32}
               height={32}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 999,
-                backgroundColor: "green",
-              }}
+              style={[
+                {
+                  width: 36,
+                  height: 36,
+                  borderRadius: 999,
+                  backgroundColor: "green",
+                },
+                borders.width.thin,
+                borders.color.gray[700],
+              ]}
             />
             <Text>{profile?.handle}</Text>
           </View>
         </View>
-        {isNotLive && (
+        {(isLive || isSelfAndNotLive) && (
           <View
             style={[
               {
@@ -230,129 +175,66 @@ export function MobileUi({ playerId }: { playerId: string }) {
               layout.position.absolute,
               position.right[1],
               position.top[1],
+              gap.all[4],
             ]}
           >
+            {!isLive && !isSelfAndNotLive && <ViewerContextMenu />}
             <Pressable onPress={doSetIngestCamera}>
-              <SwitchCamera />
+              <SwitchCamera size={32} color={colors.gray[200]} />
             </Pressable>
           </View>
         )}
       </View>
-      {isSelfAndNotLive ? (
-        <Animated.View
+      {isLive && (
+        <View
           style={[
             layout.position.absolute,
-            h.percent[30],
-            position.bottom[0],
-            zIndex[10],
-            w.percent[100],
+            position.top[14],
+            position.left[0],
+            position.right[0],
+            layout.flex.column,
             layout.flex.center,
-            { opacity: inputOpacity },
-            { transform: [{ translateY: slideKeyboard }] },
           ]}
         >
-          <View
-            style={[
-              layout.flex.column,
-              gap.all[2],
-              sizes.maxWidth[80],
-              { padding: 10 },
-            ]}
-          >
-            <View backgroundColor="rgba(64,64,64,0.8)" borderRadius={12}>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e)}
-                placeholder="Enter stream title"
-                onEndEditing={Keyboard.dismiss}
-              />
-            </View>
-            {ingestStarting ? (
-              <Text>Starting your stream...</Text>
-            ) : (
-              <View style={[layout.flex.center]}>
-                <Pressable
-                  onPress={toggleGoLive}
-                  style={[
-                    px[4],
-                    py[2],
-                    layout.flex.row,
-                    layout.flex.center,
-                    gap.all[1],
-                    {
-                      backgroundColor: "rgba(64,64,64, 0.8)",
-                      borderRadius: 12,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      p[2],
-                      {
-                        backgroundColor: "rgba(256,0,0, 0.8)",
-                        borderRadius: 12,
-                      },
-                    ]}
-                  />
-                  <Text center>Go Live</Text>
-                </Pressable>
-                <Text color="muted" size="xs" style={[mt[2]]}>
-                  We'll announce that you're live on Bluesky.
-                </Text>
-              </View>
-            )}
-          </View>
-        </Animated.View>
-      ) : (
-        <Animated.View
-          style={[
-            isPlayerRatioGreater
-              ? layout.position.relative
-              : layout.position.absolute,
-            h.percent[30],
-            position.bottom[0],
-            zIndex[10],
-            w.percent[100],
-            { opacity: chatOpacity },
-            { transform: [{ translateY: slideKeyboard }] },
-          ]}
-        >
-          <Chat isChatVisible={true} setIsChatVisible={() => true} />
-          <View style={[layout.flex.column, gap.all[2], { padding: 10 }]}>
-            <ChatBox
-              isChatVisible={true}
-              chatBoxStyle={{ borderRadius: borderRadius.xl }}
-            />
-          </View>
-        </Animated.View>
-      )}
-      {showCountdown && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width,
-            height,
-            backgroundColor: "rgba(0,0,0,0.7)",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <Animated.Text
-            style={{
-              color: "white",
-              fontSize: 120,
-              fontWeight: "bold",
-              transform: [{ scale: scaleAnim }],
-              opacity: opacityAnim,
-            }}
-          >
-            {countdown}
-          </Animated.Text>
+          <MetricsPanel
+            connectionQuality={connectionQuality}
+            segmentDeltas={segmentDeltas}
+            mean={mean || 999}
+            range={range || 999}
+          />
         </View>
       )}
+      {isSelfAndNotLive ? (
+        <InputPanel
+          title={title}
+          setTitle={setTitle}
+          ingestStarting={ingestStarting}
+          toggleGoLive={toggleGoLive}
+          slideKeyboard={slideKeyboard}
+        />
+      ) : (
+        <ChatPanel
+          isPlayerRatioGreater={isPlayerRatioGreater}
+          slideKeyboard={slideKeyboard}
+        />
+      )}
+      <CountdownOverlay
+        visible={showCountdown}
+        width={width}
+        height={height}
+        startFrom={3}
+        onDone={() => {
+          setShowCountdown(false);
+        }}
+      />
+
+      <Toast
+        open={recordSubmitted}
+        onOpenChange={setRecordSubmitted}
+        title="You're live!"
+        description="We're notifying your followers that you just went live."
+        duration={5}
+      />
     </>
   );
 }
