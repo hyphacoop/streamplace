@@ -86,7 +86,11 @@ export default function () {
     process.env["SP_PRODUCTION_RELEASE"] === "true" || !!process.env.CI;
   const pkg = require("./package.json");
   const name = isProd ? "Streamplace" : "Devplace";
-  const bundle = isProd ? "tv.aquareum" : "tv.aquareum.dev";
+  let bundle = isProd ? "tv.aquareum" : "tv.aquareum.dev";
+  if (process.env["SP_BUNDLE_OVERRIDE"]) {
+    bundle = process.env["SP_BUNDLE_OVERRIDE"];
+  }
+  let appleTeamId = process.env["SP_APPLE_TEAM_ID"];
   const scheme = process.env["SP_APP_SCHEME"] ?? bundle;
   return {
     expo: {
@@ -112,6 +116,11 @@ export default function () {
           UIBackgroundModes: ["fetch", "remote-notification"],
           LSMinimumSystemVersion: "12.0",
         },
+        ...(appleTeamId
+          ? {
+              appleTeamId,
+            }
+          : {}),
         ...(isProd
           ? {
               googleServicesFile: "./GoogleService-Info.plist",
@@ -145,6 +154,8 @@ export default function () {
       },
       plugins: [
         withAndroidProfileable,
+        "expo-video",
+        "expo-web-browser",
         streamplaceReactNativeWebRTC,
         ["expo-sqlite", { useSQLCipher: true }],
         "expo-file-system",
