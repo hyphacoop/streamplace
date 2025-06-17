@@ -12,11 +12,8 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const segment = useSegment();
 
-  const status = usePlayerStore((x) => x.status);
   const offline = usePlayerStore((x) => x.offline);
   const spurl = useStreamplaceStore((x) => x.url);
-
-  console.log("Status", status, offline);
 
   useEffect(() => {
     if (
@@ -27,7 +24,6 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
     ) {
       const jitter = 500 + Math.random() * 1500;
       retryTimeoutRef.current = setTimeout(() => {
-        console.log("Detected new segment and stalled state, retrying video");
         lastSegmentRef.current = segment?.startTime;
       }, jitter);
     }
