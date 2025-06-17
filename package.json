@@ -15,7 +15,7 @@
     "postinstall": "husky",
     "build": "pnpm --stream -r run build",
     "prepare": "husky",
-    "release": "lerna version --force-publish=@iameli/app",
+    "release": "lerna version --force-publish=@streamplace/app",
     "precommit": "make precommit",
     "app": "pnpm run -r --stream --filter @streamplace/app... --parallel",
     "desktop": "pnpm run -r --stream --filter streamplace-desktop... --parallel",
