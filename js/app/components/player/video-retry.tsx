@@ -1,42 +1,41 @@
 import {
-  PlayerStatus,
   usePlayerStore,
+  useSegment,
   useStreamplaceStore,
 } from "@streamplace/components";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+
+import { useRef } from "react";
 
 export default function VideoRetry(props: { children: React.ReactNode }) {
-  const [resetTime, setResetTime] = useState<number>(Date.now());
-  const [retryCount, setRetryCount] = useState(0);
+  const lastSegmentRef = useRef<string | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const segment = useSegment();
 
   const status = usePlayerStore((x) => x.status);
-  const playerEvent = usePlayerStore((x) => x.playerEvent);
-
+  const offline = usePlayerStore((x) => x.offline);
   const spurl = useStreamplaceStore((x) => x.url);
 
-  const isPlaying = status === PlayerStatus.PLAYING;
+  console.log("Status", status, offline);
 
   useEffect(() => {
-    if (isPlaying) {
-      setRetryCount(0);
-      return;
+    if (
+      lastSegmentRef.current !== null &&
+      segment &&
+      segment.startTime !== lastSegmentRef.current &&
+      offline
+    ) {
+      const jitter = 500 + Math.random() * 1500;
+      retryTimeoutRef.current = setTimeout(() => {
+        console.log("Detected new segment and stalled state, retrying video");
+        lastSegmentRef.current = segment?.startTime;
+      }, jitter);
     }
+  }, [offline, segment, spurl]);
 
-    const baseDelay = 3000; // 3 seconds
-    const maxDelay = 30000; // 30 seconds
-    const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
-
-    const handle = setTimeout(() => {
-      // console.log(`retrying (attempt ${retryCount + 1}, delay: ${delay}ms)`);
-      setResetTime(Date.now());
-      setRetryCount((prev) => prev + 1);
-      playerEvent(spurl, new Date().toISOString(), "retry", {
-        delay,
-      });
-    }, delay);
-
-    return () => clearTimeout(handle);
-  }, [isPlaying, resetTime, retryCount, playerEvent]);
-
-  return <React.Fragment>{props.children}</React.Fragment>;
+  return (
+    <React.Fragment key={lastSegmentRef.current}>
+      {props.children}
+    </React.Fragment>
+  );
 }
