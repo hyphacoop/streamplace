@@ -27,22 +27,18 @@ import ViewerContextMenu from "./ui/viewer-context-menu";
 
 // Dropdown imports
 
-export function MobileUi({ playerId }: { playerId: string }) {
+export function MobileUi() {
   const ingest = usePlayerStore((x) => x.ingestConnectionState);
   const profile = useLivestreamStore((x) => x.profile);
   const pHeight = Number(usePlayerStore((x) => x.playerHeight)) || 0;
   const pWidth = Number(usePlayerStore((x) => x.playerWidth)) || 0;
-  const ingestCamera = usePlayerStore((x) => x.ingestCamera, playerId);
-  const setIngestCamera = usePlayerStore((x) => x.setIngestCamera, playerId);
+  const ingestCamera = usePlayerStore((x) => x.ingestCamera);
+  const setIngestCamera = usePlayerStore((x) => x.setIngestCamera);
   const { width, height } = Dimensions.get("window");
 
   const [title, setTitle] = useState<string | undefined>();
   const [showCountdown, setShowCountdown] = useState(false);
   const [recordSubmitted, setRecordSubmitted] = useState(false);
-
-  // Dropdown state for quality and latency
-  const [quality, setQuality] = useState("auto");
-  const [lowLatency, setLowLatency] = useState(true); // true = WebRTC (Low), false = HLS (High)
 
   const navigation = useNavigation();
   const avatars = useAvatars(profile ? [profile?.did] : []);
@@ -52,11 +48,8 @@ export function MobileUi({ playerId }: { playerId: string }) {
   const isSelfAndNotLive = ingest === "new";
   const isLive = ingest !== null && ingest !== "new";
 
-  const ingestStarting = usePlayerStore((x) => x.ingestStarting, playerId);
-  const setIngestStarting = usePlayerStore(
-    (x) => x.setIngestStarting,
-    playerId,
-  );
+  const ingestStarting = usePlayerStore((x) => x.ingestStarting);
+  const setIngestStarting = usePlayerStore((x) => x.setIngestStarting);
 
   const { keyboardHeight } = useKeyboard();
   let { outerHeight, innerHeight } = useOuterAndInnerDimensions();
@@ -164,28 +157,29 @@ export function MobileUi({ playerId }: { playerId: string }) {
             <Text>{profile?.handle}</Text>
           </View>
         </View>
-        {(isLive || isSelfAndNotLive) && (
-          <View
-            style={[
-              {
-                padding: 10,
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-                borderRadius: 8,
-              },
-              layout.position.absolute,
-              position.right[1],
-              position.top[1],
-              gap.all[4],
-            ]}
-          >
-            {!isLive && !isSelfAndNotLive && <ViewerContextMenu />}
+        <View
+          style={[
+            {
+              padding: 10,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              borderRadius: 8,
+            },
+            layout.position.absolute,
+            position.right[1],
+            position.top[1],
+            gap.all[4],
+          ]}
+        >
+          {ingest === null ? (
+            <ViewerContextMenu />
+          ) : (
             <Pressable onPress={doSetIngestCamera}>
               <SwitchCamera size={32} color={colors.gray[200]} />
             </Pressable>
-          </View>
-        )}
+          )}
+        </View>
       </View>
-      {isLive && (
+      {(isLive || isSelfAndNotLive) && (
         <View
           style={[
             layout.position.absolute,

@@ -32,6 +32,7 @@ export function Player(
       <PlayerProvider defaultId={props.playerId || undefined}>
         <PropUpFullscreen setFullscreen={props.setFullscreen} />
         <PlayerInner {...props} />
+        <MobileUi />
       </PlayerProvider>
     </LivestreamProvider>
   );
@@ -138,7 +139,6 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       >
         <Fullscreen playerId={playerId} src={props.src}></Fullscreen>
       </View>
-      <MobileUi playerId={playerId} />
     </>
   );
 }
