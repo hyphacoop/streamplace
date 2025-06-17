@@ -15,4 +15,6 @@ export interface LivestreamState {
   segment: PlaceStreamSegment.Record | null;
   renditions: PlaceStreamDefs.Rendition[];
   replyToMessage: ChatMessageViewHydrated | null;
+  streamKey: string | null;
+  setStreamKey: (key: string | null) => void;
 }

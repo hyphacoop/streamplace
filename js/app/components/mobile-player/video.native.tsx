@@ -10,7 +10,7 @@ import { LayoutChangeEvent } from "react-native";
 import { MediaStream, RTCView } from "react-native-webrtc";
 import { View } from "tamagui";
 import { srcToUrl } from "../player/shared";
-import useWebRTC from "../player/use-webrtc";
+import useWebRTC from "./use-webrtc";
 
 // Add NativeIngestPlayer to the switch below!
 export default function VideoNative() {

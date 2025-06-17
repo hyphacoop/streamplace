@@ -11,12 +11,12 @@ import Hls from "hls.js";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { srcToUrl } from "../player/shared";
-import useWebRTC, { useWebRTCIngest } from "../player/use-webrtc";
 import {
   logWebRTCDiagnostics,
   useWebRTCDiagnostics,
 } from "../player/webrtc-diagnostics";
 import { checkWebRTCSupport } from "../player/webrtc-primitives";
+import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 
 function assignVideoRef(
   ref:
