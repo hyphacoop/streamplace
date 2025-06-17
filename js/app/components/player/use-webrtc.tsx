@@ -205,8 +205,6 @@ export function useWebRTCIngest({
   const storedKey = useAppSelector(selectStoredKey)?.privateKey;
 
   const [retryTime, setRetryTime] = useState<number>(0);
-
-  console.log({ storedKey });
   useEffect(() => {
     if (storedKey) {
       return;
@@ -243,6 +241,10 @@ export function useWebRTCIngest({
     });
     peerConnection.addEventListener("negotiationneeded", (ev) => {
       negotiateConnectionWithClientOffer(peerConnection, endpoint, storedKey);
+    });
+
+    peerConnection.addEventListener("track", (ev) => {
+      console.log(ev);
     });
 
     return () => {

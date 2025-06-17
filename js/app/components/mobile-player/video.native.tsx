@@ -330,7 +330,13 @@ export function NativeIngestPlayer() {
       streamURL={localMediaStream.toURL()}
       zOrder={0}
       // width is set to 5000 to ensure it fills the screen
-      style={{ minWidth: "100%", minHeight: "100%", flex: 1 }}
+      style={{
+        minWidth: "100%",
+        minHeight: "100%",
+        flex: 1,
+        // mirror the image if we're in horizontal
+        transform: ingestCamera === "environment" ? "scaleX(-1)" : "",
+      }}
     />
   );
 }
