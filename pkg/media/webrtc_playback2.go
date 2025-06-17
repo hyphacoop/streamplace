@@ -139,13 +139,16 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 				}
 			}()
 
+			var scalar float64 = 1
+
 			for {
 				select {
 				case <-ctx.Done():
 					return
 				case packet := <-bufPacketQueue:
 					latency -= packet.Duration
-					log.Warn(ctx, "latency", "latency", latency)
+					scalar = getPlaybackRate(latency)
+					log.Warn(ctx, "latency", "latency", latency, "scalar", scalar)
 					var videoDur time.Duration
 					var audioDur time.Duration
 					if len(packet.Video) > 0 {
@@ -158,7 +161,7 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 
 					if videoDur > 0 {
 						g.Go(func() error {
-							ticker := time.NewTicker(videoDur)
+							ticker := time.NewTicker(time.Duration(float64(videoDur) * (1 / scalar)))
 							defer ticker.Stop()
 							for _, video := range packet.Video {
 								// log.Log(ctx, "writing video sample", "duration", videoDur)
@@ -181,7 +184,7 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 					}
 					if audioDur > 0 {
 						g.Go(func() error {
-							ticker := time.NewTicker(audioDur)
+							ticker := time.NewTicker(time.Duration(float64(audioDur) * (1 / scalar)))
 							defer ticker.Stop()
 							log.Log(ctx, "time since last packet", "time", time.Since(lastPacketTime))
 							for _, audio := range packet.Audio {
@@ -262,5 +265,19 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 		return peerConnection.LocalDescription(), nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
+	}
+}
+
+// getPlaybackRate returns a playback rate that eases from 1.0 to 1.5 between 7 and 60 seconds
+func getPlaybackRate(dur time.Duration) float64 {
+	switch {
+	case dur <= 7*time.Second:
+		return 1.0
+	case dur >= 60*time.Second:
+		return 1.5
+	default:
+		// Linear interpolation between (7,1.0) and (60,1.5)
+		progress := (float64(dur) - float64(7*time.Second)) / (float64(60*time.Second) - float64(7*time.Second))
+		return 1.0 + (0.5 * progress)
 	}
 }
