@@ -15,7 +15,7 @@
     "postinstall": "husky",
     "build": "pnpm --stream -r run build",
     "prepare": "husky",
-    "release": "lerna publish --force-publish",
+    "release": "lerna version --force-publish=@iameli/app",
     "precommit": "make precommit",
     "app": "pnpm run -r --stream --filter @streamplace/app... --parallel",
     "desktop": "pnpm run -r --stream --filter streamplace-desktop... --parallel",
@@ -31,7 +31,7 @@
     "@types/node": "^22.15.17",
     "husky": "^9.1.6",
     "knip": "^5.59.1",
-    "lerna": "^8.1.9",
+    "lerna": "^8.2.2",
     "lint-staged": "^15.2.10",
     "prettier": "3.4.2",
     "typescript": "^5.8.3"

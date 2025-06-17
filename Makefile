@@ -258,6 +258,11 @@ ci-test: app
 	meson setup $(BUILDDIR) $(OPTS)
 	meson test -C $(BUILDDIR) go-tests
 
+.PHONY: ci-npm-release
+ci-npm-release: install
+	echo //registry.npmjs.org/:_authToken=$$NPM_TOKEN > ~/.npmrc \
+	&& npx lerna publish from-package --yes
+
 .PHONY: android
 android: app .build/bundletool.jar
 	$(MAKE) android-release

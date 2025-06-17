@@ -350,7 +350,7 @@ windows-selftest:
   script:
     - C:\msys64\usr\bin\bash -lc "bash -x ./util/windows-selftest.sh $STREAMPLACE_DESKTOP_URL_WINDOWS_AMD64"
 
-release:
+.release-template:
   stage: build
   interruptible: true
   image: "$DOCKER_REPO:builder-$DOCKERFILE_HASH"
@@ -366,6 +366,16 @@ release:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
   timeout: 2 hours
+
+npm-release:
+  extends:
+    - .release-template
+  script:
+    - make ci-npm-release
+
+release:
+  extends:
+    - .release-template
   script:
     - make ci-release
 
