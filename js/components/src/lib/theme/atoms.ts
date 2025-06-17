@@ -86,6 +86,12 @@ export const layout = {
       justifyContent: "center" as const,
       alignItems: "center" as const,
     },
+    alignCenter: {
+      alignItems: "center" as const,
+    },
+    justifyCenter: {
+      justifyContent: "center" as const,
+    },
     row: {
       flexDirection: "row" as const,
     },

@@ -51,13 +51,12 @@ export function Toast({
         // Do NOT set left at all
       }
     : {
-        top: insets.top + theme.spacing[1],
+        bottom: insets.bottom + theme.spacing[1],
         left: 0,
         right: 0,
         alignItems: "center",
         width: "100%",
         maxWidth: undefined,
-        bottom: undefined,
       };
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+import { PortalHost } from "@rn-primitives/portal";
 import {
   createContext,
   useContext,
@@ -15,6 +16,8 @@ import {
   touchTargets,
   typography,
 } from "./tokens";
+
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Theme interfaces
 export interface Theme {
@@ -363,7 +366,12 @@ export function ThemeProvider({
   );
 
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>
+      <GestureHandlerRootView>
+        {children}
+        <PortalHost />
+      </GestureHandlerRootView>
+    </ThemeContext.Provider>
   );
 }
 

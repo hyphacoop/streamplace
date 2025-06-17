@@ -27,7 +27,15 @@ interface TextContextValue {
   opacity?: number | AnimatableNumericValue;
 }
 
-const TextContext = createContext<TextContextValue | null>(null);
+export const TextContext = createContext<Partial<TextContextValue> | null>(
+  null,
+);
+
+export function objectFromObjects(
+  arr: Record<string, any>[],
+): Record<string, any> {
+  return Object.assign({}, ...arr);
+}
 
 // Text primitive props
 export interface TextPrimitiveProps extends Omit<RNTextProps, "style"> {
