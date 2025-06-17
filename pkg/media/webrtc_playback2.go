@@ -121,8 +121,6 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 				}
 			}()
 
-			lastPacketTime := time.Now()
-
 			p1 := <-packetQueue
 			p2 := <-packetQueue
 			bufPacketQueue := make(chan *PacketizedSegment, 1024)
@@ -148,7 +146,7 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 				case packet := <-bufPacketQueue:
 					latency -= packet.Duration
 					scalar = getPlaybackRate(latency)
-					log.Warn(ctx, "latency", "latency", latency, "scalar", scalar)
+					log.Debug(ctx, "playback latency", "latency", latency, "scalar", scalar)
 					var videoDur time.Duration
 					var audioDur time.Duration
 					if len(packet.Video) > 0 {
@@ -186,7 +184,6 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 						g.Go(func() error {
 							ticker := time.NewTicker(time.Duration(float64(audioDur) * (1 / scalar)))
 							defer ticker.Stop()
-							log.Log(ctx, "time since last packet", "time", time.Since(lastPacketTime))
 							for _, audio := range packet.Audio {
 								err := audioTrack.WriteSample(media.Sample{Data: audio, Duration: audioDur})
 								if err != nil {
@@ -199,7 +196,6 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 									continue
 								}
 							}
-							lastPacketTime = time.Now()
 							return nil
 						})
 
