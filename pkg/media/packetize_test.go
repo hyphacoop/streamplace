@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/gstinit"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 func TestPacketize(t *testing.T) {
@@ -41,7 +41,7 @@ func innerTestPacketize(t *testing.T) {
 	bs, err := io.ReadAll(inputFile)
 	require.NoError(t, err)
 
-	testSeg := &segchanman.Seg{
+	testSeg := &bus.Seg{
 		Data:     bs,
 		Filepath: filename,
 	}

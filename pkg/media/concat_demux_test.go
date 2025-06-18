@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 func TestConcatDemuxBin(t *testing.T) {
@@ -79,7 +79,7 @@ func innerTestConcatDemuxBin(t *testing.T) error {
 		return fmt.Errorf("failed to read fixture file: %w", err)
 	}
 
-	testSeg := &segchanman.Seg{
+	testSeg := &bus.Seg{
 		Data:     bs,
 		Filepath: filename,
 	}

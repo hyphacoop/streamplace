@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
@@ -41,10 +41,10 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err) //nolint:all
 	}
 
-	segBuffer := make(chan *segchanman.Seg, 1024)
+	segBuffer := make(chan *bus.Seg, 1024)
 	go func() {
-		ch := mm.SubscribeSegment(ctx, user, rendition)
-		defer mm.UnsubscribeSegment(ctx, user, rendition, ch)
+		ch := mm.bus.SubscribeSegment(ctx, user, rendition)
+		defer mm.bus.UnsubscribeSegment(ctx, user, rendition, ch)
 		for {
 			select {
 			case <-ctx.Done():
@@ -57,7 +57,7 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		}
 	}()
 
-	segCh := make(chan *segchanman.Seg)
+	segCh := make(chan *bus.Seg)
 	go func() {
 		for {
 			select {

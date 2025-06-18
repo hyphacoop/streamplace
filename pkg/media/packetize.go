@@ -8,18 +8,12 @@ import (
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
-type PacketizedSegment struct {
-	Video    [][]byte
-	Audio    [][]byte
-	Duration time.Duration
-}
-
 // take in a segment and return a bunch of packets suitable for webrtc
-func Packetize(ctx context.Context, seg *segchanman.Seg) (*PacketizedSegment, error) {
+func Packetize(ctx context.Context, seg *bus.Seg) (*bus.PacketizedSegment, error) {
 
 	pipelineSlice := []string{
 		"h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink sync=false name=videoappsink",
@@ -197,7 +191,7 @@ func Packetize(ctx context.Context, seg *segchanman.Seg) (*PacketizedSegment, er
 		return nil, fmt.Errorf("pipeline error: %w", err)
 	}
 
-	return &PacketizedSegment{
+	return &bus.PacketizedSegment{
 		Video:    videoOutput,
 		Audio:    audioOutput,
 		Duration: segDur,

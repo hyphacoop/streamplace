@@ -9,6 +9,7 @@ import (
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/spmetrics"
 )
@@ -91,10 +92,10 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 			}
 		}()
 
-		packetQueue := make(chan *PacketizedSegment, 1024)
+		packetQueue := make(chan *bus.PacketizedSegment, 1024)
 		go func() {
-			ch := mm.SubscribeSegment(ctx, user, rendition)
-			defer mm.UnsubscribeSegment(ctx, user, rendition, ch)
+			ch := mm.bus.SubscribeSegment(ctx, user, rendition)
+			defer mm.bus.UnsubscribeSegment(ctx, user, rendition, ch)
 			for {
 				select {
 				case <-ctx.Done():
@@ -123,7 +124,7 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 
 			p1 := <-packetQueue
 			p2 := <-packetQueue
-			bufPacketQueue := make(chan *PacketizedSegment, 1024)
+			bufPacketQueue := make(chan *bus.PacketizedSegment, 1024)
 			go func() {
 				bufPacketQueue <- p1
 				bufPacketQueue <- p2

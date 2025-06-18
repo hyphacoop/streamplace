@@ -9,13 +9,16 @@ type Subscription chan Message
 
 // Bus is a simple pub/sub system for backing websocket connections
 type Bus struct {
-	mu      sync.Mutex
-	clients map[string][]Subscription
+	mu            sync.Mutex
+	clients       map[string][]Subscription
+	segChans      map[string][]chan *Seg
+	segChansMutex sync.Mutex
 }
 
 func NewBus() *Bus {
 	return &Bus{
-		clients: make(map[string][]Subscription),
+		clients:  make(map[string][]Subscription),
+		segChans: make(map[string][]chan *Seg),
 	}
 }
 

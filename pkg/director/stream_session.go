@@ -19,7 +19,6 @@ import (
 	"stream.place/streamplace/pkg/livepeer"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
-	"stream.place/streamplace/pkg/media/segchanman"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/renditions"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -40,6 +39,7 @@ type StreamSession struct {
 	lastStatus     time.Time
 	lastStatusLock sync.Mutex
 	g              *errgroup.Group
+	packets        []bus.PacketizedSegment
 }
 
 func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
@@ -139,7 +139,10 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 
 	ss.bus.Publish(spseg.Creator, spseg)
 	ss.Go(ctx, func() error {
-		return ss.AddToHLS(ctx, spseg, "source", not.Data)
+		return ss.AddPlaybackSegment(ctx, spseg, "source", &bus.Seg{
+			Filepath: not.Segment.ID,
+			Data:     not.Data,
+		})
 	})
 
 	if ss.cli.Thumbnail {
@@ -390,17 +393,33 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 			return fmt.Errorf("failed to write transcoded segment file: %w", err)
 		}
 		ss.Go(ctx, func() error {
-			return ss.AddToHLS(ctx, spseg, rs[i].Name, seg)
-		})
-		ss.Go(ctx, func() error {
-			ss.mm.PublishSegment(ctx, spseg.Creator, rs[i].Name, &segchanman.Seg{
+			return ss.AddPlaybackSegment(ctx, spseg, rs[i].Name, &bus.Seg{
 				Filepath: fd.Name(),
 				Data:     seg,
 			})
-			return nil
 		})
 
 	}
+	return nil
+}
+
+func (ss *StreamSession) AddPlaybackSegment(ctx context.Context, spseg *streamplace.Segment, rendition string, seg *bus.Seg) error {
+	ss.Go(ctx, func() error {
+		return ss.AddToHLS(ctx, spseg, rendition, seg.Data)
+	})
+	ss.Go(ctx, func() error {
+		return ss.AddToWebRTC(ctx, spseg, rendition, seg)
+	})
+	return nil
+}
+
+func (ss *StreamSession) AddToWebRTC(ctx context.Context, spseg *streamplace.Segment, rendition string, seg *bus.Seg) error {
+	packet, err := media.Packetize(ctx, seg)
+	if err != nil {
+		return fmt.Errorf("failed to packetize segment: %w", err)
+	}
+	seg.PacketizedData = packet
+	ss.bus.PublishSegment(ctx, spseg.Creator, rendition, seg)
 	return nil
 }
 

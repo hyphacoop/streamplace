@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 type ConcatStreamer interface {
-	SubscribeSegment(ctx context.Context, user string, rendition string) <-chan *segchanman.Seg
-	UnsubscribeSegment(ctx context.Context, user string, rendition string, ch <-chan *segchanman.Seg)
+	SubscribeSegment(ctx context.Context, user string, rendition string) <-chan *bus.Seg
+	UnsubscribeSegment(ctx context.Context, user string, rendition string, ch <-chan *bus.Seg)
 }
 
 // This function remains in scope for the duration of a single users' playback
