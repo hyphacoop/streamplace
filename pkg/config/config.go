@@ -103,6 +103,7 @@ type CLI struct {
 	AccessJWK              jwk.Key
 	dataDirFlags           []*string
 	DiscordWebhooks        []*discordtypes.Webhook
+	NewWebRTCPlayback      bool
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -157,6 +158,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.RTMPServerAddon, "rtmp-server-addon", "", "address of external RTMP server to forward streams to")
 	fs.StringVar(&cli.RtmpsAddr, "rtmps-addr", ":1935", "address to listen for RTMPS connections")
 	cli.JSONFlag(fs, &cli.DiscordWebhooks, "discord-webhooks", "[]", "JSON array of Discord webhooks to send notifications to")
+	fs.BoolVar(&cli.NewWebRTCPlayback, "new-webrtc-playback", true, "enable new webrtc playback")
 
 	if runtime.GOOS == "linux" {
 		fs.BoolVar(&cli.NoMist, "no-mist", true, "Disable MistServer")
