@@ -39,10 +39,11 @@ type StreamSession struct {
 	segmentChan    chan struct{}
 	lastStatus     time.Time
 	lastStatusLock sync.Mutex
+	g              *errgroup.Group
 }
 
 func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
-
+	ss.g, ctx = errgroup.WithContext(ctx)
 	sid := livepeer.RandomTrailer(8)
 	ctx = log.WithLogValues(ctx, "sid", sid)
 	ctx, cancel := context.WithCancel(ctx)
@@ -109,6 +110,19 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 	}
 }
 
+// Execute a goroutine in the context of the stream session. Errors are
+// non-fatal; if you actually want to melt the universe on an error you
+// should panic()
+func (ss *StreamSession) Go(ctx context.Context, f func() error) {
+	ss.g.Go(func() error {
+		err := f()
+		if err != nil {
+			log.Error(ctx, "error in goroutine", "error", err)
+		}
+		return err
+	})
+}
+
 func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNotification) error {
 	if ctx.Err() != nil {
 		return nil
@@ -126,36 +140,28 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 	}
 
 	ss.bus.Publish(spseg.Creator, spseg)
-	go ss.TryAddToHLS(ctx, spseg, "source", not.Data)
+	ss.Go(ctx, func() error {
+		return ss.AddToHLS(ctx, spseg, "source", not.Data)
+	})
 
 	if ss.cli.Thumbnail {
-		go func() {
-			err := ss.Thumbnail(ctx, spseg.Creator, not)
-			if err != nil {
-				log.Error(ctx, "could not create thumbnail", "error", err)
-			}
-		}()
+		ss.Go(ctx, func() error {
+			return ss.Thumbnail(ctx, spseg.Creator, not)
+		})
 	}
 
-	go func() {
-		err := ss.UpdateStatus(ctx, spseg.Creator)
-		if err != nil {
-			log.Error(ctx, "could not update status", "error", err)
-		}
-	}()
+	ss.Go(ctx, func() error {
+		return ss.UpdateStatus(ctx, spseg.Creator)
+	})
 
 	if ss.cli.LivepeerGatewayURL != "" {
-		go func() {
+		ss.Go(ctx, func() error {
 			start := time.Now()
 			err := ss.Transcode(ctx, spseg, not.Data)
 			took := time.Since(start)
-			if err != nil {
-				log.Error(ctx, "could not transcode", "error", err, "took", took)
-			} else {
-				log.Log(ctx, "transcoded segment", "took", took)
-			}
-			spmetrics.QueuedTranscodeDuration.WithLabelValues(spseg.Creator).Set(float64(time.Since(start).Milliseconds()))
-		}()
+			spmetrics.QueuedTranscodeDuration.WithLabelValues(spseg.Creator).Set(float64(took.Milliseconds()))
+			return err
+		})
 	}
 
 	return nil
@@ -374,6 +380,7 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 		return err
 	}
 	for i, seg := range segs {
+		ctx := log.WithLogValues(ctx, "rendition", rs[i].Name)
 		log.Debug(ctx, "publishing segment", "rendition", rs[i])
 		fd, err := ss.cli.SegmentFileCreate(spseg.Creator, aqt, fmt.Sprintf("%s.mp4", rs[i].Name))
 		if err != nil {
@@ -384,21 +391,19 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 		if err != nil {
 			return fmt.Errorf("failed to write transcoded segment file: %w", err)
 		}
-		go ss.TryAddToHLS(ctx, spseg, rs[i].Name, seg)
-		go ss.mm.PublishSegment(ctx, spseg.Creator, rs[i].Name, &segchanman.Seg{
-			Filepath: fd.Name(),
-			Data:     seg,
+		ss.Go(ctx, func() error {
+			return ss.AddToHLS(ctx, spseg, rs[i].Name, seg)
 		})
+		ss.Go(ctx, func() error {
+			ss.mm.PublishSegment(ctx, spseg.Creator, rs[i].Name, &segchanman.Seg{
+				Filepath: fd.Name(),
+				Data:     seg,
+			})
+			return nil
+		})
+
 	}
 	return nil
-}
-
-func (ss *StreamSession) TryAddToHLS(ctx context.Context, spseg *streamplace.Segment, rendition string, data []byte) {
-	ctx = log.WithLogValues(ctx, "rendition", rendition)
-	err := ss.AddToHLS(ctx, spseg, rendition, data)
-	if err != nil {
-		log.Error(ctx, "could not add to hls", "error", err)
-	}
 }
 
 func (ss *StreamSession) AddToHLS(ctx context.Context, spseg *streamplace.Segment, rendition string, data []byte) error {
