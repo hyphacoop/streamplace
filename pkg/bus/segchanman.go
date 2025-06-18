@@ -24,9 +24,11 @@ type PacketizedSegment struct {
 	Duration time.Duration
 }
 
+var chanSize = 1024
+
 type SegChan struct {
-	C   chan *Seg
-	buf []*Seg
+	C       chan *Seg
+	Context context.Context
 }
 
 var bufSize = 10
@@ -55,15 +57,17 @@ func (b *Bus) SubscribeSegmentBuf(ctx context.Context, user string, rendition st
 	b.segBufMutex.RLock()
 	defer b.segBufMutex.RUnlock()
 	curBuf, ok := b.segBuf[key]
-	myBuf := []*Seg{}
+	myCh := make(chan *Seg, chanSize)
 	if ok {
 		if bufSize > len(curBuf) {
 			bufSize = len(curBuf)
 		}
-		myBuf = curBuf[len(curBuf)-bufSize:]
+		for i := 0; i < bufSize; i += 1 {
+			myCh <- curBuf[len(curBuf)-bufSize+i]
+		}
 	}
-	segChan := &SegChan{C: ch, buf: myBuf}
-	chs = append(chs, &SegChan{C: ch, buf: myBuf})
+	segChan := &SegChan{C: ch, Context: ctx}
+	chs = append(chs, segChan)
 	b.segChans[key] = chs
 	spmetrics.SegmentSubscriptionsOpen.WithLabelValues(user, rendition).Set(float64(len(chs)))
 	return segChan
@@ -114,7 +118,7 @@ func (b *Bus) PublishSegment(ctx context.Context, user string, rendition string,
 		go func(segChan *SegChan) {
 			select {
 			case segChan.C <- seg:
-			case <-ctx.Done():
+			case <-segChan.Context.Done():
 				return
 			case <-time.After(1 * time.Minute):
 				log.Warn(ctx, "failed to send segment to channel, timing out", "user", user, "rendition", rendition)
