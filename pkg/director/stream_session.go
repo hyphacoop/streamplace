@@ -43,10 +43,10 @@ type StreamSession struct {
 }
 
 func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
+	ctx, cancel := context.WithCancel(ctx)
 	ss.g, ctx = errgroup.WithContext(ctx)
 	sid := livepeer.RandomTrailer(8)
 	ctx = log.WithLogValues(ctx, "sid", sid)
-	ctx, cancel := context.WithCancel(ctx)
 	log.Log(ctx, "starting stream session")
 	defer cancel()
 	spseg, err := not.Segment.ToStreamplaceSegment()
@@ -78,8 +78,6 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 	allRenditions = append([]renditions.Rendition{sourceRendition}, allRenditions...)
 	ss.hls = media.NewM3U8(allRenditions)
 
-	g, ctx := errgroup.WithContext(ctx)
-
 	// for _, r := range allRenditions {
 	// 	g.Go(func() error {
 	// 		for {
@@ -101,7 +99,7 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 		case <-ss.segmentChan:
 			// reset timer
 		case <-ctx.Done():
-			return g.Wait()
+			return ss.g.Wait()
 		// case <-time.After(time.Minute * 1):
 		case <-time.After(time.Second * 60):
 			log.Log(ctx, "no new segments for 1 minute, shutting down")
