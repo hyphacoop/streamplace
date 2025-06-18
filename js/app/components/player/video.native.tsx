@@ -6,7 +6,7 @@ import {
 } from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
 import { useEffect, useRef } from "react";
-import { MediaStream, RTCPIPView } from "react-native-webrtc";
+import { MediaStream, RTCPIPView, RTCView } from "react-native-webrtc";
 import { View } from "tamagui";
 import { srcToUrl } from "./shared";
 import useWebRTC from "./use-webrtc";
@@ -101,8 +101,8 @@ export function NativeVideo() {
       onFullscreenExit={() => {
         setFullscreen(false);
       }}
-      allowsPictureInPicture
-      startsPictureInPictureAutomatically
+      // allowsPictureInPicture
+      // startsPictureInPictureAutomatically
     />
   );
 }
@@ -168,7 +168,7 @@ export function NativeWHEP() {
   };
 
   return (
-    <RTCPIPView
+    <RTCView
       ref={rtcView as any}
       mirror={false}
       objectFit={"contain"}
@@ -177,7 +177,12 @@ export function NativeWHEP() {
         backgroundColor: "#111",
         flex: 1,
       }}
-      iosPIP={pipOptions}
+      pictureInPictureEnabled={true}
+      autoStartPictureInPicture={true}
+      pictureInPicturePreferredSize={{
+        width: 160,
+        height: 90,
+      }}
     />
   );
 }
