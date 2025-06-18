@@ -117,7 +117,7 @@ func (ss *StreamSession) Go(ctx context.Context, f func() error) {
 		if err != nil {
 			log.Error(ctx, "error in goroutine", "error", err)
 		}
-		return err
+		return nil
 	})
 }
 
@@ -240,7 +240,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 
 	session, err := ss.mod.GetSessionByDID(repoDID)
 	if err != nil {
-		return fmt.Errorf("could not get session for repoDID: %w", err)
+		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
 	}
 	if session == nil {
 		return fmt.Errorf("no session found for repoDID: %s", repoDID)
