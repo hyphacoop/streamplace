@@ -11,14 +11,17 @@ type Subscription chan Message
 type Bus struct {
 	mu            sync.Mutex
 	clients       map[string][]Subscription
-	segChans      map[string][]chan *Seg
+	segChans      map[string][]*SegChan
 	segChansMutex sync.Mutex
+	segBuf        map[string][]*Seg
+	segBufMutex   sync.RWMutex
 }
 
 func NewBus() *Bus {
 	return &Bus{
 		clients:  make(map[string][]Subscription),
-		segChans: make(map[string][]chan *Seg),
+		segChans: make(map[string][]*SegChan),
+		segBuf:   make(map[string][]*Seg),
 	}
 }
 

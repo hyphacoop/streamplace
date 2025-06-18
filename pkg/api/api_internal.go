@@ -146,7 +146,9 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			errors.WriteHTTPBadRequest(w, "rendition required", nil)
 			return
 		}
-		seg := <-a.Bus.SubscribeSegment(ctx, user, rendition)
+		segChan := a.Bus.SubscribeSegment(ctx, user, rendition)
+		defer a.Bus.UnsubscribeSegment(ctx, user, rendition, segChan)
+		seg := <-segChan.C
 		base := filepath.Base(seg.Filepath)
 		w.Header().Set("Location", fmt.Sprintf("%s/playback/%s/%s/segment/%s\n", a.CLI.OwnInternalURL(), user, rendition, base))
 		w.WriteHeader(301)

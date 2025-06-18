@@ -94,22 +94,17 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 
 		packetQueue := make(chan *bus.PacketizedSegment, 1024)
 		go func() {
-			ch := mm.bus.SubscribeSegment(ctx, user, rendition)
-			defer mm.bus.UnsubscribeSegment(ctx, user, rendition, ch)
+			segChan := mm.bus.SubscribeSegmentBuf(ctx, user, rendition, 2)
+			defer mm.bus.UnsubscribeSegment(ctx, user, rendition, segChan)
 			for {
 				select {
 				case <-ctx.Done():
 					log.Debug(ctx, "exiting segment reader")
 					return
-				case file := <-ch:
+				case file := <-segChan.C:
 					log.Debug(ctx, "got segment", "file", file.Filepath)
-					packet, err := Packetize(ctx, file)
-					if err != nil {
-						log.Error(ctx, "failed to packetize segment", "error", err)
-						continue
-					}
-					latency += packet.Duration
-					packetQueue <- packet
+					latency += file.PacketizedData.Duration
+					packetQueue <- file.PacketizedData
 				}
 			}
 		}()
@@ -122,29 +117,13 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 				}
 			}()
 
-			p1 := <-packetQueue
-			p2 := <-packetQueue
-			bufPacketQueue := make(chan *bus.PacketizedSegment, 1024)
-			go func() {
-				bufPacketQueue <- p1
-				bufPacketQueue <- p2
-				for {
-					select {
-					case <-ctx.Done():
-						return
-					case packet := <-packetQueue:
-						bufPacketQueue <- packet
-					}
-				}
-			}()
-
 			var scalar float64 = 1
 
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case packet := <-bufPacketQueue:
+				case packet := <-packetQueue:
 					latency -= packet.Duration
 					scalar = getPlaybackRate(latency)
 					log.Debug(ctx, "playback latency", "latency", latency, "scalar", scalar)
