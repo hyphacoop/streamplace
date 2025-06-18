@@ -1,15 +1,7 @@
-import { View } from "@streamplace/components/src/components/ui";
-import {
-  borderRadius,
-  bottom,
-  gap,
-  h,
-  layout,
-  w,
-  zIndex,
-} from "@streamplace/components/src/lib/theme/atoms";
+import { View, atoms } from "@streamplace/components";
 import Chat from "components/chat/chat";
 import ChatBox from "components/chat/chat-box";
+const { borderRadius, bottom, gap, h, layout, w, zIndex } = atoms;
 
 type ChatPanelProps = {
   isPlayerRatioGreater: boolean;

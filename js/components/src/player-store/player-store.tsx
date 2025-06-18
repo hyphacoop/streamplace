@@ -151,11 +151,16 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
         let controlsTimeout = setTimeout(() => p.setShowControls(false), 1000);
         return { showControls: true, controlsTimeout };
       }),
+
+    showDebugInfo: false,
+    setShowDebugInfo: (showDebugInfo: boolean) =>
+      set(() => ({ showDebugInfo })),
   }));
 };
 
 export function usePlayerContext() {
   const context = useContext(PlayerContext);
+  console.log("usePlayerContext context", context);
   if (!context) {
     throw new Error("usePlayerContext must be used within a PlayerProvider");
   }

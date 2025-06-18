@@ -1,11 +1,11 @@
-import { usePlayerStore } from "@streamplace/components";
-import { View } from "@streamplace/components/src/components/ui";
 import { useEffect, useRef } from "react";
 import { View as RNView } from "react-native";
+import { getFirstPlayerID, usePlayerStore } from "../..";
+import { View } from "../../components/ui";
 import Video from "./video";
 
-export function Fullscreen(props: { playerId: string; src: string }) {
-  const playerId = props.playerId;
+export function Fullscreen(props: { src: string }) {
+  const playerId = getFirstPlayerID();
   const protocol = usePlayerStore((x) => x.protocol, playerId);
   const fullscreen = usePlayerStore((x) => x.fullscreen, playerId);
   const setFullscreen = usePlayerStore((x) => x.setFullscreen, playerId);

@@ -1,16 +1,24 @@
-import {
-  PlayerProtocol,
-  PlayerStatus,
-  usePlayerStore,
-  useStreamplaceStore,
-} from "@streamplace/components";
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutChangeEvent } from "react-native";
-import { MediaStream, RTCView } from "react-native-webrtc";
+import {
+  MediaStream,
+  RTCView,
+  RTCView as RTCViewIngest,
+} from "react-native-webrtc";
 import { View } from "tamagui";
-import { srcToUrl } from "../player/shared";
-import useWebRTC from "./use-webrtc";
+import {
+  IngestMediaSource,
+  PlayerStatus as IngestPlayerStatus,
+  PlayerProtocol,
+  PlayerStatus,
+  usePlayerStore as useIngestPlayerStore,
+  usePlayerStore,
+  useStreamplaceStore,
+} from "../..";
+import { srcToUrl } from "./shared";
+import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
+import { mediaDevices, WebRTCMediaStream } from "./webrtc-primitives.native";
 
 // Add NativeIngestPlayer to the switch below!
 export default function VideoNative() {
@@ -214,21 +222,15 @@ export function NativeWHEP() {
         objectFit={"contain"}
         streamURL={mediaStream.toURL()}
         onLayout={handleLayout}
+        style={{
+          minWidth: "100%",
+          minHeight: "100%",
+          flex: 1,
+        }}
       />
     </>
   );
 }
-
-import {
-  IngestMediaSource,
-  PlayerStatus as IngestPlayerStatus,
-  usePlayerStore as useIngestPlayerStore,
-} from "@streamplace/components";
-import streamKey from "components/live-dashboard/stream-key";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { RTCView as RTCViewIngest } from "react-native-webrtc";
-import { useWebRTCIngest } from "../player/use-webrtc";
-import { mediaDevices, WebRTCMediaStream } from "./webrtc-primitives.native";
 
 export function NativeIngestPlayer() {
   const ingestStarting = useIngestPlayerStore((x) => x.ingestStarting);
@@ -249,7 +251,7 @@ export function NativeIngestPlayer() {
     }
   }, [setVideoRef]);
 
-  const { url } = useStreamplaceNode();
+  const url = useStreamplaceStore((x) => x.url);
   const [lms, setLocalMediaStream] = useState<WebRTCMediaStream | null>(null);
   const [, setRemoteMediaStream] = useWebRTCIngest({
     endpoint: `${url}/api/ingest/webrtc`,
@@ -305,19 +307,10 @@ export function NativeIngestPlayer() {
     if (!localMediaStream) {
       return;
     }
-    if (!streamKey) {
-      return;
-    }
     console.log("setting remote media stream", localMediaStream);
     // @ts-expect-error: WebRTCMediaStream may not have all MediaStream properties, but is compatible for our use
     setRemoteMediaStream(localMediaStream);
-  }, [
-    localMediaStream,
-    ingestStarting,
-    streamKey,
-    ingestAutoStart,
-    setRemoteMediaStream,
-  ]);
+  }, [localMediaStream, ingestStarting, ingestAutoStart, setRemoteMediaStream]);
 
   if (!localMediaStream) {
     return null;
@@ -325,7 +318,7 @@ export function NativeIngestPlayer() {
 
   return (
     <RTCViewIngest
-      mirror={true}
+      mirror={ingestCamera !== "environment"}
       objectFit={"cover"}
       streamURL={localMediaStream.toURL()}
       zOrder={0}
@@ -334,8 +327,6 @@ export function NativeIngestPlayer() {
         minWidth: "100%",
         minHeight: "100%",
         flex: 1,
-        // mirror the image if we're in horizontal
-        transform: ingestCamera === "environment" ? "scaleX(-1)" : "",
       }}
     />
   );

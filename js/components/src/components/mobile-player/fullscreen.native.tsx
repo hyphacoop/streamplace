@@ -1,20 +1,16 @@
 import { useNavigation } from "@react-navigation/native";
-import {
-  PlayerProtocol,
-  useLivestreamStore,
-  usePlayerStore,
-} from "@streamplace/components";
 import { VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import { BackHandler, Dimensions, StatusBar, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { View } from "tamagui";
+import { PlayerProtocol, useLivestreamStore, usePlayerStore } from "../..";
 import Video from "./video.native";
 
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-export function Fullscreen(props: { src: string; playerId?: string }) {
+export function Fullscreen(props: { src: string }) {
   const ref = useRef<VideoView>(null);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();

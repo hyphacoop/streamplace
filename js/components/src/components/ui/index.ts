@@ -27,3 +27,5 @@ export type { DialogProps } from "./dialog";
 export type { InputProps } from "./input";
 export type { TextProps } from "./text";
 export type { ViewProps } from "./view";
+
+export * from "../../lib/theme";

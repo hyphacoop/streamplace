@@ -161,6 +161,9 @@ export interface PlayerState {
   clearControlsTimeout: () => void;
 
   setUserInteraction: () => void;
+
+  showDebugInfo: boolean;
+  setShowDebugInfo: (showDebugInfo: boolean) => void;
 }
 
 export type PlayerEvent = {

@@ -1,9 +1,10 @@
-import { Text, View } from "@streamplace/components/src/components/ui";
-import { pt } from "@streamplace/components/src/lib/theme/atoms";
 import { AlertCircle, CircleCheck, CircleX } from "lucide-react-native";
+import * as atoms from "../../../lib/theme/atoms";
+import { Text, View } from "../../ui";
 
 type MetricsPanelProps = {
   connectionQuality: "good" | "degraded" | "bad" | string;
+  showMetrics: boolean;
   segmentDeltas: number[];
   mean: number;
   range: number;
@@ -11,6 +12,7 @@ type MetricsPanelProps = {
 
 export function MetricsPanel({
   connectionQuality,
+  showMetrics,
   segmentDeltas,
   mean,
   range,
@@ -48,7 +50,7 @@ export function MetricsPanel({
         {icon}
         <Text
           style={[
-            pt[0],
+            atoms.pt[0],
             {
               color,
             },
@@ -57,16 +59,18 @@ export function MetricsPanel({
           {connectionQuality.toUpperCase()}
         </Text>
       </View>
-      {/* <View>
-        <Text>
-          last Δ:{" "}
-          {segmentDeltas.length > 0
-            ? segmentDeltas[segmentDeltas.length - 1]
-            : "—"}
-        </Text>
-        <Text>mean: {mean}</Text>
-        <Text>range: {range}</Text>
-      </View> */}
+      {showMetrics && (
+        <View>
+          <Text>
+            last Δ:{" "}
+            {segmentDeltas.length > 0
+              ? segmentDeltas[segmentDeltas.length - 1]
+              : "—"}
+          </Text>
+          <Text>mean: {mean}</Text>
+          <Text>range: {range}</Text>
+        </View>
+      )}
     </View>
   );
 }

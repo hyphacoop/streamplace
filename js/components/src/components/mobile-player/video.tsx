@@ -1,22 +1,21 @@
+import Hls from "hls.js";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import {
   IngestMediaSource,
   PlayerProtocol,
   PlayerStatus,
   usePlayerStore,
   useStreamplaceStore,
-} from "@streamplace/components";
-import { Text, View } from "@streamplace/components/src/components/ui/index";
-import { mt } from "@streamplace/components/src/lib/theme/atoms";
-import Hls from "hls.js";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
-import { srcToUrl } from "../player/shared";
+} from "../..";
+import { mt } from "../../lib/theme/atoms";
+import { Text, View } from "../ui/index";
+import { srcToUrl } from "./shared";
+import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 import {
   logWebRTCDiagnostics,
   useWebRTCDiagnostics,
-} from "../player/webrtc-diagnostics";
-import { checkWebRTCSupport } from "../player/webrtc-primitives";
-import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
+} from "./webrtc-diagnostics";
+import { checkWebRTCSupport } from "./webrtc-primitives";
 
 function assignVideoRef(
   ref:
@@ -462,7 +461,7 @@ export function WebcamIngestPlayer(props: VideoProps) {
     }
   }, []);
 
-  const { url } = useStreamplaceNode();
+  const url = useStreamplaceStore((x) => x.url);
   const [localMediaStream, setLocalMediaStream] = useState<MediaStream | null>(
     null,
   );

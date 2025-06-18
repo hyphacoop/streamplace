@@ -1,6 +1,5 @@
-import { usePlayerStore, useStreamKey } from "@streamplace/components";
 import { useEffect, useRef, useState } from "react";
-import { useAppDispatch } from "store/hooks";
+import { usePlayerStore, useStreamKey } from "../..";
 import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
 
 export default function useWebRTC(
@@ -197,7 +196,6 @@ export function useWebRTCIngest({
   const setIngestConnectionState = usePlayerStore(
     (x) => x.setIngestConnectionState,
   );
-  const dispatch = useAppDispatch();
   const storedKey = useStreamKey();
 
   const [retryTime, setRetryTime] = useState<number>(0);

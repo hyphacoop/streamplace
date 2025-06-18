@@ -1,17 +1,7 @@
-import { Input, Text, View } from "@streamplace/components/src/components/ui";
-import {
-  gap,
-  h,
-  layout,
-  mt,
-  p,
-  position,
-  px,
-  py,
-  sizes,
-  w,
-} from "@streamplace/components/src/lib/theme/atoms";
 import { Keyboard, Pressable } from "react-native";
+import * as atoms from "../../../lib/theme/atoms";
+import { Input, Text, View } from "../../ui";
+const { gap, h, layout, mt, p, position, px, py, sizes, w } = atoms;
 
 type InputPanelProps = {
   title: string | undefined;

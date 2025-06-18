@@ -68,6 +68,8 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({
     [players, createPlayer, removePlayer],
   );
 
+  console.log("PlayerProvider context value", contextValue);
+
   return (
     <PlayerContext.Provider value={contextValue}>
       {children}

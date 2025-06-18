@@ -1,81 +1,21 @@
+import { useEffect, useState } from "react";
+import { flex, layout, w, zIndex } from "../../lib/theme/atoms";
+import { useSegment } from "../../livestream-store";
 import {
-  getFirstPlayerID,
-  LivestreamProvider,
-  PlayerProvider,
   PlayerStatus,
   PlayerStatusTracker,
   usePlayerStore,
-  useSegment,
-  useStreamplaceStore,
-} from "@streamplace/components";
-import { Text, View } from "@streamplace/components/src/components/ui";
-import {
-  flex,
-  layout,
-  w,
-  zIndex,
-} from "@streamplace/components/src/lib/theme/atoms";
-import { useEffect, useState } from "react";
+} from "../../player-store";
+import { useStreamplaceStore } from "../../streamplace-store";
+import { Text, View } from "../ui";
 import { Fullscreen } from "./fullscreen";
 import { PlayerProps } from "./props";
-import { MobileUi } from "./ui";
 
 const OFFLINE_THRESHOLD = 10000;
 
-export function Player(
-  props: Partial<PlayerProps> & {
-    setFullscreen?: (fullscreen: boolean) => void;
-  },
-) {
-  return (
-    <LivestreamProvider src={props.src ?? ""}>
-      <PlayerProvider defaultId={props.playerId || undefined}>
-        <PropUpFullscreen setFullscreen={props.setFullscreen} />
-        <PlayerInner {...props} />
-        <MobileUi />
-      </PlayerProvider>
-    </LivestreamProvider>
-  );
-}
+export * as PlayerUI from "./ui";
 
-export function PropUpFullscreen(props: {
-  setFullscreen?: (fullscreen: boolean) => void;
-  ingest?: boolean;
-}) {
-  const fullscreen = usePlayerStore((x) => x.fullscreen);
-  const ref = usePlayerStore((x) => x.videoRef);
-
-  useEffect(() => {
-    if (props.setFullscreen) {
-      props.setFullscreen(fullscreen);
-    }
-  }, [fullscreen, props.setFullscreen]);
-
-  // get height/width and print out
-  useEffect(() => {
-    if (ref && typeof ref != "function" && ref.current) {
-      console.log(
-        "Video dimensions:",
-        ref.current.videoWidth,
-        ref.current.videoHeight,
-      );
-    } else if (ref && typeof ref === "function") {
-      // If ref is a function, we can't access videoWidth/Height directly
-      console.warn(
-        "Video ref is a function, cannot access dimensions directly.",
-      );
-    } else {
-      console.warn("Video ref is not set or is invalid.");
-    }
-  }, [ref]);
-
-  return <></>;
-}
-
-export function PlayerInner(props: Partial<PlayerProps>) {
-  // Will get the first player ID from the store
-  const playerId = getFirstPlayerID();
-
+export function Player(props: Partial<PlayerProps>) {
   const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
 
   const setOffline = usePlayerStore((x) => x.setOffline);
@@ -137,7 +77,7 @@ export function PlayerInner(props: Partial<PlayerProps>) {
       <View
         style={[zIndex[0], flex.values[1], w.percent[100], layout.flex.center]}
       >
-        <Fullscreen playerId={playerId} src={props.src}></Fullscreen>
+        <Fullscreen src={props.src}></Fullscreen>
       </View>
     </>
   );

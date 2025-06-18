@@ -1,5 +1,5 @@
-import { ThemeProvider } from "@streamplace/components/src/lib/theme";
-import { Player } from "components/mobile-player/player";
+import { theme } from "@streamplace/components";
+import { Player } from "components/mobile/player";
 import { FullscreenProvider } from "contexts/FullscreenContext";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useAppSelector } from "store/hooks";
@@ -14,10 +14,10 @@ export default function MobileGoLive() {
   }
   // get player
   return (
-    <ThemeProvider>
+    <theme.ThemeProvider>
       <FullscreenProvider>
         <Player ingest src={userProfile.did} name={userProfile.handle} />
       </FullscreenProvider>
-    </ThemeProvider>
+    </theme.ThemeProvider>
   );
 }

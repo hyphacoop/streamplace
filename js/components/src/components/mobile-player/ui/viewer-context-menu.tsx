@@ -1,8 +1,7 @@
-import {
-  PlayerProtocol,
-  useLivestreamStore,
-  usePlayerStore,
-} from "@streamplace/components";
+import { Menu } from "lucide-react-native";
+import { colors } from "../../../lib/theme";
+import { useLivestreamStore } from "../../../livestream-store";
+import { PlayerProtocol, usePlayerStore } from "../../../player-store/";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,17 +12,18 @@ import {
   DropdownMenuTrigger,
   ResponsiveDropdownMenuContent,
   Text,
-} from "@streamplace/components/src/components/ui";
-import { colors } from "@streamplace/components/src/lib/theme";
-import { Menu } from "lucide-react-native";
+} from "../../ui";
 
-export default function ContextMenu() {
+export function ContextMenu() {
   const quality = usePlayerStore((x) => x.selectedRendition);
   const setQuality = usePlayerStore((x) => x.setSelectedRendition);
   const qualities = useLivestreamStore((x) => x.renditions);
 
   const protocol = usePlayerStore((x) => x.protocol);
   const setProtocol = usePlayerStore((x) => x.setProtocol);
+
+  const debugInfo = usePlayerStore((x) => x.showDebugInfo);
+  const setShowDebugInfo = usePlayerStore((x) => x.setShowDebugInfo);
 
   const lowLatency = protocol === "webrtc";
   const setLowLatency = (value: boolean) => {
@@ -54,6 +54,13 @@ export default function ContextMenu() {
             onCheckedChange={() => setLowLatency(!lowLatency)}
           >
             <Text>Low Latency</Text>
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuInfo description="Lowers the delay between video and chat messages." />
+          <DropdownMenuCheckboxItem
+            checked={debugInfo}
+            onCheckedChange={() => setShowDebugInfo(!debugInfo)}
+          >
+            <Text>Segment Debug Info</Text>
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
         <DropdownMenuInfo description="Lowers the delay between video and chat messages." />

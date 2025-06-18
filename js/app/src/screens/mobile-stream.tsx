@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
-import { ThemeProvider } from "@streamplace/components/src/lib/theme";
-import { Player } from "components/mobile-player/player";
+import { theme } from "@streamplace/components";
+import { Player } from "components/mobile/player";
 import { PlayerProps } from "components/player/props";
 import { FullscreenProvider } from "contexts/FullscreenContext";
 import { isWeb } from "tamagui";
@@ -21,10 +21,10 @@ export default function MobileStream({ route }) {
   console.log(src);
 
   return (
-    <ThemeProvider>
+    <theme.ThemeProvider>
       <FullscreenProvider>
         <Player src={src} {...extraProps} />
       </FullscreenProvider>
-    </ThemeProvider>
+    </theme.ThemeProvider>
   );
 }
