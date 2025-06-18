@@ -444,7 +444,11 @@ func (ss *StreamSession) AddToHLS(ctx context.Context, spseg *streamplace.Segmen
 		return fmt.Errorf("failed to parse segment start time: %w", err)
 	}
 	log.Debug(ctx, "transmuxed to mpegts, adding to hls", "rendition", rendition, "size", buf.Len())
-	if err := ss.hls.GetRendition(rendition).NewSegment(&media.Segment{
+	rend, err := ss.hls.GetRendition(rendition)
+	if err != nil {
+		return fmt.Errorf("failed to get rendition: %w", err)
+	}
+	if err := rend.NewSegment(&media.Segment{
 		Buf:      &buf,
 		Duration: time.Duration(dur),
 		Time:     aqt.Time(),

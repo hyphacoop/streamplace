@@ -55,8 +55,9 @@ func NewLivepeerSession(ctx context.Context, did string, gatewayURL string) (*Li
 func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte, spseg *streamplace.Segment, rs renditions.Renditions) ([][]byte, error) {
 	ctx = log.WithLogValues(ctx, "func", "PostSegmentToGateway")
 	lpProfiles := rs.ToLivepeerProfiles()
+	sessionIDRen := fmt.Sprintf("%s-%dren", ls.SessionID, len(rs))
 	transcodingConfiguration := map[string]any{
-		"manifestID": ls.SessionID,
+		"manifestID": sessionIDRen,
 		"profiles":   lpProfiles,
 	}
 	bs, err := json.Marshal(transcodingConfiguration)
@@ -85,7 +86,7 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 	ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 	defer cancel()
 	seqNo := ls.Count
-	url := fmt.Sprintf("%s/live/%s/%d.ts", ls.GatewayURL, ls.SessionID, seqNo)
+	url := fmt.Sprintf("%s/live/%s/%d.ts", ls.GatewayURL, sessionIDRen, seqNo)
 	ls.Count++
 
 	dur := time.Duration(*spseg.Duration)
