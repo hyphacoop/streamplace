@@ -7,7 +7,7 @@ import {
   usePlayerStore,
   useStreamplaceStore,
 } from "../..";
-import { mt } from "../../lib/theme/atoms";
+import { borderRadius, colors, mt, p } from "../../lib/theme/atoms";
 import { Text, View } from "../ui/index";
 import { srcToUrl } from "./shared";
 import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
@@ -432,8 +432,14 @@ export function WebRTCPlayerInner({
 
   if (!mediaStream) {
     return (
-      <View backgroundColor="#111">
-        <View>
+      <View
+        backgroundColor="#111"
+        style={{ minWidth: "100%", minHeight: "100%" }}
+      >
+        <View
+          backgroundColor={colors.primary[800]}
+          style={{ borderRadius: borderRadius.md }}
+        >
           <View>
             <Text>Connecting...</Text>
           </View>
@@ -449,6 +455,8 @@ export function WebcamIngestPlayer(props: VideoProps) {
   const ingestStarting = usePlayerStore((x) => x.ingestStarting);
   const ingestMediaSource = usePlayerStore((x) => x.ingestMediaSource);
   const ingestAutoStart = usePlayerStore((x) => x.ingestAutoStart);
+
+  const [error, setError] = useState<Error | null>(null);
 
   let streamKey = null;
 
@@ -496,7 +504,14 @@ export function WebcamIngestPlayer(props: VideoProps) {
           setLocalMediaStream(stream);
         })
         .catch((e) => {
-          console.error("error getting user media", e);
+          console.error("error getting user media", e.name);
+          if (e.name == "NotAllowedError") {
+            setError(
+              new Error(
+                "Unable to access video! Please allow it in your browser settings.",
+              ),
+            );
+          }
         });
     }
   }, [ingestMediaSource]);
@@ -521,6 +536,22 @@ export function WebcamIngestPlayer(props: VideoProps) {
     }
     videoElement.srcObject = localMediaStream;
   }, [videoElement, localMediaStream]);
+
+  if (error) {
+    return (
+      <View
+        backgroundColor={colors.destructive[900]}
+        style={[p[4], { borderRadius: borderRadius.md }]}
+      >
+        <View>
+          <Text size="xl" weight="extrabold">
+            Error encountered!
+          </Text>
+        </View>
+        <Text>{error.message}</Text>
+      </View>
+    );
+  }
 
   return <VideoElement {...props} ref={handleRef} />;
 }

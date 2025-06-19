@@ -6,16 +6,18 @@ import {
   RTCView,
   RTCView as RTCViewIngest,
 } from "react-native-webrtc";
-import { View } from "tamagui";
 import {
   IngestMediaSource,
   PlayerStatus as IngestPlayerStatus,
   PlayerProtocol,
   PlayerStatus,
+  Text,
   usePlayerStore as useIngestPlayerStore,
   usePlayerStore,
   useStreamplaceStore,
+  View,
 } from "../..";
+import { borderRadius, colors, p } from "../../lib/theme/atoms";
 import { srcToUrl } from "./shared";
 import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 import { mediaDevices, WebRTCMediaStream } from "./webrtc-primitives.native";
@@ -239,6 +241,8 @@ export function NativeIngestPlayer() {
   const setStatus = useIngestPlayerStore((x) => x.setStatus);
   const setVideoRef = usePlayerStore((x) => x.setVideoRef);
 
+  const [error, setError] = useState<Error | null>(null);
+
   const ingestCamera = useIngestPlayerStore((x) => x.ingestCamera);
 
   useEffect(() => {
@@ -295,6 +299,11 @@ export function NativeIngestPlayer() {
         })
         .catch((e: any) => {
           console.error("error getting user media", e);
+          setError(
+            new Error(
+              "We could not access your camera or microphone. Please check your permissions.",
+            ),
+          );
         });
     }
   }, [ingestMediaSource, ingestCamera]);
@@ -314,6 +323,20 @@ export function NativeIngestPlayer() {
 
   if (!localMediaStream) {
     return null;
+  }
+
+  if (error) {
+    return (
+      <View
+        backgroundColor={colors.destructive[900]}
+        style={[p[4], { borderRadius: borderRadius.md }]}
+      >
+        <View>
+          <Text>Error encountered!</Text>
+        </View>
+        <Text>{error.message}</Text>
+      </View>
+    );
   }
 
   return (
