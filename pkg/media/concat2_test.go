@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 func TestConcatBin(t *testing.T) {
@@ -84,15 +84,15 @@ func innerTestConcatBin(t *testing.T) error {
 		return fmt.Errorf("failed to read fixture file: %w", err)
 	}
 
-	testSegs := []*segchanman.Seg{}
+	testSegs := []*bus.Seg{}
 	for range 5 {
-		testSegs = append(testSegs, &segchanman.Seg{
+		testSegs = append(testSegs, &bus.Seg{
 			Data:     bs,
 			Filepath: filename,
 		})
 	}
 
-	segCh := make(chan *segchanman.Seg)
+	segCh := make(chan *bus.Seg)
 	go func() {
 		for _, seg := range testSegs {
 			segCh <- seg

@@ -130,7 +130,20 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 		return nil, err
 	}
 
+	defer func() {
+		if err := pipeline.BlockSetState(gst.StateNull); err != nil {
+			log.Error(ctx, "error setting pipeline state to null", "error", err)
+		}
+	}()
+
 	<-ctx.Done()
+
+	if videoMetadata == nil {
+		return nil, fmt.Errorf("no video metadata")
+	}
+	if audioMetadata == nil {
+		return nil, fmt.Errorf("no audio metadata")
+	}
 
 	meta := &model.SegmentMediaData{
 		Video: []*model.SegmentMediadataVideo{videoMetadata},
@@ -142,10 +155,6 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 		return nil, fmt.Errorf("error getting duration")
 	} else {
 		meta.Duration = dur
-	}
-
-	if err := pipeline.BlockSetState(gst.StateNull); err != nil {
-		return nil, err
 	}
 
 	return meta, nil

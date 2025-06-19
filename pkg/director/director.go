@@ -66,6 +66,7 @@ func (d *Director) Start(ctx context.Context) error {
 					bus:         d.bus,
 					segmentChan: make(chan struct{}),
 					op:          d.op,
+					packets:     make([]bus.PacketizedSegment, 0),
 				}
 				d.streamSessions[not.Segment.RepoDID] = ss
 				g.Go(func() error {

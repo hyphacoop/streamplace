@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
@@ -41,23 +41,23 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err) //nolint:all
 	}
 
-	segBuffer := make(chan *segchanman.Seg, 1024)
+	segBuffer := make(chan *bus.Seg, 1024)
 	go func() {
-		ch := mm.SubscribeSegment(ctx, user, rendition)
-		defer mm.UnsubscribeSegment(ctx, user, rendition, ch)
+		segChan := mm.bus.SubscribeSegment(ctx, user, rendition)
+		defer mm.bus.UnsubscribeSegment(ctx, user, rendition, segChan)
 		for {
 			select {
 			case <-ctx.Done():
 				log.Debug(ctx, "exiting segment reader")
 				return
-			case file := <-ch:
+			case file := <-segChan.C:
 				log.Debug(ctx, "got segment", "file", file.Filepath)
 				segBuffer <- file
 			}
 		}
 	}()
 
-	segCh := make(chan *segchanman.Seg)
+	segCh := make(chan *bus.Seg)
 	go func() {
 		for {
 			select {
@@ -228,18 +228,17 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 
 				samples := buffer.Map(gst.MapRead).Bytes()
 				defer buffer.Unmap()
-				b2 := make([]byte, len(samples))
-				copy(b2, samples)
 				clockTime := buffer.Duration()
 				dur := clockTime.AsDuration()
-				mediaSample := media.Sample{Data: b2}
+				mediaSample := media.Sample{Data: samples}
 				if dur != nil {
 					mediaSample.Duration = *dur
 					lastVideoDuration = dur
 				} else if lastVideoDuration != nil {
+					// log.Log(ctx, "no video duration, using last duration", "lastVideoDuration", lastVideoDuration)
 					mediaSample.Duration = *lastVideoDuration
 				} else {
-					log.Log(ctx, "no video duration", "samples", len(b2))
+					log.Log(ctx, "no video duration", "samples", len(samples))
 					// cancel()
 					return gst.FlowOK
 				}

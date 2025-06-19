@@ -152,11 +152,11 @@ func (m *M3U8) GetFile(str string, session string, rendition string) ([]byte, er
 	}
 	rStr := parts[0]
 	fStr := parts[1]
-	rend := m.GetRendition(rStr)
-	log.Debug(context.Background(), "m3u8 get file", "str", str, "session", session, "rend", rStr, "file", fStr)
-	if rend == nil {
-		return nil, fmt.Errorf("rendition not found")
+	rend, err := m.GetRendition(rStr)
+	if err != nil {
+		return nil, err
 	}
+	log.Debug(context.Background(), "m3u8 get file", "str", str, "session", session, "rend", rStr, "file", fStr)
 	if fStr == IndexM3U8 {
 		return rend.GetPlaylist(session), nil
 	}
@@ -182,11 +182,11 @@ func (r *M3U8Rendition) NewSegment(seg *Segment) error {
 	return nil
 }
 
-func (m *M3U8) GetRendition(rendition string) *M3U8Rendition {
+func (m *M3U8) GetRendition(rendition string) (*M3U8Rendition, error) {
 	for _, r := range m.renditions {
 		if r.Rendition.Name == rendition {
-			return r
+			return r, nil
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("rendition not found")
 }

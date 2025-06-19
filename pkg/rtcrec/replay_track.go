@@ -3,6 +3,7 @@ package rtcrec
 import (
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/pion/interceptor"
 	"github.com/pion/webrtc/v4"
@@ -18,7 +19,7 @@ type ReplayTrackRemote struct {
 func (t *ReplayTrackRemote) Read(p []byte) (n int, attrs interceptor.Attributes, err error) {
 	ev := t.pc.group.NextTrack(t.ssrc, EventTypeTrackRead)
 	if ev == nil {
-		return 0, nil, nil
+		return 0, nil, io.EOF
 	}
 	select {
 	case <-t.pc.wait(fmt.Sprintf("TrackRead %s", t.trackEvent.Track.ID), ev.Time):

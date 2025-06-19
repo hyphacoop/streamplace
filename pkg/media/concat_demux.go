@@ -8,14 +8,14 @@ import (
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 // silly technique to avoid leaking pads
 func doNothing(self *gst.Element, pad *gst.Pad) {}
 
-func ConcatDemuxBin(ctx context.Context, seg *segchanman.Seg) (*gst.Bin, error) {
+func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 	ctx = log.WithLogValues(ctx, "func", "SegDemuxBin")
 	bin := gst.NewBin("seg-demux-bin")
 

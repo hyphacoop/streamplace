@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 type ConcatStreamer interface {
-	SubscribeSegment(ctx context.Context, user string, rendition string) <-chan *segchanman.Seg
-	UnsubscribeSegment(ctx context.Context, user string, rendition string, ch <-chan *segchanman.Seg)
+	SubscribeSegment(ctx context.Context, user string, rendition string) *bus.SegChan
+	UnsubscribeSegment(ctx context.Context, user string, rendition string, ch *bus.SegChan)
 }
 
 // This function remains in scope for the duration of a single users' playback
@@ -134,7 +134,7 @@ func ConcatStream(ctx context.Context, pipeline *gst.Pipeline, user string, rend
 			case <-ctx.Done():
 				log.Debug(ctx, "exiting segment reader")
 				return
-			case file := <-ch:
+			case file := <-ch.C:
 				log.Debug(ctx, "got segment", "file", file.Filepath)
 				allFiles <- file.Data
 				if len(file.Data) == 0 {

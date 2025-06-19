@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
+	"time"
 
 	"stream.place/streamplace/pkg/rtcrec"
 )
@@ -20,6 +22,101 @@ func main() {
 }
 
 func Start() error {
+	if len(os.Args) > 1 && os.Args[1] == "decode" {
+		return Decode()
+	}
+	if len(os.Args) > 1 && os.Args[1] == "trim" {
+		return Trim()
+	}
+	return fmt.Errorf("unknown command: %s", os.Args[1])
+}
+
+func Trim() error {
+	var startDuration time.Duration
+	flag.DurationVar(&startDuration, "start", 0, "timestamp where we should start our clip")
+	var endDuration time.Duration
+	flag.DurationVar(&endDuration, "end", 0, "timestamp where we should end our clip")
+	var inPath string
+	flag.StringVar(&inPath, "in-path", "", "path to the file to decode")
+	var outPath string
+	flag.StringVar(&outPath, "out-path", "", "path to the file to write the trimmed file to")
+	err := flag.CommandLine.Parse(os.Args[2:])
+	if err != nil {
+		return err
+	}
+	if startDuration == 0 && endDuration == 0 {
+		return fmt.Errorf("start or end duration is required (otherwise, you know, the cp command is right there)")
+	}
+	if inPath == "" {
+		return fmt.Errorf("in-path is required")
+	}
+	if outPath == "" {
+		return fmt.Errorf("out-path is required")
+	}
+	inFile, err := os.Open(inPath)
+	if err != nil {
+		return err
+	}
+	defer inFile.Close()
+	outFile, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	dec, err := rtcrec.MakeWebRTCDecoder(inFile)
+	if err != nil {
+		return err
+	}
+	encoder, err := rtcrec.MakeWebRTCEncoder(outFile)
+	if err != nil {
+		return err
+	}
+	var startCutoff *time.Time
+	var endCutoff *time.Time
+	if startDuration == 0 {
+		startCutoff = &time.Time{}
+	}
+	if endDuration == 0 {
+		t := time.Unix(math.MaxInt64, 0)
+		endCutoff = &t
+	}
+	included := 0
+	dropped := 0
+	for {
+		ev, err := dec.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if startCutoff == nil {
+			t := ev.Time.Add(startDuration)
+			startCutoff = &t
+		}
+		if endCutoff == nil {
+			t := ev.Time.Add(endDuration)
+			endCutoff = &t
+		}
+		// we only rewrite trackread events
+		if ev.TrackRead == nil {
+			if ev.Time.Before(*endCutoff) {
+				// included++
+				encoder.Event(*ev)
+			}
+			continue
+		}
+		if ev.Time.Before(*startCutoff) || ev.Time.After(*endCutoff) {
+			// fmt.Printf("dropped: %s < %s\n", ev.Time.Format(time.RFC3339Nano), cutoff.Format(time.RFC3339Nano))
+			dropped++
+			continue
+		}
+		included++
+		ev.Time = ev.Time.Add(-startDuration)
+		encoder.Event(*ev)
+	}
+	fmt.Printf("included: %d, dropped: %d\n", included, dropped)
+	return nil
+}
+
+func Decode() error {
 	var path string
 	flag.StringVar(&path, "path", "", "path to the file to decode")
 	flag.Parse()

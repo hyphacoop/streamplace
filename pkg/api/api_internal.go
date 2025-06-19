@@ -146,7 +146,9 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			errors.WriteHTTPBadRequest(w, "rendition required", nil)
 			return
 		}
-		seg := <-a.MediaManager.SubscribeSegment(ctx, user, rendition)
+		segChan := a.Bus.SubscribeSegment(ctx, user, rendition)
+		defer a.Bus.UnsubscribeSegment(ctx, user, rendition, segChan)
+		seg := <-segChan.C
 		base := filepath.Base(seg.Filepath)
 		w.Header().Set("Location", fmt.Sprintf("%s/playback/%s/%s/segment/%s\n", a.CLI.OwnInternalURL(), user, rendition, base))
 		w.WriteHeader(301)
@@ -621,7 +623,7 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			errors.WriteHTTPInternalServerError(w, "unable to create replay peer connection", err)
 			return
 		}
-		answer, err := a.MediaManager.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc)
+		answer, err := a.MediaManager.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, make(chan struct{}))
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to ingest web rtc", err)
 			return

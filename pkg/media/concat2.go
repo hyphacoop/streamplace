@@ -6,13 +6,13 @@ import (
 	"fmt"
 
 	"github.com/go-gst/go-gst/gst"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 )
 
 var ErrConcatDone = errors.New("concat done")
 
-func ConcatBin(ctx context.Context, segCh <-chan *segchanman.Seg) (*gst.Bin, error) {
+func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
 	ctx = log.WithLogValues(ctx, "func", "ConcatBin")
 	bin := gst.NewBin("concat-bin")
 
@@ -132,7 +132,7 @@ func ConcatBin(ctx context.Context, segCh <-chan *segchanman.Seg) (*gst.Bin, err
 	return bin, nil
 }
 
-func addConcatDemuxer(ctx context.Context, bin *gst.Bin, seg *segchanman.Seg, syncPadVideoSink *gst.Pad, syncPadAudioSink *gst.Pad) error {
+func addConcatDemuxer(ctx context.Context, bin *gst.Bin, seg *bus.Seg, syncPadVideoSink *gst.Pad, syncPadAudioSink *gst.Pad) error {
 
 	log.Debug(ctx, "adding concat demuxer", "seg", seg.Filepath)
 	demuxBin, err := ConcatDemuxBin(ctx, seg)

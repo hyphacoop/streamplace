@@ -16,7 +16,7 @@ func TestWebRTCRecording(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create recorder stream writing to temp file
-	recorder, err := NewRecorderStream(tmpfile)
+	recorder, err := MakeWebRTCEncoder(tmpfile)
 	require.NoError(t, err)
 
 	// Test recording an offer event

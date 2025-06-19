@@ -19,7 +19,6 @@ import (
 	"stream.place/streamplace/pkg/livepeer"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
-	"stream.place/streamplace/pkg/media/segchanman"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/renditions"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -39,13 +38,15 @@ type StreamSession struct {
 	segmentChan    chan struct{}
 	lastStatus     time.Time
 	lastStatusLock sync.Mutex
+	g              *errgroup.Group
+	packets        []bus.PacketizedSegment
 }
 
 func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
-
+	ctx, cancel := context.WithCancel(ctx)
+	ss.g, ctx = errgroup.WithContext(ctx)
 	sid := livepeer.RandomTrailer(8)
 	ctx = log.WithLogValues(ctx, "sid", sid)
-	ctx, cancel := context.WithCancel(ctx)
 	log.Log(ctx, "starting stream session")
 	defer cancel()
 	spseg, err := not.Segment.ToStreamplaceSegment()
@@ -77,8 +78,6 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 	allRenditions = append([]renditions.Rendition{sourceRendition}, allRenditions...)
 	ss.hls = media.NewM3U8(allRenditions)
 
-	g, ctx := errgroup.WithContext(ctx)
-
 	// for _, r := range allRenditions {
 	// 	g.Go(func() error {
 	// 		for {
@@ -100,13 +99,26 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 		case <-ss.segmentChan:
 			// reset timer
 		case <-ctx.Done():
-			return g.Wait()
+			return ss.g.Wait()
 		// case <-time.After(time.Minute * 1):
 		case <-time.After(time.Second * 60):
 			log.Log(ctx, "no new segments for 1 minute, shutting down")
 			cancel()
 		}
 	}
+}
+
+// Execute a goroutine in the context of the stream session. Errors are
+// non-fatal; if you actually want to melt the universe on an error you
+// should panic()
+func (ss *StreamSession) Go(ctx context.Context, f func() error) {
+	ss.g.Go(func() error {
+		err := f()
+		if err != nil {
+			log.Error(ctx, "error in goroutine", "error", err)
+		}
+		return nil
+	})
 }
 
 func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNotification) error {
@@ -126,36 +138,31 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 	}
 
 	ss.bus.Publish(spseg.Creator, spseg)
-	go ss.TryAddToHLS(ctx, spseg, "source", not.Data)
+	ss.Go(ctx, func() error {
+		return ss.AddPlaybackSegment(ctx, spseg, "source", &bus.Seg{
+			Filepath: not.Segment.ID,
+			Data:     not.Data,
+		})
+	})
 
 	if ss.cli.Thumbnail {
-		go func() {
-			err := ss.Thumbnail(ctx, spseg.Creator, not)
-			if err != nil {
-				log.Error(ctx, "could not create thumbnail", "error", err)
-			}
-		}()
+		ss.Go(ctx, func() error {
+			return ss.Thumbnail(ctx, spseg.Creator, not)
+		})
 	}
 
-	go func() {
-		err := ss.UpdateStatus(ctx, spseg.Creator)
-		if err != nil {
-			log.Error(ctx, "could not update status", "error", err)
-		}
-	}()
+	ss.Go(ctx, func() error {
+		return ss.UpdateStatus(ctx, spseg.Creator)
+	})
 
 	if ss.cli.LivepeerGatewayURL != "" {
-		go func() {
+		ss.Go(ctx, func() error {
 			start := time.Now()
 			err := ss.Transcode(ctx, spseg, not.Data)
 			took := time.Since(start)
-			if err != nil {
-				log.Error(ctx, "could not transcode", "error", err, "took", took)
-			} else {
-				log.Log(ctx, "transcoded segment", "took", took)
-			}
-			spmetrics.QueuedTranscodeDuration.WithLabelValues(spseg.Creator).Set(float64(time.Since(start).Milliseconds()))
-		}()
+			spmetrics.QueuedTranscodeDuration.WithLabelValues(spseg.Creator).Set(float64(took.Milliseconds()))
+			return err
+		})
 	}
 
 	return nil
@@ -233,7 +240,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 
 	session, err := ss.mod.GetSessionByDID(repoDID)
 	if err != nil {
-		return fmt.Errorf("could not get session for repoDID: %w", err)
+		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
 	}
 	if session == nil {
 		return fmt.Errorf("no session found for repoDID: %s", repoDID)
@@ -374,6 +381,7 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 		return err
 	}
 	for i, seg := range segs {
+		ctx := log.WithLogValues(ctx, "rendition", rs[i].Name)
 		log.Debug(ctx, "publishing segment", "rendition", rs[i])
 		fd, err := ss.cli.SegmentFileCreate(spseg.Creator, aqt, fmt.Sprintf("%s.mp4", rs[i].Name))
 		if err != nil {
@@ -384,21 +392,35 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 		if err != nil {
 			return fmt.Errorf("failed to write transcoded segment file: %w", err)
 		}
-		go ss.TryAddToHLS(ctx, spseg, rs[i].Name, seg)
-		go ss.mm.PublishSegment(ctx, spseg.Creator, rs[i].Name, &segchanman.Seg{
-			Filepath: fd.Name(),
-			Data:     seg,
+		ss.Go(ctx, func() error {
+			return ss.AddPlaybackSegment(ctx, spseg, rs[i].Name, &bus.Seg{
+				Filepath: fd.Name(),
+				Data:     seg,
+			})
 		})
+
 	}
 	return nil
 }
 
-func (ss *StreamSession) TryAddToHLS(ctx context.Context, spseg *streamplace.Segment, rendition string, data []byte) {
-	ctx = log.WithLogValues(ctx, "rendition", rendition)
-	err := ss.AddToHLS(ctx, spseg, rendition, data)
+func (ss *StreamSession) AddPlaybackSegment(ctx context.Context, spseg *streamplace.Segment, rendition string, seg *bus.Seg) error {
+	ss.Go(ctx, func() error {
+		return ss.AddToHLS(ctx, spseg, rendition, seg.Data)
+	})
+	ss.Go(ctx, func() error {
+		return ss.AddToWebRTC(ctx, spseg, rendition, seg)
+	})
+	return nil
+}
+
+func (ss *StreamSession) AddToWebRTC(ctx context.Context, spseg *streamplace.Segment, rendition string, seg *bus.Seg) error {
+	packet, err := media.Packetize(ctx, seg)
 	if err != nil {
-		log.Error(ctx, "could not add to hls", "error", err)
+		return fmt.Errorf("failed to packetize segment: %w", err)
 	}
+	seg.PacketizedData = packet
+	ss.bus.PublishSegment(ctx, spseg.Creator, rendition, seg)
+	return nil
 }
 
 func (ss *StreamSession) AddToHLS(ctx context.Context, spseg *streamplace.Segment, rendition string, data []byte) error {
@@ -422,7 +444,11 @@ func (ss *StreamSession) AddToHLS(ctx context.Context, spseg *streamplace.Segmen
 		return fmt.Errorf("failed to parse segment start time: %w", err)
 	}
 	log.Debug(ctx, "transmuxed to mpegts, adding to hls", "rendition", rendition, "size", buf.Len())
-	if err := ss.hls.GetRendition(rendition).NewSegment(&media.Segment{
+	rend, err := ss.hls.GetRendition(rendition)
+	if err != nil {
+		return fmt.Errorf("failed to get rendition: %w", err)
+	}
+	if err := rend.NewSegment(&media.Segment{
 		Buf:      &buf,
 		Duration: time.Duration(dur),
 		Time:     aqt.Time(),

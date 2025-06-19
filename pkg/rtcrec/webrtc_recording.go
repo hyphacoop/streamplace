@@ -116,7 +116,7 @@ type RecorderStream struct {
 	encoder *cbor.Encoder
 }
 
-func NewRecorderStream(w io.Writer) (*RecorderStream, error) {
+func MakeWebRTCEncoder(w io.Writer) (*RecorderStream, error) {
 	opts := cbor.CoreDetEncOptions()
 	opts.Time = cbor.TimeRFC3339Nano
 	em, err := opts.EncMode()

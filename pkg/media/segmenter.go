@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"stream.place/streamplace/pkg/globalerror"
 	"stream.place/streamplace/pkg/log"
 )
 
@@ -89,6 +90,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 				err = mm.ValidateMP4(ctx, bytes.NewReader(bs))
 				if err != nil {
 					log.Error(ctx, "error validating segment", "error", err)
+					globalerror.GlobalError(err)
 					return
 				}
 			},

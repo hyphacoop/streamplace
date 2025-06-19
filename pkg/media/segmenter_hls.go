@@ -26,7 +26,7 @@ func (mm *MediaManager) ToHLS(ctx context.Context, user string, rendition string
 		return fmt.Errorf("error creating ToHLS pipeline: %w", err)
 	}
 
-	outputQueue, done, err := ConcatStream(ctx, pipeline, user, rendition, mm)
+	outputQueue, done, err := ConcatStream(ctx, pipeline, user, rendition, mm.bus)
 	if err != nil {
 		return fmt.Errorf("failed to get output queue: %w", err)
 	}
@@ -60,7 +60,10 @@ func (mm *MediaManager) ToHLS(ctx context.Context, user string, rendition string
 		return err
 	}
 
-	r := m3u8.GetRendition(rendition)
+	r, err := m3u8.GetRendition(rendition)
+	if err != nil {
+		return fmt.Errorf("failed to get rendition: %w", err)
+	}
 	defer func() { r = nil }()
 	ps := NewPendingSegments(r)
 	defer func() { ps = nil }()

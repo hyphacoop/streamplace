@@ -12,7 +12,6 @@ import (
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/media/segchanman"
 	"stream.place/streamplace/pkg/model"
 
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
@@ -80,11 +79,6 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if _, err := io.Copy(fd, r); err != nil {
 		return err
 	}
-	scmSeg := &segchanman.Seg{
-		Filepath: fd.Name(),
-		Data:     buf,
-	}
-	go mm.PublishSegment(ctx, repoDID, "source", scmSeg)
 	seg := &model.Segment{
 		ID:            *mani.Label,
 		SigningKeyDID: signingKeyDID,
