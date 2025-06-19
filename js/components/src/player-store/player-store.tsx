@@ -160,7 +160,6 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
 
 export function usePlayerContext() {
   const context = useContext(PlayerContext);
-  console.log("usePlayerContext context", context);
   if (!context) {
     throw new Error("usePlayerContext must be used within a PlayerProvider");
   }

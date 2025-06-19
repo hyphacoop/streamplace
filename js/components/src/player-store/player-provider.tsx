@@ -33,7 +33,6 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({
   );
 
   const createPlayer = useCallback((id?: string) => {
-    console.log("Creating new player");
     const playerId = id || Math.random().toString(36).slice(8);
     const playerStore = makePlayerStore(playerId);
 
@@ -67,8 +66,6 @@ export const PlayerProvider: React.FC<PlayerProviderProps> = ({
     }),
     [players, createPlayer, removePlayer],
   );
-
-  console.log("PlayerProvider context value", contextValue);
 
   return (
     <PlayerContext.Provider value={contextValue}>
