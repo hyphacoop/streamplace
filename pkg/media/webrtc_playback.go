@@ -32,8 +32,8 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 	ctx, cancel := context.WithCancel(ctx) //nolint:all
 
 	pipelineSlice := []string{
-		"h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink sync=false name=videoappsink",
-		"opusparse name=audioparse ! appsink sync=false name=audioappsink",
+		"h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink name=videoappsink",
+		"opusparse name=audioparse ! appsink name=audioappsink",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -203,20 +203,6 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		}
 	}()
 
-	started := time.Now()
-	elapsed := time.Duration(0)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(time.Second * 5):
-				log.Log(ctx, "check elapsed", "elapsed", elapsed, "duration", time.Since(started))
-			}
-		}
-	}()
-
 	var lastVideoDuration = &DefaultDuration
 
 	go func() {
@@ -248,7 +234,6 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 				if dur != nil {
 					mediaSample.Duration = *dur
 					lastVideoDuration = dur
-					elapsed += *dur
 				} else if lastVideoDuration != nil {
 					// log.Log(ctx, "no video duration, using last duration", "lastVideoDuration", lastVideoDuration)
 					mediaSample.Duration = *lastVideoDuration

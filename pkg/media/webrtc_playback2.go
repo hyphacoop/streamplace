@@ -14,11 +14,6 @@ import (
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
-// we have a bug that prevents us from correctly probing video durations
-// a lot of the time. so when we don't have them we use the last duration
-// that we had, and when we don't have that we use a default duration
-var DefaultDuration2 = time.Duration(32 * time.Millisecond)
-
 // This function remains in scope for the duration of a single users' playback
 func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendition string, offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error) {
 	uu, err := uuid.NewV7()
