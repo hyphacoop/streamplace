@@ -32,6 +32,10 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     setIngestMediaSource: (ingestMediaSource: IngestMediaSource | undefined) =>
       set(() => ({ ingestMediaSource })),
 
+    ingestCamera: "user",
+    setIngestCamera: (ingestCamera: "user" | "environment") =>
+      set(() => ({ ingestCamera })),
+
     ingestConnectionState: null,
     setIngestConnectionState: (
       ingestConnectionState: RTCPeerConnectionState | null,
@@ -77,6 +81,12 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
 
     pipMode: false,
     setPipMode: (pipMode: boolean) => set(() => ({ pipMode })),
+
+    // Player element width/height setters for global sync
+    playerWidth: undefined,
+    setPlayerWidth: (playerWidth: number) => set(() => ({ playerWidth })),
+    playerHeight: undefined,
+    setPlayerHeight: (playerHeight: number) => set(() => ({ playerHeight })),
 
     // * Whether mute was forced by the browser or not for autoplay
     // * Will get set to 'false' if the user has interacted with the volume
@@ -141,6 +151,10 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
         let controlsTimeout = setTimeout(() => p.setShowControls(false), 1000);
         return { showControls: true, controlsTimeout };
       }),
+
+    showDebugInfo: false,
+    setShowDebugInfo: (showDebugInfo: boolean) =>
+      set(() => ({ showDebugInfo })),
   }));
 };
 

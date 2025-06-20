@@ -1,10 +1,5 @@
-import { usePlayerStore } from "@streamplace/components";
-import {
-  createStreamKeyRecord,
-  selectStoredKey,
-} from "features/bluesky/blueskySlice";
 import { useEffect, useRef, useState } from "react";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { usePlayerStore, useStreamKey } from "../..";
 import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
 
 export default function useWebRTC(
@@ -201,16 +196,9 @@ export function useWebRTCIngest({
   const setIngestConnectionState = usePlayerStore(
     (x) => x.setIngestConnectionState,
   );
-  const dispatch = useAppDispatch();
-  const storedKey = useAppSelector(selectStoredKey)?.privateKey;
+  const storedKey = useStreamKey();
 
   const [retryTime, setRetryTime] = useState<number>(0);
-  useEffect(() => {
-    if (storedKey) {
-      return;
-    }
-    dispatch(createStreamKeyRecord({ store: true }));
-  }, [storedKey]);
   useEffect(() => {
     if (!mediaStream) {
       return;
@@ -240,7 +228,11 @@ export function useWebRTCIngest({
       }
     });
     peerConnection.addEventListener("negotiationneeded", (ev) => {
-      negotiateConnectionWithClientOffer(peerConnection, endpoint, storedKey);
+      negotiateConnectionWithClientOffer(
+        peerConnection,
+        endpoint,
+        storedKey.streamKey?.privateKey,
+      );
     });
 
     peerConnection.addEventListener("track", (ev) => {
@@ -250,6 +242,6 @@ export function useWebRTCIngest({
     return () => {
       peerConnection.close();
     };
-  }, [endpoint, mediaStream, storedKey, retryTime]);
+  }, [endpoint, mediaStream, storedKey.streamKey?.privateKey, retryTime]);
   return [mediaStream, setMediaStream];
 }
