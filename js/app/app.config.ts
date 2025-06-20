@@ -157,6 +157,13 @@ export default function () {
         "expo-video",
         "expo-web-browser",
         streamplaceReactNativeWebRTC,
+        [
+          "expo-video",
+          {
+            supportsBackgroundPlayback: true,
+            supportsPictureInPicture: true,
+          },
+        ],
         ["expo-sqlite", { useSQLCipher: true }],
         "expo-file-system",
         [
