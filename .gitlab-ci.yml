@@ -361,6 +361,7 @@ windows-selftest:
     - build-docker-amd64
     - build-docker-arm64
     - build-docker-manifest
+    - build-desktop-darwin
     - test
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
