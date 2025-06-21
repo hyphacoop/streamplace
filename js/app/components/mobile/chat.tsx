@@ -1,5 +1,4 @@
-import { View, atoms } from "@streamplace/components";
-import Chat from "components/chat/chat";
+import { atoms, Chat, View } from "@streamplace/components";
 import ChatBox from "components/chat/chat-box";
 const { borderRadius, bottom, gap, h, layout, w, zIndex } = atoms;
 
@@ -24,13 +23,14 @@ export function ChatPanel({
         w.percent[100],
         { transform: [{ translateY: slideKeyboard }] },
         {
-          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
           borderRadius: borderRadius["2xl"],
+          padding: 10,
         },
       ]}
     >
-      <Chat isChatVisible={true} setIsChatVisible={() => true} />
-      <View style={[layout.flex.column, gap.all[2], { padding: 10 }]}>
+      <Chat />
+      <View style={[layout.flex.column, gap.all[2]]}>
         <ChatBox
           isChatVisible={true}
           chatBoxStyle={{ borderRadius: borderRadius.xl }}

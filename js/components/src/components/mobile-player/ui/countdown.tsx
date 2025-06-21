@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
+  useFrameCallback,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -21,38 +23,52 @@ export function CountdownOverlay({
   onDone,
 }: CountdownOverlayProps) {
   const [countdown, setCountdown] = useState(startFrom);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startTimestamp = useSharedValue<number | null>(null);
+  const done = useSharedValue(false);
 
   // Animation values
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
-  // Animate and handle countdown
+  const updateCountdown = (value: number) => {
+    setCountdown(value);
+  };
+
+  const handleDone = () => {
+    if (onDone) onDone();
+  };
+
+  // Accurate countdown using useFrameCallback
+  useFrameCallback(({ timestamp }) => {
+    if (!visible) return;
+
+    // Set start timestamp on first frame
+    if (startTimestamp.value === null) {
+      startTimestamp.value = timestamp;
+      return;
+    }
+
+    const elapsed = (timestamp - startTimestamp.value) / 1000; // Convert to seconds
+    const remaining = Math.max(0, startFrom - Math.floor(elapsed));
+
+    // Use runOnJS to call JavaScript functions from worklet
+    runOnJS(updateCountdown)(remaining);
+
+    if (remaining === 0 && !done.value) {
+      done.value = true;
+      runOnJS(handleDone)();
+    }
+  });
+
   useEffect(() => {
     if (visible) {
+      startTimestamp.value = null; // Will be set on first frame
       setCountdown(startFrom);
-      console.log("Countdown started from:", startFrom);
-
-      // Start countdown interval
-      intervalRef.current = setInterval(() => {
-        console.log("Setting countdown");
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            console.log("Probably done");
-            if (onDone) onDone();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      done.value = false;
     } else {
       setCountdown(startFrom);
-      if (intervalRef.current) clearInterval(intervalRef.current);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
   }, [visible, startFrom]);
 
   // Animate scale and opacity on countdown change

@@ -154,11 +154,11 @@ export function MobileUi() {
           slideKeyboard={slideKeyboard}
         />
       )}
+
       <PlayerUI.CountdownOverlay
         visible={showCountdown}
         width={width}
         height={height}
-        startFrom={3}
         onDone={() => {
           setShowCountdown(false);
         }}
