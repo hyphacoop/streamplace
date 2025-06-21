@@ -7,7 +7,7 @@ import { memo, useCallback } from "react";
 import { Linking, View } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
 import { RichtextSegment, segmentize } from "../../lib/facet";
-import { flex, gap, w } from "../../lib/theme/atoms";
+import { borders, flex, gap, ml, w } from "../../lib/theme/atoms";
 import { atoms, layout } from "../ui";
 
 interface Facet {
@@ -103,34 +103,74 @@ export const RenderChatMessage = memo(
     }, []);
 
     return (
-      <View style={[gap.all[2], layout.flex.row, w.percent[100]]}>
-        <Text
-          style={{
-            fontVariant: ["tabular-nums"],
-            color: atoms.colors.gray[300],
-          }}
-        >
-          {formatTime(item.record.createdAt)}
-        </Text>
-        <Text weight="bold" color="default" style={[flex.shrink[1]]}>
-          <Text
+      <>
+        {item.replyTo && (
+          <View
             style={[
-              {
-                cursor: "pointer",
-                color: getRgbColor(item.chatProfile?.color),
-              },
+              gap.all[2],
+              layout.flex.row,
+              w.percent[100],
+              borders.left.width.medium,
+              ml[2],
             ]}
           >
-            @{item.author.handle}
+            <View
+              style={[
+                {
+                  width: 36,
+                  height: 36,
+                  borderRadius: 999,
+                  backgroundColor: getRgbColor(item.chatProfile?.color),
+                },
+                borders.width.thin,
+                borders.color.gray[700],
+              ]}
+            />
+            <Text
+              style={{
+                color: getRgbColor((item.replyTo.chatProfile as any).color),
+                fontWeight: "bold",
+              }}
+            ></Text>
+            <Text
+              style={{
+                color: atoms.colors.gray[300],
+                fontStyle: "italic",
+              }}
+            >
+              {(item.replyTo.record as any).text}
+            </Text>
+          </View>
+        )}
+        <View style={[gap.all[2], layout.flex.row, w.percent[100]]}>
+          <Text
+            style={{
+              fontVariant: ["tabular-nums"],
+              color: atoms.colors.gray[300],
+            }}
+          >
+            {formatTime(item.record.createdAt)}
           </Text>
-          :{" "}
-          <RichTextMessage
-            text={item.record.text}
-            facets={item.record.facets || []}
-            userCache={userCache}
-          />
-        </Text>
-      </View>
+          <Text weight="bold" color="default" style={[flex.shrink[1]]}>
+            <Text
+              style={[
+                {
+                  cursor: "pointer",
+                  color: getRgbColor(item.chatProfile?.color),
+                },
+              ]}
+            >
+              @{item.author.handle}
+            </Text>
+            :{" "}
+            <RichTextMessage
+              text={item.record.text}
+              facets={item.record.facets || []}
+              userCache={userCache}
+            />
+          </Text>
+        </View>
+      </>
     );
   },
   (prevProps, nextProps) => {
