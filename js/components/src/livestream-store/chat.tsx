@@ -1,9 +1,5 @@
 import { RichText } from "@atproto/api";
 import {
-  isLink,
-  isMention,
-} from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
-import {
   ChatMessageViewHydrated,
   PlaceStreamChatMessage,
   PlaceStreamDefs,
@@ -52,12 +48,15 @@ export const useCreateChatMessage = () => {
     }
 
     const rt = new RichText({ text: msg.text });
-    rt.detectFacetsWithoutResolution();
+    rt.detectFacets(pdsAgent);
+
+    console.log(rt.facets);
 
     const record: PlaceStreamChatMessage.Record = {
       text: msg.text,
       createdAt: new Date().toISOString(),
       streamer: streamerProfile.did,
+      facets: rt.facets as PlaceStreamChatMessage.Record["facets"],
       ...(msg.reply
         ? {
             reply: {
@@ -70,34 +69,6 @@ export const useCreateChatMessage = () => {
                 uri: msg.reply.uri,
               },
             },
-          }
-        : {}),
-      ...(rt.facets && rt.facets.length > 0
-        ? {
-            facets: rt.facets.map((facet) => ({
-              index: facet.index,
-              features: facet.features
-                .filter(
-                  (feature) =>
-                    feature.$type === "app.bsky.richtext.facet#link" ||
-                    feature.$type === "app.bsky.richtext.facet#mention",
-                )
-                .map((feature) => {
-                  if (isLink(feature)) {
-                    return {
-                      $type: "app.bsky.richtext.facet#link",
-                      uri: feature.uri,
-                    };
-                  } else if (isMention(feature)) {
-                    return {
-                      $type: "app.bsky.richtext.facet#mention",
-                      did: feature.did,
-                    };
-                  } else {
-                    throw new Error("invalid code path");
-                  }
-                }),
-            })),
           }
         : {}),
     };
