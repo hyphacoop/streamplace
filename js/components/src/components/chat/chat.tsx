@@ -1,4 +1,3 @@
-import { Text, useChat, View } from "@streamplace/components";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
@@ -6,6 +5,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
+import { Text, useChat, View } from "../../";
 import { flex, w } from "../../lib/theme/atoms";
 import { RenderChatMessage } from "./chat-message";
 

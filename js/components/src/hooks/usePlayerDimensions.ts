@@ -1,5 +1,5 @@
 import { Dimensions } from "react-native";
-import { usePlayerStore } from "../..";
+import { usePlayerStore } from "../player-store";
 
 /**
  * usePlayerDimensions
