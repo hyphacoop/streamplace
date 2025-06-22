@@ -7,7 +7,7 @@ import { memo, useCallback } from "react";
 import { Linking, View } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
 import { RichtextSegment, segmentize } from "../../lib/facet";
-import { borders, flex, gap, ml, w } from "../../lib/theme/atoms";
+import { borders, flex, gap, ml, opacity, pl, w } from "../../lib/theme/atoms";
 import { atoms, layout } from "../ui";
 
 interface Facet {
@@ -49,6 +49,7 @@ const segmentedObject = (
     } else if (ftr.$type === "app.bsky.richtext.facet#mention") {
       let mtnftr = ftr as $Typed<Mention>;
       const profile = userCache?.get(mtnftr.did);
+      console.log(profile, mtnftr.did, userCache);
       return (
         <Text
           key={`mention-${index}`}
@@ -111,34 +112,29 @@ export const RenderChatMessage = memo(
               layout.flex.row,
               w.percent[100],
               borders.left.width.medium,
-              ml[2],
+              borders.left.color.gray[700],
+              ml[4],
+              pl[4],
+              opacity[80],
             ]}
           >
-            <View
-              style={[
-                {
-                  width: 36,
-                  height: 36,
-                  borderRadius: 999,
-                  backgroundColor: getRgbColor(item.chatProfile?.color),
-                },
-                borders.width.thin,
-                borders.color.gray[700],
-              ]}
-            />
-            <Text
-              style={{
-                color: getRgbColor((item.replyTo.chatProfile as any).color),
-                fontWeight: "bold",
-              }}
-            ></Text>
-            <Text
-              style={{
-                color: atoms.colors.gray[300],
-                fontStyle: "italic",
-              }}
-            >
-              {(item.replyTo.record as any).text}
+            <Text numberOfLines={1} style={[flex.shrink[1]]}>
+              <Text
+                style={{
+                  color: getRgbColor((item.replyTo.chatProfile as any).color),
+                  fontWeight: "thin",
+                }}
+              >
+                @{(item.replyTo.author as any).handle}
+              </Text>{" "}
+              <Text
+                style={{
+                  color: atoms.colors.gray[300],
+                  fontStyle: "italic",
+                }}
+              >
+                {(item.replyTo.record as any).text}
+              </Text>
             </Text>
           </View>
         )}

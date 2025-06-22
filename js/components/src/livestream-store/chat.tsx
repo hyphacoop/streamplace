@@ -147,9 +147,11 @@ const buildSortedChatList = (
 ): ChatMessageViewHydrated[] => {
   // if the update is large, just rebuild as it'll probably be faster
   if (newMessages.length > 10 || removedKeys.size > 0) {
-    const sortedKeys = Object.keys(chatIndex).sort((a, b) =>
-      a.localeCompare(b),
-    );
+    const sortedKeys = Object.keys(chatIndex).sort((a, b) => {
+      const aTime = parseInt(a.split("-")[0], 10);
+      const bTime = parseInt(b.split("-")[0], 10);
+      return bTime - aTime;
+    });
     return sortedKeys.map((key) => chatIndex[key]);
   }
 

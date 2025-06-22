@@ -11,21 +11,24 @@ import { RenderChatMessage } from "./chat-message";
 
 export function Chat() {
   const chat = useChat();
-  const [authors, setAuthors] = useState<
-    Map<string, ChatMessageViewHydrated["chatProfile"]>
-  >(new Map());
+  const [authors, setAuthors] = useState<Map<
+    string,
+    ChatMessageViewHydrated["chatProfile"]
+  > | null>(null);
   const { width } = useWindowDimensions();
   const showTime = width > 800;
 
   const reversedChat = useMemo(() => {
-    return chat ? [...chat].reverse() : [];
+    return chat ? [...chat].toReversed() : [];
   }, [chat]);
 
   useEffect(() => {
     if (!chat || chat.length === 0) return;
+    console.log("building chat cache");
 
     const uniqueAuthors = chat.reduce((acc, msg) => {
-      acc.set(msg.author.did, msg.chatProfile);
+      console.log(acc);
+      acc.set(msg.author.handle, msg.chatProfile);
       return acc;
     }, new Map<string, ChatMessageViewHydrated["chatProfile"]>());
 
@@ -41,20 +44,23 @@ export function Chat() {
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<ChatMessageViewHydrated>) => {
-      return <RenderChatMessage item={item} />;
+      if (!authors) {
+        return <Text>Loading author cache...</Text>;
+      }
+      return <RenderChatMessage item={item} userCache={authors} />;
     },
-    [showTime],
+    [showTime, authors, chat],
   );
 
-  if (!chat) return <Text>Loading chat...</Text>;
+  if (!chat || !authors) return <Text>Loading chat...</Text>;
 
   return (
     <View style={[flex.shrink[1]]}>
       <FlatList
         style={[flex.grow[1], flex.shrink[1], w.percent[100]]}
-        data={reversedChat}
+        data={chat}
+        inverted={true}
         keyExtractor={keyExtractor}
-        inverted
         renderItem={renderItem}
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
