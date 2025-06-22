@@ -48,7 +48,7 @@ export const useCreateChatMessage = () => {
     }
 
     const rt = new RichText({ text: msg.text });
-    rt.detectFacets(pdsAgent);
+    await rt.detectFacets(pdsAgent);
 
     console.log(rt.facets);
 
