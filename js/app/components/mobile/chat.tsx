@@ -17,7 +17,7 @@ export function ChatPanel({
         isPlayerRatioGreater
           ? layout.position.relative
           : layout.position.absolute,
-        h.percent[40],
+        h[96],
         bottom[0],
         zIndex[10],
         w.percent[100],
