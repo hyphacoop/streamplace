@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  react-native-webrtc@124.0.4:
+    hash: 11eed2e52e2ad4821ddf58975c0363f8cbe538d3b150d759a823343d3328f7cd
+    path: patches/react-native-webrtc@124.0.4.patch
+
 importers:
 
   .:
@@ -455,7 +460,7 @@ importers:
         version: 10.0.0(expo@53.0.11(@babel/core@7.26.0)(@expo/metro-runtime@5.0.4(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(react-native-webview@13.15.0(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0))(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0)(utf-8-validate@5.0.10))
       react-native-webrtc:
         specifier: 124.0.4
-        version: 124.0.4(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))
+        version: 124.0.4(patch_hash=11eed2e52e2ad4821ddf58975c0363f8cbe538d3b150d759a823343d3328f7cd)(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))
       rtcaudiodevice:
         specifier: git+https://github.com/streamplace/RTCAudioDevice.git#7b4659fe845545d366623cbc813936987144b76f
         version: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/7b4659fe845545d366623cbc813936987144b76f
@@ -25634,7 +25639,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  react-native-webrtc@124.0.4(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10)):
+  react-native-webrtc@124.0.4(patch_hash=11eed2e52e2ad4821ddf58975c0363f8cbe538d3b150d759a823343d3328f7cd)(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10)):
     dependencies:
       base64-js: 1.5.1
       debug: 4.3.4
