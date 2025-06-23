@@ -1,12 +1,12 @@
-import { Reply } from "lucide-react-native";
-import { useCallback, useMemo, useRef } from "react";
+import { Reply, ShieldEllipsis } from "lucide-react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   ListRenderItemInfo,
   Platform,
+  Pressable,
   useWindowDimensions,
 } from "react-native";
-import { Pressable } from "react-native-gesture-handler";
 import Swipeable, {
   SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -18,14 +18,12 @@ import { ChatMessageViewHydrated } from "streamplace";
 import { Text, useChat, useSetReplyToMessage, View } from "../../";
 import { bg, flex, py, w } from "../../lib/theme/atoms";
 import { RenderChatMessage } from "./chat-message";
+import { ModView, ModViewRef } from "./mod-view";
 
 function RightAction(prog: SharedValue<number>, drag: SharedValue<number>) {
   const styleAnimation = useAnimatedStyle(() => {
-    if (prog.value < 5 || drag.value === 0) {
-      return {};
-    }
     return {
-      transform: [{ translateX: drag.value + 50 }],
+      transform: [{ translateX: drag.value + 25 }],
     };
   });
 
@@ -36,10 +34,34 @@ function RightAction(prog: SharedValue<number>, drag: SharedValue<number>) {
   );
 }
 
-export function Chat() {
+function LeftAction(prog: SharedValue<number>, drag: SharedValue<number>) {
+  const styleAnimation = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: drag.value - 25 }],
+    };
+  });
+
+  return (
+    <Reanimated.View style={[styleAnimation, bg.destructive]}>
+      <ShieldEllipsis color="white" />
+    </Reanimated.View>
+  );
+}
+
+const SHOWN_MSGS =
+  Platform.OS === "android" || Platform.OS === "ios" ? 100 : 25;
+
+export function Chat({
+  shownMessages = SHOWN_MSGS,
+}: {
+  shownMessages?: number;
+}) {
   const chat = useChat();
   const { width } = useWindowDimensions();
   const setReply = useSetReplyToMessage();
+
+  const modViewRef = useRef<ModViewRef>(null);
+  const [modMsg, setModMsg] = useState<ChatMessageViewHydrated | null>(null);
 
   // Map to store refs for each swipeable row
   const swipeableRefs = useRef<Map<string, SwipeableMethods | null>>(new Map());
@@ -59,21 +81,6 @@ export function Chat() {
     [],
   );
 
-  const renderItemAndroid = useCallback(
-    ({ item }: ListRenderItemInfo<ChatMessageViewHydrated>) => {
-      if (!authors) {
-        return <Text>Loading author cache...</Text>;
-      }
-
-      return (
-        <Pressable onLongPress={() => setReply(item)}>
-          <RenderChatMessage item={item} userCache={authors} />
-        </Pressable>
-      );
-    },
-    [authors, setReply, keyExtractor],
-  );
-
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<ChatMessageViewHydrated>) => {
       if (!authors) {
@@ -82,31 +89,41 @@ export function Chat() {
       const key = keyExtractor(item, index);
 
       return (
-        <Swipeable
-          containerStyle={[py[1]]}
-          friction={2}
-          enableTrackpadTwoFingerGesture
-          rightThreshold={40}
-          renderRightActions={RightAction}
-          overshootFriction={9}
-          ref={(ref) => {
-            swipeableRefs.current.set(key, ref);
-          }}
-          onSwipeableOpen={(r) => {
-            console.log("swipeable open", r);
-            if (r === "left") {
-              console.log("Setting reply");
-              setReply(item);
+        <Pressable onLongPress={() => setModMsg(item)}>
+          <Swipeable
+            containerStyle={[py[1]]}
+            friction={2}
+            enableTrackpadTwoFingerGesture
+            rightThreshold={40}
+            renderRightActions={
+              Platform.OS === "android" ? undefined : RightAction
             }
-            // close this swipeable
-            const swipeable = swipeableRefs.current.get(key);
-            if (swipeable) {
-              swipeable.close();
+            renderLeftActions={
+              Platform.OS === "android" ? undefined : LeftAction
             }
-          }}
-        >
-          <RenderChatMessage item={item} userCache={authors} />
-        </Swipeable>
+            overshootFriction={9}
+            ref={(ref) => {
+              swipeableRefs.current.set(key, ref);
+            }}
+            onSwipeableOpen={(r) => {
+              if (r === (Platform.OS === "android" ? "right" : "left")) {
+                setReply(item);
+              }
+              if (r === (Platform.OS === "android" ? "left" : "right")) {
+                console.log("setting mod view");
+                setModMsg(item);
+                modViewRef.current?.open();
+              }
+              // close this swipeable
+              const swipeable = swipeableRefs.current.get(key);
+              if (swipeable) {
+                swipeable.close();
+              }
+            }}
+          >
+            <RenderChatMessage item={item} userCache={authors} />
+          </Swipeable>
+        </Pressable>
       );
     },
     [authors, setReply, keyExtractor],
@@ -123,15 +140,16 @@ export function Chat() {
     <View style={[flex.shrink[1]]}>
       <FlatList
         style={[flex.grow[1], flex.shrink[1], w.percent[100]]}
-        data={chat.slice(0, 25)}
+        data={chat.slice(0, shownMessages)}
         inverted={true}
         keyExtractor={keyExtractor}
-        renderItem={Platform.OS === "android" ? renderItemAndroid : renderItem}
+        renderItem={renderItem}
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
         initialNumToRender={20}
         updateCellsBatchingPeriod={50}
       />
+      <ModView ref={modViewRef} message={modMsg} />
     </View>
   );
 }
