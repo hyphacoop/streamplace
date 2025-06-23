@@ -15,4 +15,4 @@ onlyBuiltDependencies:
   - sharp
   - utf-8-validate
 patchedDependencies:
-  react-native-webrtc@124.0.4: patches/react-native-webrtc@124.0.4.patch
+  react-native-webrtc: patches/react-native-webrtc.patch
