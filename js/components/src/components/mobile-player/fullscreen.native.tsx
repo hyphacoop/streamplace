@@ -1,9 +1,14 @@
 import { useNavigation } from "@react-navigation/native";
 import { VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
-import { BackHandler, Dimensions, StatusBar, StyleSheet } from "react-native";
+import {
+  BackHandler,
+  Dimensions,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { View } from "tamagui";
 import { PlayerProtocol, useLivestreamStore, usePlayerStore } from "../..";
 import Video from "./video.native";
 
