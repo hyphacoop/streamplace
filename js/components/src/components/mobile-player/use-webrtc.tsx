@@ -197,29 +197,30 @@ export function useWebRTCIngest({
     (x) => x.setIngestConnectionState,
   );
   const storedKey = useStreamKey();
+  const [peerConnection, setPeerConnection] =
+    useState<RTCPeerConnection | null>(null);
+
+  const videoTransceiver = useRef<RTCRtpTransceiver | null>(null);
+  const audioTransceiver = useRef<RTCRtpTransceiver | null>(null);
 
   const [retryTime, setRetryTime] = useState<number>(0);
+
+  // "Outer loop": when we need a new peer connection, this sets that up
   useEffect(() => {
-    if (!mediaStream) {
-      return;
-    }
     if (!storedKey) {
       return;
     }
-    console.log("creating peer connection");
     const peerConnection = new RTCPeerConnection({
       bundlePolicy: "max-bundle",
     });
-    for (const track of mediaStream.getTracks()) {
-      console.log(
-        "adding track",
-        track.kind,
-        track.label,
-        track.enabled,
-        track.readyState,
-      );
-      peerConnection.addTrack(track, mediaStream);
-    }
+
+    videoTransceiver.current = peerConnection.addTransceiver("video", {
+      direction: "sendonly",
+    });
+    audioTransceiver.current = peerConnection.addTransceiver("audio", {
+      direction: "sendonly",
+    });
+
     peerConnection.addEventListener("connectionstatechange", (ev) => {
       setIngestConnectionState(peerConnection.connectionState);
       console.log("connection state change", peerConnection.connectionState);
@@ -239,9 +240,36 @@ export function useWebRTCIngest({
       console.log(ev);
     });
 
+    setPeerConnection(peerConnection);
+
     return () => {
       peerConnection.close();
     };
-  }, [endpoint, mediaStream, storedKey.streamKey?.privateKey, retryTime]);
+  }, [endpoint, storedKey.streamKey?.privateKey, retryTime]);
+
+  // "Inner loop": when our tracks change, we update the transceivers
+  useEffect(() => {
+    if (!mediaStream) {
+      return;
+    }
+    if (!peerConnection) {
+      return;
+    }
+    for (const track of mediaStream.getTracks()) {
+      console.log(
+        "adding track",
+        track.kind,
+        track.label,
+        track.enabled,
+        track.readyState,
+      );
+      if (track.kind === "video") {
+        videoTransceiver.current?.sender?.replaceTrack(track);
+      } else if (track.kind === "audio") {
+        audioTransceiver.current?.sender?.replaceTrack(track);
+      }
+    }
+  }, [peerConnection, mediaStream]);
+
   return [mediaStream, setMediaStream];
 }
