@@ -1,6 +1,7 @@
 import { TriggerRef } from "@rn-primitives/dropdown-menu";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { ChatMessageViewHydrated } from "streamplace";
+import { mr } from "../../lib/theme/atoms";
 import {
   colors,
   DropdownMenu,
@@ -47,7 +48,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(
             <>
               <DropdownMenuGroup>
                 <DropdownMenuItem>
-                  <View style={[layout.flex.column, { gap: 6 }]}>
+                  <View style={[layout.flex.column, mr[5], { gap: 6 }]}>
                     <RenderChatMessage item={message} />
                   </View>
                 </DropdownMenuItem>

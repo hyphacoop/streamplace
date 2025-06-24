@@ -1,11 +1,10 @@
 import { Reply, ShieldEllipsis } from "lucide-react-native";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { ComponentProps, useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   ListRenderItemInfo,
   Platform,
   Pressable,
-  useWindowDimensions,
 } from "react-native";
 import Swipeable, {
   SwipeableMethods,
@@ -53,11 +52,14 @@ const SHOWN_MSGS =
 
 export function Chat({
   shownMessages = SHOWN_MSGS,
-}: {
+  style: propsStyle,
+  ...props
+}: ComponentProps<typeof View> & {
   shownMessages?: number;
+  style?: ComponentProps<typeof View>["style"];
 }) {
   const chat = useChat();
-  const { width } = useWindowDimensions();
+  // const { width } = useWindowDimensions(); // 'width' is declared but its value is never read.
   const setReply = useSetReplyToMessage();
 
   const modViewRef = useRef<ModViewRef>(null);
@@ -132,12 +134,12 @@ export function Chat({
   if (!chat || !authors)
     return (
       <View style={[flex.shrink[1]]}>
-        <Text>Loading chat...</Text>
+        <Text>Loading chaat...</Text>
       </View>
     );
 
   return (
-    <View style={[flex.shrink[1]]}>
+    <View style={[flex.shrink[1]].concat(propsStyle || [])}>
       <FlatList
         style={[flex.grow[1], flex.shrink[1], w.percent[100]]}
         data={chat.slice(0, shownMessages)}

@@ -7,7 +7,16 @@ import { memo, useCallback } from "react";
 import { Linking, View } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
 import { RichtextSegment, segmentize } from "../../lib/facet";
-import { borders, flex, gap, ml, opacity, pl, w } from "../../lib/theme/atoms";
+import {
+  borders,
+  flex,
+  gap,
+  ml,
+  mr,
+  opacity,
+  pl,
+  w,
+} from "../../lib/theme/atoms";
 import { atoms, layout } from "../ui";
 
 interface Facet {
@@ -118,7 +127,7 @@ export const RenderChatMessage = memo(
               opacity[80],
             ]}
           >
-            <Text numberOfLines={1} style={[flex.shrink[1]]}>
+            <Text numberOfLines={1} style={[flex.shrink[1], mr[4]]}>
               <Text
                 style={{
                   color: getRgbColor((item.replyTo.chatProfile as any).color),
