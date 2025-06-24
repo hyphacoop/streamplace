@@ -14,3 +14,5 @@ onlyBuiltDependencies:
   - quietjs-bundle
   - sharp
   - utf-8-validate
+patchedDependencies:
+  react-native-webrtc: patches/react-native-webrtc.patch
