@@ -2,6 +2,7 @@ import { useNavigation } from "@react-navigation/native";
 import {
   atoms,
   PlayerUI,
+  Resizable,
   Text,
   Toast,
   useAvatars,
@@ -149,10 +150,12 @@ export function MobileUi() {
           slideKeyboard={slideKeyboard}
         />
       ) : (
-        <ChatPanel
+        <Resizable
           isPlayerRatioGreater={isPlayerRatioGreater}
           slideKeyboard={slideKeyboard}
-        />
+        >
+          <ChatPanel />
+        </Resizable>
       )}
 
       <PlayerUI.CountdownOverlay
