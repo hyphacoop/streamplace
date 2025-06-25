@@ -83,6 +83,8 @@ import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
 } from "react-native-reanimated";
+import MobileGoLive from "./screens/mobile-go-live";
+import MobileStream from "./screens/mobile-stream";
 store.dispatch(loadStateFromStorage());
 
 const Stack = createNativeStackNavigator();
@@ -115,6 +117,8 @@ type RootStackParamList = {
   Download: undefined;
   PopoutChat: { user: string };
   Embed: { user: string };
+  MobileStream: { user: string };
+  MobileGoLive: undefined;
 };
 
 declare global {
@@ -149,6 +153,8 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Download: "download",
       PopoutChat: "chat-popout/:user",
       Embed: "embed/:user",
+      MobileStream: "mobile/:user",
+      MobileGoLive: "mobile-golive",
     },
   },
 };
@@ -525,6 +531,24 @@ export function StreamplaceDrawer() {
           options={{
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="MobileStream"
+          component={MobileStream}
+          options={{
+            headerTitle: "Stream",
+            drawerItemStyle: { display: "none" },
+            title: "Streamplace Stream",
+          }}
+        />
+        <Drawer.Screen
+          name="MobileGoLive"
+          component={MobileGoLive}
+          options={{
+            headerTitle: "Go Live",
+            title: "Go live",
             headerShown: false,
           }}
         />

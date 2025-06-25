@@ -26,7 +26,7 @@ import {
 } from "features/streamplace/streamplaceSlice";
 import { usePreloadEmoji } from "hooks/usePreloadEmoji";
 import { useEffect, useRef, useState } from "react";
-import { Keyboard } from "react-native";
+import { Keyboard, TextStyle } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { ChatMessageViewHydrated, LivestreamViewHydrated } from "streamplace";
 import { Button, Form, Input, isWeb, Text, TextArea, View } from "tamagui";
@@ -58,10 +58,12 @@ export default function ChatBox({
   isPopout,
   setIsChatVisible,
   isChatVisible,
+  chatBoxStyle,
 }: {
   isPopout?: boolean;
   setIsChatVisible?: (visible: boolean) => void;
   isChatVisible?: boolean;
+  chatBoxStyle?: TextStyle;
 }) {
   const [message, setMessage] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -475,7 +477,7 @@ export default function ChatBox({
             <View flexDirection="row" gap="$2" position="relative">
               <View flexGrow={1} flexShrink={0} position="relative">
                 <TextArea
-                  borderRadius={0}
+                  //borderRadius={0}
                   overflow="hidden"
                   returnKeyType="done"
                   submitBehavior="blurAndSubmit"
@@ -495,6 +497,7 @@ export default function ChatBox({
                       });
                     }
                   }}
+                  style={chatBoxStyle}
                   onChangeText={(text) => {
                     if (!emojiDataLoaded) return;
                     const newMessage = text.replaceAll("\n", "");
