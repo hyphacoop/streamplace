@@ -342,7 +342,7 @@ export function NativeIngestPlayer() {
   return (
     <RTCViewIngest
       mirror={ingestCamera !== "environment"}
-      objectFit={"cover"}
+      objectFit={"contain"}
       streamURL={localMediaStream.toURL()}
       zOrder={0}
       style={{
