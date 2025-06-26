@@ -548,7 +548,9 @@ export function StreamplaceDrawer() {
           component={MobileGoLive}
           options={{
             headerTitle: "Go Live",
+            drawerItemStyle: isNative ? undefined : { display: "none" },
             title: "Go live",
+            drawerIcon: () => <Video />,
             headerShown: false,
           }}
         />

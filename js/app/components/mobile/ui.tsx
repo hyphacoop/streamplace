@@ -75,7 +75,7 @@ export function MobileUi() {
                   : navigation.navigate("Home", { screen: "StreamList" });
               }}
             >
-              <ChevronLeft />
+              <ChevronLeft color="white" />
             </Pressable>
             <Image
               source={

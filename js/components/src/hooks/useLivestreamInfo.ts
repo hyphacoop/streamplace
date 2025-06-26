@@ -23,6 +23,7 @@ export function useLivestreamInfo() {
       }
     } catch (error) {
       console.error("Error creating livestream:", error);
+      throw new Error("Failed to create livestream record");
     } finally {
       setRecordSubmitted(false);
     }
@@ -37,7 +38,10 @@ export function useLivestreamInfo() {
       if (closeKeyboard) closeKeyboard();
       setShowCountdown(true);
       setIngestStarting(true);
-      handleSubmit();
+      // wait ~3 seconds before announcing
+      setTimeout(() => {
+        handleSubmit();
+      }, 3000);
       return;
     }
     setIngestStarting(false);
