@@ -28,7 +28,6 @@ import {
   ml,
   mt,
   mx,
-  my,
   p,
   pb,
   pl,
@@ -217,66 +216,29 @@ export const ResponsiveDropdownMenuContent = forwardRef<any, any>(
 );
 
 import React from "react";
-import { Animated, Pressable } from "react-native";
 
 export const DropdownMenuItem = forwardRef<
   any,
-  DropdownMenuPrimitive.ItemProps & { inset: boolean; disabled: boolean }
+  DropdownMenuPrimitive.ItemProps & { inset?: boolean; disabled?: boolean }
 >(({ inset, disabled, style, children, ...props }, ref) => {
-  // Neutral background colors
-  const NEUTRAL_BG = colors.gray[800]; // "#262626"
-  const NEUTRAL_BG_LIGHT = colors.gray[700]; // "#404040"
-  const anim = useRef(new Animated.Value(0)).current;
-
-  const handlePressIn = () => {
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: 80,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.timing(anim, {
-      toValue: 0,
-      duration: 80,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const bgColor = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [NEUTRAL_BG, NEUTRAL_BG_LIGHT],
-  });
-
   return (
     <TextClassContext.Provider
       value={objectFromObjects([a.textColors.gray[900], a.fontSize.base])}
     >
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={disabled}
-        style={({ pressed }) => [
-          { opacity: disabled ? 0.5 : 1 },
-          inset && gap[2],
-          style,
+      <View
+        style={[
+          a.layout.flex.row,
+          a.layout.flex.alignCenter,
+          a.radius.all.sm,
+          py[1],
+          pl[2],
+          pr[2],
         ]}
-        {...props}
       >
-        <Animated.View
-          style={{
-            backgroundColor: bgColor,
-            borderRadius: 8,
-            paddingVertical: 8,
-            paddingHorizontal: 12,
-          }}
-        >
-          {typeof children === "function"
-            ? children({ pressed: true })
-            : children}
-        </Animated.View>
-      </Pressable>
+        {typeof children === "function"
+          ? children({ pressed: true })
+          : children}
+      </View>
     </TextClassContext.Provider>
   );
 });
@@ -289,13 +251,18 @@ export const DropdownMenuCheckboxItem = forwardRef<
   }
 >(({ children, checked, ...props }, ref) => {
   return (
-    <DropdownMenuPrimitive.CheckboxItem ref={ref} checked={checked} {...props}>
+    <DropdownMenuPrimitive.CheckboxItem
+      ref={ref}
+      checked={checked}
+      closeOnPress={props.closeOnPress || false}
+      {...props}
+    >
       <View
         style={[
           a.layout.flex.row,
           a.layout.flex.alignCenter,
           a.radius.all.sm,
-          py[2],
+          py[1],
           pl[2],
           pr[2],
           pr[8],
@@ -322,13 +289,17 @@ export const DropdownMenuRadioItem = forwardRef<
   }
 >(({ children, ...props }, ref) => {
   return (
-    <DropdownMenuPrimitive.RadioItem ref={ref} {...props}>
+    <DropdownMenuPrimitive.RadioItem
+      ref={ref}
+      closeOnPress={props.closeOnPress || false}
+      {...props}
+    >
       <View
         style={[
           a.layout.flex.row,
           a.layout.flex.alignCenter,
           a.radius.all.sm,
-          py[2],
+          py[1],
           pl[2],
           pr[1],
         ]}
@@ -353,7 +324,7 @@ export const DropdownMenuLabel = forwardRef<
       ref={ref}
       style={[
         px[2],
-        py[3],
+        py[2],
         a.textColors.gray[200],
         a.fontSize.base,
         inset && gap[2],
@@ -370,7 +341,7 @@ export const DropdownMenuSeparator = forwardRef<
   return (
     <View
       ref={ref}
-      style={[mx[1], my[1], h[0.5] || { height: 0.5 }, bg.gray[800]]}
+      style={[mx[2], h[0.5] || { height: 0.5 }, bg.gray[800]]}
       {...props}
     />
   );
@@ -396,7 +367,7 @@ export const DropdownMenuGroup = forwardRef<
 >((props, ref) => {
   const { inset, title, children, ...rest } = props;
   return (
-    <View style={[pt[1], inset ? gap[2] : gap[1]]} ref={ref} {...rest}>
+    <View style={[pt[2], inset ? gap[2] : gap[1]]} ref={ref} {...rest}>
       {title && (
         <Text style={[textColors.gray[400], pb[1], pl[2]]}>{title}</Text>
       )}
@@ -404,7 +375,8 @@ export const DropdownMenuGroup = forwardRef<
         style={[
           bg.gray[900],
           Platform.OS === "web" ? px[2] : p[2],
-          { borderRadius: borderRadius.lg },
+          gap[2],
+          { borderRadius: borderRadius.lg, gap: 10 },
         ]}
       >
         {children}

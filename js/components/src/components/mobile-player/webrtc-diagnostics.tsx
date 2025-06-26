@@ -89,7 +89,11 @@ export function useWebRTCDiagnostics(): WebRTCDiagnostics {
     }
 
     // Check if running over HTTPS (required for some WebRTC features)
-    if (location.protocol !== "https:" && location.hostname !== "localhost") {
+    if (
+      location.protocol !== "https:" &&
+      location.hostname !== "localhost" &&
+      location.hostname !== "127.0.0.1"
+    ) {
       warnings.push("WebRTC features may be limited over HTTP connections");
     }
 
