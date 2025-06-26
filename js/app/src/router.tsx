@@ -79,6 +79,7 @@ import { loadStateFromStorage } from "features/base/sidebarSlice";
 import { store } from "store/store";
 import HomeScreen from "./screens/home";
 
+import { useUrl } from "@streamplace/components";
 import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
@@ -237,22 +238,25 @@ const AvatarButton = () => {
   );
 };
 
-const EXTERNAL_ITEMS: ExternalDrawerItem[] = [
-  {
-    item: Book as any,
-    label: (
-      <Text alignSelf="flex-start">
-        Documentation{" "}
-        <ExternalLink size={16} paddingLeft={4} position="relative" top={2} />
-      </Text>
-    ) as any,
-    onPress: () => {
-      const u = new URL(window.location.href);
-      u.pathname = "/docs";
-      Linking.openURL(u.toString());
+const useExternalItems = (): ExternalDrawerItem[] => {
+  const streamplaceUrl = useUrl();
+  return [
+    {
+      item: Book as any,
+      label: (
+        <Text alignSelf="flex-start">
+          Documentation{" "}
+          <ExternalLink size={16} paddingLeft={4} position="relative" top={2} />
+        </Text>
+      ) as any,
+      onPress: () => {
+        const u = new URL(streamplaceUrl);
+        u.pathname = "/docs";
+        Linking.openURL(u.toString());
+      },
     },
-  },
-];
+  ];
+};
 
 // TODO: merge in ^
 function CustomDrawerContent(props) {
@@ -346,6 +350,7 @@ export function StreamplaceDrawer() {
       setLivePopup(true);
     }
   }, [userIsLive, poppedUp]);
+  const externalItems = useExternalItems();
 
   if (!hydrated) {
     return <View />;
@@ -385,7 +390,7 @@ export function StreamplaceDrawer() {
                   collapsed={sidebar.isCollapsed}
                   hidden={sidebar.isHidden}
                   widthAnim={sidebar.animatedWidth}
-                  externalItems={EXTERNAL_ITEMS}
+                  externalItems={externalItems}
                 />
               )
             : CustomDrawerContent
