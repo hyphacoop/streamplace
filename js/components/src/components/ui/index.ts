@@ -10,6 +10,7 @@ export * from "./dialog";
 export * from "./dropdown";
 export * from "./icons";
 export * from "./input";
+export * from "./loader";
 export * from "./resizeable";
 export * from "./text";
 export * from "./toast";
