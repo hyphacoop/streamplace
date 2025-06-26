@@ -100,9 +100,13 @@ export const RenderChatMessage = memo(
   function RenderChatMessage({
     item,
     userCache,
+    showReply = true,
+    showTime = true,
   }: {
     item: ChatMessageViewHydrated;
     userCache?: Map<string, ChatMessageViewHydrated["chatProfile"]>;
+    showReply?: boolean;
+    showTime?: boolean;
   }) {
     const formatTime = useCallback((dateString: string) => {
       return new Date(dateString).toLocaleString(undefined, {
@@ -114,7 +118,7 @@ export const RenderChatMessage = memo(
 
     return (
       <>
-        {item.replyTo && (
+        {item.replyTo && showReply && (
           <View
             style={[
               gap.all[2],
@@ -148,14 +152,16 @@ export const RenderChatMessage = memo(
           </View>
         )}
         <View style={[gap.all[2], layout.flex.row, w.percent[100]]}>
-          <Text
-            style={{
-              fontVariant: ["tabular-nums"],
-              color: atoms.colors.gray[300],
-            }}
-          >
-            {formatTime(item.record.createdAt)}
-          </Text>
+          {showTime && (
+            <Text
+              style={{
+                fontVariant: ["tabular-nums"],
+                color: atoms.colors.gray[300],
+              }}
+            >
+              {formatTime(item.record.createdAt)}
+            </Text>
+          )}
           <Text weight="bold" color="default" style={[flex.shrink[1]]}>
             <Text
               style={[

@@ -15,7 +15,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { ChatMessageViewHydrated } from "streamplace";
 import { Text, useChat, useSetReplyToMessage, View } from "../../";
-import { bg, flex, py, w } from "../../lib/theme/atoms";
+import { flex, py, w } from "../../lib/theme/atoms";
 import { RenderChatMessage } from "./chat-message";
 import { ModView, ModViewRef } from "./mod-view";
 
@@ -27,7 +27,7 @@ function RightAction(prog: SharedValue<number>, drag: SharedValue<number>) {
   });
 
   return (
-    <Reanimated.View style={[styleAnimation, bg.destructive]}>
+    <Reanimated.View style={[styleAnimation]}>
       <Reply color="white" />
     </Reanimated.View>
   );
@@ -41,7 +41,7 @@ function LeftAction(prog: SharedValue<number>, drag: SharedValue<number>) {
   });
 
   return (
-    <Reanimated.View style={[styleAnimation, bg.destructive]}>
+    <Reanimated.View style={[styleAnimation]}>
       <ShieldEllipsis color="white" />
     </Reanimated.View>
   );

@@ -24,3 +24,4 @@ export * as atoms from "./lib/theme/atoms";
 export * from "./hooks";
 
 export * from "./components/chat/chat";
+export * from "./components/chat/chat-box";
