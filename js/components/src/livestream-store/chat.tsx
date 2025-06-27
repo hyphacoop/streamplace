@@ -54,7 +54,6 @@ export const useCreateChatMessage = () => {
     const rt = new RichText({ text: msg.text });
     await rt.detectFacets(pdsAgent);
 
-    console.log(rt.facets);
 
     const record: PlaceStreamChatMessage.Record = {
       text: msg.text,
