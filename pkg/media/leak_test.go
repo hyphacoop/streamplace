@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/acarl005/stripansi"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/gstinit"
 )
@@ -103,7 +104,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// Often the GC is instance, but sometimes it takes a while. So, we retry a few times
+// with exponential backoff, giving the GC more time to do its thing.
 func getLeakCount(t *testing.T) int {
+	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+	defer ticker.Stop()
+	var leaks int
+	for i := 0; i < 10; i++ {
+		leaks = getLeakCountInner(t)
+		if leaks == 0 {
+			return leaks
+		}
+		if i < 9 {
+			<-ticker.C
+		}
+	}
+	return leaks
+}
+
+func getLeakCountInner(t *testing.T) int {
 	if os.Getenv(IgnoreLeaks) != "" {
 		return 0
 	}
@@ -116,9 +135,6 @@ func getLeakCount(t *testing.T) int {
 
 	// we want CI to be extra reliable here and a little slower is okay
 	flushes := 2
-	if os.Getenv("CI") != "" {
-		flushes = 5
-	}
 
 	for range flushes {
 		ch := make(chan struct{})
@@ -143,8 +159,6 @@ func getLeakCount(t *testing.T) int {
 			<-ch
 		}()
 	}
-
-	time.Sleep(time.Duration(flushes) * time.Second)
 
 	err = process.Signal(os.Signal(syscall.SIGUSR1))
 	require.NoError(t, err)

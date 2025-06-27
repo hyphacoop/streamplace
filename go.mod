@@ -18,6 +18,7 @@ require (
 	github.com/ThalesGroup/crypto11 v0.0.0-00010101000000-000000000000
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/bluesky-social/indigo v0.0.0-20250520232546-236dd575c91e
+	github.com/cenkalti/backoff/v5 v5.0.2
 	github.com/decred/dcrd/dcrec/secp256k1 v1.0.4
 	github.com/dunglas/httpsfv v1.0.2
 	github.com/ethereum/go-ethereum v1.14.7
@@ -59,7 +60,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
-	go.uber.org/goleak v1.3.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/image v0.22.0
 	golang.org/x/net v0.39.0
