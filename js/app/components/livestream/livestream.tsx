@@ -372,6 +372,7 @@ export function LivestreamInner(props: Partial<PlayerProps>) {
                 <Chat
                   isChatVisible={isChatVisible}
                   setIsChatVisible={setIsChatVisible}
+                  // chatBoxStyle={{ borderRadius: 0 }}
                 />
                 <View>
                   <ChatBox

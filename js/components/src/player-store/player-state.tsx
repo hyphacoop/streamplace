@@ -50,6 +50,9 @@ export interface PlayerState {
   ingestMediaSource?: IngestMediaSource;
   setIngestMediaSource?: (source: IngestMediaSource) => void;
 
+  ingestCamera: "user" | "environment";
+  setIngestCamera: (camera: "user" | "environment") => void;
+
   ingestAutoStart?: boolean;
   setIngestAutoStart?: (autoStart: boolean) => void;
 
@@ -110,6 +113,16 @@ export interface PlayerState {
       | undefined,
   ) => void;
 
+  /** Player element width (CSS value or number) */
+  playerWidth?: string | number;
+  /** Function to set the player width */
+  setPlayerWidth: (width: number) => void;
+
+  /** Player element height (CSS value or number) */
+  playerHeight?: string | number;
+  /** Function to set the player height */
+  setPlayerHeight: (height: number) => void;
+
   /** Flag indicating if player is in Picture-in-Picture mode */
   pipMode: boolean;
 
@@ -148,6 +161,9 @@ export interface PlayerState {
   clearControlsTimeout: () => void;
 
   setUserInteraction: () => void;
+
+  showDebugInfo: boolean;
+  setShowDebugInfo: (showDebugInfo: boolean) => void;
 }
 
 export type PlayerEvent = {

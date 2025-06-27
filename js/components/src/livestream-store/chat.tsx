@@ -1,4 +1,5 @@
 import { RichText } from "@atproto/api";
+import { useCallback } from "react";
 import {
   ChatMessageViewHydrated,
   PlaceStreamChatMessage,
@@ -14,9 +15,12 @@ export const useReplyToMessage = () =>
 
 export const useSetReplyToMessage = () => {
   const store = getStoreFromContext();
-  return (message: ChatMessageViewHydrated | null) => {
-    store.setState({ replyToMessage: message });
-  };
+  return useCallback(
+    (message: ChatMessageViewHydrated | null) => {
+      store.setState({ replyToMessage: message });
+    },
+    [store],
+  );
 };
 
 export type NewChatMessage = {
@@ -50,6 +54,7 @@ export const useCreateChatMessage = () => {
     const rt = new RichText({ text: msg.text });
     await rt.detectFacets(pdsAgent);
 
+    console.log(rt.facets);
 
     const record: PlaceStreamChatMessage.Record = {
       text: msg.text,
@@ -95,40 +100,106 @@ export const useCreateChatMessage = () => {
   };
 };
 
-const CHAT_LIMIT = 20;
+const buildSortedChatList = (
+  chatIndex: { [key: string]: ChatMessageViewHydrated },
+  existingChatList: ChatMessageViewHydrated[],
+  newMessages: { key: string; message: ChatMessageViewHydrated }[],
+  removedKeys: Set<string>,
+): ChatMessageViewHydrated[] => {
+  // if the update is large, just rebuild as it'll probably be faster
+  if (newMessages.length > 10 || removedKeys.size > 0) {
+    const sortedKeys = Object.keys(chatIndex).sort((a, b) => {
+      const aTime = parseInt(a.split("-")[0], 10);
+      const bTime = parseInt(b.split("-")[0], 10);
+      return bTime - aTime;
+    });
+    return sortedKeys.map((key) => chatIndex[key]);
+  }
 
-export const reduceChat = (
-  state: LivestreamState,
-  messages: ChatMessageViewHydrated[],
-  blocks: PlaceStreamDefs.BlockView[],
-): LivestreamState => {
-  state = { ...state } as LivestreamState;
-  let newChat: { [key: string]: ChatMessageViewHydrated } = {
-    ...state.chatIndex,
-  };
+  // otherwise, we can do an incremental update
+  let newChatList = [...existingChatList];
 
-  // Add new messages
-  for (let message of messages) {
-    const date = new Date(message.record.createdAt);
-    const key = `${date.getTime()}-${message.uri}`;
+  // i never thought i'd be writing binary search again
+  for (const { key, message } of newMessages) {
+    const timestamp = parseInt(key.split("-")[0]);
+    let insertIndex = newChatList.length;
 
-    // Remove existing local message matching the server one
-    if (!message.uri.startsWith("local-")) {
-      const existingLocalMessageKey = Object.keys(newChat).find((k) => {
-        const msg = newChat[k];
-        return (
-          msg.uri.startsWith("local-") &&
-          msg.record.text === message.record.text &&
-          msg.author.did === message.author.did
-        );
-      });
+    for (let i = newChatList.length - 1; i >= 0; i--) {
+      const existingMessage = newChatList[i];
+      const existingTimestamp = parseInt(
+        new Date(existingMessage.record.createdAt).getTime().toString(),
+      );
 
-      if (existingLocalMessageKey) {
-        delete newChat[existingLocalMessageKey];
+      if (existingTimestamp <= timestamp) {
+        insertIndex = i + 1;
+        break;
       }
     }
 
-    // Handle reply information for local-first messages
+    newChatList.splice(insertIndex, 0, message);
+  }
+
+  return newChatList;
+};
+
+export const reduceChatIncremental = (
+  state: LivestreamState,
+  newMessages: ChatMessageViewHydrated[],
+  blocks: PlaceStreamDefs.BlockView[],
+): LivestreamState => {
+  if (newMessages.length === 0 && blocks.length === 0) {
+    return state;
+  }
+
+  const newChatIndex = { ...state.chatIndex };
+  let hasChanges = false;
+  const removedKeys = new Set<string>();
+
+  // handle blocks
+  if (blocks.length > 0) {
+    const blockedDIDs = new Set(blocks.map((block) => block.record.subject));
+    for (const [key, message] of Object.entries(newChatIndex)) {
+      if (blockedDIDs.has(message.author.did)) {
+        delete newChatIndex[key];
+        removedKeys.add(key);
+        hasChanges = true;
+      }
+    }
+  }
+
+  const messagesToAdd: { key: string; message: ChatMessageViewHydrated }[] = [];
+
+  for (const message of newMessages) {
+    const date = new Date(message.record.createdAt);
+    const key = `${date.getTime()}-${message.uri}`;
+
+    // skip messages we already have
+    if (newChatIndex[key] && newChatIndex[key].uri === message.uri) {
+      continue;
+    }
+
+    // if we have a local message, replace it with the new one
+    if (!message.uri.startsWith("local-")) {
+      const existingLocalKey = Object.keys(newChatIndex).find((k) => {
+        const msg = newChatIndex[k];
+        return (
+          msg.uri.startsWith("local-") &&
+          msg.record.text === message.record.text &&
+          msg.author.did === message.author.did &&
+          Math.abs(new Date(msg.record.createdAt).getTime() - date.getTime()) <
+            10000 // Within 10 seconds
+        );
+      });
+
+      if (existingLocalKey) {
+        delete newChatIndex[existingLocalKey];
+        removedKeys.add(existingLocalKey);
+        hasChanges = true;
+      }
+    }
+
+    // add reply info
+    let processedMessage = message;
     if (message.record.reply) {
       const reply = message.record.reply as {
         parent?: { uri: string; cid: string };
@@ -136,17 +207,14 @@ export const reduceChat = (
       };
 
       const parentUri = reply?.parent?.uri || reply?.root?.uri;
-
       if (parentUri) {
-        // First try to find the parent message in our chat
-        const parentMsgKey = Object.keys(newChat).find(
-          (k) => newChat[k].uri === parentUri,
+        const parentMsgKey = Object.keys(newChatIndex).find(
+          (k) => newChatIndex[k].uri === parentUri,
         );
 
         if (parentMsgKey) {
-          // Found the parent message, add its info to our message
-          const parentMsg = newChat[parentMsgKey];
-          message = {
+          const parentMsg = newChatIndex[parentMsgKey];
+          processedMessage = {
             ...message,
             replyTo: {
               cid: parentMsg.cid,
@@ -161,34 +229,33 @@ export const reduceChat = (
       }
     }
 
-    newChat[key] = message;
+    messagesToAdd.push({ key, message: processedMessage });
+    hasChanges = true;
   }
 
-  for (const block of blocks) {
-    for (const [k, v] of Object.entries(newChat)) {
-      if (v.author.did === block.record.subject) {
-        delete newChat[k];
-      }
-    }
+  // Add new messages to index
+  for (const { key, message } of messagesToAdd) {
+    newChatIndex[key] = message;
   }
 
-  let newChatList = Object.values(newChat).sort((a, b) =>
-    new Date(a.record.createdAt) > new Date(b.record.createdAt) ? 1 : -1,
-  );
+  // only rebuild if we have changes
+  if (!hasChanges) {
+    return state;
+  }
 
-  newChatList = newChatList.slice(-CHAT_LIMIT);
-
-  newChat = newChatList.reduce(
-    (acc, msg) => {
-      acc[msg.uri] = msg;
-      return acc;
-    },
-    {} as { [key: string]: ChatMessageViewHydrated },
+  // Build the new sorted chat list efficiently
+  const newChatList = buildSortedChatList(
+    newChatIndex,
+    state.chat,
+    messagesToAdd,
+    removedKeys,
   );
 
   return {
     ...state,
-    chatIndex: newChat,
+    chatIndex: newChatIndex,
     chat: newChatList,
   };
 };
+
+export const reduceChat = reduceChatIncremental;
