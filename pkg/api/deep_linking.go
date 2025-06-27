@@ -21,7 +21,7 @@ func (a *StreamplaceAPI) HandleAppleAppSiteAssociation(ctx context.Context) http
 				"details": []map[string]any{
 					{
 						"appID": a.CLI.AppleTeamID + "." + a.CLI.AppBundleID,
-						"paths": []string{"*", "NOT /docs/*", "NOT /api/*", "NOT /xrpc/*", "NOT /oauth/*"},
+						"paths": []string{"*", "NOT /docs/*", "NOT /api/*", "NOT /xrpc/*", "NOT /oauth/*", "NOT /.well-known/*"},
 					},
 				},
 			},
