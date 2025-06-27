@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -15,9 +16,25 @@ import (
 	"time"
 
 	"github.com/acarl005/stripansi"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/gstinit"
 )
+
+var streamplaceTestCount = 50
+
+func init() {
+	testRunsStr := os.Getenv("STREAMPLACE_TEST_COUNT")
+	if testRunsStr != "" {
+		var err error
+		streamplaceTestCount, err = strconv.Atoi(testRunsStr)
+		if err != nil {
+			panic(fmt.Sprintf("STREAMPLACE_TEST_COUNT is not a number: %s", testRunsStr))
+		}
+	}
+}
+
+var LeakTestMutex sync.Mutex
 
 const IgnoreLeaks = "STREAMPLACE_IGNORE_LEAKS"
 const GSTDebugNeeded = "leaks:9,GST_TRACER:9"
@@ -87,7 +104,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+// Often the GC is instance, but sometimes it takes a while. So, we retry a few times
+// with exponential backoff, giving the GC more time to do its thing.
 func getLeakCount(t *testing.T) int {
+	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+	defer ticker.Stop()
+	var leaks int
+	for i := 0; i < 10; i++ {
+		leaks = getLeakCountInner(t)
+		if leaks == 0 {
+			return leaks
+		}
+		if i < 9 {
+			<-ticker.C
+		}
+	}
+	return leaks
+}
+
+func getLeakCountInner(t *testing.T) int {
 	if os.Getenv(IgnoreLeaks) != "" {
 		return 0
 	}
@@ -100,9 +135,6 @@ func getLeakCount(t *testing.T) int {
 
 	// we want CI to be extra reliable here and a little slower is okay
 	flushes := 2
-	if os.Getenv("CI") != "" {
-		flushes = 5
-	}
 
 	for range flushes {
 		ch := make(chan struct{})
@@ -128,8 +160,6 @@ func getLeakCount(t *testing.T) int {
 		}()
 	}
 
-	time.Sleep(time.Duration(flushes) * time.Second)
-
 	err = process.Signal(os.Signal(syscall.SIGUSR1))
 	require.NoError(t, err)
 
@@ -152,6 +182,17 @@ func checkGStreamerLeaks(t *testing.T, expected int) {
 			fmt.Println(l)
 		}
 		LeakReportMutex.Unlock()
+		require.Equal(t, expected, len(LeakReport), "Leaks found")
 	}
-	require.Equal(t, expected, len(LeakReport), "Leaks found")
+}
+
+func withNoGSTLeaks(t *testing.T, f func()) {
+	LeakTestMutex.Lock()
+	defer LeakTestMutex.Unlock()
+	gstinit.InitGST()
+	before := getLeakCount(t)
+	defer checkGStreamerLeaks(t, before)
+	// ignore := goleak.IgnoreCurrent()
+	// defer goleak.VerifyNone(t, ignore)
+	f()
 }

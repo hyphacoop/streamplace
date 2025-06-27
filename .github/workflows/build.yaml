@@ -46,7 +46,7 @@ jobs:
         if: matrix.name == 'windows-amd64'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-bin
+          name: windows-bin-${{ github.event.pull_request.head.sha }}
           path: ./bin/
           retention-days: 1
 
@@ -58,7 +58,7 @@ jobs:
       - name: Download bin artifacts
         uses: actions/download-artifact@v4
         with:
-          name: windows-bin
+          name: windows-bin-${{ github.event.pull_request.head.sha }}
           path: ./bin/
 
       - name: Run Windows executable
