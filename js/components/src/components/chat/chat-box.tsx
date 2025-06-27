@@ -11,7 +11,7 @@ import {
   useSetReplyToMessage,
   View,
 } from "../../";
-import { bg, gap, h, layout, mb, pl, pr, w } from "../../lib/theme/atoms";
+import { bg, flex, gap, h, layout, mb, pl, pr, w } from "../../lib/theme/atoms";
 import { Textarea } from "../ui/textarea";
 import { RenderChatMessage } from "./chat-message";
 import { MentionSuggestions } from "./mention-suggestions";
@@ -92,7 +92,7 @@ export function ChatBox({
   }, [replyTo]);
 
   return (
-    <View style={{ position: "relative" }}>
+    <View style={[layout.flex.column, flex.shrink[1], gap.all[2]]}>
       {replyTo && (
         <View
           style={[
@@ -134,6 +134,8 @@ export function ChatBox({
           ref={textAreaRef}
           numberOfLines={1}
           value={message}
+          enterKeyHint="send"
+          multiline={false}
           onChangeText={(text) => {
             setMessage(text);
             updateSuggestions(text);

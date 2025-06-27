@@ -13,6 +13,7 @@ import {
   useSegmentTiming as useSegmentMetrics,
   View,
 } from "@streamplace/components";
+import { bottom, zIndex } from "@streamplace/components/src/lib/theme/atoms";
 import { ChevronLeft, SwitchCamera } from "lucide-react-native";
 import { useEffect } from "react";
 import { Image, Pressable } from "react-native";
@@ -150,12 +151,22 @@ export function MobileUi() {
           slideKeyboard={slideKeyboard}
         />
       ) : (
-        <Resizable
-          isPlayerRatioGreater={isPlayerRatioGreater}
-          slideKeyboard={slideKeyboard}
+        <View
+          style={[
+            isPlayerRatioGreater
+              ? layout.position.absolute
+              : layout.position.relative,
+            zIndex[50],
+            bottom[0],
+          ]}
         >
-          <ChatPanel />
-        </Resizable>
+          <Resizable
+            isPlayerRatioGreater={isPlayerRatioGreater}
+            slideKeyboard={slideKeyboard}
+          >
+            <ChatPanel />
+          </Resizable>
+        </View>
       )}
 
       <PlayerUI.CountdownOverlay

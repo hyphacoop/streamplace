@@ -1,6 +1,6 @@
 import * as React from "react";
 import { TextInput, type TextInputProps } from "react-native";
-import { bg, borders, p, text, w } from "../../lib/theme/atoms";
+import { bg, borders, flex, p, text } from "../../lib/theme/atoms";
 
 function Textarea({
   style,
@@ -13,7 +13,7 @@ function Textarea({
   return (
     <TextInput
       style={[
-        w.percent[100],
+        flex.values[1],
         borders.width.thin,
         borders.color.gray[400],
         bg.gray[900],
