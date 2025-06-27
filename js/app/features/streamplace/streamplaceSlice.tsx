@@ -222,6 +222,7 @@ export const streamplaceSlice = createAppSlice({
   selectors: {
     selectStreamplace: (streamplace) => streamplace,
     selectUrl: (streamplace) => streamplace.url,
+    selectInitialized: (streamplace) => streamplace.initialized,
     selectRecentSegments: (streamplace) => streamplace.recentSegments,
     selectMySegments: (streamplace) => streamplace.mySegments,
     selectUserMuted: (streamplace) => streamplace.userMuted,
@@ -244,4 +245,5 @@ export const {
   selectUserMuted,
   selectChatWarned,
   selectUrl,
+  selectInitialized,
 } = streamplaceSlice.selectors;

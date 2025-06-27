@@ -107,7 +107,6 @@ func (b *Bus) PublishSegment(ctx context.Context, user string, rendition string,
 	}
 	curBuf = append(curBuf, seg)
 	if len(curBuf) > bufSize {
-		log.Warn(ctx, "segment buffer is too large, dropping oldest segment", "user", user, "rendition", rendition, "bufSize", bufSize, "len", len(curBuf))
 		curBuf = curBuf[1:]
 	}
 	b.segBuf[key] = curBuf

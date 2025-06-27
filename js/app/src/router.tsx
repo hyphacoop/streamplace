@@ -554,13 +554,14 @@ export function StreamplaceDrawer() {
           options={{
             headerTitle: "Go Live",
             drawerItemStyle: isNative ? undefined : { display: "none" },
+            drawerLabel: () => <Text>Go Live</Text>,
             title: "Go live",
             drawerIcon: () => <Video />,
             headerShown: false,
           }}
         />
       </Drawer.Navigator>
-      {livePopup && (
+      {isWeb && livePopup && (
         <Popup
           onPress={() => {
             navigation.navigate("LiveDashboard");

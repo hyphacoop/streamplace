@@ -10,7 +10,6 @@ import {
   useKeyboardSlide,
   useLivestreamInfo,
   usePlayerDimensions,
-  useSegmentTiming as useSegmentMetrics,
   View,
 } from "@streamplace/components";
 import { bottom, zIndex } from "@streamplace/components/src/lib/theme/atoms";
@@ -38,7 +37,6 @@ export function MobileUi() {
   } = useLivestreamInfo();
   const { width, height, isPlayerRatioGreater } = usePlayerDimensions();
   const { slideKeyboard } = useKeyboardSlide();
-  const { connectionQuality, segmentDeltas, mean, range } = useSegmentMetrics();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
@@ -133,13 +131,7 @@ export function MobileUi() {
             layout.flex.center,
           ]}
         >
-          <PlayerUI.MetricsPanel
-            connectionQuality={connectionQuality}
-            showMetrics={isLive || isSelfAndNotLive}
-            segmentDeltas={segmentDeltas}
-            mean={mean || 999}
-            range={range || 999}
-          />
+          <PlayerUI.MetricsPanel showMetrics={isLive || isSelfAndNotLive} />
         </View>
       )}
       {isSelfAndNotLive ? (
