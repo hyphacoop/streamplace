@@ -136,6 +136,7 @@ export default function () {
           backgroundColor: "#ffffff",
         },
         package: bundle,
+        edgeToEdgeEnabled: true,
         versionCode: versionCode(pkg.version),
         ...(isProd
           ? {
