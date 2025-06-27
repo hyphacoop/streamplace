@@ -112,6 +112,7 @@ export default function () {
       ios: {
         supportsTablet: true,
         bundleIdentifier: bundle,
+        associatedDomains: ["applinks:stream.place"],
         infoPlist: {
           UIBackgroundModes: ["fetch", "remote-notification"],
           LSMinimumSystemVersion: "12.0",
@@ -138,6 +139,20 @@ export default function () {
         package: bundle,
         edgeToEdgeEnabled: true,
         versionCode: versionCode(pkg.version),
+        intentFilters: [
+          {
+            action: "VIEW",
+            autoVerify: true,
+            data: [
+              {
+                scheme: "https",
+                host: "stream.place",
+                pathPrefix: "/",
+              },
+            ],
+            category: ["BROWSABLE", "DEFAULT"],
+          },
+        ],
         ...(isProd
           ? {
               googleServicesFile: "./google-services.json",

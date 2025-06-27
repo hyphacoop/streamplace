@@ -161,6 +161,8 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 	router.Handler("POST", "/oauth/*anything", a.op.Handler())
 	router.Handler("GET", "/.well-known/oauth-authorization-server", a.op.Handler())
 	router.Handler("GET", "/.well-known/oauth-protected-resource", a.op.Handler())
+	router.Handler("GET", "/.well-known/apple-app-site-association", a.HandleAppleAppSiteAssociation(ctx))
+	router.Handler("GET", "/.well-known/assetlinks.json", a.HandleAndroidAssetLinks(ctx))
 	apiRouter := httprouter.New()
 	addFunc(apiRouter, "POST", "/api/notification", a.HandleNotification(ctx))
 	// old clients

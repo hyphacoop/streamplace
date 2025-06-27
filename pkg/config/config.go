@@ -104,6 +104,8 @@ type CLI struct {
 	dataDirFlags           []*string
 	DiscordWebhooks        []*discordtypes.Webhook
 	NewWebRTCPlayback      bool
+	AppleTeamID            string
+	AndroidCertFingerprint string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -159,6 +161,8 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.RtmpsAddr, "rtmps-addr", ":1935", "address to listen for RTMPS connections")
 	cli.JSONFlag(fs, &cli.DiscordWebhooks, "discord-webhooks", "[]", "JSON array of Discord webhooks to send notifications to")
 	fs.BoolVar(&cli.NewWebRTCPlayback, "new-webrtc-playback", true, "enable new webrtc playback")
+	fs.StringVar(&cli.AppleTeamID, "apple-team-id", "", "apple team id for deep linking")
+	fs.StringVar(&cli.AndroidCertFingerprint, "android-cert-fingerprint", "", "android cert fingerprint for deep linking")
 
 	if runtime.GOOS == "linux" {
 		fs.BoolVar(&cli.NoMist, "no-mist", true, "Disable MistServer")
