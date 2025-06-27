@@ -82,7 +82,7 @@ const StreamCard = ({
         <Image
           source={{ uri: `${url}/${thumbnailUrl}`, width: 160, height: 90 }}
           style={{ width: "100%", height: "100%", aspectRatio: 16 / 9 }}
-          resizeMode="stretch"
+          resizeMode="contain"
         />
         {isLive && (
           <XStack
