@@ -81,9 +81,8 @@ export function ChatBox({
     createChatMessage({
       text: message,
       reply: replyTo || undefined,
-    }).then(() => {
-      setSubmitting(false);
     });
+    setSubmitting(false);
   };
   useEffect(() => {
     if (replyTo && textAreaRef.current) {

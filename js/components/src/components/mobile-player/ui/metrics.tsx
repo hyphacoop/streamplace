@@ -1,22 +1,15 @@
 import { AlertCircle, CircleCheck, CircleX } from "lucide-react-native";
+import { useSegmentTiming } from "../../../hooks/useSegmentTiming";
 import * as atoms from "../../../lib/theme/atoms";
 import { Text, View } from "../../ui";
 
 type MetricsPanelProps = {
-  connectionQuality: "good" | "degraded" | "bad" | string;
   showMetrics: boolean;
-  segmentDeltas: number[];
-  mean: number;
-  range: number;
 };
 
-export function MetricsPanel({
-  connectionQuality,
-  showMetrics,
-  segmentDeltas,
-  mean,
-  range,
-}: MetricsPanelProps) {
+export function MetricsPanel({ showMetrics }: MetricsPanelProps) {
+  const { connectionQuality, segmentDeltas, mean, range } = useSegmentTiming();
+
   let icon = <CircleX color="#d44" />;
   let color = "#d44";
   if (connectionQuality === "good") {
