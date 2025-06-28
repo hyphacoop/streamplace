@@ -1,13 +1,13 @@
 import { TriggerRef } from "@rn-primitives/dropdown-menu";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { ChatMessageViewHydrated } from "streamplace";
-import { mr } from "../../lib/theme/atoms";
+import { gap, mr } from "../../lib/theme/atoms";
+import { useCreateBlockRecord } from "../../streamplace-store/block";
+import { usePDSAgent } from "../../streamplace-store/xrpc";
 import {
-  colors,
   DropdownMenu,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   layout,
   ResponsiveDropdownMenuContent,
@@ -19,8 +19,8 @@ import { RenderChatMessage } from "./chat-message";
 type ModViewProps = {
   message: ChatMessageViewHydrated | null;
   onClose?: () => void;
-  onDeleteMessage?: (msg: ChatMessageViewHydrated) => void;
-  onBanUser?: (userHandle: string) => void;
+  // onDeleteMessage?: (msg: ChatMessageViewHydrated) => void;
+  // onBanUser?: (userHandle: string) => void;
 };
 
 export type ModViewRef = {
@@ -29,8 +29,17 @@ export type ModViewRef = {
 };
 
 export const ModView = forwardRef<ModViewRef, ModViewProps>(
-  ({ message, onClose, onDeleteMessage, onBanUser }, ref) => {
+  ({ message, onClose }, ref) => {
     const triggerRef = useRef<TriggerRef>(null);
+
+    let agent = usePDSAgent();
+    let createBlockRecord = useCreateBlockRecord();
+
+    if (!agent?.did) {
+      <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
+        <Text>Log in to submit mod actions</Text>
+      </View>;
+    }
 
     useImperativeHandle(ref, () => ({
       open: () => triggerRef.current?.open(),
@@ -55,7 +64,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(
               </DropdownMenuGroup>
 
               <DropdownMenuGroup title={`Moderation actions`}>
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                   onPress={
                     onDeleteMessage ? () => onDeleteMessage(message) : undefined
                   }
@@ -74,6 +83,18 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(
                 >
                   <Text color="destructive">
                     Ban user @{message.author.handle}
+                  </Text>
+                </DropdownMenuItem> */}
+                <DropdownMenuItem
+                  disabled={message.author.did === agent?.did}
+                  onPress={() => createBlockRecord(message.author.handle)}
+                >
+                  <Text color="destructive">
+                    {message.author.did === agent?.did ? (
+                      <>Block yourself (you can't block yourself)</>
+                    ) : (
+                      <>Block user @{message.author.handle} from this channel</>
+                    )}
                   </Text>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
