@@ -105,6 +105,9 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     telemetry: true,
     setTelemetry: (telemetry: boolean) => set(() => ({ telemetry })),
 
+    ingestLive: false,
+    setIngestLive: (ingestLive: boolean) => set(() => ({ ingestLive })),
+
     playerEvent: async (
       url: string,
       time: string,

@@ -204,10 +204,14 @@ export function useWebRTCIngest({
   const audioTransceiver = useRef<RTCRtpTransceiver | null>(null);
 
   const [retryTime, setRetryTime] = useState<number>(0);
+  const ingestLive = usePlayerStore((x) => x.ingestLive);
 
   // "Outer loop": when we need a new peer connection, this sets that up
   useEffect(() => {
     if (!storedKey) {
+      return;
+    }
+    if (!ingestLive) {
       return;
     }
     const peerConnection = new RTCPeerConnection({
@@ -245,7 +249,7 @@ export function useWebRTCIngest({
     return () => {
       peerConnection.close();
     };
-  }, [endpoint, storedKey.streamKey?.privateKey, retryTime]);
+  }, [endpoint, storedKey.streamKey?.privateKey, retryTime, ingestLive]);
 
   // "Inner loop": when our tracks change, we update the transceivers
   useEffect(() => {
@@ -253,6 +257,9 @@ export function useWebRTCIngest({
       return;
     }
     if (!peerConnection) {
+      return;
+    }
+    if (!ingestLive) {
       return;
     }
     for (const track of mediaStream.getTracks()) {
@@ -269,7 +276,7 @@ export function useWebRTCIngest({
         audioTransceiver.current?.sender?.replaceTrack(track);
       }
     }
-  }, [peerConnection, mediaStream]);
+  }, [peerConnection, mediaStream, ingestLive]);
 
   return [mediaStream, setMediaStream];
 }

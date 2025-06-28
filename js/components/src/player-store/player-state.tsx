@@ -41,6 +41,10 @@ export interface PlayerState {
   /** Function to set the ingestStarting flag */
   setIngestStarting: (ingestStarting: boolean) => void;
 
+  /** Flag indicating if ingest is live */
+  ingestLive: boolean;
+  setIngestLive: (ingestLive: boolean) => void;
+
   /** Current connection state of ingest RTP/RTC peer connection */
   ingestConnectionState: RTCPeerConnectionState | null;
 

@@ -8,6 +8,7 @@ export function useLivestreamInfo() {
   const profile = useLivestreamStore((x) => x.profile);
   const ingestStarting = usePlayerStore((x) => x.ingestStarting);
   const setIngestStarting = usePlayerStore((x) => x.setIngestStarting);
+  const setIngestLive = usePlayerStore((x) => x.setIngestLive);
 
   const createStreamRecord = useCreateStreamRecord();
 
@@ -38,13 +39,15 @@ export function useLivestreamInfo() {
       if (closeKeyboard) closeKeyboard();
       setShowCountdown(true);
       setIngestStarting(true);
+      setIngestLive(true);
       // wait ~3 seconds before announcing
       setTimeout(() => {
         handleSubmit();
       }, 3000);
-      return;
+    } else {
+      setIngestStarting(false);
+      setIngestLive(false);
     }
-    setIngestStarting(false);
   };
 
   return {
