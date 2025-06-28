@@ -104,40 +104,12 @@ const buildSortedChatList = (
   newMessages: { key: string; message: ChatMessageViewHydrated }[],
   removedKeys: Set<string>,
 ): ChatMessageViewHydrated[] => {
-  // if the update is large, just rebuild as it'll probably be faster
-  if (newMessages.length > 10 || removedKeys.size > 0) {
-    const sortedKeys = Object.keys(chatIndex).sort((a, b) => {
-      const aTime = parseInt(a.split("-")[0], 10);
-      const bTime = parseInt(b.split("-")[0], 10);
-      return bTime - aTime;
-    });
-    return sortedKeys.map((key) => chatIndex[key]);
-  }
-
-  // otherwise, we can do an incremental update
-  let newChatList = [...existingChatList];
-
-  // i never thought i'd be writing binary search again
-  for (const { key, message } of newMessages) {
-    const timestamp = parseInt(key.split("-")[0]);
-    let insertIndex = newChatList.length;
-
-    for (let i = newChatList.length - 1; i >= 0; i--) {
-      const existingMessage = newChatList[i];
-      const existingTimestamp = parseInt(
-        new Date(existingMessage.record.createdAt).getTime().toString(),
-      );
-
-      if (existingTimestamp <= timestamp) {
-        insertIndex = i + 1;
-        break;
-      }
-    }
-
-    newChatList.splice(insertIndex, 0, message);
-  }
-
-  return newChatList;
+  const sortedKeys = Object.keys(chatIndex).sort((a, b) => {
+    const aTime = parseInt(a.split("-")[0], 10);
+    const bTime = parseInt(b.split("-")[0], 10);
+    return bTime - aTime;
+  });
+  return sortedKeys.map((key) => chatIndex[key]);
 };
 
 export const reduceChatIncremental = (

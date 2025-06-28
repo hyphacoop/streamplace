@@ -128,7 +128,7 @@ export default function Sidebar({
       {externalItems.map((i) => {
         return (
           <SidebarItem
-            key={JSON.stringify(i.label)}
+            key={`${i}`}
             icon={i.item}
             label={i.label || "Fix this label!"}
             active={false}
