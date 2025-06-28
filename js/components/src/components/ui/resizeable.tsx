@@ -1,3 +1,4 @@
+import { useKeyboardSlide } from "@streamplace/components/src/hooks";
 import { ChevronUp } from "lucide-react-native";
 import { ComponentProps } from "react";
 import { Dimensions } from "react-native";
@@ -20,7 +21,6 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 type ResizableChatSheetProps = {
   isPlayerRatioGreater: boolean;
-  slideKeyboard: number;
   style?: ComponentProps<typeof AnimatedView>["style"];
   children?: React.ReactNode;
 };
@@ -29,10 +29,10 @@ const SPRING_CONFIG = { damping: 20, stiffness: 100 };
 
 export function Resizable({
   isPlayerRatioGreater,
-  slideKeyboard = 0,
   style = {},
   children,
 }: ResizableChatSheetProps) {
+  const { slideKeyboard } = useKeyboardSlide();
   const MAX_HEIGHT = SCREEN_HEIGHT * 0.5;
   const MIN_HEIGHT = SCREEN_HEIGHT * 0.0;
   const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.2;

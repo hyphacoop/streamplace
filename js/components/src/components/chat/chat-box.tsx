@@ -146,6 +146,7 @@ export function ChatBox({
           numberOfLines={1}
           value={message}
           enterKeyHint="send"
+          onSubmitEditing={submit}
           multiline={false}
           onChangeText={(text) => {
             setMessage(text);

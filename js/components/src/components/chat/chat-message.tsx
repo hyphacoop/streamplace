@@ -31,6 +31,7 @@ interface Facet {
   }>;
 }
 
+import { useLivestreamStore } from "../../livestream-store";
 import { Text } from "../ui/text";
 
 const getRgbColor = (color?: { red: number; green: number; blue: number }) =>
@@ -39,7 +40,7 @@ const getRgbColor = (color?: { red: number; green: number; blue: number }) =>
 const segmentedObject = (
   obj: RichtextSegment,
   index: number,
-  userCache?: Map<string, ChatMessageViewHydrated["chatProfile"]>,
+  userCache?: { [key: string]: ChatMessageViewHydrated["chatProfile"] },
 ) => {
   if (obj.features && obj.features.length > 0) {
     let ftr = obj.features[0];
@@ -57,7 +58,7 @@ const segmentedObject = (
       );
     } else if (ftr.$type === "app.bsky.richtext.facet#mention") {
       let mtnftr = ftr as $Typed<Mention>;
-      const profile = userCache?.get(mtnftr.did);
+      const profile = userCache?.[mtnftr.did];
       console.log(profile, mtnftr.did, userCache);
       return (
         <Text
@@ -84,13 +85,13 @@ const segmentedObject = (
 const RichTextMessage = ({
   text,
   facets,
-  userCache,
 }: {
   text: string;
   facets: ChatMessageViewHydrated["record"]["facets"];
-  userCache?: Map<string, ChatMessageViewHydrated["chatProfile"]>;
 }) => {
   if (!facets?.length) return <Text>{text}</Text>;
+
+  const userCache = useLivestreamStore((state) => state.authors);
 
   let segs = segmentize(text, facets as Facet[]);
 
@@ -99,7 +100,6 @@ const RichTextMessage = ({
 export const RenderChatMessage = memo(
   function RenderChatMessage({
     item,
-    userCache,
     showReply = true,
     showTime = true,
   }: {
@@ -177,7 +177,6 @@ export const RenderChatMessage = memo(
             <RichTextMessage
               text={item.record.text}
               facets={item.record.facets || []}
-              userCache={userCache}
             />
           </Text>
         </View>

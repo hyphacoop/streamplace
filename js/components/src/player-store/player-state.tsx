@@ -1,3 +1,5 @@
+import { ChatMessageViewHydrated } from "streamplace";
+
 export enum PlayerProtocol {
   WEBRTC = "webrtc",
   HLS = "hls",
@@ -168,6 +170,12 @@ export interface PlayerState {
 
   showDebugInfo: boolean;
   setShowDebugInfo: (showDebugInfo: boolean) => void;
+
+  /** Message to be moderated */
+  modMessage: ChatMessageViewHydrated | null;
+
+  /** Function to set the mod message */
+  setModMessage: (message: ChatMessageViewHydrated | null) => void;
 }
 
 export type PlayerEvent = {

@@ -112,6 +112,28 @@ const buildSortedChatList = (
   return sortedKeys.map((key) => chatIndex[key]);
 };
 
+const profileIsDifferent = (
+  newProfile: ChatMessageViewHydrated["chatProfile"],
+  oldProfile: ChatMessageViewHydrated["chatProfile"],
+) => {
+  if (!oldProfile) {
+    return true;
+  }
+  if (!newProfile) {
+    return false;
+  }
+  if (!oldProfile.color) {
+    return true;
+  }
+  if (!newProfile.color) {
+    // idk. shouldn't happen.
+    return false;
+  }
+  const { red: newRed, green: newGreen, blue: newBlue } = newProfile.color;
+  const { red: oldRed, green: oldGreen, blue: oldBlue } = oldProfile.color;
+  return newRed !== oldRed || newGreen !== oldGreen || newBlue !== oldBlue;
+};
+
 export const reduceChatIncremental = (
   state: LivestreamState,
   newMessages: ChatMessageViewHydrated[],
@@ -122,6 +144,7 @@ export const reduceChatIncremental = (
   }
 
   const newChatIndex = { ...state.chatIndex };
+  const newAuthors = { ...state.authors };
   let hasChanges = false;
   const removedKeys = new Set<string>();
 
@@ -142,6 +165,13 @@ export const reduceChatIncremental = (
   for (const message of newMessages) {
     const date = new Date(message.record.createdAt);
     const key = `${date.getTime()}-${message.uri}`;
+
+    // only change the ref if the profile is different to avoid re-renders elsewhere
+    if (
+      profileIsDifferent(message.chatProfile, newAuthors[message.author.handle])
+    ) {
+      newAuthors[message.author.handle] = message.chatProfile;
+    }
 
     // skip messages we already have
     if (newChatIndex[key] && newChatIndex[key].uri === message.uri) {
