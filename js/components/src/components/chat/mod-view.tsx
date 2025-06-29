@@ -87,7 +87,12 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(
                 </DropdownMenuItem> */}
                 <DropdownMenuItem
                   disabled={message.author.did === agent?.did}
-                  onPress={() => createBlockRecord(message.author.handle)}
+                  onPress={() => {
+                    console.log("Creating block record");
+                    createBlockRecord(message.author.did)
+                      .then((r) => console.log(r))
+                      .catch((e) => console.error(e));
+                  }}
                 >
                   <Text color="destructive">
                     {message.author.did === agent?.did ? (
