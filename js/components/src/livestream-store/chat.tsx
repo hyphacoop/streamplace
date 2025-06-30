@@ -1,8 +1,4 @@
 import { RichText } from "@atproto/api";
-import {
-  isLink,
-  isMention,
-} from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 import { useCallback } from "react";
 import {
   ChatMessageViewHydrated,
@@ -42,101 +38,64 @@ export const useCreateChatMessage = () => {
   const userHandle = useHandle();
   const chatProfile = useChatProfile();
 
-  return useCallback(
-    async (msg: NewChatMessage) => {
-      if (!pdsAgent || !userDID) {
-        throw new Error("No PDS agent or user DID found");
-      }
+  return async (msg: NewChatMessage) => {
+    if (!pdsAgent || !userDID) {
+      throw new Error("No PDS agent or user DID found");
+    }
 
-      let state = store.getState();
+    let state = store.getState();
 
-      const streamerProfile = state.profile;
+    const streamerProfile = state.profile;
 
-      if (!streamerProfile) {
-        throw new Error("Profile not found");
-      }
+    if (!streamerProfile) {
+      throw new Error("Profile not found");
+    }
 
-      const rt = new RichText({ text: msg.text });
-      rt.detectFacetsWithoutResolution();
+    const rt = new RichText({ text: msg.text });
+    await rt.detectFacets(pdsAgent);
 
-      const record: PlaceStreamChatMessage.Record = {
-        text: msg.text,
-        createdAt: new Date().toISOString(),
-        streamer: streamerProfile.did,
-        ...(msg.reply
-          ? {
-              reply: {
-                root: {
-                  cid: msg.reply.cid,
-                  uri: msg.reply.uri,
-                },
-                parent: {
-                  cid: msg.reply.cid,
-                  uri: msg.reply.uri,
-                },
+    const record: PlaceStreamChatMessage.Record = {
+      text: msg.text,
+      createdAt: new Date().toISOString(),
+      streamer: streamerProfile.did,
+      facets: rt.facets as PlaceStreamChatMessage.Record["facets"],
+      ...(msg.reply
+        ? {
+            reply: {
+              root: {
+                cid: msg.reply.cid,
+                uri: msg.reply.uri,
               },
-            }
-          : {}),
-        ...(rt.facets && rt.facets.length > 0
-          ? {
-              facets: rt.facets.map((facet) => ({
-                index: facet.index,
-                features: facet.features
-                  .filter(
-                    (feature) =>
-                      feature.$type === "app.bsky.richtext.facet#link" ||
-                      feature.$type === "app.bsky.richtext.facet#mention",
-                  )
-                  .map((feature) => {
-                    if (isLink(feature)) {
-                      return {
-                        $type: "app.bsky.richtext.facet#link",
-                        uri: feature.uri,
-                      };
-                    } else if (isMention(feature)) {
-                      return {
-                        $type: "app.bsky.richtext.facet#mention",
-                        did: feature.did,
-                      };
-                    } else {
-                      throw new Error("invalid code path");
-                    }
-                  }),
-              })),
-            }
-          : {}),
-      };
+              parent: {
+                cid: msg.reply.cid,
+                uri: msg.reply.uri,
+              },
+            },
+          }
+        : {}),
+    };
 
-      const localChat: ChatMessageViewHydrated = {
-        uri: `local-${Date.now()}-${userDID.slice(-8)}`,
-        cid: "",
-        author: {
-          did: userDID,
-          handle: userHandle || userDID,
-        },
-        record: record,
-        indexedAt: new Date().toISOString(),
-        chatProfile: chatProfile || undefined,
-      };
+    const localChat: ChatMessageViewHydrated = {
+      uri: `local-${Date.now()}`,
+      cid: "",
+      author: {
+        did: userDID,
+        handle: userHandle || userDID,
+      },
+      record: record,
+      indexedAt: new Date().toISOString(),
+      chatProfile: chatProfile || undefined,
+    };
 
-      // Optimistic update - use incremental approach
-      state = reduceChatIncremental(state, [localChat], []);
-      store.setState(state);
+    state = reduceChat(state, [localChat], []);
+    store.setState(state);
 
-      try {
-        await pdsAgent.com.atproto.repo.createRecord({
-          repo: userDID,
-          collection: "place.stream.chat.message",
-          record,
-        });
-      } catch (error) {
-        // On error, we could implement a retry mechanism or remove the optimistic message
-        console.error("Failed to send chat message:", error);
-        throw error;
-      }
-    },
-    [pdsAgent, store, userDID, userHandle, chatProfile],
-  );
+    await pdsAgent.com.atproto.repo.createRecord({
+      repo: userDID,
+      collection: "place.stream.chat.message",
+      record,
+    });
+  };
 };
 
 const buildSortedChatList = (
