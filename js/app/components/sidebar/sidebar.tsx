@@ -125,10 +125,11 @@ export default function Sidebar({
           />
         );
       })}
-      {externalItems.map((i) => {
+      {externalItems.map((i, num) => {
+        console.log(i);
         return (
           <SidebarItem
-            key={JSON.stringify(i.label)}
+            key={num}
             icon={i.item}
             label={i.label || "Fix this label!"}
             active={false}
