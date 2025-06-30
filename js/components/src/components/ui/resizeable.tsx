@@ -7,6 +7,8 @@ import {
   Pressable,
 } from "react-native-gesture-handler";
 import Animated, {
+  Extrapolation,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -34,8 +36,8 @@ export function Resizable({
   children,
 }: ResizableChatSheetProps) {
   const MAX_HEIGHT = SCREEN_HEIGHT * 0.5;
-  const MIN_HEIGHT = SCREEN_HEIGHT * 0.0;
-  const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.2;
+  const MIN_HEIGHT = -SCREEN_HEIGHT * 0.2;
+  const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.1;
 
   const sheetHeight = useSharedValue(MIN_HEIGHT);
   const startHeight = useSharedValue(MIN_HEIGHT);
@@ -51,14 +53,23 @@ export function Resizable({
       sheetHeight.value = newHeight;
 
       if (newHeight < COLLAPSE_HEIGHT) {
-        sheetHeight.value = withSpring(0, SPRING_CONFIG);
+        sheetHeight.value = withSpring(MIN_HEIGHT, SPRING_CONFIG);
       }
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    height: sheetHeight.value,
-    opacity: sheetHeight.value > 0 ? 1 : 0,
-    transform: [{ translateY: slideKeyboard }],
+    height: sheetHeight.value < COLLAPSE_HEIGHT ? 0 : sheetHeight.value,
+    opacity: interpolate(
+      sheetHeight.value,
+      [MIN_HEIGHT, COLLAPSE_HEIGHT],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+    transform: [
+      {
+        translateY: slideKeyboard + Math.max(0, -sheetHeight.value),
+      },
+    ],
   }));
 
   const handleAnimatedStyle = useAnimatedStyle(() => ({
