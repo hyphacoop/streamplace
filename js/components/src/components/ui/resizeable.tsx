@@ -13,6 +13,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { bottom, layout, p, w, zIndex } from "../../lib/theme/atoms";
 import { View } from "./view";
 
@@ -42,6 +43,8 @@ export function Resizable({
   const sheetHeight = useSharedValue(MIN_HEIGHT);
   const startHeight = useSharedValue(MIN_HEIGHT);
 
+  const { bottom: safeBottom } = useSafeAreaInsets();
+
   const panGesture = Gesture.Pan()
     .onStart(() => {
       startHeight.value = sheetHeight.value;
@@ -67,7 +70,8 @@ export function Resizable({
     ),
     transform: [
       {
-        translateY: slideKeyboard + Math.max(0, -sheetHeight.value),
+        translateY:
+          slideKeyboard - safeBottom + Math.max(0, -sheetHeight.value),
       },
     ],
   }));
