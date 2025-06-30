@@ -224,6 +224,12 @@ export function NativeWHEP() {
         objectFit={"contain"}
         streamURL={mediaStream.toURL()}
         onLayout={handleLayout}
+        pictureInPictureEnabled={true}
+        autoStartPictureInPicture={true}
+        pictureInPicturePreferredSize={{
+          width: 160,
+          height: 90,
+        }}
         style={{
           minWidth: "100%",
           minHeight: "100%",

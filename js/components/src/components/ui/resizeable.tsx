@@ -36,14 +36,13 @@ export function Resizable({
   children,
 }: ResizableChatSheetProps) {
   const { slideKeyboard } = useKeyboardSlide();
-  const MAX_HEIGHT = SCREEN_HEIGHT * 0.5;
-  const MIN_HEIGHT = -SCREEN_HEIGHT * 0.2;
-  const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.1;
+  const { bottom: safeBottom } = useSafeAreaInsets();
+  const MAX_HEIGHT = (SCREEN_HEIGHT - safeBottom) * 0.5;
+  const MIN_HEIGHT = -(SCREEN_HEIGHT - safeBottom) * 0.2;
+  const COLLAPSE_HEIGHT = (SCREEN_HEIGHT - safeBottom) * 0.1;
 
   const sheetHeight = useSharedValue(MIN_HEIGHT);
   const startHeight = useSharedValue(MIN_HEIGHT);
-
-  const { bottom: safeBottom } = useSafeAreaInsets();
 
   const panGesture = Gesture.Pan()
     .onStart(() => {
@@ -95,6 +94,7 @@ export function Resizable({
           w.percent[100],
           layout.flex.center,
           zIndex[1],
+          { marginBottom: safeBottom },
         ]}
       >
         <Pressable
