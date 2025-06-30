@@ -57,7 +57,6 @@ import {
   Linking,
   Platform,
   Pressable,
-  StatusBar,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { H3, Text, useTheme, View } from "tamagui";
@@ -80,6 +79,7 @@ import { store } from "store/store";
 import HomeScreen from "./screens/home";
 
 import { useUrl } from "@streamplace/components";
+import { SystemBars } from "react-native-edge-to-edge";
 import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
@@ -305,6 +305,8 @@ export function StreamplaceDrawer() {
 
   const sidebar = useSidebarControl();
 
+  SystemBars.setStyle("dark");
+
   // Top-level stuff to handle push notification registration
   useEffect(() => {
     dispatch(hydrate());
@@ -357,7 +359,6 @@ export function StreamplaceDrawer() {
   }
   return (
     <>
-      <StatusBar backgroundColor={theme.background.val} />
       <Drawer.Navigator
         initialRouteName="Home"
         screenOptions={{
@@ -625,7 +626,7 @@ const MainTab = () => {
       />
       <Stack.Screen
         name="Stream"
-        component={StreamScreen}
+        component={isWeb ? StreamScreen : MobileStream}
         options={{
           headerTitle: "Stream",
           title: "Streamplace Stream",

@@ -232,6 +232,15 @@ export default function () {
           },
         ],
         [withConsistentVersionNumber, { version: pkg.version }],
+        [
+          "react-native-edge-to-edge",
+          {
+            android: {
+              parentTheme: "Default",
+              enforceNavigationBarContrast: false,
+            },
+          },
+        ],
         ...(isProd
           ? [
               "@react-native-firebase/app",

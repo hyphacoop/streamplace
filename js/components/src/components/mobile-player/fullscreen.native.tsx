@@ -1,13 +1,8 @@
 import { useNavigation } from "@react-navigation/native";
 import { VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
-import {
-  BackHandler,
-  Dimensions,
-  StatusBar,
-  StyleSheet,
-  View,
-} from "react-native";
+import { BackHandler, Dimensions, StyleSheet, View } from "react-native";
+import { SystemBars } from "react-native-edge-to-edge";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PlayerProtocol, useLivestreamStore, usePlayerStore } from "../..";
 import Video from "./video.native";
@@ -52,7 +47,7 @@ export function Fullscreen(props: { src: string }) {
   // Hide status bar when in fullscreen mode
   useEffect(() => {
     if (fullscreen) {
-      StatusBar.setHidden(true);
+      SystemBars.setHidden(true);
       console.log("setting sidebar hidden");
 
       // Hide the navigation header
@@ -73,7 +68,7 @@ export function Fullscreen(props: { src: string }) {
         backHandler.remove();
       };
     } else {
-      StatusBar.setHidden(false);
+      SystemBars.setHidden(false);
 
       // Restore the navigation header
       navigation.setOptions({
@@ -82,7 +77,7 @@ export function Fullscreen(props: { src: string }) {
     }
 
     return () => {
-      StatusBar.setHidden(false);
+      SystemBars.setHidden(false);
       // Ensure header is restored if component unmounts
       navigation.setOptions({
         headerShown: true,
