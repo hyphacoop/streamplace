@@ -11,6 +11,7 @@ import {
 import { forwardRef, ReactNode, useMemo, useRef } from "react";
 import {
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -222,24 +223,26 @@ export const DropdownMenuItem = forwardRef<
   DropdownMenuPrimitive.ItemProps & { inset?: boolean; disabled?: boolean }
 >(({ inset, disabled, style, children, ...props }, ref) => {
   return (
-    <TextClassContext.Provider
-      value={objectFromObjects([a.textColors.gray[900], a.fontSize.base])}
-    >
-      <View
-        style={[
-          a.layout.flex.row,
-          a.layout.flex.alignCenter,
-          a.radius.all.sm,
-          py[1],
-          pl[2],
-          pr[2],
-        ]}
+    <Pressable {...props}>
+      <TextClassContext.Provider
+        value={objectFromObjects([a.textColors.gray[900], a.fontSize.base])}
       >
-        {typeof children === "function"
-          ? children({ pressed: true })
-          : children}
-      </View>
-    </TextClassContext.Provider>
+        <View
+          style={[
+            a.layout.flex.row,
+            a.layout.flex.alignCenter,
+            a.radius.all.sm,
+            py[1],
+            pl[2],
+            pr[2],
+          ]}
+        >
+          {typeof children === "function"
+            ? children({ pressed: true })
+            : children}
+        </View>
+      </TextClassContext.Provider>
+    </Pressable>
   );
 });
 

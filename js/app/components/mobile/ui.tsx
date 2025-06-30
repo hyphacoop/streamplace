@@ -7,7 +7,6 @@ import {
   Toast,
   useAvatars,
   useCameraToggle,
-  useKeyboardSlide,
   useLivestreamInfo,
   usePlayerDimensions,
   View,
@@ -36,7 +35,6 @@ export function MobileUi() {
     toggleGoLive,
   } = useLivestreamInfo();
   const { width, height, isPlayerRatioGreater } = usePlayerDimensions();
-  const { slideKeyboard } = useKeyboardSlide();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
@@ -140,7 +138,6 @@ export function MobileUi() {
           setTitle={setTitle}
           ingestStarting={ingestStarting}
           toggleGoLive={toggleGoLive}
-          slideKeyboard={slideKeyboard}
         />
       ) : (
         <View
@@ -152,10 +149,7 @@ export function MobileUi() {
             bottom[0],
           ]}
         >
-          <Resizable
-            isPlayerRatioGreater={isPlayerRatioGreater}
-            slideKeyboard={slideKeyboard}
-          >
+          <Resizable isPlayerRatioGreater={isPlayerRatioGreater}>
             <ChatPanel />
           </Resizable>
         </View>
