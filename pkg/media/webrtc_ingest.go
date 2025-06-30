@@ -192,9 +192,8 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 		videoFirst := false
 		audioFirst := false
 
-		log.Warn(ctx, "setting OnTrack")
 		peerConnection.OnTrack(func(track rtcrec.TrackRemote, _ rtcrec.RTPReceiver) {
-			log.Warn(ctx, "OnTrack")
+			log.Warn(ctx, "OnTrack", "kind", track.Kind())
 			if track.Kind() == webrtc.RTPCodecTypeVideo {
 				// Send a PLI on an interval so that the publisher is pushing a keyframe every rtcpPLIInterval
 				go func() {

@@ -1,8 +1,4 @@
 import { RichText } from "@atproto/api";
-import {
-  isLink,
-  isMention,
-} from "@atproto/api/dist/client/types/app/bsky/richtext/facet";
 import { useCallback } from "react";
 import {
   ChatMessageViewHydrated,
@@ -42,101 +38,64 @@ export const useCreateChatMessage = () => {
   const userHandle = useHandle();
   const chatProfile = useChatProfile();
 
-  return useCallback(
-    async (msg: NewChatMessage) => {
-      if (!pdsAgent || !userDID) {
-        throw new Error("No PDS agent or user DID found");
-      }
+  return async (msg: NewChatMessage) => {
+    if (!pdsAgent || !userDID) {
+      throw new Error("No PDS agent or user DID found");
+    }
 
-      let state = store.getState();
+    let state = store.getState();
 
-      const streamerProfile = state.profile;
+    const streamerProfile = state.profile;
 
-      if (!streamerProfile) {
-        throw new Error("Profile not found");
-      }
+    if (!streamerProfile) {
+      throw new Error("Profile not found");
+    }
 
-      const rt = new RichText({ text: msg.text });
-      rt.detectFacetsWithoutResolution();
+    const rt = new RichText({ text: msg.text });
+    await rt.detectFacets(pdsAgent);
 
-      const record: PlaceStreamChatMessage.Record = {
-        text: msg.text,
-        createdAt: new Date().toISOString(),
-        streamer: streamerProfile.did,
-        ...(msg.reply
-          ? {
-              reply: {
-                root: {
-                  cid: msg.reply.cid,
-                  uri: msg.reply.uri,
-                },
-                parent: {
-                  cid: msg.reply.cid,
-                  uri: msg.reply.uri,
-                },
+    const record: PlaceStreamChatMessage.Record = {
+      text: msg.text,
+      createdAt: new Date().toISOString(),
+      streamer: streamerProfile.did,
+      facets: rt.facets as PlaceStreamChatMessage.Record["facets"],
+      ...(msg.reply
+        ? {
+            reply: {
+              root: {
+                cid: msg.reply.cid,
+                uri: msg.reply.uri,
               },
-            }
-          : {}),
-        ...(rt.facets && rt.facets.length > 0
-          ? {
-              facets: rt.facets.map((facet) => ({
-                index: facet.index,
-                features: facet.features
-                  .filter(
-                    (feature) =>
-                      feature.$type === "app.bsky.richtext.facet#link" ||
-                      feature.$type === "app.bsky.richtext.facet#mention",
-                  )
-                  .map((feature) => {
-                    if (isLink(feature)) {
-                      return {
-                        $type: "app.bsky.richtext.facet#link",
-                        uri: feature.uri,
-                      };
-                    } else if (isMention(feature)) {
-                      return {
-                        $type: "app.bsky.richtext.facet#mention",
-                        did: feature.did,
-                      };
-                    } else {
-                      throw new Error("invalid code path");
-                    }
-                  }),
-              })),
-            }
-          : {}),
-      };
+              parent: {
+                cid: msg.reply.cid,
+                uri: msg.reply.uri,
+              },
+            },
+          }
+        : {}),
+    };
 
-      const localChat: ChatMessageViewHydrated = {
-        uri: `local-${Date.now()}-${userDID.slice(-8)}`,
-        cid: "",
-        author: {
-          did: userDID,
-          handle: userHandle || userDID,
-        },
-        record: record,
-        indexedAt: new Date().toISOString(),
-        chatProfile: chatProfile || undefined,
-      };
+    const localChat: ChatMessageViewHydrated = {
+      uri: `local-${Date.now()}`,
+      cid: "",
+      author: {
+        did: userDID,
+        handle: userHandle || userDID,
+      },
+      record: record,
+      indexedAt: new Date().toISOString(),
+      chatProfile: chatProfile || undefined,
+    };
 
-      // Optimistic update - use incremental approach
-      state = reduceChatIncremental(state, [localChat], []);
-      store.setState(state);
+    state = reduceChat(state, [localChat], []);
+    store.setState(state);
 
-      try {
-        await pdsAgent.com.atproto.repo.createRecord({
-          repo: userDID,
-          collection: "place.stream.chat.message",
-          record,
-        });
-      } catch (error) {
-        // On error, we could implement a retry mechanism or remove the optimistic message
-        console.error("Failed to send chat message:", error);
-        throw error;
-      }
-    },
-    [pdsAgent, store, userDID, userHandle, chatProfile],
-  );
+    await pdsAgent.com.atproto.repo.createRecord({
+      repo: userDID,
+      collection: "place.stream.chat.message",
+      record,
+    });
+  };
 };
 
 const buildSortedChatList = (
@@ -145,40 +104,34 @@ const buildSortedChatList = (
   newMessages: { key: string; message: ChatMessageViewHydrated }[],
   removedKeys: Set<string>,
 ): ChatMessageViewHydrated[] => {
-  // if the update is large, just rebuild as it'll probably be faster
-  if (newMessages.length > 10 || removedKeys.size > 0) {
-    const sortedKeys = Object.keys(chatIndex).sort((a, b) => {
-      const aTime = parseInt(a.split("-")[0], 10);
-      const bTime = parseInt(b.split("-")[0], 10);
-      return bTime - aTime;
-    });
-    return sortedKeys.map((key) => chatIndex[key]);
+  const sortedKeys = Object.keys(chatIndex).sort((a, b) => {
+    const aTime = parseInt(a.split("-")[0], 10);
+    const bTime = parseInt(b.split("-")[0], 10);
+    return bTime - aTime;
+  });
+  return sortedKeys.map((key) => chatIndex[key]);
+};
+
+const profileIsDifferent = (
+  newProfile: ChatMessageViewHydrated["chatProfile"],
+  oldProfile: ChatMessageViewHydrated["chatProfile"],
+) => {
+  if (!oldProfile) {
+    return true;
   }
-
-  // otherwise, we can do an incremental update
-  let newChatList = [...existingChatList];
-
-  // i never thought i'd be writing binary search again
-  for (const { key, message } of newMessages) {
-    const timestamp = parseInt(key.split("-")[0]);
-    let insertIndex = newChatList.length;
-
-    for (let i = newChatList.length - 1; i >= 0; i--) {
-      const existingMessage = newChatList[i];
-      const existingTimestamp = parseInt(
-        new Date(existingMessage.record.createdAt).getTime().toString(),
-      );
-
-      if (existingTimestamp <= timestamp) {
-        insertIndex = i + 1;
-        break;
-      }
-    }
-
-    newChatList.splice(insertIndex, 0, message);
+  if (!newProfile) {
+    return false;
   }
-
-  return newChatList;
+  if (!oldProfile.color) {
+    return true;
+  }
+  if (!newProfile.color) {
+    // idk. shouldn't happen.
+    return false;
+  }
+  const { red: newRed, green: newGreen, blue: newBlue } = newProfile.color;
+  const { red: oldRed, green: oldGreen, blue: oldBlue } = oldProfile.color;
+  return newRed !== oldRed || newGreen !== oldGreen || newBlue !== oldBlue;
 };
 
 export const reduceChatIncremental = (
@@ -191,6 +144,7 @@ export const reduceChatIncremental = (
   }
 
   const newChatIndex = { ...state.chatIndex };
+  const newAuthors = { ...state.authors };
   let hasChanges = false;
   const removedKeys = new Set<string>();
 
@@ -211,6 +165,13 @@ export const reduceChatIncremental = (
   for (const message of newMessages) {
     const date = new Date(message.record.createdAt);
     const key = `${date.getTime()}-${message.uri}`;
+
+    // only change the ref if the profile is different to avoid re-renders elsewhere
+    if (
+      profileIsDifferent(message.chatProfile, newAuthors[message.author.handle])
+    ) {
+      newAuthors[message.author.handle] = message.chatProfile;
+    }
 
     // skip messages we already have
     if (newChatIndex[key] && newChatIndex[key].uri === message.uri) {

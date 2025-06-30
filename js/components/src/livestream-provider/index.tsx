@@ -25,6 +25,11 @@ export function LivestreamProvider({
   );
 }
 
+export function WebsocketWatcher({ src }: { src: string }) {
+  useLivestreamWebsocket(src);
+  return <></>;
+}
+
 export function LivestreamPoller({
   children,
   src,
@@ -32,6 +37,12 @@ export function LivestreamPoller({
   children: React.ReactNode;
   src: string;
 }) {
-  useLivestreamWebsocket(src);
-  return <>{children}</>;
+  // Websocket watcher is a sibling instead of a parent to avoid
+  // re-rendering when the websocket does stuff
+  return (
+    <>
+      <WebsocketWatcher src={src} />
+      {children}
+    </>
+  );
 }

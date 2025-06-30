@@ -289,7 +289,6 @@ export function NativeIngestPlayer() {
           },
           video: {
             facingMode: ingestCamera,
-            deviceId: "video-1",
             width: { min: 200, ideal: 1080, max: 2160 },
             height: { min: 200, ideal: 1920, max: 3840 },
           },
