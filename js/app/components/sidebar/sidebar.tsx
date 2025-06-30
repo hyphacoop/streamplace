@@ -126,7 +126,6 @@ export default function Sidebar({
         );
       })}
       {externalItems.map((i, num) => {
-        console.log(i);
         return (
           <SidebarItem
             key={num}
