@@ -7,10 +7,13 @@ import {
   Pressable,
 } from "react-native-gesture-handler";
 import Animated, {
+  Extrapolation,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useKeyboardSlide } from "../../hooks";
 import { bottom, layout, p, w, zIndex } from "../../lib/theme/atoms";
 import { View } from "./view";
@@ -34,11 +37,13 @@ export function Resizable({
 }: ResizableChatSheetProps) {
   const { slideKeyboard } = useKeyboardSlide();
   const MAX_HEIGHT = SCREEN_HEIGHT * 0.5;
-  const MIN_HEIGHT = SCREEN_HEIGHT * 0.0;
-  const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.2;
+  const MIN_HEIGHT = -SCREEN_HEIGHT * 0.2;
+  const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.1;
 
   const sheetHeight = useSharedValue(MIN_HEIGHT);
   const startHeight = useSharedValue(MIN_HEIGHT);
+
+  const { bottom: safeBottom } = useSafeAreaInsets();
 
   const panGesture = Gesture.Pan()
     .onStart(() => {
@@ -51,14 +56,24 @@ export function Resizable({
       sheetHeight.value = newHeight;
 
       if (newHeight < COLLAPSE_HEIGHT) {
-        sheetHeight.value = withSpring(0, SPRING_CONFIG);
+        sheetHeight.value = withSpring(MIN_HEIGHT, SPRING_CONFIG);
       }
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    height: sheetHeight.value,
-    opacity: sheetHeight.value > 0 ? 1 : 0,
-    transform: [{ translateY: slideKeyboard }],
+    height: sheetHeight.value < COLLAPSE_HEIGHT ? 0 : sheetHeight.value,
+    opacity: interpolate(
+      sheetHeight.value,
+      [MIN_HEIGHT, COLLAPSE_HEIGHT],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+    transform: [
+      {
+        translateY:
+          slideKeyboard - safeBottom + Math.max(0, -sheetHeight.value),
+      },
+    ],
   }));
 
   const handleAnimatedStyle = useAnimatedStyle(() => ({
@@ -122,6 +137,7 @@ export function Resizable({
             overflow: "visible",
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
+            minWidth: "100%",
           },
           style,
         ]}
