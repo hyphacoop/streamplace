@@ -77,7 +77,6 @@ const ChatLine = memo(({ item }: { item: ChatMessageViewHydrated }) => {
             setReply(item);
           }
           if (r === (Platform.OS === "android" ? "left" : "right")) {
-            console.log("setting mod view");
             setModMsg(item);
           }
           // close this swipeable
