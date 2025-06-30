@@ -1,5 +1,5 @@
-import { useKeyboardSlide } from "@streamplace/components/src/hooks";
 import { Keyboard, Pressable } from "react-native";
+import { useKeyboardSlide } from "../../../hooks";
 import * as atoms from "../../../lib/theme/atoms";
 import { Input, Text, View } from "../../ui";
 const { gap, h, layout, mt, p, position, px, py, sizes, w } = atoms;

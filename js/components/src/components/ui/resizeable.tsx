@@ -1,4 +1,3 @@
-import { useKeyboardSlide } from "@streamplace/components/src/hooks";
 import { ChevronUp } from "lucide-react-native";
 import { ComponentProps } from "react";
 import { Dimensions } from "react-native";
@@ -12,6 +11,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { useKeyboardSlide } from "../../hooks";
 import { bottom, layout, p, w, zIndex } from "../../lib/theme/atoms";
 import { View } from "./view";
 
