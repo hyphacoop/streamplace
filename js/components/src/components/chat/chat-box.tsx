@@ -5,6 +5,7 @@ import { ChatMessageViewHydrated } from "streamplace";
 import {
   Button,
   Loader,
+  Text,
   useChat,
   useCreateChatMessage,
   useReplyToMessage,
@@ -12,6 +13,7 @@ import {
   View,
 } from "../../";
 import { bg, flex, gap, h, layout, mb, pl, pr, w } from "../../lib/theme/atoms";
+import { usePDSAgent } from "../../streamplace-store/xrpc";
 import { Textarea } from "../ui/textarea";
 import { RenderChatMessage } from "./chat-message";
 import { MentionSuggestions } from "./mention-suggestions";
@@ -36,6 +38,16 @@ export function ChatBox({
   const replyTo = useReplyToMessage();
   const setReplyToMessage = useSetReplyToMessage();
   const textAreaRef = useRef<TextInput>(null);
+
+  // are we logged in?
+
+  let agent = usePDSAgent();
+
+  if (!agent?.did) {
+    <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
+      <Text>Log in to chat.</Text>
+    </View>;
+  }
 
   const authors = useMemo(() => {
     if (!chat) return null;
