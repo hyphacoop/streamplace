@@ -1,3 +1,5 @@
+import { ChatMessageViewHydrated } from "streamplace";
+
 export enum PlayerProtocol {
   WEBRTC = "webrtc",
   HLS = "hls",
@@ -40,6 +42,10 @@ export interface PlayerState {
 
   /** Function to set the ingestStarting flag */
   setIngestStarting: (ingestStarting: boolean) => void;
+
+  /** Flag indicating if ingest is live */
+  ingestLive: boolean;
+  setIngestLive: (ingestLive: boolean) => void;
 
   /** Current connection state of ingest RTP/RTC peer connection */
   ingestConnectionState: RTCPeerConnectionState | null;
@@ -164,6 +170,12 @@ export interface PlayerState {
 
   showDebugInfo: boolean;
   setShowDebugInfo: (showDebugInfo: boolean) => void;
+
+  /** Message to be moderated */
+  modMessage: ChatMessageViewHydrated | null;
+
+  /** Function to set the mod message */
+  setModMessage: (message: ChatMessageViewHydrated | null) => void;
 }
 
 export type PlayerEvent = {

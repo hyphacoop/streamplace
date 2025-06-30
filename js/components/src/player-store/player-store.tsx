@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { ChatMessageViewHydrated } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
 import { PlayerContext } from "./context";
 import {
@@ -105,6 +106,9 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     telemetry: true,
     setTelemetry: (telemetry: boolean) => set(() => ({ telemetry })),
 
+    ingestLive: false,
+    setIngestLive: (ingestLive: boolean) => set(() => ({ ingestLive })),
+
     playerEvent: async (
       url: string,
       time: string,
@@ -155,6 +159,10 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     showDebugInfo: false,
     setShowDebugInfo: (showDebugInfo: boolean) =>
       set(() => ({ showDebugInfo })),
+
+    modMessage: null,
+    setModMessage: (modMessage: ChatMessageViewHydrated | null) =>
+      set(() => ({ modMessage })),
   }));
 };
 

@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { useKeyboardSlide } from "../../hooks";
 import { bottom, layout, p, w, zIndex } from "../../lib/theme/atoms";
 import { View } from "./view";
 
@@ -20,7 +21,6 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 type ResizableChatSheetProps = {
   isPlayerRatioGreater: boolean;
-  slideKeyboard: number;
   style?: ComponentProps<typeof AnimatedView>["style"];
   children?: React.ReactNode;
 };
@@ -29,10 +29,10 @@ const SPRING_CONFIG = { damping: 20, stiffness: 100 };
 
 export function Resizable({
   isPlayerRatioGreater,
-  slideKeyboard = 0,
   style = {},
   children,
 }: ResizableChatSheetProps) {
+  const { slideKeyboard } = useKeyboardSlide();
   const MAX_HEIGHT = SCREEN_HEIGHT * 0.5;
   const MIN_HEIGHT = SCREEN_HEIGHT * 0.0;
   const COLLAPSE_HEIGHT = SCREEN_HEIGHT * 0.2;

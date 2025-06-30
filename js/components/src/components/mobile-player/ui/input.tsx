@@ -1,4 +1,5 @@
 import { Keyboard, Pressable } from "react-native";
+import { useKeyboardSlide } from "../../../hooks";
 import * as atoms from "../../../lib/theme/atoms";
 import { Input, Text, View } from "../../ui";
 const { gap, h, layout, mt, p, position, px, py, sizes, w } = atoms;
@@ -8,7 +9,6 @@ type InputPanelProps = {
   setTitle: (title: string) => void;
   ingestStarting: boolean;
   toggleGoLive: () => void;
-  slideKeyboard: number;
 };
 
 export function InputPanel({
@@ -16,8 +16,8 @@ export function InputPanel({
   setTitle,
   ingestStarting,
   toggleGoLive,
-  slideKeyboard,
 }: InputPanelProps) {
+  const { slideKeyboard } = useKeyboardSlide();
   return (
     <View
       style={[

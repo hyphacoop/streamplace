@@ -41,7 +41,7 @@ export default function Chat({
     null,
   );
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const chat = useChat();
+  let chat = useChat();
   const scrollRef = useRef<ScrollView>(null);
   const streamerProfile = useProfile();
   const userProfile = useAppSelector(selectUserProfile);
@@ -69,6 +69,8 @@ export default function Chat({
   if (!chat) {
     return <></>;
   }
+
+  chat = [...chat].reverse();
 
   const m = useMedia();
   const dispatch = useAppDispatch();
