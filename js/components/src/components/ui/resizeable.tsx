@@ -137,6 +137,7 @@ export function Resizable({
             overflow: "visible",
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
+            minWidth: "100%",
           },
           style,
         ]}
