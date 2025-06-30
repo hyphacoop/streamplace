@@ -125,10 +125,10 @@ export default function Sidebar({
           />
         );
       })}
-      {externalItems.map((i) => {
+      {externalItems.map((i, num) => {
         return (
           <SidebarItem
-            key={`${i}`}
+            key={num}
             icon={i.item}
             label={i.label || "Fix this label!"}
             active={false}
