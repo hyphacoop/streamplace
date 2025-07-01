@@ -110,6 +110,21 @@ export function MobileUi() {
               borderRadius: 8,
             },
             layout.position.absolute,
+            position.right[12],
+            position.top[2],
+            gap.all[4],
+          ]}
+        >
+          <PlayerUI.Viewers />
+        </View>
+        <View
+          style={[
+            {
+              padding: 10,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              borderRadius: 8,
+            },
+            layout.position.absolute,
             position.right[1],
             position.top[1],
             gap.all[4],
