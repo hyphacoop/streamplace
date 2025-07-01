@@ -37,7 +37,8 @@ export function Settings() {
 
   const onSubmitUrl = () => {
     if (newUrl) {
-      dispatch(setURL(newUrl));
+      let trimmedUrl = newUrl.endsWith("/") ? newUrl.slice(0, -1) : newUrl;
+      dispatch(setURL(trimmedUrl));
       setNewUrl("");
     }
   };
@@ -64,18 +65,19 @@ export function Settings() {
           <Updates />
         </View>
 
-        <View alignItems="center" justifyContent="center" gap="$4">
+        <View alignItems="stretch" justifyContent="flex-start" gap="$4">
           <XStack
+            // f={1}
             alignItems="stretch"
-            justifyContent="space-between"
+            justifyContent="flex-start"
             width="100%"
             flexDirection="column"
           >
             <View
               flexDirection="row"
-              alignItems="center"
-              justifyContent="space-between"
-              flex={1}
+              alignItems="flex-start"
+              justifyContent="flex-start"
+              // flex={1}
             >
               <View flex={1} pr="$3">
                 <H3 fontSize="$7">Use Custom Node</H3>
