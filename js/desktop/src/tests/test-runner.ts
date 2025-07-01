@@ -7,12 +7,14 @@ import { privateKeyToAccount } from "viem/accounts";
 import getEnv from "../env";
 import makeNode from "../node";
 import { playbackTest } from "./playback-test";
+import { resumeLoopTest } from "./resume-loop-test";
 import { syncTest } from "./sync-test";
 import { E2ETest, TestEnv } from "./test-env";
 
 const allTests: Record<string, E2ETest> = {
   playback: playbackTest,
   sync: syncTest,
+  resume: resumeLoopTest,
 };
 
 export const allTestNames = Object.keys(allTests);
