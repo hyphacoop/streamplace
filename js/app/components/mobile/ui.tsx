@@ -9,9 +9,10 @@ import {
   useCameraToggle,
   useLivestreamInfo,
   usePlayerDimensions,
+  useSegmentDimensions,
   View,
 } from "@streamplace/components";
-import { bottom, zIndex } from "@streamplace/components/src/lib/theme/atoms";
+import { bottom } from "@streamplace/components/src/lib/theme/atoms";
 import { ChevronLeft, SwitchCamera } from "lucide-react-native";
 import { useEffect } from "react";
 import { Image, Pressable } from "react-native";
@@ -34,7 +35,12 @@ export function MobileUi() {
     setIngestStarting,
     toggleGoLive,
   } = useLivestreamInfo();
-  const { width, height, isPlayerRatioGreater } = usePlayerDimensions();
+  const { width, height } = usePlayerDimensions();
+  const {
+    isPlayerRatioGreater,
+    width: pwidth,
+    height: pheight,
+  } = useSegmentDimensions();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
@@ -143,13 +149,15 @@ export function MobileUi() {
         <View
           style={[
             isPlayerRatioGreater
-              ? layout.position.absolute
-              : layout.position.relative,
-            zIndex[50],
+              ? layout.position.relative
+              : layout.position.absolute,
             bottom[0],
           ]}
         >
-          <Resizable isPlayerRatioGreater={isPlayerRatioGreater}>
+          <Resizable
+            isPlayerRatioGreater={isPlayerRatioGreater}
+            startingPercentage={0.4}
+          >
             <ChatPanel />
           </Resizable>
         </View>

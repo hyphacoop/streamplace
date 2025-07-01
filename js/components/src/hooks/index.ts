@@ -6,4 +6,5 @@ export * from "./useKeyboardSlide";
 export * from "./useLivestreamInfo";
 export * from "./useOuterAndInnerDimensions";
 export * from "./usePlayerDimensions";
+export * from "./useSegmentDimensions";
 export * from "./useSegmentTiming";
