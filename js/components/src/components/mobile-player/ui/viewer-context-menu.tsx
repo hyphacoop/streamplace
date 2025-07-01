@@ -39,7 +39,7 @@ export function ContextMenu() {
         <DropdownMenuGroup title="Resolution">
           <DropdownMenuRadioGroup value={quality} onValueChange={setQuality}>
             <DropdownMenuRadioItem value="source">
-              <Text>Source</Text>
+              <Text>Source (Original Quality)</Text>
             </DropdownMenuRadioItem>
             {qualities.map((r) => (
               <DropdownMenuRadioItem value={r.name}>
@@ -55,15 +55,16 @@ export function ContextMenu() {
           >
             <Text>Low Latency</Text>
           </DropdownMenuCheckboxItem>
-          <DropdownMenuInfo description="Lowers the delay between video and chat messages." />
+        </DropdownMenuGroup>
+        <DropdownMenuInfo description="Reduces the delay between video and chat for a more real-time experience." />
+        <DropdownMenuGroup>
           <DropdownMenuCheckboxItem
             checked={debugInfo}
             onCheckedChange={() => setShowDebugInfo(!debugInfo)}
           >
-            <Text>Segment Debug Info</Text>
+            <Text>Show Debug Info</Text>
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
-        <DropdownMenuInfo description="Lowers the delay between video and chat messages." />
       </ResponsiveDropdownMenuContent>
     </DropdownMenu>
   );
