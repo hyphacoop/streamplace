@@ -1,7 +1,7 @@
 import { Eye } from "lucide-react-native";
-import { Text, View } from "tamagui";
 import * as atoms from "../../../lib/theme/atoms";
 import { useViewers } from "../../../livestream-store";
+import { Text, View } from "../../ui";
 
 export function Viewers() {
   const viewers = useViewers();
