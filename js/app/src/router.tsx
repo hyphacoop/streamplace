@@ -37,6 +37,7 @@ import AQLink from "components/aqlink";
 import Login from "components/login/login";
 import Popup from "components/popup";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
+import * as ExpoLinking from "expo-linking";
 import { hydrate, selectHydrated } from "features/base/baseSlice";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import {
@@ -79,6 +80,7 @@ import { store } from "store/store";
 import HomeScreen from "./screens/home";
 
 import { useUrl } from "@streamplace/components";
+import Constants from "expo-constants";
 import { SystemBars } from "react-native-edge-to-edge";
 import {
   configureReanimatedLogger,
@@ -129,7 +131,7 @@ declare global {
 }
 
 const linking: LinkingOptions<ReactNavigation.RootParamList> = {
-  prefixes: ["place.stream://", "place.stream.dev://"],
+  prefixes: [ExpoLinking.createURL("")],
   config: {
     screens: {
       Home: {
@@ -159,6 +161,12 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
     },
   },
 };
+
+const associatedDomain = Constants.expoConfig?.ios?.associatedDomains?.[0];
+if (associatedDomain && associatedDomain.startsWith("applinks:")) {
+  const domain = associatedDomain.slice("applinks:".length);
+  linking.prefixes.push(`https://${domain}`);
+}
 
 const Drawer = createDrawerNavigator();
 
@@ -282,12 +290,6 @@ function CustomDrawerContent(props) {
 }
 
 export default function Router() {
-  const { isWeb, isElectron } = usePlatform();
-  useEffect(() => {
-    if (isWeb && !isElectron) {
-      linking.prefixes.push(document.location.origin);
-    }
-  }, []);
   return (
     <Provider linking={linking}>
       <StreamplaceDrawer />
