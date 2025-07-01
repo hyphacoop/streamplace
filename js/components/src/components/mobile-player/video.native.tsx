@@ -1,12 +1,14 @@
 import { useVideoPlayer, VideoPlayerEvents, VideoView } from "expo-video";
+import { ArrowRight } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LayoutChangeEvent } from "react-native";
+import { LayoutChangeEvent, Linking } from "react-native";
 import {
   MediaStream,
   RTCView,
   RTCView as RTCViewIngest,
 } from "react-native-webrtc";
 import {
+  Button,
   IngestMediaSource,
   PlayerStatus as IngestPlayerStatus,
   PlayerProtocol,
@@ -17,7 +19,16 @@ import {
   useStreamplaceStore,
   View,
 } from "../..";
-import { borderRadius, colors, p } from "../../lib/theme/atoms";
+import {
+  borderRadius,
+  colors,
+  fontWeight,
+  gap,
+  h,
+  layout,
+  m,
+  p,
+} from "../../lib/theme/atoms";
 import { srcToUrl } from "./shared";
 import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 import { mediaDevices, WebRTCMediaStream } from "./webrtc-primitives.native";
@@ -301,12 +312,31 @@ export function NativeIngestPlayer() {
         })
         .then((stream: WebRTCMediaStream) => {
           setLocalMediaStream(stream);
+
+          let errs: string[] = [];
+          if (stream.getAudioTracks().length === 0) {
+            console.warn("No audio tracks found in user media stream");
+            errs.push("microphone");
+          }
+          if (stream.getVideoTracks().length === 0) {
+            console.warn("No video tracks found in user media stream");
+            errs.push("camera");
+          }
+          if (errs.length > 0) {
+            setError(
+              new Error(
+                `We could not access your ${errs.join(" and ")}. To stream, you need to give us permission to access these.`,
+              ),
+            );
+          } else {
+            setError(null);
+          }
         })
         .catch((e: any) => {
           console.error("error getting user media", e);
           setError(
             new Error(
-              "We could not access your camera or microphone. Please check your permissions.",
+              "We could not access your camera or microphone. To stream, you need to give us permission to access these.",
             ),
           );
         });
@@ -334,12 +364,27 @@ export function NativeIngestPlayer() {
     return (
       <View
         backgroundColor={colors.destructive[900]}
-        style={[p[4], { borderRadius: borderRadius.md }]}
+        style={[p[4], m[4], gap.all[2], { borderRadius: borderRadius.md }]}
       >
         <View>
-          <Text>Error encountered!</Text>
+          <Text style={[fontWeight.semibold]} size="2xl">
+            Error encountered!
+          </Text>
         </View>
         <Text>{error.message}</Text>
+        {error.message.includes(
+          "To stream, you need to give us permission to access these.",
+        ) && (
+          <Button
+            onPress={Linking.openSettings}
+            style={[h[10]]}
+            variant="secondary"
+          >
+            <View style={[layout.flex.row, gap.all[1]]}>
+              <Text>Open Settings</Text> <ArrowRight color="white" size="18" />
+            </View>
+          </Button>
+        )}
       </View>
     );
   }
