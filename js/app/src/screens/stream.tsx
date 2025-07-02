@@ -1,6 +1,7 @@
 import Livestream from "components/livestream/livestream";
 import { PlayerProps } from "components/player/props";
 import { FullscreenProvider } from "contexts/FullscreenContext";
+import useTitle from "hooks/useTitle";
 import { isWeb } from "tamagui";
 import { queryToProps } from "./util";
 
@@ -14,6 +15,7 @@ export default function StreamScreen({ route }) {
   if (user === "stream") {
     src = url;
   }
+  useTitle(user);
   return (
     <FullscreenProvider>
       <Livestream src={src} {...extraProps} />

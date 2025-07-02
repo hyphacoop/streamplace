@@ -112,7 +112,6 @@ export default function () {
       ios: {
         supportsTablet: true,
         bundleIdentifier: bundle,
-        associatedDomains: ["applinks:stream.place"],
         infoPlist: {
           UIBackgroundModes: ["fetch", "remote-notification"],
           LSMinimumSystemVersion: "12.0",
@@ -128,6 +127,7 @@ export default function () {
               entitlements: {
                 "aps-environment": "production",
               },
+              associatedDomains: ["applinks:stream.place"],
             }
           : {}),
       },
