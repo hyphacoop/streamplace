@@ -167,6 +167,7 @@ export function MobileUi() {
               ? layout.position.relative
               : layout.position.absolute,
             bottom[0],
+            { width: "100%", maxWidth: "100%" },
           ]}
         >
           <Resizable

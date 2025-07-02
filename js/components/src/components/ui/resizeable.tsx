@@ -81,7 +81,9 @@ export function Resizable({
     transform: [
       {
         translateY:
-          slideKeyboard - safeBottom + Math.max(0, -sheetHeight.value),
+          slideKeyboard +
+          Math.max(0, -sheetHeight.value) +
+          (slideKeyboard < 0 ? 0 : -safeBottom),
       },
     ],
   }));
@@ -105,7 +107,6 @@ export function Resizable({
           w.percent[100],
           layout.flex.center,
           zIndex[1],
-          { marginBottom: safeBottom },
         ]}
       >
         <Pressable
