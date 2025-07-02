@@ -168,6 +168,16 @@ if (associatedDomain && associatedDomain.startsWith("applinks:")) {
   linking.prefixes.push(`https://${domain}`);
 }
 
+// https://github.com/streamplace/streamplace/issues/377
+const hasDevDomain = linking.prefixes.some((prefix) =>
+  prefix.includes("tv.aquareum.dev"),
+);
+if (hasDevDomain) {
+  linking.prefixes.push("tv.aquareum://");
+}
+
+console.log("Linking prefixes", linking.prefixes);
+
 const Drawer = createDrawerNavigator();
 
 const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
