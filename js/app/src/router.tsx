@@ -57,6 +57,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  StatusBar,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { H3, Text, useTheme, View } from "tamagui";
@@ -359,6 +360,7 @@ export function StreamplaceDrawer() {
   }
   return (
     <>
+      <StatusBar barStyle="light-content" />
       <Drawer.Navigator
         initialRouteName="Home"
         screenOptions={{
