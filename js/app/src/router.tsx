@@ -81,7 +81,6 @@ import HomeScreen from "./screens/home";
 
 import { useUrl } from "@streamplace/components";
 import Constants from "expo-constants";
-import { useURL } from "expo-linking";
 import { SystemBars } from "react-native-edge-to-edge";
 import {
   configureReanimatedLogger,
@@ -605,19 +604,6 @@ export const PopupChecker = ({
       setIsLiveDashboard(false);
     }
   }, [route.name]);
-
-  const [lastLink, setLastLink] = useState<string | null>(null);
-  const url = useURL();
-  const linkTo = useLinkTo();
-
-  useEffect(() => {
-    console.log("url", url, "lastLink", lastLink);
-    if (url !== lastLink && url) {
-      linkTo(url);
-    }
-    setLastLink(url);
-  }, [url, lastLink]);
-
   return <Fragment />;
 };
 
