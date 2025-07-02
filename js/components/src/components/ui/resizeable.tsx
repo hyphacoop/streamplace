@@ -1,5 +1,5 @@
 import { ChevronUp } from "lucide-react-native";
-import { ComponentProps } from "react";
+import { ComponentProps, useEffect } from "react";
 import { Dimensions } from "react-native";
 import {
   Gesture,
@@ -23,6 +23,7 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 type ResizableChatSheetProps = {
+  startingPercentage?: number;
   isPlayerRatioGreater: boolean;
   style?: ComponentProps<typeof AnimatedView>["style"];
   children?: React.ReactNode;
@@ -31,6 +32,7 @@ type ResizableChatSheetProps = {
 const SPRING_CONFIG = { damping: 20, stiffness: 100 };
 
 export function Resizable({
+  startingPercentage,
   isPlayerRatioGreater,
   style = {},
   children,
@@ -43,6 +45,15 @@ export function Resizable({
 
   const sheetHeight = useSharedValue(MIN_HEIGHT);
   const startHeight = useSharedValue(MIN_HEIGHT);
+
+  useEffect(() => {
+    setTimeout(() => {
+      sheetHeight.value = withSpring(
+        startingPercentage ? startingPercentage * SCREEN_HEIGHT : MIN_HEIGHT,
+        SPRING_CONFIG,
+      );
+    }, 1000);
+  }, []);
 
   const panGesture = Gesture.Pan()
     .onStart(() => {
@@ -70,7 +81,9 @@ export function Resizable({
     transform: [
       {
         translateY:
-          slideKeyboard - safeBottom + Math.max(0, -sheetHeight.value),
+          slideKeyboard +
+          Math.max(0, -sheetHeight.value) +
+          (slideKeyboard < 0 ? 0 : -safeBottom),
       },
     ],
   }));
@@ -94,7 +107,6 @@ export function Resizable({
           w.percent[100],
           layout.flex.center,
           zIndex[1],
-          { marginBottom: safeBottom },
         ]}
       >
         <Pressable
