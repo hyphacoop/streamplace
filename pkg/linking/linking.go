@@ -148,6 +148,18 @@ func (l *Linker) GenerateHTML(ctx context.Context, pc *PageConfig) ([]byte, erro
 	}
 
 	// Title tag (handled separately as it's not a meta tag)
+
+	var oldTitle *html.Node
+	for node := range head.ChildNodes() {
+		if node.Type == html.ElementNode && node.Data == "title" {
+			oldTitle = node
+			break
+		}
+	}
+	if oldTitle != nil {
+		head.RemoveChild(oldTitle)
+	}
+
 	title := &html.Node{
 		Type: html.ElementNode,
 		Data: "title",
