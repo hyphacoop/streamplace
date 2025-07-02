@@ -1,5 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { theme } from "@streamplace/components";
+import KeepAwake from "components/keep-awake";
 import { Player } from "components/mobile/player";
 import { PlayerProps } from "components/player/props";
 import { FullscreenProvider } from "contexts/FullscreenContext";
@@ -22,6 +23,7 @@ export default function MobileStream({ route }) {
 
   return (
     <theme.ThemeProvider>
+      <KeepAwake />
       <FullscreenProvider>
         <Player src={src} {...extraProps} />
       </FullscreenProvider>
