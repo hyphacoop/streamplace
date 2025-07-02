@@ -8,8 +8,8 @@
   "exports": {
     ".": {
       "@streamplace/dev": "./src/index.tsx",
-      "types": "./dist/index.d.mjs",
-      "default": "./dist/index.mjs"
+      "types": "./src/index.tsx",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {

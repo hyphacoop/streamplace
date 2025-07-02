@@ -8,7 +8,7 @@
   "exports": {
     ".": {
       "@streamplace/dev": "./src/index.ts",
-      "types": "./dist/index.d.js",
+      "types": "./src/index.ts",
       "default": "./dist/index.js"
     }
   },
