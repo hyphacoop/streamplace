@@ -48,7 +48,7 @@ func (l *Linker) GenerateStreamerCard(ctx context.Context, u *url.URL, lsv *stre
 		return nil, errors.New("livestream view is not a livestream")
 	}
 
-	titleStr := fmt.Sprintf("@%s is 🔴LIVE on %s!", lsv.Author.Handle, u.Host)
+	titleStr := fmt.Sprintf("@%s's livestream on %s", lsv.Author.Handle, u.Host)
 	outURL := u.String()
 
 	pageTitle := fmt.Sprintf("@%s | %s", lsv.Author.Handle, u.Host)
