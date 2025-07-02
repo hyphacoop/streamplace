@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "postinstall": "cd ../.. && make js-lexicons && cd - && pnpm run build",
+    "prepare": "cd ../.. && make js-lexicons && cd - && pnpm run build",
     "start": "tsc --watch --preserveWatchOutput"
   },
   "keywords": [

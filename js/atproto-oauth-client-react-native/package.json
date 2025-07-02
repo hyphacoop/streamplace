@@ -52,6 +52,6 @@
   },
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
-    "postinstall": "pnpm run build"
+    "prepare": "pnpm run build"
   }
 }
