@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepare": "cd ../.. && make js-lexicons && cd - && pnpm run build",
+    "prepare": "cd ../.. && make js-lexicons && cd - && pnpm run build && pnpm run test-import",
+    "test-import": "node -e 'require(\".\")' || (echo 'require(\".\") failed, npm package is not working' && exit 1)",
     "start": "tsc --watch --preserveWatchOutput"
   },
   "keywords": [
