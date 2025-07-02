@@ -174,6 +174,7 @@ const hasDevDomain = linking.prefixes.some((prefix) =>
 );
 if (hasDevDomain) {
   linking.prefixes.push("tv.aquareum://");
+  linking.prefixes.push("https://stream.place");
 }
 
 console.log("Linking prefixes", linking.prefixes);
