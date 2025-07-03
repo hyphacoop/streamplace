@@ -18,7 +18,7 @@ const uploadThumbnail = async (
       while (
         thumbnail.data.blob.size === 0 &&
         customThumbnail.size !== 0 &&
-        tries < 3
+        tries < 12
       ) {
         console.warn(
           "Reuploading blob as blob sizes don't match! Blob size recieved is",
@@ -30,7 +30,7 @@ const uploadThumbnail = async (
       }
 
       if (tries === 3) {
-        throw new Error("Could not successfully upload blob (tried thrice)");
+        throw new Error(`Could not successfully upload blob (tried ${tries}x)`);
       }
 
       if (thumbnail.success) {
