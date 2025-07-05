@@ -99,7 +99,7 @@ export function MobileUi() {
                 borders.color.gray[700],
               ]}
             />
-            <Text>{profile?.handle}</Text>
+            <Text>@{profile?.handle}</Text>
           </View>
         </View>
         <View
