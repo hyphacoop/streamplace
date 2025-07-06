@@ -163,7 +163,7 @@ export function Resizable({
                 width: 120, // Wide enough for thumbs
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(0,255,255,0.1)",
+                //backgroundColor: "rgba(0,255,255,0.1)",
                 transform: [{ translateY: -30 }],
               }}
             >
