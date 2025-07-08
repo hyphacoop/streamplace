@@ -8,8 +8,9 @@ import React, { useEffect } from "react";
 import { useRef } from "react";
 
 export default function VideoRetry(props: { children: React.ReactNode }) {
-  const lastSegmentRef = useRef<string | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // last segment start time
+  let [lastSegST, setLastSegST] = React.useState<string | null>(null);
   const segment = useSegment();
 
   const offline = usePlayerStore((x) => x.offline);
@@ -17,21 +18,19 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (
-      lastSegmentRef.current !== null &&
+      lastSegST !== null &&
       segment &&
-      segment.startTime !== lastSegmentRef.current &&
+      segment.startTime !== lastSegST &&
       offline
     ) {
+      console.log("Timeout detected!");
       const jitter = 500 + Math.random() * 1500;
       retryTimeoutRef.current = setTimeout(() => {
-        lastSegmentRef.current = segment?.startTime;
+        console.log("Retrying video segment", segment.startTime);
+        setLastSegST(segment.startTime);
       }, jitter);
     }
   }, [offline, segment, spurl]);
 
-  return (
-    <React.Fragment key={lastSegmentRef.current}>
-      {props.children}
-    </React.Fragment>
-  );
+  return <React.Fragment key={lastSegST}>{props.children}</React.Fragment>;
 }
