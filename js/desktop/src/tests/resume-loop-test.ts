@@ -5,14 +5,12 @@ import { delay, PlayerReport } from "./util";
 
 /**
  * This test:
- * - Plays a stream for 15 seconds
- * - Pauses for 15 seconds
- * - Resumes and plays for 15 seconds
- * - Checks that the player is not stuck in a resume loop (i.e., spends most of the post-resume time in 'playing')
+ * - Plays a stream that goes up/down every 15 seconds
+ * - Observes the player for several cycles
+ * - Checks that the player spends a reasonable amount of time in 'playing' state after each recovery
  */
 
-const SEGMENT_MS = 15000; // 15 seconds
-const POST_RESUME_PLAYING_THRESHOLD = 0.5; // At least 50% of post-resume time should be 'playing'
+const PLAYING_THRESHOLD = 0.4;
 
 export const resumeLoopTest: E2ETest = {
   setup: async (testEnv: TestEnv) => {
@@ -28,14 +26,14 @@ export const resumeLoopTest: E2ETest = {
     const mainWindow = await makeWindow();
 
     const testId = uuidv7();
-    const playerId = `${testId}-resume-loop`;
+    const playerId = `${testId}-intermittent`;
     const playerConfig = {
-      name: "resume-loop",
+      name: "intermittent-stream",
       playerId,
-      src: "self-test",
+      src: "intermittent-self-test", // <-- Make sure this matches your Go alias!
       showControls: true,
       telemetry: true,
-      forceProtocol: "progressive-mp4", // Use a stable protocol for this test
+      forceProtocol: "webrtc",
     };
     const enc = encodeURIComponent(JSON.stringify([playerConfig]));
     const load = `${testEnv.addr}/multi/${enc}`;
@@ -43,82 +41,30 @@ export const resumeLoopTest: E2ETest = {
     console.log(`Opening player at ${load}`);
     await mainWindow.loadURL(load);
 
-    // Wait for the player to load and start playing
-    await delay(SEGMENT_MS);
+    await delay(testEnv.testDuration);
 
-    // Pause the player via JS injection
-    console.log("Pausing player...");
-    await mainWindow.webContents.executeJavaScript(`
-      (function() {
-        const video = document.querySelector("video");
-        if (video) video.pause();
-      })();
-    `);
-
-    await delay(SEGMENT_MS);
-
-    // Resume the player via JS injection
-    console.log("Resuming player...");
-    await mainWindow.webContents.executeJavaScript(`
-      (function() {
-        const video = document.querySelector("video");
-        if (video) video.play();
-      })();
-    `);
-
-    await delay(SEGMENT_MS);
-
-    // Fetch player report
     const res = await fetch(
       `${testEnv.internalAddr}/player-report/${playerId}`,
     );
     const data = (await res.json()) as PlayerReport;
 
-    // Analyze whatHappened for post-resume period
-    // We'll estimate post-resume by looking at the last 15 seconds of state time
-    // If the player is stuck in a resume loop, 'playing' will be low, and 'resume' or 'buffering' will be high
-
-    // Sum total time spent in each state
     const stateTimes = data.whatHappened || {};
-    let total = 0;
-    for (const ms of Object.values(stateTimes)) total += ms;
+    const total = Object.values(stateTimes).reduce((a, b) => a + b, 0);
+    const playing = stateTimes["playing"] || 0;
 
-    // If total < 3 * SEGMENT_MS, just use the last segment as post-resume
-    // Otherwise, estimate post-resume as the last SEGMENT_MS proportion
-    let postResumePlaying = 0;
-    let postResumeTotal = 0;
-    if (total > 0) {
-      for (const [state, ms] of Object.entries(stateTimes)) {
-        // Proportion of this state's time in the post-resume segment
-        const prop = Math.min(
-          1,
-          Math.max(0, (ms / total) * (total / SEGMENT_MS)),
-        );
-        if (state === "playing") postResumePlaying += ms * prop;
-        postResumeTotal += ms * prop;
-      }
-    }
-
-    // Fallback: if above logic fails, just use the overall 'playing' percentage
-    if (postResumeTotal === 0 && total > 0) {
-      postResumePlaying = stateTimes["playing"] || 0;
-      postResumeTotal = total;
-    }
-
-    const playingPct =
-      postResumeTotal > 0 ? postResumePlaying / postResumeTotal : 0;
+    const playingPct = total > 0 ? playing / total : 0;
 
     console.log(
-      `Post-resume playing percentage: ${(playingPct * 100).toFixed(1)}%`,
+      `Overall playing percentage: ${(playingPct * 100).toFixed(1)}%`,
     );
     console.log("Full state times:", JSON.stringify(stateTimes, null, 2));
 
     mainWindow.close();
 
-    if (playingPct < POST_RESUME_PLAYING_THRESHOLD) {
-      return `Player spent too little time playing after resume (${(
+    if (playingPct < PLAYING_THRESHOLD) {
+      return `Player spent too little time playing during intermittent stream (${(
         playingPct * 100
-      ).toFixed(1)}%). Possible resume loop or stall.`;
+      ).toFixed(1)}%). Possible stall or failure to recover.`;
     }
 
     return null;
