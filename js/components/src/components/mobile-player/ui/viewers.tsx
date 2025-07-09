@@ -1,5 +1,5 @@
 import { Eye } from "lucide-react-native";
-import { Text, View } from "tamagui";
+import { Text, View } from "../../../";
 import * as atoms from "../../../lib/theme/atoms";
 import { useViewers } from "../../../livestream-store";
 
