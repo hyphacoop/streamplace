@@ -340,7 +340,7 @@ export default function Controls(props: { name: string; playerId?: string }) {
         <Part justifyContent="flex-start" overflow="hidden">
           <View justifyContent="center" paddingLeft="$5" maxWidth="100%">
             <Text wordWrap="break-word" numberOfLines={1} ellipsizeMode="tail">
-              {props.name}
+              @{props.name}
             </Text>
           </View>
         </Part>
