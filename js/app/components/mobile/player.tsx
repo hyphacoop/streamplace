@@ -30,7 +30,6 @@ export function Player(
   const userProfile = useAppSelector(selectUserProfile);
 
   useEffect(() => {
-    console.log("user is live changed to", userIsLive);
     if (props.ingest && userIsLive && isStreamingElsewhere === null) {
       setIsStreamingElsewhere(true);
     } else if (props.ingest && userIsLive === false) {
@@ -40,7 +39,6 @@ export function Player(
 
   const navigation = useNavigation();
 
-  console.log(isStreamingElsewhere);
   if (isStreamingElsewhere) {
     return (
       <View style={[layout.flex.center, h.percent[100], gap.all[4]]}>
