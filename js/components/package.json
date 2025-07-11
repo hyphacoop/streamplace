@@ -1,20 +1,19 @@
 {
   "name": "@streamplace/components",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "Streamplace React (Native) Components",
-  "type": "module",
   "main": "dist/index.js",
   "types": "src/index.tsx",
   "exports": {
     ".": {
       "@streamplace/dev": "./src/index.tsx",
-      "types": "./dist/index.d.mjs",
-      "default": "./dist/index.mjs"
+      "types": "./src/index.tsx",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
-    "postinstall": "pnpm run build",
+    "prepare": "pnpm run build",
     "start": "tsc --watch --preserveWatchOutput"
   },
   "keywords": [

@@ -14,7 +14,7 @@ import {
 } from "@streamplace/components";
 import { bottom } from "@streamplace/components/src/lib/theme/atoms";
 import { ChevronLeft, SwitchCamera } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Image, Pressable } from "react-native";
 import { ChatPanel } from "./chat";
 
@@ -44,6 +44,8 @@ export function MobileUi() {
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
+  const [showLoading, setShowLoading] = useState(false);
+
   useEffect(() => {
     return () => {
       if (ingestStarting) {
@@ -51,6 +53,10 @@ export function MobileUi() {
       }
     };
   }, [ingestStarting, setIngestStarting]);
+
+  useEffect(() => {
+    if (recordSubmitted) setShowLoading(false);
+  }, [recordSubmitted]);
 
   const isSelfAndNotLive = ingest === "new";
   const isLive = ingest !== null && ingest !== "new";
@@ -99,7 +105,7 @@ export function MobileUi() {
                 borders.color.gray[700],
               ]}
             />
-            <Text>{profile?.handle}</Text>
+            <Text>@{profile?.handle}</Text>
           </View>
         </View>
         <View
@@ -167,6 +173,7 @@ export function MobileUi() {
               ? layout.position.relative
               : layout.position.absolute,
             bottom[0],
+            { width: "100%", maxWidth: "100%" },
           ]}
         >
           <Resizable
@@ -181,10 +188,20 @@ export function MobileUi() {
       <PlayerUI.CountdownOverlay
         visible={showCountdown}
         width={width}
-        height={height}
+        height={height - 150}
         onDone={() => {
+          if (!recordSubmitted && title != "") {
+            setShowLoading(true);
+          }
           setShowCountdown(false);
         }}
+      />
+
+      <PlayerUI.LoadingOverlay
+        visible={showLoading}
+        width={width}
+        height={height - 150}
+        subtitle="We're setting up your stream."
       />
 
       <Toast

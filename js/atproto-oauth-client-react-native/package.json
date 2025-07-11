@@ -1,6 +1,6 @@
 {
   "name": "@streamplace/atproto-oauth-client-react-native",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "license": "MIT",
   "description": "ATProto OAuth client for React Native",
   "keywords": [
@@ -52,6 +52,6 @@
   },
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
-    "postinstall": "pnpm run build"
+    "prepare": "pnpm run build"
   }
 }

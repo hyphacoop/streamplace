@@ -22,6 +22,34 @@ get started:
 - pkg-config
 - Rust
 - Working C and C++ compilers: `gcc` on Linux or `clang` (via Xcode) on macOS.
+- Reverse proxy
+
+## Reverse Proxy
+
+Due to the nature of ATProto, a requirement for developing for Streamplace is
+using a reverse proxy so that your PDS can connect with your development
+environment.
+
+Popular options include:
+
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+  (recommended)
+- [zrok](https://zrok.io/) (self hostable, recommended)
+- [Pangolin](https://github.com/fosrl/pangolin) (self-hostable)
+- [ngrok](https://ngrok.com/)
+
+**Example usage:**
+
+- Cloudflare Tunnel: `cloudflared tunnel --url http://127.0.0.1:38080`
+- zrok: `zrok share http 127.0.0.1:38080`
+- Pangolin: (if you have a site set up)
+  `newt --id my-id --secret my-secret --endpoint 127.0.0.1:38080`
+- ngrok: `ngrok http 38080`
+
+> **Tip:** A static tunnel URL is preferred for consistency, especially if you
+> need to share your dev environment or if you want to stay logged in between
+> proxy restarts. Look at the docs for your preferred reverse proxy for more
+> information.
 
 ## Get Started
 
@@ -49,13 +77,29 @@ The node will be accessible at [http://127.0.0.1:38080](http://127.0.0.1:38080).
 
 By default, the `make dev` Streamplace node will proxy incoming requests
 front-end requests — basically every endpoint that's not at `/api` or `/xrpc` —
-through to the Streamplace app dev server. Usually, you'll usually want to be
-hacking on both of those things at once. If this isn't the case — like you're
-making exclusively backend changes — and you want to launch the node with the
-embedded frontend, you can override the pertinent command line argument:
+through to the Streamplace app dev server. Usually, you'll want to be hacking on
+both of those things at once. If this isn't the case — like you're making
+exclusively backend changes — and you want to launch the node with the embedded
+frontend, you can override the pertinent command line argument:
 
 ```shell
 make dev && ./build-darwin-arm64/streamplace --dev-frontend-proxy=""
+```
+
+If you're using a proxy server, you may want to set your tunnel URL as the
+public host URL so you can get authentication working. You may do that via the
+`--public-host` argument.
+
+Similarly, if you're working on mobile and need authentication, use the
+`--app-bundle-id` argument with your bundle NSID in `app.json` (for Devplace,
+the id is `tv.aquareum.dev`).
+
+Here's an example with both:
+
+```shell
+make dev && ./build-darwin-arm64/streamplace \
+  --public-host your.proxy.example.com \
+  --app-bundle-id tv.aquareum.dev
 ```
 
 ### Streamplace App
