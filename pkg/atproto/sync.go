@@ -148,6 +148,38 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			}
 		}
 
+	case *streamplace.ChatHide:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		if r == nil {
+			// someone we don't know about
+			return nil
+		}
+		log.Debug(ctx, "creating hide", "userDID", userDID, "hiddenMessage", rec.HiddenMessage)
+		hide := &model.Hide{
+			RKey:          rkey.String(),
+			RepoDID:       userDID,
+			HiddenMessage: rec.HiddenMessage,
+			CID:           cid,
+			CreatedAt:     now,
+			Repo:          repo,
+		}
+		err = atsync.Model.CreateHide(ctx, hide)
+		if err != nil {
+			return fmt.Errorf("failed to create hide: %w", err)
+		}
+		hide, err = atsync.Model.GetHide(ctx, rkey.String())
+		if err != nil {
+			return fmt.Errorf("failed to get hide after we just saved it?!: %w", err)
+		}
+		streamplaceHide, err := hide.ToStreamplaceHide()
+		if err != nil {
+			return fmt.Errorf("failed to convert hide to streamplace hide: %w", err)
+		}
+		go atsync.Bus.Publish(userDID, streamplaceHide)
+
 	case *streamplace.ChatProfile:
 		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
 		if err != nil {

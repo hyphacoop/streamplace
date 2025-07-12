@@ -84,6 +84,11 @@ type Model interface {
 	MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDefs_MessageView, error)
 	GetChatMessage(cid string) (*ChatMessage, error)
 
+	CreateHide(ctx context.Context, hide *Hide) error
+	DeleteHide(ctx context.Context, rkey string) error
+	GetHide(ctx context.Context, rkey string) (*Hide, error)
+	GetUserHides(ctx context.Context, userDID string) ([]*Hide, error)
+
 	CreateChatProfile(ctx context.Context, profile *ChatProfile) error
 	GetChatProfile(ctx context.Context, repoDID string) (*ChatProfile, error)
 
