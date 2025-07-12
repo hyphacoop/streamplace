@@ -115,6 +115,9 @@ func (m *DBModel) MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDef
 		// Exclude messages from users blocked by the streamer
 		Joins("LEFT JOIN blocks ON blocks.repo_did = chat_messages.streamer_repo_did AND blocks.subject_did = chat_messages.repo_did").
 		Where("blocks.rkey IS NULL"). // Only include messages where no block exists
+		// Exclude hidden messages
+		Joins("LEFT JOIN hides ON hides.repo_did = chat_messages.streamer_repo_did AND hides.hidden_message = CONCAT('at://', chat_messages.repo_did, '/place.stream.chat.message/', chat_messages.rkey)").
+		Where("hides.rkey IS NULL"). // Only include messages where no hide exists
 		Limit(100).
 		Order("chat_messages.created_at DESC").
 		Find(&dbmessages).Error
