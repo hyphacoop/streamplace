@@ -30,7 +30,12 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
         setLastSegST(segment.startTime);
       }, jitter);
     }
-  }, [offline, segment, spurl]);
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, [offline, segment, spurl, lastSegST]);
 
   return <React.Fragment key={lastSegST}>{props.children}</React.Fragment>;
 }
