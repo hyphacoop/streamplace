@@ -1,41 +1,36 @@
-import {
-  usePlayerStore,
-  useSegment,
-  useStreamplaceStore,
-} from "@streamplace/components";
-import React, { useEffect } from "react";
-
-import { useRef } from "react";
+import { usePlayerStore } from "@streamplace/components";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function VideoRetry(props: { children: React.ReactNode }) {
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // last segment start time
-  let [lastSegST, setLastSegST] = React.useState<string | null>(null);
-  const segment = useSegment();
+  const [retries, setRetries] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
 
   const offline = usePlayerStore((x) => x.offline);
-  const spurl = useStreamplaceStore((x) => x.url);
 
   useEffect(() => {
-    if (
-      lastSegST !== null &&
-      segment &&
-      segment.startTime !== lastSegST &&
-      offline
-    ) {
-      console.log("Timeout detected!");
+    if (!offline && !hasStarted) {
+      console.log("Player is online. Marking as started.");
+      setHasStarted(true);
+    }
+
+    if (offline) {
+      console.log("Player is offline. Incrementing retries.");
+      setRetries((prevRetries) => prevRetries + 1);
+
       const jitter = 500 + Math.random() * 1500;
       retryTimeoutRef.current = setTimeout(() => {
-        console.log("Retrying video segment", segment.startTime);
-        setLastSegST(segment.startTime);
+        console.log("Retrying video playback...");
       }, jitter);
     }
+
     return () => {
       if (retryTimeoutRef.current) {
+        console.log("Clearing retry timeout");
         clearTimeout(retryTimeoutRef.current);
       }
     };
-  }, [offline, segment, spurl, lastSegST]);
+  }, [offline, hasStarted]);
 
-  return <React.Fragment key={lastSegST}>{props.children}</React.Fragment>;
+  return <React.Fragment key={retries}>{props.children}</React.Fragment>;
 }
