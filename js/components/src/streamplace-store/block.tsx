@@ -27,3 +27,28 @@ export function useCreateBlockRecord() {
     return record;
   };
 }
+
+export function useCreateHideChatRecord() {
+  let agent = usePDSAgent();
+
+  return async (chatMessageUri: string) => {
+    if (!agent) {
+      throw new Error("No PDS agent found");
+    }
+
+    if (!agent.did) {
+      throw new Error("No user DID found, assuming not logged in");
+    }
+
+    const record = {
+      $type: "place.stream.chat.hide",
+      hiddenMessage: chatMessageUri,
+    };
+
+    return await agent.com.atproto.repo.createRecord({
+      repo: agent.did,
+      collection: "place.stream.chat.hide",
+      record,
+    });
+  };
+}
