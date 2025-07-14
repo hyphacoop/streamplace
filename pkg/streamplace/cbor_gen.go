@@ -2769,7 +2769,7 @@ func (t *ServerSettings) UnmarshalCBOR(r io.Reader) (err error) {
 
 	return nil
 }
-func (t *ChatHide) MarshalCBOR(w io.Writer) error {
+func (t *ChatGate) MarshalCBOR(w io.Writer) error {
 	if t == nil {
 		_, err := w.Write(cbg.CborNull)
 		return err
@@ -2793,10 +2793,10 @@ func (t *ChatHide) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("place.stream.chat.hide"))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("place.stream.chat.gate"))); err != nil {
 		return err
 	}
-	if _, err := cw.WriteString(string("place.stream.chat.hide")); err != nil {
+	if _, err := cw.WriteString(string("place.stream.chat.gate")); err != nil {
 		return err
 	}
 
@@ -2825,8 +2825,8 @@ func (t *ChatHide) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *ChatHide) UnmarshalCBOR(r io.Reader) (err error) {
-	*t = ChatHide{}
+func (t *ChatGate) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = ChatGate{}
 
 	cr := cbg.NewCborReader(r)
 
@@ -2845,7 +2845,7 @@ func (t *ChatHide) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 
 	if extra > cbg.MaxLength {
-		return fmt.Errorf("ChatHide: map struct too large (%d)", extra)
+		return fmt.Errorf("ChatGate: map struct too large (%d)", extra)
 	}
 
 	n := extra

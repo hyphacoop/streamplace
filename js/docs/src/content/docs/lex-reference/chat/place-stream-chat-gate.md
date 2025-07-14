@@ -1,6 +1,6 @@
 ---
-title: place.stream.chat.hide
-description: Reference for the place.stream.chat.hide lexicon
+title: place.stream.chat.gate
+description: Reference for the place.stream.chat.gate lexicon
 ---
 
 **Lexicon Version:** 1
@@ -13,7 +13,7 @@ description: Reference for the place.stream.chat.hide lexicon
 
 **Type:** `record`
 
-Record defining a single hidden chat message.
+Record defining a single gated chat message.
 
 **Record Key:** `tid`
 
@@ -30,12 +30,12 @@ Record defining a single hidden chat message.
 ```json
 {
   "lexicon": 1,
-  "id": "place.stream.chat.hide",
+  "id": "place.stream.chat.gate",
   "defs": {
     "main": {
       "type": "record",
       "key": "tid",
-      "description": "Record defining a single hidden chat message.",
+      "description": "Record defining a single gated chat message.",
       "record": {
         "type": "object",
         "required": ["hiddenMessage"],

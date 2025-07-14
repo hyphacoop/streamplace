@@ -151,7 +151,7 @@ var CollectionFilter = []string{
 	constants.APP_BSKY_FEED_POST,
 	constants.APP_BSKY_GRAPH_BLOCK,
 	constants.PLACE_STREAM_SERVER_SETTINGS,
-	constants.PLACE_STREAM_CHAT_HIDE,
+	constants.PLACE_STREAM_CHAT_GATE,
 }
 
 func (atsync *ATProtoSynchronizer) handleCommitEventOps(ctx context.Context, evt *comatproto.SyncSubscribeRepos_Commit) {

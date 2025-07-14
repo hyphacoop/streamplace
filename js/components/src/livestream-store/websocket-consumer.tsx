@@ -3,7 +3,7 @@ import {
   ChatMessageViewHydrated,
   LivestreamViewHydrated,
   PlaceStreamChatDefs,
-  PlaceStreamChatHide,
+  PlaceStreamChatGate,
   PlaceStreamChatMessage,
   PlaceStreamDefs,
   PlaceStreamLivestream,
@@ -57,8 +57,8 @@ export const handleWebSocketMessages = (
         ...state,
         profile: message,
       };
-    } else if (PlaceStreamChatHide.isRecord(message)) {
-      const hideRecord = message as PlaceStreamChatHide.Record;
+    } else if (PlaceStreamChatGate.isRecord(message)) {
+      const hideRecord = message as PlaceStreamChatGate.Record;
       const hiddenMessageUri = hideRecord.hiddenMessage;
       const newPendingHides = [...state.pendingHides];
       if (!newPendingHides.includes(hiddenMessageUri)) {

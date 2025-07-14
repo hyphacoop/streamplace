@@ -2,18 +2,18 @@
 
 package streamplace
 
-// schema: place.stream.chat.hide
+// schema: place.stream.chat.gate
 
 import (
 	"github.com/bluesky-social/indigo/lex/util"
 )
 
 func init() {
-	util.RegisterType("place.stream.chat.hide", &ChatHide{})
+	util.RegisterType("place.stream.chat.gate", &ChatGate{})
 } //
-// RECORDTYPE: ChatHide
-type ChatHide struct {
-	LexiconTypeID string `json:"$type,const=place.stream.chat.hide" cborgen:"$type,const=place.stream.chat.hide"`
+// RECORDTYPE: ChatGate
+type ChatGate struct {
+	LexiconTypeID string `json:"$type,const=place.stream.chat.gate" cborgen:"$type,const=place.stream.chat.gate"`
 	// hiddenMessage: URI of the hidden chat message.
 	HiddenMessage string `json:"hiddenMessage" cborgen:"hiddenMessage"`
 }

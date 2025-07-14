@@ -41,13 +41,13 @@ export function useCreateHideChatRecord() {
     }
 
     const record = {
-      $type: "place.stream.chat.hide",
+      $type: "place.stream.chat.gate",
       hiddenMessage: chatMessageUri,
     };
 
     return await agent.com.atproto.repo.createRecord({
       repo: agent.did,
-      collection: "place.stream.chat.hide",
+      collection: "place.stream.chat.gate",
       record,
     });
   };

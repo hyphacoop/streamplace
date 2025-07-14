@@ -148,7 +148,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			}
 		}
 
-	case *streamplace.ChatHide:
+	case *streamplace.ChatGate:
 		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
 		if err != nil {
 			return fmt.Errorf("failed to sync bluesky repo: %w", err)
@@ -157,8 +157,8 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			// someone we don't know about
 			return nil
 		}
-		log.Debug(ctx, "creating hide", "userDID", userDID, "hiddenMessage", rec.HiddenMessage)
-		hide := &model.Hide{
+		log.Debug(ctx, "creating gate", "userDID", userDID, "hiddenMessage", rec.HiddenMessage)
+		gate := &model.Gate{
 			RKey:          rkey.String(),
 			RepoDID:       userDID,
 			HiddenMessage: rec.HiddenMessage,
@@ -166,19 +166,19 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			CreatedAt:     now,
 			Repo:          repo,
 		}
-		err = atsync.Model.CreateHide(ctx, hide)
+		err = atsync.Model.CreateGate(ctx, gate)
 		if err != nil {
-			return fmt.Errorf("failed to create hide: %w", err)
+			return fmt.Errorf("failed to create gate: %w", err)
 		}
-		hide, err = atsync.Model.GetHide(ctx, rkey.String())
+		gate, err = atsync.Model.GetGate(ctx, rkey.String())
 		if err != nil {
-			return fmt.Errorf("failed to get hide after we just saved it?!: %w", err)
+			return fmt.Errorf("failed to get gate after we just saved it?!: %w", err)
 		}
-		streamplaceHide, err := hide.ToStreamplaceHide()
+		streamplaceGate, err := gate.ToStreamplaceGate()
 		if err != nil {
-			return fmt.Errorf("failed to convert hide to streamplace hide: %w", err)
+			return fmt.Errorf("failed to convert gate to streamplace gate: %w", err)
 		}
-		go atsync.Bus.Publish(userDID, streamplaceHide)
+		go atsync.Bus.Publish(userDID, streamplaceGate)
 
 	case *streamplace.ChatProfile:
 		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
