@@ -159,6 +159,7 @@ func MakeDB(dbURL string) (Model, error) {
 		Block{},
 		ChatMessage{},
 		ChatProfile{},
+		Hide{},
 		oatproxy.OAuthSession{},
 		ServerSettings{},
 	} {
