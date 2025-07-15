@@ -1,5 +1,5 @@
 import { TriggerRef } from "@rn-primitives/dropdown-menu";
-import { forwardRef, useEffect, useRef } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { gap, mr, w } from "../../lib/theme/atoms";
 import { usePlayerStore } from "../../player-store";
 import {
@@ -11,6 +11,7 @@ import { usePDSAgent } from "../../streamplace-store/xrpc";
 import { Linking } from "react-native";
 import { useStreamplaceStore } from "../../streamplace-store";
 import {
+  atoms,
   DropdownMenu,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -20,7 +21,6 @@ import {
   Text,
   View,
 } from "../ui";
-import { RenderChatMessage } from "./chat-message";
 
 const BSKY_FRONTEND_DOMAIN = "bsky.app";
 
@@ -40,8 +40,9 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   const message = usePlayerStore((state) => state.modMessage);
 
   let agent = usePDSAgent();
-  let createBlockRecord = useCreateBlockRecord();
-  let createHideChatRecord = useCreateHideChatRecord();
+  let [messageRemoved, setMessageRemoved] = useState(false);
+  let { createBlock, isLoading: isBlockLoading } = useCreateBlockRecord();
+  let { createHideChat, isLoading: isHideLoading } = useCreateHideChatRecord();
 
   // get the channel did
   const channelId = usePlayerStore((state) => state.src);
@@ -57,6 +58,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   useEffect(() => {
     if (message) {
       console.log("opening mod view");
+      setMessageRemoved(false);
       triggerRef.current?.open();
     } else {
       console.log("closing mod view");
@@ -84,7 +86,19 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
                     { gap: 6, maxWidth: "100%" },
                   ]}
                 >
-                  <RenderChatMessage item={message} />
+                  <Text
+                    style={{
+                      fontVariant: ["tabular-nums"],
+                      color: atoms.colors.gray[300],
+                    }}
+                  >
+                    {new Date(message.record.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    })}{" "}
+                    @{message.author.handle}: {message.record.text}
+                  </Text>
                 </View>
               </DropdownMenuItem>
             </DropdownMenuGroup>
@@ -93,19 +107,30 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
             {channelId === handle && (
               <DropdownMenuGroup title={`Moderation actions`}>
                 <DropdownMenuItem
-                  disabled={message.author.did === agent?.did}
+                  disabled={isHideLoading || messageRemoved}
                   onPress={() => {
-                    createHideChatRecord(message.uri)
-                      .then((r) => console.log(r))
+                    if (isHideLoading || messageRemoved) return;
+                    createHideChat(message.uri)
+                      .then((r) => setMessageRemoved(true))
                       .catch((e) => console.error(e));
                   }}
                 >
-                  <Text color="destructive">Remove this message</Text>
+                  <Text
+                    color={
+                      isHideLoading || messageRemoved ? "muted" : "destructive"
+                    }
+                  >
+                    {isHideLoading
+                      ? "Removing..."
+                      : messageRemoved
+                        ? "Message removed"
+                        : "Remove this message"}
+                  </Text>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  disabled={message.author.did === agent?.did}
+                  disabled={message.author.did === agent?.did || isBlockLoading}
                   onPress={() => {
-                    createBlockRecord(message.author.did)
+                    createBlock(message.author.did)
                       .then((r) => console.log(r))
                       .catch((e) => console.error(e));
                   }}
@@ -116,7 +141,9 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
                     </Text>
                   ) : (
                     <Text color="destructive">
-                      Block user @{message.author.handle} from this channel
+                      {isBlockLoading
+                        ? "Blocking..."
+                        : `Block user @${message.author.handle} from this channel`}
                     </Text>
                   )}
                 </DropdownMenuItem>

@@ -1,10 +1,12 @@
 import { AppBskyGraphBlock } from "@atproto/api";
+import { useState } from "react";
 import { usePDSAgent } from "./xrpc";
 
 export function useCreateBlockRecord() {
   let agent = usePDSAgent();
+  const [isLoading, setIsLoading] = useState(false);
 
-  return async (subjectDID: string) => {
+  const createBlock = async (subjectDID: string) => {
     if (!agent) {
       throw new Error("No PDS agent found");
     }
@@ -13,25 +15,32 @@ export function useCreateBlockRecord() {
       throw new Error("No user DID found, assuming not logged in");
     }
 
-    const record: AppBskyGraphBlock.Record = {
-      $type: "app.bsky.graph.block",
-      subject: subjectDID,
-      createdAt: new Date().toISOString(),
-    };
-    return await agent.com.atproto.repo.createRecord({
-      repo: agent.did,
-      collection: "app.bsky.graph.block",
-      record,
-    });
-
-    return record;
+    setIsLoading(true);
+    try {
+      const record: AppBskyGraphBlock.Record = {
+        $type: "app.bsky.graph.block",
+        subject: subjectDID,
+        createdAt: new Date().toISOString(),
+      };
+      const result = await agent.com.atproto.repo.createRecord({
+        repo: agent.did,
+        collection: "app.bsky.graph.block",
+        record,
+      });
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  return { createBlock, isLoading };
 }
 
 export function useCreateHideChatRecord() {
   let agent = usePDSAgent();
+  const [isLoading, setIsLoading] = useState(false);
 
-  return async (chatMessageUri: string) => {
+  const createHideChat = async (chatMessageUri: string) => {
     if (!agent) {
       throw new Error("No PDS agent found");
     }
@@ -40,15 +49,23 @@ export function useCreateHideChatRecord() {
       throw new Error("No user DID found, assuming not logged in");
     }
 
-    const record = {
-      $type: "place.stream.chat.gate",
-      hiddenMessage: chatMessageUri,
-    };
+    setIsLoading(true);
+    try {
+      const record = {
+        $type: "place.stream.chat.gate",
+        hiddenMessage: chatMessageUri,
+      };
 
-    return await agent.com.atproto.repo.createRecord({
-      repo: agent.did,
-      collection: "place.stream.chat.gate",
-      record,
-    });
+      const result = await agent.com.atproto.repo.createRecord({
+        repo: agent.did,
+        collection: "place.stream.chat.gate",
+        record,
+      });
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  return { createHideChat, isLoading };
 }
