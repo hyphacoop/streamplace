@@ -16,7 +16,7 @@ import {
   useSetReplyToMessage,
   View,
 } from "../../";
-import { flex, py, w } from "../../lib/theme/atoms";
+import { bg, flex, px, py, w } from "../../lib/theme/atoms";
 import { RenderChatMessage } from "./chat-message";
 import { ModView } from "./mod-view";
 
@@ -135,7 +135,6 @@ const ChatLine = memo(({ item }: { item: ChatMessageViewHydrated }) => {
   const setReply = useSetReplyToMessage();
   const setModMsg = usePlayerStore((state) => state.setModMessage);
   const swipeableRef = useRef<SwipeableMethods | null>(null);
-  const { isMouseDriven } = usePointerDevice();
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -161,7 +160,7 @@ const ChatLine = memo(({ item }: { item: ChatMessageViewHydrated }) => {
     };
   }, []);
 
-  if (isMouseDriven) {
+  if (Platform.OS === "web") {
     return (
       <View
         style={[
@@ -192,6 +191,7 @@ const ChatLine = memo(({ item }: { item: ChatMessageViewHydrated }) => {
         friction={2}
         enableTrackpadTwoFingerGesture
         rightThreshold={40}
+        leftThreshold={40}
         renderRightActions={Platform.OS === "android" ? undefined : RightAction}
         renderLeftActions={Platform.OS === "android" ? undefined : LeftAction}
         overshootFriction={9}
@@ -242,7 +242,6 @@ export function Chat({
         data={chat}
         inverted={true}
         keyExtractor={keyExtractor}
-        renderItem={({ item, index }) => <ChatLine item={item} />}
         renderItem={({ item, index }) => <ChatLine item={item} />}
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
