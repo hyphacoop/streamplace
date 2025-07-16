@@ -87,11 +87,21 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "live" {
-		if len(os.Args) != 3 {
-			fmt.Println("usage: streamplace live [stream-key]")
+		cli := config.CLI{Build: build}
+		fs := cli.NewFlagSet("streamplace live")
+
+		err := cli.Parse(fs, os.Args[2:])
+		if err != nil {
+			return err
+		}
+
+		args := fs.Args()
+		if len(args) != 1 {
+			fmt.Println("usage: streamplace live [flags] [stream-key]")
 			os.Exit(1)
 		}
-		return Live(os.Args[2])
+
+		return Live(args[0], cli.HTTPInternalAddr)
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "sign" {
