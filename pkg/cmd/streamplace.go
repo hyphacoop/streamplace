@@ -247,6 +247,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
+	handle, err := atproto.MakeLexiconRepo(ctx, &cli, mod)
+	if err != nil {
+		return err
+	}
+	defer handle.Close()
 	var noter notifications.FirebaseNotifier
 	if cli.FirebaseServiceAccount != "" {
 		noter, err = notifications.MakeFirebaseNotifier(ctx, cli.FirebaseServiceAccount)
