@@ -1,5 +1,5 @@
-import { Reply, ShieldEllipsis } from "lucide-react-native";
-import { ComponentProps, memo, useRef } from "react";
+import { Ellipsis, Reply, ShieldEllipsis } from "lucide-react-native";
+import { ComponentProps, memo, useEffect, useRef, useState } from "react";
 import { FlatList, Platform, Pressable } from "react-native";
 import Swipeable, {
   SwipeableMethods,
@@ -16,7 +16,7 @@ import {
   useSetReplyToMessage,
   View,
 } from "../../";
-import { flex, py, w } from "../../lib/theme/atoms";
+import { bg, flex, px, py, w } from "../../lib/theme/atoms";
 import { RenderChatMessage } from "./chat-message";
 import { ModView } from "./mod-view";
 
@@ -55,17 +55,143 @@ const keyExtractor = (item: ChatMessageViewHydrated, index: number) => {
   return `${item.uri}`;
 };
 
+// Actions bar for larger screens
+const ActionsBar = memo(
+  ({
+    item,
+    visible,
+    hoverTimeoutRef,
+  }: {
+    item: ChatMessageViewHydrated;
+    visible: boolean;
+    hoverTimeoutRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  }) => {
+    const setReply = useSetReplyToMessage();
+    const setModMsg = usePlayerStore((state) => state.setModMessage);
+
+    if (!visible) return null;
+
+    return (
+      <View
+        style={[
+          {
+            position: "absolute",
+            top: -14,
+            right: 8,
+            flexDirection: "row",
+            backgroundColor: "rgba(180,180,180, 0.5)",
+            borderRadius: 6,
+            borderWidth: 1,
+            padding: 1,
+            gap: 4,
+            zIndex: 10,
+          },
+        ]}
+      >
+        <Pressable
+          onPress={() => setReply(item)}
+          style={[
+            {
+              padding: 6,
+              borderRadius: 4,
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+            },
+          ]}
+          onHoverIn={() => {
+            // Keep the actions bar visible when hovering over it
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+              hoverTimeoutRef.current = null;
+            }
+          }}
+        >
+          <Reply color="white" size={16} />
+        </Pressable>
+        <Pressable
+          onPress={() => setModMsg(item)}
+          style={[
+            {
+              padding: 6,
+              borderRadius: 4,
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+            },
+          ]}
+          onHoverIn={() => {
+            // Keep the actions bar visible when hovering over it
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+              hoverTimeoutRef.current = null;
+            }
+          }}
+        >
+          <Ellipsis color="white" size={16} />
+        </Pressable>
+      </View>
+    );
+  },
+);
+
 const ChatLine = memo(({ item }: { item: ChatMessageViewHydrated }) => {
   const setReply = useSetReplyToMessage();
   const setModMsg = usePlayerStore((state) => state.setModMessage);
   const swipeableRef = useRef<SwipeableMethods | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleHoverIn = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHovered(true);
+  };
+
+  const handleHoverOut = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 50);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (Platform.OS === "web") {
+    return (
+      <View
+        style={[
+          py[1],
+          px[2],
+          { position: "relative", borderRadius: 8 },
+          isHovered && bg.gray[950],
+        ]}
+        onPointerEnter={handleHoverIn}
+        onPointerLeave={handleHoverOut}
+      >
+        <Pressable>
+          <RenderChatMessage item={item} />
+        </Pressable>
+        <ActionsBar
+          item={item}
+          visible={isHovered}
+          hoverTimeoutRef={hoverTimeoutRef}
+        />
+      </View>
+    );
+  }
+
   return (
-    <Pressable onLongPress={() => setModMsg(item)}>
+    <Pressable>
       <Swipeable
         containerStyle={[py[1]]}
         friction={2}
         enableTrackpadTwoFingerGesture
         rightThreshold={40}
+        leftThreshold={40}
         renderRightActions={Platform.OS === "android" ? undefined : RightAction}
         renderLeftActions={Platform.OS === "android" ? undefined : LeftAction}
         overshootFriction={9}

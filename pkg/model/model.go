@@ -85,6 +85,11 @@ type Model interface {
 	MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDefs_MessageView, error)
 	GetChatMessage(cid string) (*ChatMessage, error)
 
+	CreateGate(ctx context.Context, gate *Gate) error
+	DeleteGate(ctx context.Context, rkey string) error
+	GetGate(ctx context.Context, rkey string) (*Gate, error)
+	GetUserGates(ctx context.Context, userDID string) ([]*Gate, error)
+
 	CreateChatProfile(ctx context.Context, profile *ChatProfile) error
 	GetChatProfile(ctx context.Context, repoDID string) (*ChatProfile, error)
 
@@ -160,6 +165,7 @@ func MakeDB(dbURL string) (Model, error) {
 		Block{},
 		ChatMessage{},
 		ChatProfile{},
+		Gate{},
 		oatproxy.OAuthSession{},
 		ServerSettings{},
 		XrpcStreamEvent{},
