@@ -14,7 +14,7 @@ export default function MobileGoLive() {
   }
   // get player
   return (
-    <theme.ThemeProvider>
+    <theme.ThemeProvider forcedTheme="dark">
       <KeepAwake />
       <FullscreenProvider>
         <Player ingest src={userProfile.did} name={userProfile.handle} />
