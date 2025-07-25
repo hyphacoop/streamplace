@@ -20,6 +20,8 @@ export const makeLivestreamStore = (): StoreApi<LivestreamState> => {
     streamKey: null,
     setStreamKey: (sk) => set({ streamKey: sk }),
     authors: {},
+    recentSegments: [],
+    problems: [],
   }));
 };
 

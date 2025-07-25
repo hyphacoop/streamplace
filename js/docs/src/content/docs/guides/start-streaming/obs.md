@@ -26,7 +26,7 @@ sidebar:
 6. Click "Generate Stream Key"
    - The stream key will automatically be copied to your clipboard
 
-### 2. Configure OBS Studio
+### 2. Configure OBS Studio <a name="obs-configuration"></a>
 
 #### 2a. Initial OBS Configuration
 

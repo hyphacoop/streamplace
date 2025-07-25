@@ -21,7 +21,9 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	pipelineSlice := []string{
-		"appsrc name=appsrc ! qtdemux name=demux ! fakesink sync=false",
+		"appsrc name=appsrc ! qtdemux name=demux",
+		"demux.video_0 ! queue ! h264parse name=videoparse disable-passthrough=true config-interval=-1 ! h264timestamper ! appsink sync=false name=videoappsink",
+		"demux.audio_0 ! queue ! opusparse name=audioparse ! appsink sync=false name=audioappsink",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -118,6 +120,57 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 		return nil, fmt.Errorf("error connecting pad-add: %w", err)
 	}
 
+	audioSinkElem, err := pipeline.GetElementByName("audioappsink")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get audioappsink element: %w", err)
+	}
+	audioSink := app.SinkFromElement(audioSinkElem)
+	if audioSink == nil {
+		return nil, fmt.Errorf("failed to get audioappsink element: %w", err)
+	}
+
+	audioSink.SetCallbacks(&app.SinkCallbacks{
+		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
+			sample := sink.PullSample()
+			if sample == nil {
+				return gst.FlowOK
+			}
+
+			return gst.FlowOK
+		},
+	})
+
+	videoSinkElem, err := pipeline.GetElementByName("videoappsink")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get videoappsink element: %w", err)
+	}
+	videoSink := app.SinkFromElement(videoSinkElem)
+	if videoSink == nil {
+		return nil, fmt.Errorf("failed to get videoappsink element: %w", err)
+	}
+
+	hasBFrames := false
+	videoSink.SetCallbacks(&app.SinkCallbacks{
+		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
+			sample := sink.PullSample()
+			if sample == nil {
+				return gst.FlowOK
+			}
+
+			buf := sample.GetBuffer()
+			pts := buf.PresentationTimestamp().String()
+			dts := buf.DecodingTimestamp().String()
+
+			if pts != dts {
+				hasBFrames = true
+			} else {
+				log.Log(ctx, "no bframes", "pts", pts, "dts", dts)
+			}
+
+			return gst.FlowOK
+		},
+	})
+
 	go func() {
 		if err := HandleBusMessages(ctx, pipeline); err != nil {
 			log.Log(ctx, "pipeline error", "error", err)
@@ -144,6 +197,8 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 	if audioMetadata == nil {
 		return nil, fmt.Errorf("no audio metadata")
 	}
+
+	videoMetadata.BFrames = hasBFrames
 
 	meta := &model.SegmentMediaData{
 		Video: []*model.SegmentMediadataVideo{videoMetadata},

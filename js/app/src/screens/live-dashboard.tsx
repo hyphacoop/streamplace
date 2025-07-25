@@ -1,4 +1,7 @@
-import { LivestreamProvider } from "@streamplace/components";
+import {
+  LivestreamProvider,
+  useLivestreamStore,
+} from "@streamplace/components";
 import { Camera, FerrisWheel, X } from "@tamagui/lucide-icons";
 import { Redirect } from "components/aqlink";
 import CreateLivestream from "components/create-livestream";
@@ -134,12 +137,27 @@ export default function LiveDashboard() {
             {page === "update" && isLive ? <UpdateLivestream /> : null}
             {page === "create" ? <CreateLivestream /> : null}
           </View>
+          <View>
+            <Problems />
+          </View>
           {madeChoiceAboutDebugRecording ? null : <DebugRecordingPopup />}
         </View>
       </VideoElementProvider>
     </LivestreamProvider>
   );
 }
+
+const Problems = () => {
+  const problems = useLivestreamStore((x) => x.problems);
+  if (problems.length === 0) {
+    return null;
+  }
+  return (
+    <View>
+      <Text>{JSON.stringify(problems, null, 2)}</Text>
+    </View>
+  );
+};
 
 const elems = [
   {
