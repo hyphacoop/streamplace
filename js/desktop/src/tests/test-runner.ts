@@ -8,18 +8,19 @@ import getEnv from "../env";
 import makeNode from "../node";
 import { playbackTest } from "./playback-test";
 import { resumeLoopTest } from "./resume-loop-test";
+import { serverRestartTest } from "./server-restart-test";
 import { syncTest } from "./sync-test";
 import { E2ETest, TestEnv } from "./test-env";
+import { randomPort } from "./util";
 
 const allTests: Record<string, E2ETest> = {
   playback: playbackTest,
   sync: syncTest,
   resume: resumeLoopTest,
+  serverRestart: serverRestartTest,
 };
 
 export const allTestNames = Object.keys(allTests);
-
-const randomPort = () => Math.floor(Math.random() * 20000) + 20000;
 
 export default async function runTests(
   tests: string[],

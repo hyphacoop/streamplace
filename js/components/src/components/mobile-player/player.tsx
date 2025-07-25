@@ -25,6 +25,12 @@ export function Player(
 
   const clearControlsTimeout = usePlayerStore((x) => x.clearControlsTimeout);
 
+  const setReportingURL = usePlayerStore((x) => x.setReportingURL);
+
+  useEffect(() => {
+    setReportingURL(props.reportingURL ?? null);
+  }, [props.reportingURL]);
+
   // Will call back every few seconds to send health updates
   usePlayerStatus();
 

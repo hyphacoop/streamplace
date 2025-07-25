@@ -180,6 +180,12 @@ export interface PlayerState {
 
   /** Function to set the mod message */
   setModMessage: (message: ChatMessageViewHydrated | null) => void;
+
+  /** URL to send player events to (if not default) */
+  reportingURL: string | null;
+
+  /** Function to set the reporting URL */
+  setReportingURL: (reportingURL: string | null) => void;
 }
 
 export type PlayerEvent = {

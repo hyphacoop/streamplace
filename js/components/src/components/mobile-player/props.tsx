@@ -8,4 +8,5 @@ export type PlayerProps = {
   setFullscreen: (isFullscreen: boolean) => void;
   ingest?: boolean;
   embedded?: boolean;
+  reportingURL?: string;
 };

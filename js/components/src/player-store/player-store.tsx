@@ -114,6 +114,10 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     ingestLive: false,
     setIngestLive: (ingestLive: boolean) => set(() => ({ ingestLive })),
 
+    reportingURL: null,
+    setReportingURL: (reportingURL: string | null) =>
+      set(() => ({ reportingURL })),
+
     playerEvent: async (
       url: string,
       time: string,
@@ -131,7 +135,8 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
         };
         try {
           // fetch url from sp provider
-          fetch(`${url}/api/player-event`, {
+          const reportingURL = x.reportingURL ?? `${url}/api/player-event`;
+          fetch(reportingURL, {
             method: "POST",
             body: JSON.stringify(data),
           });
