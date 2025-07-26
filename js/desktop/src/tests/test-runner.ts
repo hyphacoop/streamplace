@@ -27,16 +27,18 @@ export default async function runTests(
   duration: string,
   privateKey: `0x${string}`,
 ): Promise<boolean> {
-  const testFuncs = [];
+  const testsToRun = [];
   for (const test of tests) {
     if (!allTests[test]) {
       throw new Error(`Test ${test} not found`);
     }
-    testFuncs.push(allTests[test]);
+    testsToRun.push(test);
   }
   try {
     const results = [];
-    for (const test of testFuncs) {
+    for (const testName of testsToRun) {
+      const test = allTests[testName];
+      console.log(`============ running test ${testName} ============`);
       let testProc: ChildProcess | undefined;
       try {
         const { skipNode } = getEnv();
