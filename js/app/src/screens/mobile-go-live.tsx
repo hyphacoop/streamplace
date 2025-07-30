@@ -1,6 +1,5 @@
-import { theme } from "@streamplace/components";
+import { KeepAwake, ThemeProvider } from "@streamplace/components";
 import { Redirect } from "components/aqlink";
-import KeepAwake from "components/keep-awake";
 import { Player } from "components/mobile/player";
 import { FullscreenProvider } from "contexts/FullscreenContext";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
@@ -14,11 +13,11 @@ export default function MobileGoLive() {
   }
   // get player
   return (
-    <theme.ThemeProvider forcedTheme="dark">
+    <ThemeProvider forcedTheme="dark">
       <KeepAwake />
       <FullscreenProvider>
         <Player ingest src={userProfile.did} name={userProfile.handle} />
       </FullscreenProvider>
-    </theme.ThemeProvider>
+    </ThemeProvider>
   );
 }

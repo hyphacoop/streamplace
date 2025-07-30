@@ -209,9 +209,9 @@ export const reduceChatIncremental = (
 
     // only change the ref if the profile is different to avoid re-renders elsewhere
     if (
-      profileIsDifferent(message.chatProfile, newAuthors[message.author.handle])
+      profileIsDifferent(message.chatProfile, newAuthors[message.author.did])
     ) {
-      newAuthors[message.author.handle] = message.chatProfile;
+      newAuthors[message.author.did] = message.chatProfile;
     }
 
     // skip messages we already have
@@ -255,17 +255,20 @@ export const reduceChatIncremental = (
 
         if (parentMsgKey) {
           const parentMsg = newChatIndex[parentMsgKey];
-          processedMessage = {
-            ...message,
-            replyTo: {
-              cid: parentMsg.cid,
-              uri: parentMsg.uri,
-              author: parentMsg.author,
-              record: parentMsg.record,
-              chatProfile: parentMsg.chatProfile,
-              indexedAt: parentMsg.indexedAt,
-            },
-          };
+          // Don't allow replies to system messages
+          if (parentMsg.author.did !== "did:sys:system") {
+            processedMessage = {
+              ...message,
+              replyTo: {
+                cid: parentMsg.cid,
+                uri: parentMsg.uri,
+                author: parentMsg.author,
+                record: parentMsg.record,
+                chatProfile: parentMsg.chatProfile,
+                indexedAt: parentMsg.indexedAt,
+              },
+            };
+          }
         }
       }
     }
@@ -302,6 +305,7 @@ export const reduceChatIncremental = (
 
   return {
     ...state,
+    authors: newAuthors,
     chatIndex: newChatIndex,
     chat: newChatList,
     pendingHides: newPendingHides,
