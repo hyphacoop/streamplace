@@ -2,7 +2,8 @@ import {
   LivestreamProvider,
   useLivestreamStore,
 } from "@streamplace/components";
-import { Camera, FerrisWheel, X } from "@tamagui/lucide-icons";
+import { LivestreamProblem } from "@streamplace/components/src/livestream-store/livestream-state";
+import { Camera, ExternalLink, FerrisWheel, X } from "@tamagui/lucide-icons";
 import { Redirect } from "components/aqlink";
 import CreateLivestream from "components/create-livestream";
 import UpdateLivestream from "components/edit-livestream";
@@ -22,6 +23,7 @@ import {
 } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import React, { useCallback, useEffect, useState } from "react";
+import { Linking, Pressable } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Button, H3, H6, isWeb, Text, View } from "tamagui";
 
@@ -123,22 +125,23 @@ export default function LiveDashboard() {
             {closeButton}
           </View>
           <View f={1} ai="center" jc="center" fb={0}>
-            <ButtonSelector
-              values={[
-                { label: "Create", value: "create" },
-                { label: "Update", value: "update" },
-              ]}
-              disabledValues={isLive ? [] : ["update"]}
-              selectedValue={page}
-              setSelectedValue={setPage}
-              maxWidth={250}
-              width="100%"
-            />
-            {page === "update" && isLive ? <UpdateLivestream /> : null}
-            {page === "create" ? <CreateLivestream /> : null}
-          </View>
-          <View>
-            <Problems />
+            <ProblemsWrapper>
+              <>
+                <ButtonSelector
+                  values={[
+                    { label: "Create", value: "create" },
+                    { label: "Update", value: "update" },
+                  ]}
+                  disabledValues={isLive ? [] : ["update"]}
+                  selectedValue={page}
+                  setSelectedValue={setPage}
+                  maxWidth={250}
+                  width="100%"
+                />
+                {page === "update" && isLive ? <UpdateLivestream /> : null}
+                {page === "create" ? <CreateLivestream /> : null}
+              </>
+            </ProblemsWrapper>
           </View>
           {madeChoiceAboutDebugRecording ? null : <DebugRecordingPopup />}
         </View>
@@ -147,15 +150,90 @@ export default function LiveDashboard() {
   );
 }
 
-const Problems = () => {
-  const problems = useLivestreamStore((x) => x.problems);
-  if (problems.length === 0) {
-    return null;
-  }
+const Problems = ({
+  probs,
+  onIgnore,
+}: {
+  probs: LivestreamProblem[];
+  onIgnore: () => void;
+}) => {
   return (
-    <View>
-      <Text>{JSON.stringify(problems, null, 2)}</Text>
+    <View gap={"$3"}>
+      <View>
+        <H3>Optimize Your Stream</H3>
+        <Text>
+          We’ve found a few things that could improve your stream’s reliability.
+        </Text>
+      </View>
+      {probs.map((p) => (
+        <View>
+          <View gap="$2" key={p.message} flexDirection="row" ai="flex-start">
+            <Text
+              borderRadius="$2"
+              px="$2"
+              bg={
+                p.severity === "error"
+                  ? "$red8Dark"
+                  : p.severity === "warning"
+                    ? "$yellow8Dark"
+                    : "$blue8Dark"
+              }
+            >
+              {p.severity}
+            </Text>
+            <View flex={1} gap="$1">
+              <Text>{p.code}</Text>
+              <Text color="$gray11Dark" fontSize="$6">
+                {p.message}
+              </Text>
+              {p.link && (
+                <Pressable onPress={() => p.link && Linking.openURL(p.link)}>
+                  <View flexDirection="row" ai="center" gap="$2">
+                    <Text color="$blue10" fontSize="$6">
+                      Learn More
+                    </Text>
+                    <ExternalLink size="$1" />
+                  </View>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </View>
+      ))}
+
+      <Button onPress={onIgnore}>
+        <Text>Ignore</Text>
+      </Button>
     </View>
+  );
+};
+
+const ProblemsWrapper = ({ children }: { children: React.ReactElement }) => {
+  const problems = useLivestreamStore((x) => x.problems);
+  const [dismiss, setDismiss] = useState(false);
+
+  return (
+    <>
+      {children}
+      {problems.length > 0 && !dismiss && (
+        <Popup
+          onClose={() => setDismiss(true)}
+          containerProps={{
+            top: "$4",
+            zIndex: 1000,
+          }}
+          bubbleProps={{
+            borderColor: "$gray5",
+            borderWidth: 1,
+            backgroundColor: "$gray1",
+            gap: "$3",
+            maxWidth: 400,
+          }}
+        >
+          <Problems probs={problems} onIgnore={() => setDismiss(true)} />
+        </Popup>
+      )}
+    </>
   );
 };
 
