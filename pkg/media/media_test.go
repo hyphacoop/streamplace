@@ -14,7 +14,6 @@ import (
 	"stream.place/streamplace/pkg/config"
 	ct "stream.place/streamplace/pkg/config/configtesting"
 	"stream.place/streamplace/pkg/crypto/signers/eip712/eip712test"
-	_ "stream.place/streamplace/pkg/media/mediatesting"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/replication/boring"
 )
