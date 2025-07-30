@@ -6,6 +6,7 @@ import {
   Player as PlayerInnerInner,
   PlayerProps,
   PlayerProvider,
+  PlayerUI,
   Text,
   usePlayerDimensions,
   usePlayerStore,
@@ -227,6 +228,7 @@ export function PlayerInner(
       >
         <PlayerInnerInner {...props}>
           {(showBottomMetaPanel || fullscreen) && <DesktopUi />}
+          <PlayerUI.ViewerLoadingOverlay />
           <OfflineCounter isMobile={true} />
         </PlayerInnerInner>
       </Animated.View>

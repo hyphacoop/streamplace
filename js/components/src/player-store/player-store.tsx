@@ -68,9 +68,6 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     playTime: 0,
     setPlayTime: (playTime: number) => set(() => ({ playTime })),
 
-    offline: false,
-    setOffline: (offline: boolean) => set(() => ({ offline })),
-
     videoRef: undefined,
     setVideoRef: (
       videoRef:

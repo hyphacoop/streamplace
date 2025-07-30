@@ -89,6 +89,14 @@ export function NativeVideo() {
   }, [setStatus]);
 
   const player = useVideoPlayer(url, (player) => {
+    player.addListener("playingChange", (newIsPlaying) => {
+      console.log("playingChange", newIsPlaying);
+      if (newIsPlaying) {
+        setStatus(PlayerStatus.PLAYING);
+      } else {
+        setStatus(PlayerStatus.WAITING);
+      }
+    });
     player.loop = true;
     player.muted = muted;
     player.play();
@@ -115,12 +123,14 @@ export function NativeVideo() {
     ).map((evType) => {
       return player.addListener(evType, (...args) => {
         const now = new Date();
+        console.log("video native event", evType);
         playerEvent(spurl, now.toISOString(), evType, { args: args });
       });
     });
 
     subs.push(
       player.addListener("playingChange", (newIsPlaying) => {
+        console.log("playingChange", newIsPlaying);
         if (newIsPlaying) {
           setStatus(PlayerStatus.PLAYING);
         } else {
@@ -164,6 +174,7 @@ export function NativeWHEP() {
     PlayerProtocol.WEBRTC,
   );
   const [stream, stuck] = useWebRTC(url);
+  const status = usePlayerStore((x) => x.status);
 
   const setPlayerWidth = usePlayerStore((x) => x.setPlayerWidth);
   const setPlayerHeight = usePlayerStore((x) => x.setPlayerHeight);
@@ -189,22 +200,25 @@ export function NativeWHEP() {
   const volume = usePlayerStore((x) => x.volume);
 
   useEffect(() => {
-    if (stuck) {
+    if (stuck && status === PlayerStatus.PLAYING) {
+      console.log("setting status to stalled", status);
       setStatus(PlayerStatus.STALLED);
-    } else {
+    }
+    if (!stuck && status === PlayerStatus.STALLED) {
+      console.log("setting status to playing", status);
       setStatus(PlayerStatus.PLAYING);
     }
-  }, [stuck, setStatus]);
+  }, [stuck, status]);
 
   const mediaStream = stream as unknown as MediaStream;
 
-  useEffect(() => {
-    if (!mediaStream) {
-      setStatus(PlayerStatus.WAITING);
-      return;
-    }
-    setStatus(PlayerStatus.PLAYING);
-  }, [mediaStream, setStatus]);
+  // useEffect(() => {
+  //   if (!mediaStream) {
+  //     setStatus(PlayerStatus.WAITING);
+  //     return;
+  //   }
+  //   setStatus(PlayerStatus.PLAYING);
+  // }, [mediaStream, setStatus]);
 
   useEffect(() => {
     if (!mediaStream) {

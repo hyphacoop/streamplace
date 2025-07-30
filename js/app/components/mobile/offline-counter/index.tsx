@@ -1,6 +1,6 @@
 import {
   Text,
-  usePlayerStore,
+  useOffline,
   useSegment,
   View,
   zero,
@@ -14,7 +14,7 @@ interface OfflineCounterProps {
 }
 
 export function OfflineCounter({ isMobile = false }: OfflineCounterProps) {
-  const offline = usePlayerStore((state) => state.offline);
+  const offline = useOffline();
   const segment = useSegment();
 
   // Live timer for offline overlay

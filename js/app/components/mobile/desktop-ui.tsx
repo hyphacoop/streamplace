@@ -2,6 +2,7 @@ import {
   PlayerUI,
   Toast,
   useLivestreamInfo,
+  useOffline,
   usePlayerDimensions,
   usePlayerStore,
   useSegment,
@@ -50,7 +51,7 @@ export function DesktopUi() {
   const { width, height } = usePlayerDimensions();
   const { safeAreaInsets, shouldShowFloatingMetrics } = useResponsiveLayout();
 
-  const offline = usePlayerStore((state) => state.offline);
+  const offline = useOffline();
   const showMetrics = usePlayerStore((state) => state.showDebugInfo);
   const pipAction = usePlayerStore((state) => state.pipAction);
   const videoRef = usePlayerStore((state) => state.videoRef);

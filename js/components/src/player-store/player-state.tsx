@@ -99,10 +99,6 @@ export interface PlayerState {
   setPlayTime: (playTime: number) => void;
 
   /** Flag indicating if player is in offline state */
-  offline: boolean;
-
-  /** Function to set the offline state */
-  setOffline: (offline: boolean) => void;
   /** Reference to the video element for direct manipulation (used for PiP) */
   videoRef:
     | React.MutableRefObject<HTMLVideoElement | null>

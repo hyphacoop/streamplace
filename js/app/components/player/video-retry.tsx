@@ -1,4 +1,4 @@
-import { usePlayerStore } from "@streamplace/components";
+import { useOffline } from "@streamplace/components";
 import React, { useEffect, useRef, useState } from "react";
 
 export default function VideoRetry(props: { children: React.ReactNode }) {
@@ -6,7 +6,7 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
   const [retries, setRetries] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
-  const offline = usePlayerStore((x) => x.offline);
+  const offline = useOffline();
 
   useEffect(() => {
     if (!offline && !hasStarted) {

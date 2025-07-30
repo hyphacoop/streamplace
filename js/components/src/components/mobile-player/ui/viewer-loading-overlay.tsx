@@ -18,6 +18,8 @@ export function ViewerLoadingOverlay() {
   const theme = useTheme();
   const opacity = useSharedValue(0);
 
+  console.log("ViewerLoadingOverlay", status);
+
   useEffect(() => {
     if (status === PlayerStatus.PLAYING || status === PlayerStatus.SUSPEND) {
       opacity.value = withTiming(0, { duration: 300 });
