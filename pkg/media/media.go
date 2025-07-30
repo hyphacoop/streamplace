@@ -27,6 +27,8 @@ import (
 	"github.com/piprate/json-gold/ld"
 )
 
+//#cgo pkg-config: streamplacedeps-uninstalled
+
 const CertFile = "cert.pem"
 const SegmentsDir = "segments"
 
