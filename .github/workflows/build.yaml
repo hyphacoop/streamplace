@@ -64,6 +64,8 @@ jobs:
     steps:
       - name: Download bin artifacts
         uses: actions/download-artifact@v4
+        env:
+          STREAMPLACE_TEST_SERIES: "true"
         with:
           name: windows-bin-${{ github.event.pull_request.head.sha }}
           path: ./bin/
