@@ -2,7 +2,7 @@ import {
   ComAtprotoModerationCreateReport,
   ComAtprotoModerationDefs,
 } from "@atproto/api";
-import { CheckCircle, Circle, Loader2 } from "@tamagui/lucide-icons";
+import { CheckCircle, Circle, Loader2 } from "lucide-react-native";
 import React, { useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { zero } from "../../..";
