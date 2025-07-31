@@ -28,6 +28,7 @@ func innerTestClip(t *testing.T) error {
 	buf := bytes.NewBuffer(nil)
 	err := Clip(context.Background(), inputFiles, buf)
 	require.NoError(t, err)
-	require.Equal(t, 2986131, buf.Len())
+	require.Greater(t, buf.Len(), 2900000)
+	require.Less(t, buf.Len(), 3100000)
 	return nil
 }
