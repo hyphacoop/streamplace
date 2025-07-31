@@ -9,6 +9,7 @@ import { useStreamplaceStore } from "../../streamplace-store";
 import { Text, View } from "../ui";
 import { Fullscreen } from "./fullscreen";
 import { PlayerProps } from "./props";
+import ReportModal from "./ui/report-modal";
 
 const OFFLINE_THRESHOLD = 10000;
 
@@ -22,6 +23,10 @@ export function Player(
   const clearControlsTimeout = usePlayerStore((x) => x.clearControlsTimeout);
 
   const setReportingURL = usePlayerStore((x) => x.setReportingURL);
+
+  const reportModalOpen = usePlayerStore((x) => x.reportModalOpen);
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const reportSubject = usePlayerStore((x) => x.reportSubject);
 
   useEffect(() => {
     setReportingURL(props.reportingURL ?? null);
@@ -59,6 +64,11 @@ export function Player(
           layout.flex.center,
         ]}
       >
+        <ReportModal
+          open={reportModalOpen}
+          onOpenChange={setReportModalOpen}
+          subject={reportSubject!}
+        />
         <Fullscreen src={props.src}>{props.children}</Fullscreen>
       </View>
     </>

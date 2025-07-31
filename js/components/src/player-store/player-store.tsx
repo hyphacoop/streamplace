@@ -1,3 +1,4 @@
+import { ComAtprotoModerationCreateReport } from "@atproto/api";
 import { useContext, useEffect, useState } from "react";
 import { ChatMessageViewHydrated } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
@@ -171,6 +172,15 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     modMessage: null,
     setModMessage: (modMessage: ChatMessageViewHydrated | null) =>
       set(() => ({ modMessage })),
+
+    reportModalOpen: false,
+    setReportModalOpen: (reportModalOpen: boolean) =>
+      set(() => ({ reportModalOpen })),
+
+    reportSubject: null,
+    setReportSubject: (
+      subject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null,
+    ) => set(() => ({ reportSubject: subject })),
   }));
 };
 

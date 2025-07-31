@@ -1,3 +1,4 @@
+import { ComAtprotoModerationCreateReport } from "@atproto/api";
 import { ChatMessageViewHydrated } from "streamplace";
 
 export enum PlayerProtocol {
@@ -182,6 +183,20 @@ export interface PlayerState {
 
   /** Function to set the reporting URL */
   setReportingURL: (reportingURL: string | null) => void;
+
+  /** Is the report modal open? */
+  reportModalOpen: boolean;
+
+  /** Function to set the report modal open state */
+  setReportModalOpen: (reportModalOpen: boolean) => void;
+
+  /** Subject to report */
+  reportSubject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null;
+
+  /** Function to set the report subject */
+  setReportSubject: (
+    subject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null,
+  ) => void;
 }
 
 export type PlayerEvent = {

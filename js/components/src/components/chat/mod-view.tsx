@@ -1,4 +1,4 @@
-import { TriggerRef } from "@rn-primitives/dropdown-menu";
+import { TriggerRef, useRootContext } from "@rn-primitives/dropdown-menu";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { gap, mr, w } from "../../lib/theme/atoms";
 import { usePlayerStore } from "../../player-store";
@@ -9,6 +9,7 @@ import {
 import { usePDSAgent } from "../../streamplace-store/xrpc";
 
 import { Linking } from "react-native";
+import { ChatMessageViewHydrated } from "streamplace";
 import { useStreamplaceStore } from "../../streamplace-store";
 import {
   atoms,
@@ -160,6 +161,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
               >
                 <Text color="primary">View user on {BSKY_FRONTEND_DOMAIN}</Text>
               </DropdownMenuItem>
+              <ReportButton message={message} />
             </DropdownMenuGroup>
           </>
         )}
@@ -167,3 +169,29 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
     </DropdownMenu>
   );
 });
+
+export function ReportButton({
+  message,
+}: {
+  message: ChatMessageViewHydrated;
+}) {
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+  const { onOpenChange } = useRootContext();
+  return (
+    <DropdownMenuItem
+      onPress={() => {
+        if (!message) return;
+        onOpenChange?.(false);
+        setReportModalOpen(true);
+        setReportSubject({
+          $type: "com.atproto.repo.strongRef",
+          uri: message.uri,
+          cid: message.cid,
+        });
+      }}
+    >
+      <Text color="warning">Report chat...</Text>
+    </DropdownMenuItem>
+  );
+}
