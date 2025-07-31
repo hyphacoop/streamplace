@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { createStore, StoreApi, useStore } from "zustand";
 import { LivestreamContext } from "./context";
 import { LivestreamState } from "./livestream-state";
@@ -58,19 +58,3 @@ export const useLivestream = () => useLivestreamStore((x) => x.livestream);
 export const useSegment = () => useLivestreamStore((x) => x.segment);
 
 export const useRenditions = () => useLivestreamStore((x) => x.renditions);
-
-// returns true if the livestream has been offline for more than 10 seconds
-export const useOffline = () => {
-  const segment = useLivestreamStore((x) => x.segment);
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-  if (!segment?.startTime) {
-    return false;
-  }
-  return now - Date.parse(segment.startTime) > 10000;
-};

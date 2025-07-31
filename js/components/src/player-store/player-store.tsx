@@ -1,6 +1,7 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ChatMessageViewHydrated } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
+import { useLivestreamStore } from "../livestream-store";
 import { PlayerContext } from "./context";
 import {
   IngestMediaSource,
@@ -243,4 +244,24 @@ export const intoPlayerProtocol = (protocol: string): PlayerProtocol => {
     default:
       return PlayerProtocol.WEBRTC;
   }
+};
+
+// returns true if the livestream has been offline for more than 10 seconds and we're not playing
+export const useOffline = () => {
+  const status = usePlayerStore((x) => x.status);
+  const segment = useLivestreamStore((x) => x.segment);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  if (status === PlayerStatus.PLAYING) {
+    return false;
+  }
+  if (!segment?.startTime) {
+    return false;
+  }
+  return now - Date.parse(segment.startTime) > 10000;
 };
