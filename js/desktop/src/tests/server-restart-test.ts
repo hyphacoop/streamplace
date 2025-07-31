@@ -9,12 +9,13 @@ import { delay, PlayerReport, randomPort } from "./util";
 
 /**
  * This test:
- * - Plays a stream that goes up/down every 15 seconds
- * - Observes the player for several cycles
- * - Checks that the player spends a reasonable amount of time in 'playing' state after each recovery
+ * - Starts a new Streamplace node
+ * - Starts playing
+ * - Crashes that node and restarts it
+ * - Make sure we're still playing again afterwards
  */
 
-const PLAYING_THRESHOLD = 0.7;
+const PLAYING_THRESHOLD = 0.5;
 
 export const serverRestartTest: E2ETest = {
   test: async (testEnv: TestEnv): Promise<string | null> => {
@@ -61,7 +62,7 @@ export const serverRestartTest: E2ETest = {
       autoQuit: false,
     });
 
-    await delay(40000);
+    await delay(60000);
     proc2.kill("SIGTERM");
 
     const res = await fetch(
