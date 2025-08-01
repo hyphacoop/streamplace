@@ -49,9 +49,6 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   // Will get the first player ID from the store
   const playerId = getFirstPlayerID();
 
-  const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
-
-  const setOffline = usePlayerStore((x) => x.setOffline);
   const setIngest = usePlayerStore((x) => x.setIngestConnectionState);
 
   const clearControlsTimeout = usePlayerStore((x) => x.clearControlsTimeout);
@@ -79,31 +76,6 @@ export function PlayerInner(props: Partial<PlayerProps>) {
 
   const segment = useSegment();
   const [lastCheck, setLastCheck] = useState(0);
-
-  useEffect(() => {
-    if (playing) {
-      setOffline(false);
-      return;
-    }
-    if (!segment) {
-      setOffline(false);
-      return;
-    }
-    const startTime = Date.parse(segment.startTime);
-    if (!startTime) {
-      console.error("startTime is not a number", segment.startTime);
-      return;
-    }
-    const timeSinceStart = Date.now() - startTime;
-    if (timeSinceStart > OFFLINE_THRESHOLD) {
-      setOffline(true);
-      return;
-    }
-    const handle = setTimeout(() => {
-      setLastCheck(Date.now());
-    }, 1000);
-    return () => clearTimeout(handle);
-  }, [segment, playing, lastCheck]);
 
   return (
     <View f={1} justifyContent="center" position="relative">

@@ -99,10 +99,6 @@ export interface PlayerState {
   setPlayTime: (playTime: number) => void;
 
   /** Flag indicating if player is in offline state */
-  offline: boolean;
-
-  /** Function to set the offline state */
-  setOffline: (offline: boolean) => void;
   /** Reference to the video element for direct manipulation (used for PiP) */
   videoRef:
     | React.MutableRefObject<HTMLVideoElement | null>
@@ -180,6 +176,12 @@ export interface PlayerState {
 
   /** Function to set the mod message */
   setModMessage: (message: ChatMessageViewHydrated | null) => void;
+
+  /** URL to send player events to (if not default) */
+  reportingURL: string | null;
+
+  /** Function to set the reporting URL */
+  setReportingURL: (reportingURL: string | null) => void;
 }
 
 export type PlayerEvent = {

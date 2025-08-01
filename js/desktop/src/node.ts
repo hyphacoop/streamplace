@@ -56,12 +56,14 @@ export default async function makeNode(opts: {
 
   if (opts.autoQuit) {
     app.on("before-quit", () => {
+      console.log("before-quit");
       proc.kill("SIGTERM");
     });
   }
   proc.on("exit", () => {
     console.log("node exited");
     if (opts.autoQuit) {
+      console.log("exiting app");
       app.quit();
     }
   });

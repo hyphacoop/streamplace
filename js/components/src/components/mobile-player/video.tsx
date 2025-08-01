@@ -176,6 +176,7 @@ const VideoElement = forwardRef<
       firstAttempt,
       videoRef: !!localVideoRef.current,
     });
+    setStatus(PlayerStatus.PLAYING);
     event("canplaythrough")(e);
     if (firstAttempt && localVideoRef.current) {
       setFirstAttempt(false);
@@ -437,7 +438,7 @@ export function WebRTCPlayerInner({
     if (stuck && status === PlayerStatus.PLAYING) {
       setStatus(PlayerStatus.STALLED);
     }
-    if (!stuck && mediaStream) {
+    if (!stuck && status === PlayerStatus.STALLED) {
       setStatus(PlayerStatus.PLAYING);
     }
   }, [stuck, status, mediaStream]);

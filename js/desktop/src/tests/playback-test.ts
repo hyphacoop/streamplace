@@ -89,17 +89,17 @@ export const playbackTest: E2ETest = {
         return { ...t, data: data.whatHappened, retries: data.retries };
       }),
     );
-    let failed = false;
+    const failures = [];
     if (!foundThumbnail) {
       console.log("never found a thumbnail, failing test");
-      failed = true;
+      failures.push("never found a thumbnail");
     }
     const percentages = reports.map((report) => {
       if (typeof report.retries === "number" && report.retries > 1) {
         console.log(`${report.name} had ${report.retries} retries`);
         // we only care about webrtc failures right now
         if (report.name === "webrtc") {
-          failed = true;
+          failures.push("webrtc had retries");
         }
       }
       let total = 0;
@@ -111,14 +111,14 @@ export const playbackTest: E2ETest = {
         pcts[state] = ms / total;
       }
       if (pcts.playing < PLAYING_SUCCESS) {
-        failed = true;
+        failures.push("playing was less than 50%");
       }
       return { ...report, pcts };
     });
     console.log(JSON.stringify(percentages, null, 2));
     await mainWindow.close();
-    if (failed) {
-      return "test failed!";
+    if (failures.length > 0) {
+      return failures.join(", ");
     }
     return null;
   },

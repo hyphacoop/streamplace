@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -118,10 +117,6 @@ func (fs AppHostingFS) Open(name string) (http.File, error) {
 	if err1 == nil {
 		return file, nil
 	}
-	if !errors.Is(err1, os.ErrNotExist) {
-		return nil, err1
-	}
-
 	return nil, ErrorIndex
 }
 

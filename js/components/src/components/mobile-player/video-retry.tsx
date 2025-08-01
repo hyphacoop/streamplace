@@ -1,26 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { usePlayerStore } from "../..";
+import { PlayerStatus, usePlayerStore } from "../..";
 
 export default function VideoRetry(props: { children: React.ReactNode }) {
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [retries, setRetries] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
-
-  const offline = usePlayerStore((x) => x.offline);
+  const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
 
   useEffect(() => {
-    if (!offline && !hasStarted) {
-      console.log("Player is online. Marking as started.");
-      setHasStarted(true);
-    }
-
-    if (offline) {
-      console.log("Player is offline. Incrementing retries.");
-      setRetries((prevRetries) => prevRetries + 1);
-
+    if (!playing) {
       const jitter = 500 + Math.random() * 1500;
       retryTimeoutRef.current = setTimeout(() => {
         console.log("Retrying video playback...");
+        setRetries((prevRetries) => prevRetries + 1);
       }, jitter);
     }
 
@@ -28,9 +19,10 @@ export default function VideoRetry(props: { children: React.ReactNode }) {
       if (retryTimeoutRef.current) {
         console.log("Clearing retry timeout");
         clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
     };
-  }, [offline, hasStarted]);
+  }, [!playing]);
 
   return <React.Fragment key={retries}>{props.children}</React.Fragment>;
 }
