@@ -141,6 +141,7 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 	}()
 	aqt := aqtime.FromTime(not.Segment.StartTime)
 	ctx = log.WithLogValues(ctx, "segID", not.Segment.ID, "repoDID", not.Segment.RepoDID, "timestamp", aqt.FileSafeString())
+	not.Segment.MediaData.SizeB = len(not.Data)
 	err := ss.mod.CreateSegment(not.Segment)
 	if err != nil {
 		return fmt.Errorf("could not add segment to database: %w", err)
