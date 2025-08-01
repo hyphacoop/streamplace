@@ -31,7 +31,7 @@ type SegmentMediaData struct {
 	Video    []*SegmentMediadataVideo `json:"video"`
 	Audio    []*SegmentMediadataAudio `json:"audio"`
 	Duration int64                    `json:"duration"`
-	SizeB    int                      `json:"sizeB"`
+	Size     int                      `json:"size"`
 }
 
 // Scan scan value into Jsonb, implements sql.Scanner interface
@@ -60,7 +60,7 @@ type Segment struct {
 	RepoDID       string            `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
 	Repo          *Repo             `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
 	Title         string            `json:"title"`
-	SizeB         int               `json:"sizeB"                gorm:"column:size_b"`
+	Size          int               `json:"size"                gorm:"column:size"`
 	MediaData     *SegmentMediaData `json:"mediaData,omitempty"`
 }
 
@@ -76,7 +76,7 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 		return nil, fmt.Errorf("audio data is nil")
 	}
 	duration := s.MediaData.Duration
-	sizei64 := int64(s.SizeB)
+	sizei64 := int64(s.Size)
 	return &streamplace.Segment{
 		LexiconTypeID: "place.stream.segment",
 		Creator:       s.RepoDID,

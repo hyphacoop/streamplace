@@ -85,7 +85,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		RepoDID:       repoDID,
 		StartTime:     meta.StartTime.Time(),
 		Title:         meta.Title,
-		SizeB:         len(buf),
+		Size:          len(buf),
 		MediaData:     mediaData,
 	}
 	mm.newSegmentSubsMutex.RLock()
