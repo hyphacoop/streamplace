@@ -22,6 +22,8 @@ type Segment struct {
 	Id string `json:"id" cborgen:"id"`
 	// signingKey: The DID of the signing key used for this segment
 	SigningKey string `json:"signingKey" cborgen:"signingKey"`
+	// size: The size of the segment in bytes
+	Size *int64 `json:"size,omitempty" cborgen:"size,omitempty"`
 	// startTime: When this segment started
 	StartTime string           `json:"startTime" cborgen:"startTime"`
 	Video     []*Segment_Video `json:"video,omitempty" cborgen:"video,omitempty"`

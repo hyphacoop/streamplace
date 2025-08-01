@@ -31,10 +31,11 @@ type SegmentMediaData struct {
 	Video    []*SegmentMediadataVideo `json:"video"`
 	Audio    []*SegmentMediadataAudio `json:"audio"`
 	Duration int64                    `json:"duration"`
+	Size     int                      `json:"size"`
 }
 
 // Scan scan value into Jsonb, implements sql.Scanner interface
-func (j *SegmentMediaData) Scan(value interface{}) error {
+func (j *SegmentMediaData) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
 		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
@@ -59,6 +60,7 @@ type Segment struct {
 	RepoDID       string            `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
 	Repo          *Repo             `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
 	Title         string            `json:"title"`
+	Size          int               `json:"size"                gorm:"column:size"`
 	MediaData     *SegmentMediaData `json:"mediaData,omitempty"`
 }
 
@@ -74,6 +76,7 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 		return nil, fmt.Errorf("audio data is nil")
 	}
 	duration := s.MediaData.Duration
+	sizei64 := int64(s.Size)
 	return &streamplace.Segment{
 		LexiconTypeID: "place.stream.segment",
 		Creator:       s.RepoDID,
@@ -81,6 +84,7 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 		SigningKey:    s.SigningKeyDID,
 		StartTime:     string(aqt),
 		Duration:      &duration,
+		Size:          &sizei64,
 		Video: []*streamplace.Segment_Video{
 			{
 				Codec:  "h264",
