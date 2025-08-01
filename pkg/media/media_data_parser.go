@@ -163,8 +163,6 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 
 			if pts != dts {
 				hasBFrames = true
-			} else {
-				log.Log(ctx, "no bframes", "pts", pts, "dts", dts)
 			}
 
 			return gst.FlowOK
