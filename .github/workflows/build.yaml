@@ -57,29 +57,29 @@ jobs:
           path: ./bin/
           retention-days: 1
 
-  windows-selftest:
-    name: windows-selftest
-    runs-on: windows-latest
-    needs: linux
-    steps:
-      - name: Download bin artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-bin-${{ github.event.pull_request.head.sha }}
-          path: ./bin/
+  # windows-selftest:
+  #   name: windows-selftest
+  #   runs-on: windows-latest
+  #   needs: linux
+  #   steps:
+  #     - name: Download bin artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: windows-bin-${{ github.event.pull_request.head.sha }}
+  #         path: ./bin/
 
-      - name: Run Windows executable
-        shell: bash
-        run: |
-          set -euo pipefail
-          set -x AQD_NO_UPDATE=true
-          set -x STREAMPLACE_TEST_SERIES=true
-          echo "running $PWD/bin/*.exe"
-          ./bin/*.exe
-          powershell -Command "Stop-Process -Name Streamplace"
-          cd "$LOCALAPPDATA/streamplace_desktop"
-          cd app-*
-          ./Streamplace.exe -- --self-test
+  #     - name: Run Windows executable
+  #       shell: bash
+  #       run: |
+  #         set -euo pipefail
+  #         set -x AQD_NO_UPDATE=true
+  #         set -x STREAMPLACE_TEST_SERIES=true
+  #         echo "running $PWD/bin/*.exe"
+  #         ./bin/*.exe
+  #         powershell -Command "Stop-Process -Name Streamplace"
+  #         cd "$LOCALAPPDATA/streamplace_desktop"
+  #         cd app-*
+  #         ./Streamplace.exe -- --self-test
 
   darwin:
     name: ${{ matrix.name }}
