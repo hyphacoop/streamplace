@@ -22,6 +22,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Button, H3, H6, isWeb, Text, View } from "tamagui";
 
+import { ProblemsWrapper } from "components/live-dashboard/problems";
+
 enum StreamSource {
   Start,
   Camera,
@@ -120,19 +122,23 @@ export default function LiveDashboard() {
             {closeButton}
           </View>
           <View f={1} ai="center" jc="center" fb={0}>
-            <ButtonSelector
-              values={[
-                { label: "Create", value: "create" },
-                { label: "Update", value: "update" },
-              ]}
-              disabledValues={isLive ? [] : ["update"]}
-              selectedValue={page}
-              setSelectedValue={setPage}
-              maxWidth={250}
-              width="100%"
-            />
-            {page === "update" && isLive ? <UpdateLivestream /> : null}
-            {page === "create" ? <CreateLivestream /> : null}
+            <ProblemsWrapper>
+              <>
+                <ButtonSelector
+                  values={[
+                    { label: "Create", value: "create" },
+                    { label: "Update", value: "update" },
+                  ]}
+                  disabledValues={isLive ? [] : ["update"]}
+                  selectedValue={page}
+                  setSelectedValue={setPage}
+                  maxWidth={250}
+                  width="100%"
+                />
+                {page === "update" && isLive ? <UpdateLivestream /> : null}
+                {page === "create" ? <CreateLivestream /> : null}
+              </>
+            </ProblemsWrapper>
           </View>
           {madeChoiceAboutDebugRecording ? null : <DebugRecordingPopup />}
         </View>

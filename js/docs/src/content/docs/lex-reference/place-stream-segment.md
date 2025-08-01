@@ -61,6 +61,7 @@ Media file representing a segment of a livestream
 | `width`     | `integer`                  | ✅    |             |              |
 | `height`    | `integer`                  | ✅    |             |              |
 | `framerate` | [`#framerate`](#framerate) | ❌    |             |              |
+| `bframes`   | `boolean`                  | ❌    |             |              |
 
 ---
 
@@ -180,6 +181,9 @@ Media file representing a segment of a livestream
         "framerate": {
           "type": "ref",
           "ref": "#framerate"
+        },
+        "bframes": {
+          "type": "boolean"
         }
       }
     },

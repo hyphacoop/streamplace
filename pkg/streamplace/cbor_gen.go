@@ -1224,7 +1224,11 @@ func (t *Segment_Video) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 4
+	fieldCount := 5
+
+	if t.Bframes == nil {
+		fieldCount--
+	}
 
 	if t.Framerate == nil {
 		fieldCount--
@@ -1298,6 +1302,31 @@ func (t *Segment_Video) MarshalCBOR(w io.Writer) error {
 	} else {
 		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.Height-1)); err != nil {
 			return err
+		}
+	}
+
+	// t.Bframes (bool) (bool)
+	if t.Bframes != nil {
+
+		if len("bframes") > 1000000 {
+			return xerrors.Errorf("Value in field \"bframes\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("bframes"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("bframes")); err != nil {
+			return err
+		}
+
+		if t.Bframes == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if err := cbg.WriteBool(w, *t.Bframes); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -1425,6 +1454,39 @@ func (t *Segment_Video) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.Height = int64(extraI)
+			}
+			// t.Bframes (bool) (bool)
+		case "bframes":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					maj, extra, err = cr.ReadHeader()
+					if err != nil {
+						return err
+					}
+					if maj != cbg.MajOther {
+						return fmt.Errorf("booleans must be major type 7")
+					}
+
+					var val bool
+					switch extra {
+					case 20:
+						val = false
+					case 21:
+						val = true
+					default:
+						return fmt.Errorf("booleans are either major type 7, value 20 or 21 (got %d)", extra)
+					}
+					t.Bframes = &val
+				}
 			}
 			// t.Framerate (streamplace.Segment_Framerate) (struct)
 		case "framerate":

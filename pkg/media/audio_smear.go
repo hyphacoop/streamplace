@@ -137,6 +137,11 @@ func ToBuffers(ctx context.Context, input io.Reader) (*SegmentData, error) {
 		NeedDataFunc: ReaderNeedData(ctx, input),
 	})
 
+	seg := SegmentData{
+		Audio: []SegmentBuffer{},
+		Video: []SegmentBuffer{},
+	}
+
 	audioSinkElem, err := pipeline.GetElementByName("audioappsink")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get audioappsink element: %w", err)
@@ -144,11 +149,6 @@ func ToBuffers(ctx context.Context, input io.Reader) (*SegmentData, error) {
 	audioSink := app.SinkFromElement(audioSinkElem)
 	if audioSink == nil {
 		return nil, fmt.Errorf("failed to get audioappsink element: %w", err)
-	}
-
-	seg := SegmentData{
-		Audio: []SegmentBuffer{},
-		Video: []SegmentBuffer{},
 	}
 
 	audioSink.SetCallbacks(&app.SinkCallbacks{

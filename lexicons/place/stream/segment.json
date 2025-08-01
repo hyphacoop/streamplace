@@ -67,7 +67,8 @@
         "framerate": {
           "type": "ref",
           "ref": "#framerate"
-        }
+        },
+        "bframes": { "type": "boolean" }
       }
     },
     "framerate": {

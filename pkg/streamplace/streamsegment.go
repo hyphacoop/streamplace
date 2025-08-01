@@ -48,6 +48,7 @@ type Segment_SegmentView struct {
 
 // Segment_Video is a "video" in the place.stream.segment schema.
 type Segment_Video struct {
+	Bframes   *bool              `json:"bframes,omitempty" cborgen:"bframes,omitempty"`
 	Codec     string             `json:"codec" cborgen:"codec"`
 	Framerate *Segment_Framerate `json:"framerate,omitempty" cborgen:"framerate,omitempty"`
 	Height    int64              `json:"height" cborgen:"height"`
