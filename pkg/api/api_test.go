@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"stream.place/streamplace/pkg/config"
-	_ "stream.place/streamplace/pkg/media/mediatesting"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/notifications"
 )

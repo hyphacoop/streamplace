@@ -1,4 +1,4 @@
-import { RichText } from "@atproto/api";
+import { ComAtprotoModerationCreateReport, RichText } from "@atproto/api";
 import { useCallback } from "react";
 import {
   ChatMessageViewHydrated,
@@ -130,7 +130,9 @@ const buildSortedChatList = (
     const bTime = parseInt(b.split("-")[0], 10);
     return bTime - aTime;
   });
-  return sortedKeys.map((key) => chatIndex[key]);
+  return sortedKeys
+    .map((key) => chatIndex[key])
+    .filter((msg) => !removedKeys.has(msg.uri));
 };
 
 const profileIsDifferent = (
@@ -173,6 +175,17 @@ export const reduceChatIncremental = (
   const newAuthors = { ...state.authors };
   let hasChanges = false;
   const removedKeys = new Set<string>();
+
+  console.log("newMessages", newMessages);
+
+  for (const msg of newMessages) {
+    if (msg.deleted) {
+      hasChanges = true;
+      console.log("deleted", msg.uri);
+      removedKeys.add(msg.uri);
+    }
+  }
+  newMessages = newMessages.filter((msg) => msg.deleted !== true);
 
   // handle blocks
   if (blocks.length > 0) {
@@ -310,6 +323,67 @@ export const reduceChatIncremental = (
     chat: newChatList,
     pendingHides: newPendingHides,
   };
+};
+
+export const useSubmitReport = () => {
+  const pdsAgent = usePDSAgent();
+  const userDID = useDID();
+
+  return useCallback(
+    async (
+      subject: ComAtprotoModerationCreateReport.InputSchema["subject"],
+      reasonType: string,
+      reason?: string,
+      // no clue about this
+      moderationSvcDid: string = "did:web:stream.place",
+    ) => {
+      if (!pdsAgent || !userDID) {
+        throw new Error("No PDS agent or user DID found");
+      }
+
+      try {
+        const response = await pdsAgent.com.atproto.moderation.createReport(
+          {
+            reasonType,
+            reason,
+            subject: subject,
+          },
+          {
+            headers: {
+              // "atproto-proxy": `${userDID}#atproto_labeler`,
+            },
+          },
+        );
+
+        return response;
+      } catch (error) {
+        console.error("Failed to submit report:", error);
+        throw error;
+      }
+    },
+    [pdsAgent, userDID],
+  );
+};
+
+export const useReportChatMessage = () => {
+  const submitReport = useSubmitReport();
+
+  return useCallback(
+    async (
+      message: ChatMessageViewHydrated,
+      reasonType: string,
+      reason?: string,
+    ) => {
+      const reportSubject = {
+        $type: "com.atproto.repo.strongRef",
+        uri: message.uri,
+        cid: message.cid,
+      };
+
+      return await submitReport(reportSubject, reasonType, reason);
+    },
+    [submitReport],
+  );
 };
 
 export const reduceChat = reduceChatIncremental;

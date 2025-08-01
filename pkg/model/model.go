@@ -37,7 +37,7 @@ type Model interface {
 	CreateSegment(segment *Segment) error
 	MostRecentSegments() ([]Segment, error)
 	LatestSegmentForUser(user string) (*Segment, error)
-	LatestSegmentsForUser(user string, limit int, before *time.Time) ([]Segment, error)
+	LatestSegmentsForUser(user string, limit int, before *time.Time, after *time.Time) ([]Segment, error)
 	CreateThumbnail(thumb *Thumbnail) error
 	LatestThumbnailForUser(user string) (*Thumbnail, error)
 	GetSegment(id string) (*Segment, error)
@@ -107,6 +107,13 @@ type Model interface {
 	GetCommitEventsSince(repoDID string, t time.Time) ([]*XrpcStreamEvent, error)
 	GetCommitEventsSinceSeq(repoDID string, seq int64) ([]*XrpcStreamEvent, error)
 	GetMostRecentCommitEvent(repoDID string) (*XrpcStreamEvent, error)
+
+	CreateLabeler(did string) (*Labeler, error)
+	GetLabeler(did string) (*Labeler, error)
+	UpdateLabelerCursor(did string, cursor int64) error
+
+	CreateLabel(label *Label) error
+	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
 }
 
 func MakeDB(dbURL string) (Model, error) {
@@ -169,6 +176,8 @@ func MakeDB(dbURL string) (Model, error) {
 		oatproxy.OAuthSession{},
 		ServerSettings{},
 		XrpcStreamEvent{},
+		Labeler{},
+		Label{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

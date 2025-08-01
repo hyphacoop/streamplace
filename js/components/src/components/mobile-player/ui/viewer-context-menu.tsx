@@ -1,3 +1,4 @@
+import { useRootContext } from "@rn-primitives/dropdown-menu";
 import { Settings } from "lucide-react-native";
 import { colors } from "../../../lib/theme";
 import { useLivestreamStore } from "../../../livestream-store";
@@ -7,6 +8,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuGroup,
   DropdownMenuInfo,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -65,7 +67,33 @@ export function ContextMenu() {
             <Text>Show Debug Info</Text>
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
+        <DropdownMenuGroup title="Report">
+          <ReportButton />
+        </DropdownMenuGroup>
       </ResponsiveDropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function ReportButton() {
+  const livestream = useLivestreamStore((x) => x.livestream);
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+  const { onOpenChange } = useRootContext();
+  return (
+    <DropdownMenuItem
+      onPress={() => {
+        if (!livestream) return;
+        onOpenChange?.(false);
+        setReportModalOpen(true);
+        setReportSubject({
+          $type: "com.atproto.repo.strongRef",
+          uri: livestream.uri,
+          cid: livestream.cid,
+        });
+      }}
+    >
+      <Text>Report Livestream...</Text>
+    </DropdownMenuItem>
   );
 }
