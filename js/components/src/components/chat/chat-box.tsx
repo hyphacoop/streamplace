@@ -1,5 +1,5 @@
 import Picker from "@emoji-mart/react";
-import { AtSignIcon, X } from "lucide-react-native";
+import { AtSignIcon, ExternalLink, X } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, TextInput } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
@@ -9,6 +9,7 @@ import {
   Text,
   useChat,
   useCreateChatMessage,
+  useLivestream,
   useReplyToMessage,
   useSetReplyToMessage,
   View,
@@ -40,10 +41,12 @@ export function ChatBox({
   isPopout,
   chatBoxStyle,
   emojiData,
+  setIsChatVisible,
 }: {
   isPopout?: boolean;
   chatBoxStyle?: any;
   emojiData: EmojiData;
+  setIsChatVisible?: (visible: boolean) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -58,6 +61,8 @@ export function ChatBox({
     new Map(),
   );
   const [filteredEmojis, setFilteredEmojis] = useState<any[]>([]);
+
+  let linfo = useLivestream();
 
   const chat = useChat();
   const createChatMessage = useCreateChatMessage();
@@ -438,6 +443,21 @@ export function ChatBox({
               <Text>{COOL_EMOJI_LIST[emojiIconIndex]}</Text>
             </Button>
           </Pressable>
+          {!isPopout && (
+            <Button
+              variant="secondary"
+              style={{ borderRadius: 16, height: 36, maxWidth: 36 }}
+              onPress={() => {
+                if (!linfo) return;
+                const u = new URL(window.location.href);
+                u.pathname = `/chat-popout/${linfo?.author?.did}`;
+                window.open(u.toString(), "_blank", "popup=true");
+                setIsChatVisible?.(false);
+              }}
+            >
+              <ExternalLink size={16} />
+            </Button>
+          )}
         </View>
       )}
     </View>
