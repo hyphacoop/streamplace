@@ -130,7 +130,9 @@ const buildSortedChatList = (
     const bTime = parseInt(b.split("-")[0], 10);
     return bTime - aTime;
   });
-  return sortedKeys.map((key) => chatIndex[key]);
+  return sortedKeys
+    .map((key) => chatIndex[key])
+    .filter((msg) => !removedKeys.has(msg.uri));
 };
 
 const profileIsDifferent = (
@@ -173,6 +175,17 @@ export const reduceChatIncremental = (
   const newAuthors = { ...state.authors };
   let hasChanges = false;
   const removedKeys = new Set<string>();
+
+  console.log("newMessages", newMessages);
+
+  for (const msg of newMessages) {
+    if (msg.deleted) {
+      hasChanges = true;
+      console.log("deleted", msg.uri);
+      removedKeys.add(msg.uri);
+    }
+  }
+  newMessages = newMessages.filter((msg) => msg.deleted !== true);
 
   // handle blocks
   if (blocks.length > 0) {
