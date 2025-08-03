@@ -14,7 +14,7 @@ import {
 } from "@streamplace/components";
 import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Image, Pressable } from "react-native";
+import { Image, Pressable, TouchableWithoutFeedback } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -93,7 +93,7 @@ export function MobileUi() {
 
   return (
     <>
-      <Pressable onPress={resetFadeTimer}>
+      <TouchableWithoutFeedback onPress={resetFadeTimer}>
         <Animated.View
           style={[
             layout.position.absolute,
@@ -249,7 +249,7 @@ export function MobileUi() {
             duration={5}
           />
         </Animated.View>
-      </Pressable>
+      </TouchableWithoutFeedback>
 
       {!isSelfAndNotLive && (
         <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
