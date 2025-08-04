@@ -346,8 +346,6 @@ export function ChatBox({
                 if (filteredEmojis.length > 0) {
                   handleEmojiSelect(filteredEmojis[highlightedIndex]);
                 }
-              } else {
-                submit();
               }
             } else if (k.nativeEvent.key === "ArrowUp") {
               if (showSuggestions || showEmojiSuggestions) {
