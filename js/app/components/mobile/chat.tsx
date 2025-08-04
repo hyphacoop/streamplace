@@ -21,7 +21,7 @@ import { useResponsiveLayout } from "./useResponsiveLayout";
 import { useNavigation } from "@react-navigation/native";
 import { ArrowRight } from "@tamagui/lucide-icons";
 import emojiData from "assets/emoji-data.json";
-const { borderRadius, gap, layout, flex, px, py, r, position, bottom } = zero;
+const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
 export function DesktopChatPanel({
   chatVisible,
@@ -107,12 +107,14 @@ function ChatPanel() {
     <View
       style={[
         layout.flex.column,
-        flex.shrink[1],
+        flex.values[1],
         { width: "100%", maxWidth: "100%" },
       ]}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <Chat canModerate={canModerate} />
+        <View style={[flex.values[1]]}>
+          <Chat canModerate={canModerate} />
+        </View>
       </TouchableWithoutFeedback>
       <View style={[layout.flex.column, gap.all[2], px[4]]}>
         {handle ? (
