@@ -108,6 +108,7 @@ type CLI struct {
 	AppleTeamID            string
 	AndroidCertFingerprint string
 	Labelers               []string
+	AtprotoDID             string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -166,6 +167,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.AppleTeamID, "apple-team-id", "", "apple team id for deep linking")
 	fs.StringVar(&cli.AndroidCertFingerprint, "android-cert-fingerprint", "", "android cert fingerprint for deep linking")
 	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
+	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
 
 	if runtime.GOOS == "linux" {
 		fs.BoolVar(&cli.NoMist, "no-mist", true, "Disable MistServer")
