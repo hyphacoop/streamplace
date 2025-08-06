@@ -45,6 +45,9 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   let { createBlock, isLoading: isBlockLoading } = useCreateBlockRecord();
   let { createHideChat, isLoading: isHideLoading } = useCreateHideChatRecord();
 
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+
   // get the channel did
   const channelId = usePlayerStore((state) => state.src);
   // get the logged in user's identity
@@ -161,7 +164,11 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
               >
                 <Text color="primary">View user on {BSKY_FRONTEND_DOMAIN}</Text>
               </DropdownMenuItem>
-              <ReportButton message={message} />
+              <ReportButton
+                message={message}
+                setReportModalOpen={setReportModalOpen}
+                setReportSubject={setReportSubject}
+              />
             </DropdownMenuGroup>
           </>
         )}
@@ -172,11 +179,13 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
 
 export function ReportButton({
   message,
+  setReportModalOpen,
+  setReportSubject,
 }: {
   message: ChatMessageViewHydrated;
+  setReportModalOpen: (open: boolean) => void;
+  setReportSubject: (subject: any) => void;
 }) {
-  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
-  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
   const { onOpenChange } = useRootContext();
   return (
     <DropdownMenuItem

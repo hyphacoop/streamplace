@@ -200,6 +200,8 @@ export const DropdownMenuContent = forwardRef<
   );
 });
 
+/// Responsive Dropdown Menu Content. On mobile this will render a *bottom sheet* that is **portaled to the root of the app**.
+/// Prefer passing scoped content in as **otherwise it may crash the app**.
 export const ResponsiveDropdownMenuContent = forwardRef<any, any>(
   ({ children, ...props }, ref) => {
     const { width } = useWindowDimensions();
