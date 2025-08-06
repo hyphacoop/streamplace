@@ -27,6 +27,10 @@ export function ContextMenu() {
   const debugInfo = usePlayerStore((x) => x.showDebugInfo);
   const setShowDebugInfo = usePlayerStore((x) => x.setShowDebugInfo);
 
+  const livestream = useLivestreamStore((x) => x.livestream);
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+
   const lowLatency = protocol === "webrtc";
   const setLowLatency = (value: boolean) => {
     setProtocol(value ? PlayerProtocol.WEBRTC : PlayerProtocol.HLS);
@@ -68,17 +72,22 @@ export function ContextMenu() {
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
         <DropdownMenuGroup title="Report">
-          <ReportButton />
+          <ReportButton
+            livestream={livestream}
+            setReportModalOpen={setReportModalOpen}
+            setReportSubject={setReportSubject}
+          />
         </DropdownMenuGroup>
       </ResponsiveDropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-export function ReportButton() {
-  const livestream = useLivestreamStore((x) => x.livestream);
-  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
-  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+export function ReportButton({
+  livestream,
+  setReportModalOpen,
+  setReportSubject,
+}) {
   const { onOpenChange } = useRootContext();
   return (
     <DropdownMenuItem
