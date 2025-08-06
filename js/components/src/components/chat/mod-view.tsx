@@ -158,7 +158,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
               <DropdownMenuItem
                 onPress={() => {
                   Linking.openURL(
-                    `https://${BSKY_FRONTEND_DOMAIN}/profile/${channelId}`,
+                    `https://${BSKY_FRONTEND_DOMAIN}/profile/${message.author.handle}`,
                   );
                 }}
               >
