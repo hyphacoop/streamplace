@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/decred/dcrd/dcrec/secp256k1"
 	"github.com/mr-tron/base58"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/media"
 )
@@ -57,6 +59,19 @@ func Sign(ctx context.Context) error {
 		StreamerName: *streamerName,
 		TAURL:        *taURL,
 		AQPub:        pub,
+	}
+
+	// Check for user consent data in environment variable
+	userConsentData := os.Getenv("STREAMPLACE_USER_CONSENT_DATA")
+	if userConsentData != "" {
+		var contentWarnings []string
+		err := json.Unmarshal([]byte(userConsentData), &contentWarnings)
+		if err == nil && len(contentWarnings) > 0 {
+			userConsent := &config.UserConsentData{
+				ContentWarnings: contentWarnings,
+			}
+			ms.SetUserConsent(userConsent)
+		}
 	}
 
 	inputBs, err := io.ReadAll(os.Stdin)

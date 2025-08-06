@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,9 +16,11 @@ import (
 	"github.com/pion/webrtc/v4"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/errors"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
@@ -216,6 +219,37 @@ func (a *StreamplaceAPI) HandleWebRTCIngest(ctx context.Context) httprouter.Hand
 		if err != nil {
 			errors.WriteHTTPUnauthorized(w, "invalid authorization key", err)
 			return
+		}
+
+		// Check for user consent data header
+		userConsentData := r.Header.Get("X-User-Consent-Data")
+		if userConsentData != "" {
+			log.Log(ctx, "received user consent data header", "data", userConsentData)
+			var contentWarnings []string
+			err := json.Unmarshal([]byte(userConsentData), &contentWarnings)
+			if err != nil {
+				log.Warn(ctx, "failed to parse user consent data header", "error", err)
+			} else if len(contentWarnings) > 0 {
+				log.Log(ctx, "parsed content warnings from header", "warnings", contentWarnings)
+				// Create user consent data and set it on the media signer
+				userConsent := &config.UserConsentData{
+					ContentWarnings: contentWarnings,
+				}
+				// Try to set user consent on both MediaSignerLocal and MediaSignerExt
+				if localSigner, ok := mediaSigner.(*media.MediaSignerLocal); ok {
+					localSigner.SetUserConsent(userConsent)
+					log.Log(ctx, "set user consent data on MediaSignerLocal", "streamer", localSigner.Streamer())
+				} else if extSigner, ok := mediaSigner.(*media.MediaSignerExt); ok {
+					extSigner.SetUserConsent(userConsent)
+					log.Log(ctx, "set user consent data on MediaSignerExt", "streamer", extSigner.Streamer())
+				} else {
+					log.Warn(ctx, "media signer is neither MediaSignerLocal nor MediaSignerExt, cannot set user consent", "type", fmt.Sprintf("%T", mediaSigner))
+				}
+			} else {
+				log.Log(ctx, "no content warnings found in header data")
+			}
+		} else {
+			log.Log(ctx, "no user consent data header received")
 		}
 
 		body, err := io.ReadAll(r.Body)

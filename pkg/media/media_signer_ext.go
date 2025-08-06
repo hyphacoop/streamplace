@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -21,14 +22,15 @@ import (
 )
 
 type MediaSignerExt struct {
-	cli      *config.CLI
-	signer   crypto.Signer
-	pub      aqpub.Pub
-	certPath string
-	streamer string
-	keyBs    []byte
-	taURL    string
-	did      string
+	cli         *config.CLI
+	signer      crypto.Signer
+	pub         aqpub.Pub
+	certPath    string
+	streamer    string
+	keyBs       []byte
+	taURL       string
+	did         string
+	UserConsent *config.UserConsentData
 }
 
 func MakeMediaSignerExt(ctx context.Context, cli *config.CLI, streamer string, keyBs []byte) (MediaSigner, error) {
@@ -84,6 +86,14 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 	// overwrite so that our subprocesses don't do their own leak checking
 	cmd.Env = append(os.Environ(), "LD_PRELOAD=")
 
+	// Add user consent data as environment variable if available
+	if ms.UserConsent != nil && len(ms.UserConsent.ContentWarnings) > 0 {
+		jsonData, err := json.Marshal(ms.UserConsent.ContentWarnings)
+		if err == nil {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("STREAMPLACE_USER_CONSENT_DATA=%s", string(jsonData)))
+		}
+	}
+
 	// Set up pipes for stdin and stdout
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -125,4 +135,9 @@ func (ms *MediaSignerExt) Streamer() string {
 
 func (ms *MediaSignerExt) DID() string {
 	return ms.did
+}
+
+// SetUserConsent sets the user consent data for this media signer
+func (ms *MediaSignerExt) SetUserConsent(userConsent *config.UserConsentData) {
+	ms.UserConsent = userConsent
 }

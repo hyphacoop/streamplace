@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/pion/webrtc/v4"
 	pionmedia "github.com/pion/webrtc/v4/pkg/media"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/spkey"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/log"
@@ -29,6 +32,7 @@ func WHIP(args []string) error {
 	file := fs.String("file", "", "file to stream (needs to be an MP4 containing H264 video and Opus audio)")
 	endpoint := fs.String("endpoint", "http://127.0.0.1:38080", "endpoint to send the WHIP request to")
 	freezeAfter := fs.Duration("freeze-after", 0, "freeze the stream after the given duration")
+	userConsentConfig := fs.String("user-consent-config", "", "Path to YAML file containing user consent configuration")
 	err := fs.Parse(args)
 	if *file == "" {
 		return fmt.Errorf("file is required")
@@ -46,24 +50,26 @@ func WHIP(args []string) error {
 	}
 
 	w := &WHIPClient{
-		StreamKey:   *streamKey,
-		File:        *file,
-		Endpoint:    *endpoint,
-		Count:       *count,
-		FreezeAfter: *freezeAfter,
-		Viewers:     *viewers,
+		StreamKey:        *streamKey,
+		File:             *file,
+		Endpoint:         *endpoint,
+		Count:            *count,
+		FreezeAfter:      *freezeAfter,
+		Viewers:          *viewers,
+		UserConsentConfig: *userConsentConfig,
 	}
 
 	return w.WHIP(ctx)
 }
 
 type WHIPClient struct {
-	StreamKey   string
-	File        string
-	Endpoint    string
-	Count       int
-	FreezeAfter time.Duration
-	Viewers     int
+	StreamKey        string
+	File             string
+	Endpoint         string
+	Count            int
+	FreezeAfter      time.Duration
+	Viewers          int
+	UserConsentConfig string
 }
 
 var failureStates = []webrtc.ICEConnectionState{
@@ -306,10 +312,10 @@ func (w *WHIPClient) WHIP(ctx context.Context) error {
 func (w *WHIPClient) StartWHIPConnection(ctx context.Context, streamKey string, did string) (*WHIPConnection, error) {
 
 	// Prepare the configuration
-	config := webrtc.Configuration{}
+	webrtcConfig := webrtc.Configuration{}
 
 	// Create a new RTCPeerConnection
-	peerConnection, err := webrtc.NewPeerConnection(config)
+	peerConnection, err := webrtc.NewPeerConnection(webrtcConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -360,6 +366,35 @@ func (w *WHIPClient) StartWHIPConnection(ctx context.Context, streamKey string, 
 	}
 	req.Header.Set("Authorization", "Bearer "+streamKey)
 	req.Header.Set("Content-Type", "application/sdp")
+
+	// Add user consent data header if YAML file is provided
+	if w.UserConsentConfig != "" {
+		log.Log(ctx, "reading user consent config file", "path", w.UserConsentConfig)
+		data, err := os.ReadFile(w.UserConsentConfig)
+		if err != nil {
+			log.Warn(ctx, "failed to read user consent config file", "path", w.UserConsentConfig, "error", err)
+		} else {
+			log.Log(ctx, "successfully read user consent config file", "size", len(data))
+			userConsent, err := config.ParseUserConsentFromYAML(data)
+			if err != nil {
+				log.Warn(ctx, "failed to parse user consent config file", "path", w.UserConsentConfig, "error", err)
+			} else if userConsent != nil && len(userConsent.ContentWarnings) > 0 {
+				log.Log(ctx, "parsed user consent data", "contentWarnings", userConsent.ContentWarnings)
+				// Convert content warnings to JSON for HTTP header
+				jsonData, err := json.Marshal(userConsent.ContentWarnings)
+				if err != nil {
+					log.Warn(ctx, "failed to marshal content warnings to JSON", "error", err)
+				} else {
+					log.Log(ctx, "sending user consent data header", "jsonData", string(jsonData))
+					req.Header.Set("X-User-Consent-Data", string(jsonData))
+				}
+			} else {
+				log.Log(ctx, "no content warnings found in user consent data")
+			}
+		}
+	} else {
+		log.Log(ctx, "no user consent config file specified")
+	}
 
 	// Execute the request
 	resp, err := client.Do(req)

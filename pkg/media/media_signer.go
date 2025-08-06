@@ -37,6 +37,7 @@ type MediaSignerLocal struct {
 	Cert         []byte
 	TAURL        string
 	did          string
+	UserConsent  *config.UserConsentData
 }
 
 func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]byte, string, error) {
@@ -128,6 +129,18 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 			},
 		},
 	}
+	// Add user consent data to C2PA manifest if available
+	if ms.UserConsent != nil && len(ms.UserConsent.ContentWarnings) > 0 {
+		log.Log(ctx, "adding content warnings to C2PA manifest", "warnings", ms.UserConsent.ContentWarnings)
+		mani["assertions"] = append(mani["assertions"].([]obj), obj{
+			"label": "place.stream.contentWarnings",
+			"data": obj{
+				"contentWarnings": ms.UserConsent.ContentWarnings,
+			},
+		})
+	} else {
+		log.Log(ctx, "no user consent data available for C2PA manifest")
+	}
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_MarshalManifest")
 	manifestBs, err := json.Marshal(mani)
 	if err != nil {
@@ -184,4 +197,9 @@ func (ms *MediaSignerLocal) Pub() aqpub.Pub {
 
 func (ms *MediaSignerLocal) DID() string {
 	return ms.did
+}
+
+// SetUserConsent sets the user consent data for this media signer
+func (ms *MediaSignerLocal) SetUserConsent(userConsent *config.UserConsentData) {
+	ms.UserConsent = userConsent
 }
