@@ -5,6 +5,7 @@ $(shell mkdir -p $(OUT_DIR))
 default: app node
 
 VERSION?=$(shell go run ./pkg/config/git/git.go -v)
+VERSION_NO_V=$(subst v,,$(VERSION))
 VERSION_ELECTRON=$(subst -,-z,$(subst v,,$(VERSION)))
 UUID?=$(shell go run ./pkg/config/uuid/uuid.go)
 BRANCH?=$(shell go run ./pkg/config/git/git.go --branch)
@@ -609,22 +610,77 @@ docker-mistserver:
 		-t dist.stream.place/streamplace/streamplace:mistserver \
 		.
 
+FPM_BASE_OPTS= \
+	-s dir \
+	-t deb \
+	-v $(VERSION_NO_V) \
+	--force \
+	--license=GPL-3.0-or-later \
+	--maintainer="Streamplace <support@stream.place>" \
+	--vendor="Streamplace" \
+	--url="https://stream.place"
+SP_ARCH_NAME?=amd64
+.PHONY: deb-pkg
+deb-pkg:
+	fpm $(FPM_BASE_OPTS) \
+		-n streamplace \
+		-a $(SP_ARCH_NAME) \
+		-p bin/streamplace-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
+		--deb-systemd=util/systemd/streamplace.service \
+		--deb-systemd-auto-start \
+		--deb-systemd-enable \
+		--deb-systemd-restart-after-upgrade \
+		--after-install=util/systemd/after-install.sh \
+		--description="Live video for the AT Protocol. Solving video for everybody forever." \
+		build-linux-$(SP_ARCH_NAME)/streamplace=/usr/bin/streamplace \
+	&& fpm $(FPM_BASE_OPTS) \
+		-n streamplace-default-http \
+		-a $(SP_ARCH_NAME) \
+		-d streamplace \
+		--deb-systemd-auto-start \
+		--deb-systemd-enable \
+		--deb-systemd-restart-after-upgrade \
+		-p bin/streamplace-default-http-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
+		--description="Installing this package will install Streamplace as the default HTTP server on ports 80 and 443." \
+		util/systemd/streamplace-http.socket=/lib/systemd/system/streamplace-http.socket \
+		util/systemd/streamplace-https.socket=/lib/systemd/system/streamplace-https.socket
+
+.PHONY: pkg-linux-amd64
+pkg-linux-amd64:
+	$(MAKE) deb-pkg SP_ARCH_NAME=amd64
+
+.PHONY: pkg-linux-arm64
+pkg-linux-arm64:
+	$(MAKE) deb-pkg SP_ARCH_NAME=arm64
+
+.PHONY: pkg-darwin-amd64
+pkg-darwin-amd64:
+	echo todo
+
+.PHONY: pkg-darwin-arm64
+pkg-darwin-arm64:
+	echo todo
+
+.PHONY: pkg-windows-amd64
+pkg-windows-amd64:
+	echo todo
+
 .PHONY: ci-upload
 ci-upload: ci-upload-node ci-upload-android
 
 .PHONY: ci-upload-node-linux-amd64
 ci-upload-node-linux-amd64:
-	export file=streamplace-$(VERSION)-linux-amd64.tar.gz \
-	&& $(MAKE) ci-upload-file upload_file=$$file; \
-	export file=streamplace-desktop-$(VERSION)-linux-amd64.AppImage \
-	&& $(MAKE) ci-upload-file upload_file=$$file;
+	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-amd64.tar.gz \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-desktop-$(VERSION)-linux-amd64.AppImage \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-default-http-$(VERSION)-linux-amd64.deb \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-amd64.deb
 
 .PHONY: ci-upload-node-linux-arm64
 ci-upload-node-linux-arm64:
-	export file=streamplace-$(VERSION)-linux-arm64.tar.gz \
-	&& $(MAKE) ci-upload-file upload_file=$$file; \
-	export file=streamplace-desktop-$(VERSION)-linux-arm64.AppImage \
-	&& $(MAKE) ci-upload-file upload_file=$$file;
+	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-arm64.tar.gz \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-desktop-$(VERSION)-linux-arm64.AppImage \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-default-http-$(VERSION)-linux-arm64.deb \
+	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-arm64.deb
 
 .PHONY: ci-upload-node-darwin-arm64
 ci-upload-node-darwin-arm64:
@@ -687,6 +743,15 @@ ci-upload-file:
 		--upload-file bin/$(upload_file) \
 		"$$CI_API_V4_URL/projects/$$CI_PROJECT_ID/packages/generic/$(BRANCH)/$(VERSION)/$(upload_file)";
 
+download_file?=""
+.PHONY: ci-download-file
+ci-download-file:
+	curl \
+		--fail-with-body \
+		--header "JOB-TOKEN: $$CI_JOB_TOKEN" \
+		-o bin/$(download_file) \
+		"$$CI_API_V4_URL/projects/$$CI_PROJECT_ID/packages/generic/$(BRANCH)/$(VERSION)/$(download_file)";
+
 .PHONY: release
 release: install
 	$(MAKE) lexicons
@@ -697,6 +762,31 @@ ci-release:
 	go install gitlab.com/gitlab-org/release-cli/cmd/release-cli
 	go run ./pkg/config/git/git.go -release -o release.yml
 	release-cli create-from-file --file release.yml
+
+.PHONY: deb-release
+deb-release:
+	aptly repo create -distribution=all -component=main streamplace-releases
+	aptly mirror create old-version $$S3_PUBLIC_URL/debian all
+	aptly mirror update old-version
+	aptly repo import old-version streamplace-releases streamplace streamplace-default-http
+	aptly repo add streamplace-releases \
+		bin/streamplace-default-http-$(VERSION)-linux-arm64.deb \
+		bin/streamplace-$(VERSION)-linux-arm64.deb \
+		bin/streamplace-default-http-$(VERSION)-linux-amd64.deb \
+		bin/streamplace-$(VERSION)-linux-amd64.deb
+	aptly snapshot create streamplace-$(VERSION) from repo streamplace-releases
+	aptly publish snapshot -distribution=all streamplace-$(VERSION) s3:streamplace-releases:
+
+.PHONY: ci-deb-release
+ci-deb-release:
+	$(MAKE) ci-download-file download_file=streamplace-default-http-$(VERSION)-linux-amd64.deb
+	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-linux-amd64.deb
+	$(MAKE) ci-download-file download_file=streamplace-default-http-$(VERSION)-linux-arm64.deb
+	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-linux-arm64.deb
+	echo $$CI_SIGNING_KEY_BASE64 | base64 -d | gpg --import
+	gpg --armor --export | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+	echo '{"S3PublishEndpoints":{"streamplace-releases":{"region":"'$$S3_REGION'","bucket":"'$$S3_BUCKET_NAME'","endpoint":"'$$S3_ENDPOINT'","acl":"public-read","prefix":"debian"}}}' > ~/.aptly.conf
+	$(MAKE) deb-release
 
 .PHONY: check
 check: install
@@ -720,3 +810,30 @@ dockerfile-hash-precommit:
 .PHONY: rtcrec
 rtcrec:
 	go build -o $(BUILDDIR)/rtcrec ./pkg/rtcrec/cmd/...
+
+.PHONY: homebrew
+homebrew:
+	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-linux-amd64.tar.gz
+	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-linux-arm64.tar.gz
+	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-darwin-amd64.tar.gz
+	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-darwin-arm64.tar.gz
+	git clone git@github.com:streamplace/homebrew-streamplace.git /tmp/homebrew-streamplace
+	go run ./pkg/config/git/git.go -homebrew -o /tmp/homebrew-streamplace/Formula/streamplace.rb
+
+.PHONY: ci-homebrew
+ci-homebrew:
+	git config --global user.name "Streamplace Homebrew Robot"
+	git config --global user.email support@stream.place
+	mkdir -p ~/.ssh
+	echo "Host * \n\
+	  StrictHostKeyChecking no \n\
+	  UserKnownHostsFile=/dev/null" > ~/.ssh/config
+	echo "$$CI_HOMEBREW_KEY_BASE64" | base64 -d > ~/.ssh/id_ed25519
+	chmod 600 ~/.ssh/id_ed25519
+
+	chmod 600 ~/.ssh/config
+	$(MAKE) homebrew
+	cd /tmp/homebrew-streamplace \
+	&& git add . \
+	&& git commit -m "Update streamplace $(VERSION)" \
+	&& git push
