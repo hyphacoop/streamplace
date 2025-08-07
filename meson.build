@@ -80,6 +80,17 @@ c2pa_go_proj = subproject(
 )
 c2pa_go_dep = c2pa_go_proj.get_variable('c2pa_go_dep')
 
+iroh_streamplace_opts = {}
+triple = meson.get_external_property('RUST_TRIPLE', '')
+if triple != ''
+  iroh_streamplace_opts += {'RUST_TRIPLE': triple}
+endif
+iroh_streamplace_proj = subproject(
+  'iroh_streamplace',
+  default_options: iroh_streamplace_opts,
+)
+iroh_streamplace_dep = iroh_streamplace_proj.get_variable('iroh_streamplace_dep')
+
 streamplace_deps = []
 # if host_machine.system() == 'linux'
 #   mistserver_proj = subproject(
@@ -232,7 +243,7 @@ libstreamplace = custom_target(
 )
 
 if host_machine.system() == 'darwin'
-  streamplace_deps += [dependency('appleframeworks', modules: ['CoreFoundation', 'Security'])]
+  streamplace_deps += [dependency('appleframeworks', modules: ['CoreFoundation', 'Security', 'SystemConfiguration'])]
 endif
 if host_machine.system() == 'windows'
   add_project_link_arguments(
@@ -251,7 +262,7 @@ endif
 pkg = import('pkgconfig')
 pkg.generate(
   name: 'streamplacedeps',
-  libraries: [streamplace_deps, c2pa_go_dep],
+  libraries: [streamplace_deps, c2pa_go_dep, iroh_streamplace_dep],
   description: 'all streamplace dependencies bundled for easy inclusion',
 )
 
@@ -264,7 +275,7 @@ if build_machine.system() == 'linux' and host_machine.system() == 'darwin'
     dependencies: [
       streamplace_deps,
     ],
-    link_with: [c2pa_go_dep],
+    link_with: [c2pa_go_dep, iroh_streamplace_dep],
   )
 
   streamplace = custom_target(
@@ -289,7 +300,7 @@ else
     dependencies: [
       streamplace_deps,
     ],
-    link_with: [c2pa_go_dep],
+    link_with: [c2pa_go_dep, iroh_streamplace_dep],
   )
 endif
 
