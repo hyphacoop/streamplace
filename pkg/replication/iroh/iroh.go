@@ -8,7 +8,7 @@ import (
 	irohStreamplace "github.com/n0-computer/iroh-streamplace/pkg/iroh_streamplace/generated/iroh_streamplace"
 )
 
-// iroh replication mechanism
+// IrohReplicator implements the replication mechanism using iroh
 type IrohReplicator struct {
 	peers []*irohStreamplace.PublicKey
 	endpoint *irohStreamplace.SenderEndpoint
@@ -16,16 +16,17 @@ type IrohReplicator struct {
 
 func NewIrohReplicator(peers []string) *IrohReplicator {
 	endpoint := irohStreamplace.NewSenderEndpoint()
-	// TODO: add addrs to the endpoint
 
-	nodeAddrs := make([]*irohStreamplace.PublicKey, len(peers))
+	nodeIds := make([]*irohStreamplace.PublicKey, len(peers))
 	for i := range(peers) {
-		addr := irohStreamplace.PublicKeyFromString(peers[i])
-		nodeAddrs[i] = addr
+		nodeId := irohStreamplace.PublicKeyFromString(peers[i])
+		nodeAddr := irohStreamplace.NewNodeAddr(nodeId, nil, nil)
+		endpoint.AddPeer(nodeAddr)
+		nodeIds[i] = nodeId
 	}
 
 	return &IrohReplicator {
-		peers: nodeAddrs,
+		peers: nodeIds,
 		endpoint: endpoint,
 	}
 }
@@ -33,8 +34,7 @@ func NewIrohReplicator(peers []string) *IrohReplicator {
 func (rep *IrohReplicator) NewSegment(ctx context.Context, bs []byte) {
 	for _, p := range rep.peers {
 		go func(peer *irohStreamplace.PublicKey) {
-			ctx := log.WithLogValues(ctx, "peer", peer.FmtShort())
-			err := sendSegment(ctx, rep.endpoint, peer, bs)
+			err := sendSegment(rep.endpoint, peer, bs)
 			if err != nil {
 				log.Log(ctx, "error replicating segment", "error", err)
 			}
@@ -42,7 +42,7 @@ func (rep *IrohReplicator) NewSegment(ctx context.Context, bs []byte) {
 	}
 }
 
-func sendSegment(ctx context.Context, endpoint *irohStreamplace.SenderEndpoint, peer *irohStreamplace.PublicKey, bs []byte) error {
+func sendSegment(endpoint *irohStreamplace.SenderEndpoint, peer *irohStreamplace.PublicKey, bs []byte) error {
 	endpoint.Send(peer, bs)
 	return nil
 }
