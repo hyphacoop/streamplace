@@ -313,7 +313,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	rec := irohStreamplace.NewReceiverEndpoint(mm)
-	fmt.Printf("iroh replicator running, ID: %s", rec.NodeAddr().NodeId().String())
+	go func() {
+		// for now to make sure things are still alive, just print our info every 15 seconds
+		for {
+			addr := rec.NodeAddr()
+			fmt.Printf("iroh replicator running, ID: %s\nHome Relay: %s\n", addr.NodeId().String(), *addr.RelayUrl())
+			time.Sleep(15 * time.Second)
+		}
+	}()
 
 	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
 	if err != nil {
