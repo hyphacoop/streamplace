@@ -40,6 +40,8 @@ import (
 	"stream.place/streamplace/pkg/api"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
+
+	irohStreamplace "github.com/n0-computer/iroh-streamplace/pkg/iroh_streamplace/generated/iroh_streamplace"
 )
 
 // Additional jobs that can be injected by platforms
@@ -266,7 +268,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		log.Log(ctx, "successfully initialized hardware signer", "address", addr)
 		signer = hwsigner
 	}
-	// var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 	var rep replication.Replicator = iroh.NewIrohReplicator(cli.Peers)
 	mod, err := model.MakeDB(cli.DBPath)
 	if err != nil {
@@ -310,6 +311,9 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
+
+	rec := irohStreamplace.NewReceiverEndpoint(mm)
+	fmt.Printf("iroh replicator running, ID: %s", rec.NodeAddr().NodeId().String())
 
 	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
 	if err != nil {
