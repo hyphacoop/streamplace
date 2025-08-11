@@ -1,0 +1,122 @@
+{
+  "lexicon": 1,
+  "id": "place.stream.live.metadata",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Metadata record for livestream content including warnings, rights, and distribution policy",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["createdAt"],
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When this metadata was created."
+          },
+          "contentWarnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "death",
+                "drugUse",
+                "fantasyViolence",
+                "flashingLights",
+                "language",
+                "nudity",
+                "personalInformation",
+                "sexuality",
+                "suffering",
+                "violence"
+              ]
+            },
+            "description": "Content warnings for potentially sensitive material based on IPTC standards."
+          },
+          "rights": {
+            "type": "ref",
+            "ref": "#rights",
+            "description": "Content rights and attribution information."
+          },
+          "distributionPolicy": {
+            "type": "ref",
+            "ref": "#distributionPolicy",
+            "description": "Distribution policy for the livestream content."
+          },
+          "livestreamRef": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "Reference to the livestream this metadata applies to."
+          }
+        }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "description": "Content rights and attribution information",
+      "properties": {
+        "copyright": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Additional copyright notice or information."
+        },
+        "copyrightYear": {
+          "type": "string",
+          "maxLength": 4,
+          "description": "Copyright year (e.g., 2025)."
+        },
+        "attribution": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "How the creator wishes to be credited (name or handle)."
+        },
+        "license": {
+          "type": "string",
+          "enum": [
+            "all-rights-reserved",
+            "cc0",
+            "cc-by",
+            "cc-by-sa",
+            "cc-by-nc",
+            "cc-by-nc-sa",
+            "cc-by-nd",
+            "cc-by-nc-nd",
+            "custom"
+          ],
+          "description": "License type for the content. Use 'custom' for non-standard licenses."
+        },
+        "customLicense": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Custom license terms when license is set to 'custom'."
+        }
+      }
+    },
+    "distributionPolicy": {
+      "type": "object",
+      "description": "Distribution policy for livestream content",
+      "required": ["allowBroadcast", "allowArchive", "broadcastUntil"],
+      "properties": {
+        "allowBroadcast": {
+          "type": "boolean",
+          "description": "Whether the content can be rebroadcast."
+        },
+        "allowArchive": {
+          "type": "boolean",
+          "description": "Whether viewers can save this stream."
+        },
+        "broadcastUntil": {
+          "type": "string",
+          "enum": ["forever", "1year", "1month", "1day", "custom"],
+          "description": "How long the stream can be rebroadcast."
+        },
+        "customDuration": {
+          "type": "string",
+          "format": "datetime",
+          "description": "Custom end date/time in ISO 8601 format. Required when broadcastUntil is 'custom'."
+        }
+      }
+    }
+  }
+}
