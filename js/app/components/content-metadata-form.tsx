@@ -1,8 +1,13 @@
 import { ChevronDown, Info } from "@tamagui/lucide-icons";
+import { useToastController } from "@tamagui/toast";
+import { createStreamKeyRecord, selectStoredKey } from "features/bluesky/blueskySlice";
+import { createContentMetadata, selectCurrentMetadataRkey, selectError, selectIsCreating, selectIsUpdating, updateContentMetadata } from "features/bluesky/contentMetadataSlice";
 import React, { useState } from "react";
 import { useWindowDimensions } from "react-native";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
   Adapt,
+  Button,
   Checkbox,
   Input,
   Label,
@@ -44,6 +49,7 @@ export interface ContentMetadata {
 interface ContentMetadataFormProps {
   onMetadataChange: (metadata: ContentMetadata) => void;
   initialMetadata?: Partial<ContentMetadata>;
+  showUpdateButton?: boolean;
 }
 
 // Content warnings list based on IPTC NewsCodes Scheme
@@ -70,7 +76,7 @@ const BROADCAST_OPTIONS = [
 ];
 
 const LICENSE_OPTIONS = [
-  { value: "all-rights-reserved", label: "No License / All Rights Reserved" },
+  { value: "all-rights-reserved", label: "All Rights Reserved" },
   { value: "cc0", label: "CC0 (Public Domain)" },
   { value: "cc-by", label: "CC BY" },
   { value: "cc-by-sa", label: "CC BY-SA" },
@@ -112,10 +118,22 @@ const generateDateOptions = () => {
 export default function ContentMetadataForm({
   onMetadataChange,
   initialMetadata,
+  showUpdateButton = false,
 }: ContentMetadataFormProps) {
   const { width } = useWindowDimensions();
   const isWide = width > 1020;
   const useTwoColumns = isWide;
+  const dispatch = useAppDispatch();
+  const toast = useToastController();
+  const isUpdating = useAppSelector(selectIsUpdating);
+  const isCreating = useAppSelector(selectIsCreating);
+  const error = useAppSelector(selectError);
+  const currentMetadataRkey = useAppSelector(selectCurrentMetadataRkey);
+  const storedKey = useAppSelector(selectStoredKey);
+  
+  const isLoading = isUpdating || isCreating;
+  const hasMetadata = Boolean(currentMetadataRkey);
+  const hasStreamKey = Boolean(storedKey);
 
   const [contentWarnings, setContentWarnings] = useState<string[]>(
     initialMetadata?.contentWarnings || []
@@ -202,6 +220,53 @@ export default function ContentMetadataForm({
       });
     }
   }, [customDay, customMonth, customYear, customHour, customMinute, customPeriod, distributionPolicy.broadcastUntil]);
+
+  const handleSaveMetadata = async () => {
+    try {
+      // First ensure we have a stream key
+      if (!hasStreamKey) {
+        await dispatch(createStreamKeyRecord({ store: true })).unwrap();
+      }
+
+      const metadataPayload = {
+        contentWarnings,
+        distributionPolicy: {
+          allowBroadcast: distributionPolicy.allowBroadcast,
+          allowArchive: distributionPolicy.allowArchive,
+          broadcastUntil: distributionPolicy.broadcastUntil,
+          customDuration: distributionPolicy.customDuration,
+        },
+        rights: {
+          copyright: contentRights.copyright,
+          copyrightYear: contentRights.copyrightYear,
+          attribution: contentRights.attribution,
+          license: contentRights.license,
+          customLicense: contentRights.customLicense,
+        },
+      };
+
+      if (hasMetadata && currentMetadataRkey) {
+        // Update existing metadata
+        await dispatch(updateContentMetadata({
+          rkey: currentMetadataRkey,
+          ...metadataPayload,
+        })).unwrap();
+        toast.show("Success", { message: "Content metadata updated successfully" });
+      } else {
+        // Create new metadata
+        await dispatch((createContentMetadata as any)({
+          contentWarnings,
+          distributionPolicy,
+          rights: contentRights,
+        })).unwrap();
+        toast.show("Success", { message: "Content metadata created successfully" });
+      }
+    } catch (error) {
+      toast.show("Error", { 
+        message: `Failed to ${hasMetadata ? 'update' : 'create'} metadata: ${error.message || error}` 
+      });
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -792,6 +857,30 @@ export default function ContentMetadataForm({
           </YStack>
         </View>
       </View>
+
+      {/* Save/Update Button */}
+      {showUpdateButton && (
+        <View p="$2" alignItems="center">
+          <Button
+            disabled={isLoading}
+            opacity={isLoading ? 0.5 : 1}
+            size="$4"
+            w="100%"
+            maxWidth={400}
+            onPress={handleSaveMetadata}
+          >
+            {isLoading 
+              ? (isCreating ? "Creating..." : "Updating...") 
+              : (hasMetadata ? "Update Content Metadata" : "Create Content Metadata")
+            }
+          </Button>
+          {error && (
+            <Paragraph color="$red10" fontSize="$1" mt="$1">
+              {error}
+            </Paragraph>
+          )}
+        </View>
+      )}
 
       {/* Footer Information */}
       <View p="$0.5" maxWidth={900} alignSelf="center">

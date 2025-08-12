@@ -86,7 +86,6 @@ export default function CreateLivestream() {
         createLivestreamRecord({
           title,
           customThumbnail: thumbnailToUse,
-          contentMetadata,
         }),
       );
     } catch (error) {
@@ -145,6 +144,7 @@ export default function CreateLivestream() {
             <ContentMetadataForm
               onMetadataChange={setContentMetadata}
               initialMetadata={contentMetadata}
+              showUpdateButton={true}
             />
             
             {/* Submit Button */}

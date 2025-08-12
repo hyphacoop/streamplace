@@ -849,26 +849,10 @@ export const blueskySlice = createAppSlice({
       async (
         { 
           title, 
-          customThumbnail, 
-          contentMetadata 
+          customThumbnail 
         }: { 
           title: string; 
           customThumbnail?: Blob;
-          contentMetadata?: {
-            contentWarnings: string[];
-            distributionPolicy: {
-              allowBroadcast: boolean;
-              allowArchive: boolean;
-              broadcastUntil: string;
-              customDuration?: string;
-            };
-            contentRights: {
-              copyright?: string;
-              copyrightYear?: string;
-              attribution?: string;
-              license?: string;
-            };
-          };
         },
         thunkAPI,
       ) => {
@@ -987,30 +971,6 @@ export const blueskySlice = createAppSlice({
           record,
         });
 
-        // If content metadata is provided, create a metadata record
-        if (contentMetadata) {
-          try {
-            const metadataRecord = {
-              createdAt: new Date().toISOString(),
-              contentWarnings: contentMetadata.contentWarnings,
-              rights: contentMetadata.contentRights,
-              distributionPolicy: contentMetadata.distributionPolicy,
-              livestreamRef: {
-                uri: livestreamResult.data.uri,
-                cid: livestreamResult.data.cid,
-              },
-            };
-
-            await bluesky.pdsAgent.com.atproto.repo.createRecord({
-              repo: did,
-              collection: "place.stream.live.metadata",
-              record: metadataRecord,
-            });
-          } catch (e) {
-            console.warn("Failed to create metadata record:", e);
-            // Don't fail the entire operation if metadata creation fails
-          }
-        }
 
         return record;
       },
