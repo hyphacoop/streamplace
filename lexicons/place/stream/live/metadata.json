@@ -73,14 +73,14 @@
           "livestreamRef": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",
-            "description": "reference to the livestream this metadata applies to."
+            "description": "Reference to the livestream this metadata applies to."
           }
         }
       }
     },
     "rights": {
       "type": "object",
-      "description": "content rights and attribution",
+      "description": "Content rights and attribution information",
       "properties": {
         "attribution": {
           "type": "string",
@@ -145,19 +145,22 @@
           "description": "e.g. 2025-08-12"
         },
         "allowBroadcast": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the content can be rebroadcast."
         },
         "allowArchive": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether viewers can save this stream."
         },
         "broadcastUntil": {
           "type": "string",
-          "enum": ["forever", "1year", "1month", "1day", "custom"]
+          "enum": ["forever", "1year", "1month", "1day", "custom"],
+          "description": "How long the stream can be rebroadcast."
         },
         "customDuration": {
           "type": "string",
           "format": "datetime",
-          "description": "required when broadcastUntil is 'custom'."
+          "description": "Custom end date/time in ISO 8601 format. Required when broadcastUntil is 'custom'."
         }
       }
     }

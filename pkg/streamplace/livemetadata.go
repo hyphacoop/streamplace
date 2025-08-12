@@ -14,22 +14,32 @@ func init() {
 } //
 // RECORDTYPE: LiveMetadata
 type LiveMetadata struct {
-	LexiconTypeID string `json:"$type,const=place.stream.live.metadata" cborgen:"$type,const=place.stream.live.metadata"`
-	// contentWarnings: Content warnings for potentially sensitive material based on IPTC standards.
+	LexiconTypeID string             `json:"$type,const=place.stream.live.metadata" cborgen:"$type,const=place.stream.live.metadata"`
+	C2pa          *LiveMetadata_C2pa `json:"c2pa,omitempty" cborgen:"c2pa,omitempty"`
+	// contentWarningScheme: controlled vocabulary scheme uri.
+	ContentWarningScheme *string `json:"contentWarningScheme,omitempty" cborgen:"contentWarningScheme,omitempty"`
+	// contentWarningUris: uris from iptc content warning vocabulary (https://cv.iptc.org/newscodes/contentwarning/). these are written into c2pa.
+	ContentWarningUris []string `json:"contentWarningUris,omitempty" cborgen:"contentWarningUris,omitempty"`
+	// contentWarnings: prefer contentWarningUris as it maps to iptc uris.
 	ContentWarnings []string `json:"contentWarnings,omitempty" cborgen:"contentWarnings,omitempty"`
-	// createdAt: When this metadata was created.
-	CreatedAt string `json:"createdAt" cborgen:"createdAt"`
-	// distributionPolicy: Distribution policy for the livestream content.
+	// createdAt: iso 8601 with timezone; mirrored to c2pa.metadata (dc:created/xmp:CreateDate).
+	CreatedAt          string                           `json:"createdAt" cborgen:"createdAt"`
 	DistributionPolicy *LiveMetadata_DistributionPolicy `json:"distributionPolicy,omitempty" cborgen:"distributionPolicy,omitempty"`
 	// livestreamRef: Reference to the livestream this metadata applies to.
 	LivestreamRef *comatprototypes.RepoStrongRef `json:"livestreamRef,omitempty" cborgen:"livestreamRef,omitempty"`
-	// rights: Content rights and attribution information.
-	Rights *LiveMetadata_Rights `json:"rights,omitempty" cborgen:"rights,omitempty"`
+	Rights        *LiveMetadata_Rights           `json:"rights,omitempty" cborgen:"rights,omitempty"`
+}
+
+type LiveMetadata_C2pa struct {
+	// instanceId: c2pa instance id for this asset, if known.
+	InstanceId *string `json:"instanceId,omitempty" cborgen:"instanceId,omitempty"`
+	// manifestUrl: where the c2pa manifest can be fetched if not embedded.
+	ManifestUrl *string `json:"manifestUrl,omitempty" cborgen:"manifestUrl,omitempty"`
 }
 
 // LiveMetadata_DistributionPolicy is a "distributionPolicy" in the place.stream.live.metadata schema.
 //
-// Distribution policy for livestream content
+// also emitted as a custom c2pa assertion label: place.stream.distribution/v1
 type LiveMetadata_DistributionPolicy struct {
 	// allowArchive: Whether viewers can save this stream.
 	AllowArchive bool `json:"allowArchive" cborgen:"allowArchive"`
@@ -39,20 +49,27 @@ type LiveMetadata_DistributionPolicy struct {
 	BroadcastUntil string `json:"broadcastUntil" cborgen:"broadcastUntil"`
 	// customDuration: Custom end date/time in ISO 8601 format. Required when broadcastUntil is 'custom'.
 	CustomDuration *string `json:"customDuration,omitempty" cborgen:"customDuration,omitempty"`
+	// policyId: uuid
+	PolicyId *string `json:"policyId,omitempty" cborgen:"policyId,omitempty"`
+	// policyVersion: e.g. 2025-08-12
+	PolicyVersion *string `json:"policyVersion,omitempty" cborgen:"policyVersion,omitempty"`
 }
 
 // LiveMetadata_Rights is a "rights" in the place.stream.live.metadata schema.
 //
 // Content rights and attribution information
 type LiveMetadata_Rights struct {
-	// attribution: How the creator wishes to be credited (name or handle).
+	// attribution: display credit line; maps to photoshop:Credit.
 	Attribution *string `json:"attribution,omitempty" cborgen:"attribution,omitempty"`
-	// copyright: Additional copyright notice or information.
-	Copyright *string `json:"copyright,omitempty" cborgen:"copyright,omitempty"`
-	// copyrightYear: Copyright year (e.g., 2025).
+	// copyright: copyright notice; maps to photoshop:CopyrightNotice.
+	Copyright     *string `json:"copyright,omitempty" cborgen:"copyright,omitempty"`
 	CopyrightYear *string `json:"copyrightYear,omitempty" cborgen:"copyrightYear,omitempty"`
-	// customLicense: Custom license terms when license is set to 'custom'.
-	CustomLicense *string `json:"customLicense,omitempty" cborgen:"customLicense,omitempty"`
-	// license: License type for the content. Use 'custom' for non-standard licenses.
+	// creators: list of creators; maps to dc:creator.
+	Creators []string `json:"creators,omitempty" cborgen:"creators,omitempty"`
+	// license: ui hint. source of truth is licenseUrl and usageTerms.
 	License *string `json:"license,omitempty" cborgen:"license,omitempty"`
+	// licenseUrl: canonical license page; maps to xmpRights:WebStatement.
+	LicenseUrl *string `json:"licenseUrl,omitempty" cborgen:"licenseUrl,omitempty"`
+	// usageTerms: human-readable terms; maps to xmpRights:UsageTerms.
+	UsageTerms *string `json:"usageTerms,omitempty" cborgen:"usageTerms,omitempty"`
 }
