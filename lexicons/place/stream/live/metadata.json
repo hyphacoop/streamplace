@@ -70,10 +70,10 @@
               }
             }
           },
-          "livestreamRef": {
+          "streamKeyRef": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",
-            "description": "Reference to the livestream this metadata applies to."
+            "description": "Reference to the stream key (place.stream.key) this metadata applies to."
           }
         }
       }
