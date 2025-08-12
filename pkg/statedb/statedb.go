@@ -70,6 +70,7 @@ func MakeDB(cli *config.CLI) (*StatefulDB, error) {
 	}
 	for _, model := range []any{
 		oatproxy.OAuthSession{},
+		Notification{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

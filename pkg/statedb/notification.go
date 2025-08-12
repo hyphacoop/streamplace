@@ -1,4 +1,4 @@
-package model
+package statedb
 
 import (
 	"fmt"
@@ -15,42 +15,43 @@ type Notification struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-func (m *DBModel) CreateNotification(token string, repoDID string) error {
+func (db *StatefulDB) CreateNotification(token string, repoDID string) error {
 	not := Notification{
 		Token: token,
 	}
 	if repoDID != "" {
 		not.RepoDID = repoDID
 	}
-	err := m.DB.Save(&not).Error
+	err := db.DB.Save(&not).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *DBModel) ListNotifications() ([]Notification, error) {
+func (db *StatefulDB) ListNotifications() ([]Notification, error) {
 	nots := []Notification{}
-	err := m.DB.Find(&nots).Error
+	err := db.DB.Find(&nots).Error
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving notifications: %w", err)
 	}
 	return nots, nil
 }
 
-func (m *DBModel) ListUserNotifications(userDID string) ([]Notification, error) {
+func (db *StatefulDB) ListUserNotifications(userDID string) ([]Notification, error) {
 	nots := []Notification{}
-	err := m.DB.Where("repo_did = ?", userDID).Find(&nots).Error
+	err := db.DB.Where("repo_did = ?", userDID).Find(&nots).Error
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving notifications: %w", err)
 	}
 	return nots, nil
 }
 
-func (m *DBModel) GetFollowersNotificationTokens(userDID string) ([]string, error) {
+// todo fixme we don't have followers in this database
+func (db *StatefulDB) GetFollowersNotificationTokens(userDID string) ([]string, error) {
 	var tokens []string
 
-	err := m.DB.Model(&Notification{}).
+	err := db.DB.Model(&Notification{}).
 		Distinct("notifications.token").
 		Joins("JOIN follows ON follows.user_did = notifications.repo_did").
 		Where("follows.subject_did = ?", userDID).
@@ -62,7 +63,7 @@ func (m *DBModel) GetFollowersNotificationTokens(userDID string) ([]string, erro
 	}
 
 	// also you prolly wanna get one for yourself
-	nots, err := m.ListUserNotifications(userDID)
+	nots, err := db.ListUserNotifications(userDID)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving user notifications: %w", err)
 	}

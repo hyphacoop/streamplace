@@ -25,6 +25,7 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	notificationpkg "stream.place/streamplace/pkg/notifications"
+	"stream.place/streamplace/pkg/statedb"
 
 	"slices"
 
@@ -32,12 +33,13 @@ import (
 )
 
 type ATProtoSynchronizer struct {
-	CLI       *config.CLI
-	Model     model.Model
-	LastSeen  time.Time
-	LastEvent time.Time
-	Noter     notificationpkg.FirebaseNotifier
-	Bus       *bus.Bus
+	CLI        *config.CLI
+	Model      model.Model
+	StatefulDB *statedb.StatefulDB
+	LastSeen   time.Time
+	LastEvent  time.Time
+	Noter      notificationpkg.FirebaseNotifier
+	Bus        *bus.Bus
 }
 
 func (atsync *ATProtoSynchronizer) StartFirehose(ctx context.Context) error {

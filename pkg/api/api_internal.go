@@ -379,7 +379,7 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 	})
 
 	router.GET("/notifications", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		notifications, err := a.Model.ListNotifications()
+		notifications, err := a.StatefulDB.ListNotifications()
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to get notifications", err)
 			return
@@ -458,7 +458,7 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			errors.WriteHTTPBadRequest(w, "invalid request body", err)
 			return
 		}
-		notifications, err := a.Model.ListNotifications()
+		notifications, err := a.StatefulDB.ListNotifications()
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to get notifications", err)
 			return

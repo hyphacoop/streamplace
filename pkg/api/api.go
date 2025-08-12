@@ -476,7 +476,7 @@ func (a *StreamplaceAPI) HandleNotification(ctx context.Context) http.HandlerFun
 			w.WriteHeader(400)
 			return
 		}
-		err = a.Model.CreateNotification(n.Token, n.RepoDID)
+		err = a.StatefulDB.CreateNotification(n.Token, n.RepoDID)
 		if err != nil {
 			log.Log(ctx, "error creating notification", "error", err)
 			w.WriteHeader(400)

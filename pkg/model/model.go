@@ -25,9 +25,6 @@ type DBModel struct {
 }
 
 type Model interface {
-	CreateNotification(token, repoDID string) error
-	ListNotifications() ([]Notification, error)
-
 	CreatePlayerEvent(event PlayerEventAPI) error
 	ListPlayerEvents(playerID string) ([]PlayerEvent, error)
 	PlayerReport(playerID string) (map[string]any, error)
@@ -62,7 +59,6 @@ type Model interface {
 	GetUserFollowers(ctx context.Context, userDID string) ([]Follow, error)
 	GetUserFollowingUser(ctx context.Context, userDID, subjectDID string) (*Follow, error)
 	DeleteFollow(ctx context.Context, userDID, rev string) error
-	GetFollowersNotificationTokens(userDID string) ([]string, error)
 
 	CreateFeedPost(ctx context.Context, post *FeedPost) error
 	ListFeedPosts() ([]FeedPost, error)
@@ -152,7 +148,6 @@ func MakeDB(dbURL string) (Model, error) {
 	}
 	sqlDB.SetMaxOpenConns(1)
 	for _, model := range []any{
-		Notification{},
 		PlayerEvent{},
 		Segment{},
 		Thumbnail{},

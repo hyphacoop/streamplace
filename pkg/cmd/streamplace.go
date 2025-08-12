@@ -341,10 +341,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	b := bus.NewBus()
 	atsync := &atproto.ATProtoSynchronizer{
-		CLI:   &cli,
-		Model: mod,
-		Noter: noter,
-		Bus:   b,
+		CLI:        &cli,
+		Model:      mod,
+		StatefulDB: statefulDB,
+		Noter:      noter,
+		Bus:        b,
 	}
 	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod, b, atsync)
 	if err != nil {

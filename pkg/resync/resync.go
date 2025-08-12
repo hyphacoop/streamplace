@@ -31,10 +31,11 @@ func Resync(ctx context.Context, cli *config.CLI) error {
 	}
 
 	atsync := &atproto.ATProtoSynchronizer{
-		CLI:   cli,
-		Model: newMod,
-		Noter: nil,
-		Bus:   bus.NewBus(),
+		CLI:        cli,
+		Model:      newMod,
+		StatefulDB: nil, // TODO: Add StatefulDB for resync when migration is ready
+		Noter:      nil,
+		Bus:        bus.NewBus(),
 	}
 
 	doneMap := make(map[string]bool)
@@ -93,17 +94,18 @@ func Resync(ctx context.Context, cli *config.CLI) error {
 	// }
 	// log.Log(ctx, "migrated oauth sessions", "count", len(oauthSessions))
 
-	notificationTokens, err := oldMod.ListNotifications()
-	if err != nil {
-		return err
-	}
-	for _, token := range notificationTokens {
-		err := newMod.CreateNotification(token.Token, token.RepoDID)
-		if err != nil {
-			return fmt.Errorf("failed to create notification: %w", err)
-		}
-	}
-	log.Log(ctx, "migrated notification tokens", "count", len(notificationTokens))
+	// TODO: Update notification migration to use new statefulDB
+	// notificationTokens, err := oldMod.ListNotifications()
+	// if err != nil {
+	// 	return err
+	// }
+	// for _, token := range notificationTokens {
+	// 	err := newMod.CreateNotification(token.Token, token.RepoDID)
+	// 	if err != nil {
+	// 		return fmt.Errorf("failed to create notification: %w", err)
+	// 	}
+	// }
+	// log.Log(ctx, "migrated notification tokens", "count", len(notificationTokens))
 
 	log.Log(ctx, "resync complete!", "newDBPath", tempDBPath)
 
