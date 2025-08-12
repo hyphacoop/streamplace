@@ -35,6 +35,11 @@
             "type": "blob",
             "accept": ["image/*"],
             "maxSize": 1000000
+          },
+          "streamKeyRef": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "Reference to the stream key (place.stream.key) for this livestream."
           }
         }
       }
