@@ -41,6 +41,7 @@ import (
 	"stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/spxrpc"
+	"stream.place/streamplace/pkg/statedb"
 	"stream.place/streamplace/pkg/streamplace"
 
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
@@ -53,6 +54,7 @@ import (
 type StreamplaceAPI struct {
 	CLI              *config.CLI
 	Model            model.Model
+	StatefulDB       *statedb.StatefulDB
 	Updater          *Updater
 	Signer           *eip712.EIP712Signer
 	Mimes            map[string]string
@@ -80,13 +82,14 @@ type WebsocketTracker struct {
 	mu            sync.RWMutex
 }
 
-func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, signer *eip712.EIP712Signer, noter notifications.FirebaseNotifier, mm *media.MediaManager, ms media.MediaSigner, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer, d *director.Director, op *oatproxy.OATProxy) (*StreamplaceAPI, error) {
+func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, statefulDB *statedb.StatefulDB, signer *eip712.EIP712Signer, noter notifications.FirebaseNotifier, mm *media.MediaManager, ms media.MediaSigner, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer, d *director.Director, op *oatproxy.OATProxy) (*StreamplaceAPI, error) {
 	updater, err := PrepareUpdater(cli)
 	if err != nil {
 		return nil, err
 	}
 	a := &StreamplaceAPI{CLI: cli,
 		Model:            mod,
+		StatefulDB:       statefulDB,
 		Updater:          updater,
 		Signer:           signer,
 		FirebaseNotifier: noter,

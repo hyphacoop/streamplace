@@ -16,11 +16,11 @@ import (
 // resync a fresh database from the PDSses, copying over the few pieces of local state
 // that we have
 func Resync(ctx context.Context, cli *config.CLI) error {
-	oldMod, err := model.MakeDB(cli.DBPath)
+	oldMod, err := model.MakeDB(cli.IndexDBPath)
 	if err != nil {
 		return err
 	}
-	tempDBPath := cli.DBPath + ".temp." + fmt.Sprintf("%d", time.Now().UnixNano())
+	tempDBPath := cli.IndexDBPath + ".temp." + fmt.Sprintf("%d", time.Now().UnixNano())
 	newMod, err := model.MakeDB(tempDBPath)
 	if err != nil {
 		return err
@@ -80,17 +80,18 @@ func Resync(ctx context.Context, cli *config.CLI) error {
 		return err
 	}
 
-	oauthSessions, err := oldMod.ListOAuthSessions()
-	if err != nil {
-		return err
-	}
-	for _, session := range oauthSessions {
-		err := newMod.CreateOAuthSession(session.DownstreamDPoPJKT, &session)
-		if err != nil {
-			return fmt.Errorf("failed to create oauth session: %w", err)
-		}
-	}
-	log.Log(ctx, "migrated oauth sessions", "count", len(oauthSessions))
+	// TODO: Update OAuth session migration to use new statefulDB
+	// oauthSessions, err := oldMod.ListOAuthSessions()
+	// if err != nil {
+	// 	return err
+	// }
+	// for _, session := range oauthSessions {
+	// 	err := newMod.CreateOAuthSession(session.DownstreamDPoPJKT, &session)
+	// 	if err != nil {
+	// 		return fmt.Errorf("failed to create oauth session: %w", err)
+	// 	}
+	// }
+	// log.Log(ctx, "migrated oauth sessions", "count", len(oauthSessions))
 
 	notificationTokens, err := oldMod.ListNotifications()
 	if err != nil {

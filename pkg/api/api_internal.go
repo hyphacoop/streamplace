@@ -437,7 +437,7 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 	})
 
 	router.GET("/oauth-sessions", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		sessions, err := a.Model.ListOAuthSessions()
+		sessions, err := a.StatefulDB.ListOAuthSessions()
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to get oauth sessions", err)
 			return

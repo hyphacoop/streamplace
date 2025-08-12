@@ -12,7 +12,6 @@ import (
 	"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/lmittmann/tint"
 	slogGorm "github.com/orandin/slog-gorm"
-	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
@@ -93,12 +92,6 @@ type Model interface {
 	CreateChatProfile(ctx context.Context, profile *ChatProfile) error
 	GetChatProfile(ctx context.Context, repoDID string) (*ChatProfile, error)
 
-	CreateOAuthSession(id string, session *oatproxy.OAuthSession) error
-	LoadOAuthSession(id string) (*oatproxy.OAuthSession, error)
-	UpdateOAuthSession(id string, session *oatproxy.OAuthSession) error
-	ListOAuthSessions() ([]oatproxy.OAuthSession, error)
-	GetSessionByDID(did string) (*oatproxy.OAuthSession, error)
-
 	UpdateServerSettings(ctx context.Context, settings *ServerSettings) error
 	GetServerSettings(ctx context.Context, server string, repoDID string) (*ServerSettings, error)
 	DeleteServerSettings(ctx context.Context, server string, repoDID string) error
@@ -173,7 +166,6 @@ func MakeDB(dbURL string) (Model, error) {
 		ChatMessage{},
 		ChatProfile{},
 		Gate{},
-		oatproxy.OAuthSession{},
 		ServerSettings{},
 		XrpcStreamEvent{},
 		Labeler{},

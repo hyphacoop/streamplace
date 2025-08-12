@@ -35,6 +35,7 @@ import (
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
+	"stream.place/streamplace/pkg/statedb"
 
 	"github.com/ThalesGroup/crypto11"
 	_ "github.com/go-gst/go-glib/glib"
@@ -302,7 +303,12 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		signer = hwsigner
 	}
 	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
-	mod, err := model.MakeDB(cli.DBPath)
+
+	mod, err := model.MakeDB(cli.IndexDBPath)
+	if err != nil {
+		return err
+	}
+	statefulDB, err := statedb.MakeDB(&cli)
 	if err != nil {
 		return err
 	}
@@ -361,16 +367,16 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	op := oatproxy.New(&oatproxy.Config{
 		Host:               cli.PublicHost,
-		CreateOAuthSession: mod.CreateOAuthSession,
-		UpdateOAuthSession: mod.UpdateOAuthSession,
-		GetOAuthSession:    mod.LoadOAuthSession,
+		CreateOAuthSession: statefulDB.CreateOAuthSession,
+		UpdateOAuthSession: statefulDB.UpdateOAuthSession,
+		GetOAuthSession:    statefulDB.LoadOAuthSession,
 		Scope:              "atproto transition:generic",
 		UpstreamJWK:        cli.JWK,
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op)
-	a, err := api.MakeStreamplaceAPI(&cli, mod, eip712signer, noter, mm, ms, b, atsync, d, op)
+	d := director.NewDirector(mm, mod, &cli, b, op, statefulDB)
+	a, err := api.MakeStreamplaceAPI(&cli, mod, statefulDB, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err
 	}
