@@ -18,19 +18,7 @@
           "contentWarnings": {
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": [
-                "death",
-                "drugUse",
-                "fantasyViolence",
-                "flashingLights",
-                "language",
-                "nudity",
-                "personalInformation",
-                "sexuality",
-                "suffering",
-                "violence"
-              ]
+              "type": "string"
             },
             "description": "prefer contentWarningUris as it maps to iptc uris."
           },
@@ -55,20 +43,6 @@
           "distributionPolicy": {
             "type": "ref",
             "ref": "#distributionPolicy"
-          },
-          "c2pa": {
-            "type": "object",
-            "properties": {
-              "manifestUrl": {
-                "type": "string",
-                "format": "uri",
-                "description": "where the c2pa manifest can be fetched if not embedded."
-              },
-              "instanceId": {
-                "type": "string",
-                "description": "c2pa instance id for this asset, if known."
-              }
-            }
           },
           "streamKeyRef": {
             "type": "ref",
@@ -106,17 +80,6 @@
         },
         "license": {
           "type": "string",
-          "enum": [
-            "all-rights-reserved",
-            "cc0",
-            "cc-by",
-            "cc-by-sa",
-            "cc-by-nc",
-            "cc-by-nc-sa",
-            "cc-by-nd",
-            "cc-by-nc-nd",
-            "custom"
-          ],
           "description": "ui hint. source of truth is licenseUrl and usageTerms."
         },
         "licenseUrl": {
@@ -154,7 +117,6 @@
         },
         "broadcastUntil": {
           "type": "string",
-          "enum": ["forever", "1year", "1month", "1day", "custom"],
           "description": "How long the stream can be rebroadcast."
         },
         "customDuration": {
