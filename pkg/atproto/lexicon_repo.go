@@ -31,6 +31,7 @@ import (
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/statedb"
 )
 
 var LexiconRepo *atrepo.Repo
@@ -124,7 +125,7 @@ type Closer interface {
 	Close() error
 }
 
-func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model) (Closer, error) {
+func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, state *statedb.StatefulDB) (Closer, error) {
 	ctx = log.WithLogValues(ctx, "func", "MakeLexiconRepo")
 	fd, err := cli.DataFileCreate([]string{"carstore", "empty"}, true)
 	if err != nil {
@@ -153,29 +154,44 @@ func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model) (Clo
 	}
 
 	var priv *atcrypto.PrivateKeyK256
-	exists, err := cli.DataFileExists([]string{"carstore", "repo.key"})
+
+	keyBs, err := state.GetConfig("repo-key")
 	if err != nil {
 		return nil, err
 	}
-	if exists {
-		buf := bytes.Buffer{}
-		err := cli.DataFileRead([]string{"carstore", "repo.key"}, &buf)
+	if keyBs != nil {
+		// good path: we have a key in the stateful database
+		priv, err = atcrypto.ParsePrivateBytesK256(keyBs.Value)
 		if err != nil {
-			return nil, err
-		}
-		priv, err = atcrypto.ParsePrivateBytesK256(buf.Bytes())
-		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse repo key from stateful database: %w", err)
 		}
 	} else {
-		priv, err = atcrypto.GeneratePrivateKeyK256()
+		// migration path: maybe we have an old one on disk.
+		exists, err := cli.DataFileExists([]string{"carstore", "repo.key"})
 		if err != nil {
 			return nil, err
 		}
+		if exists {
+			log.Warn(ctx, "found old repo key on disk, migrating to stateful database", "path", cli.DataFilePath([]string{"carstore", "repo.key"}))
+			buf := bytes.Buffer{}
+			err := cli.DataFileRead([]string{"carstore", "repo.key"}, &buf)
+			if err != nil {
+				return nil, err
+			}
+			priv, err = atcrypto.ParsePrivateBytesK256(buf.Bytes())
+			if err != nil {
+				return nil, fmt.Errorf("failed to read repo key from disk: %w", err)
+			}
+		} else {
+			priv, err = atcrypto.GeneratePrivateKeyK256()
+			if err != nil {
+				return nil, err
+			}
+		}
 		bs := priv.Bytes()
-		err = cli.DataFileWrite([]string{"carstore", "repo.key"}, bytes.NewReader(bs), true)
+		err = state.PutConfig("repo-key", bs)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to save repo key to stateful database: %w", err)
 		}
 	}
 

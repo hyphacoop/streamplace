@@ -308,11 +308,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
-	statefulDB, err := statedb.MakeDB(&cli)
+	state, err := statedb.MakeDB(&cli)
 	if err != nil {
 		return err
 	}
-	handle, err := atproto.MakeLexiconRepo(ctx, &cli, mod)
+	handle, err := atproto.MakeLexiconRepo(ctx, &cli, mod, state)
 	if err != nil {
 		return err
 	}
@@ -325,13 +325,13 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		}
 	}
 
-	jwk, err := statefulDB.EnsureJWK(ctx, "jwk")
+	jwk, err := state.EnsureJWK(ctx, "jwk")
 	if err != nil {
 		return err
 	}
 	cli.JWK = jwk
 
-	accessJWK, err := statefulDB.EnsureJWK(ctx, "access-jwk")
+	accessJWK, err := state.EnsureJWK(ctx, "access-jwk")
 	if err != nil {
 		return err
 	}
@@ -341,7 +341,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	atsync := &atproto.ATProtoSynchronizer{
 		CLI:        &cli,
 		Model:      mod,
-		StatefulDB: statefulDB,
+		StatefulDB: state,
 		Noter:      noter,
 		Bus:        b,
 	}
@@ -366,16 +366,16 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	op := oatproxy.New(&oatproxy.Config{
 		Host:               cli.PublicHost,
-		CreateOAuthSession: statefulDB.CreateOAuthSession,
-		UpdateOAuthSession: statefulDB.UpdateOAuthSession,
-		GetOAuthSession:    statefulDB.LoadOAuthSession,
+		CreateOAuthSession: state.CreateOAuthSession,
+		UpdateOAuthSession: state.UpdateOAuthSession,
+		GetOAuthSession:    state.LoadOAuthSession,
 		Scope:              "atproto transition:generic",
 		UpstreamJWK:        cli.JWK,
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op, statefulDB)
-	a, err := api.MakeStreamplaceAPI(&cli, mod, statefulDB, eip712signer, noter, mm, ms, b, atsync, d, op)
+	d := director.NewDirector(mm, mod, &cli, b, op, state)
+	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err
 	}

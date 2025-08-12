@@ -11,18 +11,22 @@ import (
 	"stream.place/streamplace/lexicons"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/statedb"
 )
 
 func TestLexiconRepo(t *testing.T) {
 	cli := config.CLI{
 		PublicHost: "example.com",
+		DBURL:      ":memory:",
 	}
 	cli.DataDir = t.TempDir()
 	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
+	state, err := statedb.MakeDB(&cli)
+	require.NoError(t, err)
 
 	// creating a new repo
-	handle, err := MakeLexiconRepo(context.Background(), &cli, mod)
+	handle, err := MakeLexiconRepo(context.Background(), &cli, mod, state)
 	require.NoError(t, err)
 	r, sess, err := OpenLexiconRepo(context.Background())
 	require.NoError(t, err)
@@ -41,7 +45,7 @@ func TestLexiconRepo(t *testing.T) {
 	require.Equal(t, evts[0].RepoDID, cli.MyDID())
 
 	// opening an existing repo
-	handle, err = MakeLexiconRepo(context.Background(), &cli, mod)
+	handle, err = MakeLexiconRepo(context.Background(), &cli, mod, state)
 	require.NoError(t, err)
 	handle.Close()
 
@@ -91,7 +95,7 @@ func TestLexiconRepo(t *testing.T) {
 	AllFiles = modifiedFS
 
 	// opening an existing repo with modified lexicon
-	handle, err = MakeLexiconRepo(context.Background(), &cli, mod)
+	handle, err = MakeLexiconRepo(context.Background(), &cli, mod, state)
 	require.NoError(t, err)
 	handle.Close()
 
