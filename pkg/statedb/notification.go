@@ -3,44 +3,41 @@ package statedb
 import (
 	"fmt"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Notification struct {
-	Token     string `gorm:"primarykey"`
-	RepoDID   string `json:"repoDID,omitempty" gorm:"column:repo_did;index"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Token     string    `gorm:"column:token;primarykey"`
+	RepoDID   string    `json:"repoDID,omitempty" gorm:"column:repo_did;index"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
-func (db *StatefulDB) CreateNotification(token string, repoDID string) error {
+func (state *StatefulDB) CreateNotification(token string, repoDID string) error {
 	not := Notification{
 		Token: token,
 	}
 	if repoDID != "" {
 		not.RepoDID = repoDID
 	}
-	err := db.DB.Save(&not).Error
+	err := state.DB.Save(&not).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *StatefulDB) ListNotifications() ([]Notification, error) {
+func (state *StatefulDB) ListNotifications() ([]Notification, error) {
 	nots := []Notification{}
-	err := db.DB.Find(&nots).Error
+	err := state.DB.Find(&nots).Error
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving notifications: %w", err)
 	}
 	return nots, nil
 }
 
-func (db *StatefulDB) ListUserNotifications(userDID string) ([]Notification, error) {
+func (state *StatefulDB) ListUserNotifications(userDID string) ([]Notification, error) {
 	nots := []Notification{}
-	err := db.DB.Where("repo_did = ?", userDID).Find(&nots).Error
+	err := state.DB.Where("repo_did = ?", userDID).Find(&nots).Error
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving notifications: %w", err)
 	}
@@ -48,10 +45,10 @@ func (db *StatefulDB) ListUserNotifications(userDID string) ([]Notification, err
 }
 
 // todo fixme we don't have followers in this database
-func (db *StatefulDB) GetFollowersNotificationTokens(userDID string) ([]string, error) {
+func (state *StatefulDB) GetFollowersNotificationTokens(userDID string) ([]string, error) {
 	var tokens []string
 
-	err := db.DB.Model(&Notification{}).
+	err := state.DB.Model(&Notification{}).
 		Distinct("notifications.token").
 		Joins("JOIN follows ON follows.user_did = notifications.repo_did").
 		Where("follows.subject_did = ?", userDID).
@@ -63,7 +60,7 @@ func (db *StatefulDB) GetFollowersNotificationTokens(userDID string) ([]string, 
 	}
 
 	// also you prolly wanna get one for yourself
-	nots, err := db.ListUserNotifications(userDID)
+	nots, err := state.ListUserNotifications(userDID)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving user notifications: %w", err)
 	}

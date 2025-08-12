@@ -23,6 +23,13 @@ type StatefulDB struct {
 	CLI *config.CLI
 }
 
+// list tables here so we can migrate them
+var StatefulDBModels = []any{
+	oatproxy.OAuthSession{},
+	Notification{},
+	Config{},
+}
+
 var NoPostgresDatabaseCode = "3D000"
 
 // Stateful database for storing private streamplace state
@@ -68,16 +75,13 @@ func MakeDB(cli *config.CLI) (*StatefulDB, error) {
 		}
 		sqlDB.SetMaxOpenConns(1)
 	}
-	for _, model := range []any{
-		oatproxy.OAuthSession{},
-		Notification{},
-	} {
+	for _, model := range StatefulDBModels {
 		err = db.AutoMigrate(model)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &StatefulDB{DB: db}, nil
+	return &StatefulDB{DB: db, CLI: cli}, nil
 }
 
 func openDB(dial gorm.Dialector) (*gorm.DB, error) {

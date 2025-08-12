@@ -325,15 +325,13 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		}
 	}
 
-	jwkPath := cli.DataFilePath([]string{"jwk.json"})
-	jwk, err := atproto.EnsureJWK(ctx, jwkPath)
+	jwk, err := statefulDB.EnsureJWK(ctx, "jwk")
 	if err != nil {
 		return err
 	}
 	cli.JWK = jwk
 
-	accessJWKPath := cli.DataFilePath([]string{"access-jwk.json"})
-	accessJWK, err := atproto.EnsureJWK(ctx, accessJWKPath)
+	accessJWK, err := statefulDB.EnsureJWK(ctx, "access-jwk")
 	if err != nil {
 		return err
 	}
