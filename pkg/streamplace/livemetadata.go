@@ -25,9 +25,9 @@ type LiveMetadata struct {
 	// createdAt: iso 8601 with timezone; mirrored to c2pa.metadata (dc:created/xmp:CreateDate).
 	CreatedAt          string                           `json:"createdAt" cborgen:"createdAt"`
 	DistributionPolicy *LiveMetadata_DistributionPolicy `json:"distributionPolicy,omitempty" cborgen:"distributionPolicy,omitempty"`
-	// livestreamRef: Reference to the livestream this metadata applies to.
-	LivestreamRef *comatprototypes.RepoStrongRef `json:"livestreamRef,omitempty" cborgen:"livestreamRef,omitempty"`
-	Rights        *LiveMetadata_Rights           `json:"rights,omitempty" cborgen:"rights,omitempty"`
+	Rights             *LiveMetadata_Rights             `json:"rights,omitempty" cborgen:"rights,omitempty"`
+	// streamKeyRef: Reference to the stream key (place.stream.key) this metadata applies to.
+	StreamKeyRef *comatprototypes.RepoStrongRef `json:"streamKeyRef,omitempty" cborgen:"streamKeyRef,omitempty"`
 }
 
 type LiveMetadata_C2pa struct {
