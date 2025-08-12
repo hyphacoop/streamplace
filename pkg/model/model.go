@@ -76,6 +76,12 @@ type Model interface {
 	GetLivestreamByPostCID(postCID string) (*Livestream, error)
 	GetLatestLivestreams(limit int, before *time.Time) ([]Livestream, error)
 
+	CreateLiveMetadata(ctx context.Context, lm *LiveMetadata) error
+	GetLiveMetadata(ctx context.Context, cid string) (*LiveMetadata, error)
+	GetLiveMetadataByLivestreamRef(ctx context.Context, livestreamCID string) (*LiveMetadata, error)
+	GetLiveMetadataForRepo(ctx context.Context, repoDID string) ([]LiveMetadata, error)
+	GetLiveMetadataWithContentWarnings(ctx context.Context) ([]LiveMetadata, error)
+
 	CreateBlock(ctx context.Context, block *Block) error
 	GetBlock(ctx context.Context, rkey string) (*Block, error)
 	GetUserBlock(ctx context.Context, userDID, subjectDID string) (*Block, error)
@@ -162,6 +168,7 @@ func MakeDB(dbURL string) (Model, error) {
 		Follow{},
 		FeedPost{},
 		Livestream{},
+		LiveMetadata{},
 		Block{},
 		ChatMessage{},
 		ChatProfile{},

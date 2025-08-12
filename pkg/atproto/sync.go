@@ -420,6 +420,83 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			log.Error(ctx, "failed to create signing key", "err", err)
 		}
 
+	case *streamplace.LiveMetadata:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		if r == nil {
+			// someone we don't know about
+			return nil
+		}
+		log.Debug(ctx, "creating live metadata", "userDID", userDID, "createdAt", rec.CreatedAt)
+		
+		createdAt, err := time.Parse(time.RFC3339, rec.CreatedAt)
+		if err != nil {
+			log.Error(ctx, "failed to parse createdAt", "err", err)
+			return nil
+		}
+		
+		// Extract parsed fields for efficient querying
+		var livestreamRefCID, livestreamRefURI *string
+		if rec.LivestreamRef != nil {
+			livestreamRefCID = &rec.LivestreamRef.Cid
+			livestreamRefURI = &rec.LivestreamRef.Uri
+		}
+		
+		hasContentWarnings := len(rec.ContentWarnings) > 0
+		contentWarningsCount := len(rec.ContentWarnings)
+		
+		var allowBroadcast, allowArchive *bool
+		var broadcastUntil *string
+		if rec.DistributionPolicy != nil {
+			allowBroadcast = &rec.DistributionPolicy.AllowBroadcast
+			allowArchive = &rec.DistributionPolicy.AllowArchive
+			broadcastUntil = &rec.DistributionPolicy.BroadcastUntil
+		}
+		
+		hasRights := rec.Rights != nil
+		var license *string
+		if rec.Rights != nil && rec.Rights.License != nil {
+			license = rec.Rights.License
+		}
+		
+		lm := &model.LiveMetadata{
+			CID:                  cid,
+			URI:                  aturi.String(),
+			CreatedAt:            createdAt,
+			Record:               recCBOR,
+			RepoDID:              userDID,
+			Repo:                 repo,
+			LivestreamRefCID:     livestreamRefCID,
+			LivestreamRefURI:     livestreamRefURI,
+			HasContentWarnings:   hasContentWarnings,
+			ContentWarningsCount: contentWarningsCount,
+			AllowBroadcast:       allowBroadcast,
+			AllowArchive:         allowArchive,
+			BroadcastUntil:       broadcastUntil,
+			HasRights:            hasRights,
+			License:              license,
+		}
+		
+		err = atsync.Model.CreateLiveMetadata(ctx, lm)
+		if err != nil {
+			return fmt.Errorf("failed to create live metadata: %w", err)
+		}
+		
+		lm, err = atsync.Model.GetLiveMetadata(ctx, cid)
+		if err != nil {
+			return fmt.Errorf("failed to get live metadata after we just saved it?!: %w", err)
+		}
+		
+		// Convert to streamplace format for publishing
+		streamplaceLiveMetadata, err := lm.ToStreamplaceLiveMetadata()
+		if err != nil {
+			return fmt.Errorf("failed to convert live metadata to streamplace format: %w", err)
+		}
+		
+		go atsync.Bus.Publish(userDID, streamplaceLiveMetadata)
+
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))
 	}
