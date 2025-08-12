@@ -13,7 +13,7 @@
           "createdAt": {
             "type": "string",
             "format": "datetime",
-            "description": "When this metadata was created."
+            "description": "iso 8601 with timezone; mirrored to c2pa.metadata (dc:created/xmp:CreateDate)."
           },
           "contentWarnings": {
             "type": "array",
@@ -32,44 +32,77 @@
                 "violence"
               ]
             },
-            "description": "Content warnings for potentially sensitive material based on IPTC standards."
+            "description": "prefer contentWarningUris as it maps to iptc uris."
+          },
+          "contentWarningUris": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "uris from iptc content warning vocabulary (https://cv.iptc.org/newscodes/contentwarning/). these are written into c2pa."
+          },
+          "contentWarningScheme": {
+            "type": "string",
+            "format": "uri",
+            "default": "https://cv.iptc.org/newscodes/contentwarning/",
+            "description": "controlled vocabulary scheme uri."
           },
           "rights": {
             "type": "ref",
-            "ref": "#rights",
-            "description": "Content rights and attribution information."
+            "ref": "#rights"
           },
           "distributionPolicy": {
             "type": "ref",
-            "ref": "#distributionPolicy",
-            "description": "Distribution policy for the livestream content."
+            "ref": "#distributionPolicy"
+          },
+          "c2pa": {
+            "type": "object",
+            "properties": {
+              "manifestUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "where the c2pa manifest can be fetched if not embedded."
+              },
+              "instanceId": {
+                "type": "string",
+                "description": "c2pa instance id for this asset, if known."
+              }
+            }
           },
           "livestreamRef": {
             "type": "ref",
             "ref": "com.atproto.repo.strongRef",
-            "description": "Reference to the livestream this metadata applies to."
+            "description": "reference to the livestream this metadata applies to."
           }
         }
       }
     },
     "rights": {
       "type": "object",
-      "description": "Content rights and attribution information",
+      "description": "content rights and attribution",
       "properties": {
-        "copyright": {
-          "type": "string",
-          "maxLength": 200,
-          "description": "Additional copyright notice or information."
-        },
-        "copyrightYear": {
-          "type": "string",
-          "maxLength": 4,
-          "description": "Copyright year (e.g., 2025)."
-        },
         "attribution": {
           "type": "string",
           "maxLength": 100,
-          "description": "How the creator wishes to be credited (name or handle)."
+          "description": "display credit line; maps to photoshop:Credit."
+        },
+        "creators": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "description": "list of creators; maps to dc:creator."
+        },
+        "copyright": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "copyright notice; maps to photoshop:CopyrightNotice."
+        },
+        "copyrightYear": {
+          "type": "string",
+          "maxLength": 4
         },
         "license": {
           "type": "string",
@@ -84,37 +117,47 @@
             "cc-by-nc-nd",
             "custom"
           ],
-          "description": "License type for the content. Use 'custom' for non-standard licenses."
+          "description": "ui hint. source of truth is licenseUrl and usageTerms."
         },
-        "customLicense": {
+        "licenseUrl": {
           "type": "string",
-          "maxLength": 200,
-          "description": "Custom license terms when license is set to 'custom'."
+          "format": "uri",
+          "description": "canonical license page; maps to xmpRights:WebStatement."
+        },
+        "usageTerms": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "human-readable terms; maps to xmpRights:UsageTerms."
         }
       }
     },
     "distributionPolicy": {
       "type": "object",
-      "description": "Distribution policy for livestream content",
       "required": ["allowBroadcast", "allowArchive", "broadcastUntil"],
+      "description": "also emitted as a custom c2pa assertion label: place.stream.distribution/v1",
       "properties": {
+        "policyId": {
+          "type": "string",
+          "description": "uuid"
+        },
+        "policyVersion": {
+          "type": "string",
+          "description": "e.g. 2025-08-12"
+        },
         "allowBroadcast": {
-          "type": "boolean",
-          "description": "Whether the content can be rebroadcast."
+          "type": "boolean"
         },
         "allowArchive": {
-          "type": "boolean",
-          "description": "Whether viewers can save this stream."
+          "type": "boolean"
         },
         "broadcastUntil": {
           "type": "string",
-          "enum": ["forever", "1year", "1month", "1day", "custom"],
-          "description": "How long the stream can be rebroadcast."
+          "enum": ["forever", "1year", "1month", "1day", "custom"]
         },
         "customDuration": {
           "type": "string",
           "format": "datetime",
-          "description": "Custom end date/time in ISO 8601 format. Required when broadcastUntil is 'custom'."
+          "description": "required when broadcastUntil is 'custom'."
         }
       }
     }
