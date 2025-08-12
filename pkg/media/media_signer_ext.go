@@ -126,3 +126,10 @@ func (ms *MediaSignerExt) Streamer() string {
 func (ms *MediaSignerExt) DID() string {
 	return ms.did
 }
+
+// SignMP4WithLivestream - external signers don't support enhanced metadata yet
+func (ms *MediaSignerExt) SignMP4WithLivestream(ctx context.Context, input io.ReadSeeker, start int64, livestreamCID string) ([]byte, error) {
+	// For now, external signers fall back to standard signing
+	// TODO: Implement enhanced metadata support for external signers
+	return ms.SignMP4(ctx, input, start)
+}

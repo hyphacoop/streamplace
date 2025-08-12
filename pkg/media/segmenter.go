@@ -17,6 +17,11 @@ import (
 
 // element that takes the input stream, muxes to mp4, and signs the result
 func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) (*gst.Element, error) {
+	return mm.SegmentAndSignElemWithLivestream(ctx, ms, "")
+}
+
+// SegmentAndSignElemWithLivestream creates a segmenter with optional livestream CID for enhanced metadata
+func (mm *MediaManager) SegmentAndSignElemWithLivestream(ctx context.Context, ms MediaSigner, livestreamCID string) (*gst.Element, error) {
 	// elem, err := gst.NewElement("splitmuxsink name=splitter async-finalize=true sink-factory=appsink muxer-factory=matroskamux max-size-bytes=1")
 	elem, err := gst.NewElementWithProperties("splitmuxsink", map[string]any{
 		"name":           "signer",
@@ -81,7 +86,15 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 					}
 					bs = smearedBuf.Bytes()
 				}
-				bs, err := ms.SignMP4(ctx, bytes.NewReader(bs), now)
+				var signedBs []byte
+				if livestreamCID != "" {
+					// Use enhanced signing with livestream metadata
+					signedBs, err = ms.SignMP4WithLivestream(ctx, bytes.NewReader(bs), now, livestreamCID)
+				} else {
+					// Fallback to standard signing
+					signedBs, err = ms.SignMP4(ctx, bytes.NewReader(bs), now)
+				}
+				bs = signedBs
 				if err != nil {
 					log.Error(ctx, "error signing segment", "error", err)
 					return
