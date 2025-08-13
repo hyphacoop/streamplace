@@ -38,13 +38,13 @@ Content rights and attribution information.
 
 **Properties:**
 
-| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ----------------- | --------- | ----- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-nd/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-sa/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-nc/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-nd/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-sa/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by/4.0/`, `place.stream.default.metadata#https://creativecommons.org/publicdomain/zero/1.0/` |
-| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Name              | Type      | Req'd | Description                      | Constraints |
+| ----------------- | --------- | ----- | -------------------------------- | ----------- |
+| `creator`         | `string`  | ❌    | Name of the creator of the work. |             |
+| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |             |
+| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |             |
+| `license`         | `string`  | ❌    | License URL or identifier.       |             |
+| `creditLine`      | `string`  | ❌    | Credit line for the work.        |             |
 
 ---
 
@@ -175,76 +175,6 @@ violence.
 
 ---
 
-<a name="httpscreativecommonsorglicensesbyncnd40"></a>
-
-### `https://creativecommons.org/licenses/by-nc-nd/4.0/`
-
-**Type:** `token`
-
-Attribution-NonCommercial-NoDerivatives 4.0 International
-
----
-
-<a name="httpscreativecommonsorglicensesbyncsa40"></a>
-
-### `https://creativecommons.org/licenses/by-nc-sa/4.0/`
-
-**Type:** `token`
-
-Attribution-NonCommercial-ShareAlike 4.0 International
-
----
-
-<a name="httpscreativecommonsorglicensesbync40"></a>
-
-### `https://creativecommons.org/licenses/by-nc/4.0/`
-
-**Type:** `token`
-
-Attribution-NonCommercial 4.0 International
-
----
-
-<a name="httpscreativecommonsorglicensesbynd40"></a>
-
-### `https://creativecommons.org/licenses/by-nd/4.0/`
-
-**Type:** `token`
-
-Attribution-NoDerivatives 4.0 International
-
----
-
-<a name="httpscreativecommonsorglicensesbysa40"></a>
-
-### `https://creativecommons.org/licenses/by-sa/4.0/`
-
-**Type:** `token`
-
-Attribution-ShareAlike 4.0 International
-
----
-
-<a name="httpscreativecommonsorglicensesby40"></a>
-
-### `https://creativecommons.org/licenses/by/4.0/`
-
-**Type:** `token`
-
-Attribution 4.0 International
-
----
-
-<a name="httpscreativecommonsorgpublicdomainzero10"></a>
-
-### `https://creativecommons.org/publicdomain/zero/1.0/`
-
-**Type:** `token`
-
-Public Domain Dedication 1.0
-
----
-
 ## Lexicon Source
 
 ```json
@@ -307,15 +237,6 @@ Public Domain Dedication 1.0
         },
         "license": {
           "type": "string",
-          "knownValues": [
-            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-nd/4.0/",
-            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-sa/4.0/",
-            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc/4.0/",
-            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nd/4.0/",
-            "place.stream.default.metadata#https://creativecommons.org/licenses/by-sa/4.0/",
-            "place.stream.default.metadata#https://creativecommons.org/licenses/by/4.0/",
-            "place.stream.default.metadata#https://creativecommons.org/publicdomain/zero/1.0/"
-          ],
           "description": "License URL or identifier."
         },
         "creditLine": {
@@ -378,34 +299,6 @@ Public Domain Dedication 1.0
     "violence": {
       "type": "token",
       "description": "The content could be perceived as offensive due to the discussion or display of violence."
-    },
-    "https://creativecommons.org/licenses/by-nc-nd/4.0/": {
-      "type": "token",
-      "description": "Attribution-NonCommercial-NoDerivatives 4.0 International"
-    },
-    "https://creativecommons.org/licenses/by-nc-sa/4.0/": {
-      "type": "token",
-      "description": "Attribution-NonCommercial-ShareAlike 4.0 International"
-    },
-    "https://creativecommons.org/licenses/by-nc/4.0/": {
-      "type": "token",
-      "description": "Attribution-NonCommercial 4.0 International"
-    },
-    "https://creativecommons.org/licenses/by-nd/4.0/": {
-      "type": "token",
-      "description": "Attribution-NoDerivatives 4.0 International"
-    },
-    "https://creativecommons.org/licenses/by-sa/4.0/": {
-      "type": "token",
-      "description": "Attribution-ShareAlike 4.0 International"
-    },
-    "https://creativecommons.org/licenses/by/4.0/": {
-      "type": "token",
-      "description": "Attribution 4.0 International"
-    },
-    "https://creativecommons.org/publicdomain/zero/1.0/": {
-      "type": "token",
-      "description": "Public Domain Dedication 1.0"
     }
   }
 }
