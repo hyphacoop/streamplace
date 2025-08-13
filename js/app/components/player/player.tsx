@@ -8,6 +8,8 @@ import {
   useSegment,
   useStreamplaceStore,
 } from "@streamplace/components";
+import ContentWarning from "components/content-warning";
+import { useLivestreamMetadata } from "hooks/useLivestreamMetadata";
 import { useEffect, useState } from "react";
 import { Text, View } from "tamagui";
 import { Fullscreen } from "./fullscreen";
@@ -56,6 +58,10 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   // Will call back every few seconds to send health updates
   usePlayerStatus();
 
+  // Fetch metadata for content warnings - src should be the streamer's DID
+  const { metadata, loading, error, hasWarnings, warnings } =
+    useLivestreamMetadata(props.src);
+
   useEffect(() => {
     setIngest(props.ingest ? "new" : null);
   }, []);
@@ -80,6 +86,9 @@ export function PlayerInner(props: Partial<PlayerProps>) {
   return (
     <View f={1} justifyContent="center" position="relative">
       <Fullscreen playerId={playerId} src={props.src}></Fullscreen>
+      {hasWarnings && (
+        <ContentWarning warnings={warnings} size="lg" variant="compact" />
+      )}
     </View>
   );
 }

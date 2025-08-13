@@ -1,4 +1,6 @@
+import ContentWarning from "components/content-warning";
 import Viewers from "components/viewers";
+import { useLivestreamMetadata } from "hooks/useLivestreamMetadata";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { Image } from "react-native";
 import { isWeb, Stack, Text, useMedia, View, XStack, YStack } from "tamagui";
@@ -15,6 +17,7 @@ interface StreamCardProps {
   viewers?: number;
   category: string[];
   isLive?: boolean;
+  livestreamUri?: string;
 }
 
 const StreamCard = ({
@@ -27,11 +30,15 @@ const StreamCard = ({
   viewers = 0,
   category = [],
   isLive = true,
+  livestreamUri,
 }: StreamCardProps) => {
   const media = useMedia();
 
   const layoutHorizontal = horizontal;
   const { url } = useStreamplaceNode();
+
+  // Fetch metadata for content warnings
+  const { warnings } = useLivestreamMetadata(livestreamUri);
 
   // Define dynamic styles
   const borderRadius = 12;
@@ -84,6 +91,12 @@ const StreamCard = ({
           style={{ width: "100%", height: "100%", aspectRatio: 16 / 9 }}
           resizeMode="contain"
         />
+
+        {/* Content Warning Overlay */}
+        {warnings.length > 0 && (
+          <ContentWarning warnings={warnings} size="sm" variant="compact" />
+        )}
+
         {isLive && (
           <XStack
             position="absolute"
@@ -213,3 +226,8 @@ const StreamCard = ({
 };
 
 export default StreamCard;
+
+// Export StreamCardHorizontal as an alias with horizontal=true by default
+export const StreamCardHorizontal = (
+  props: Omit<StreamCardProps, "horizontal">,
+) => <StreamCard {...props} horizontal={true} />;

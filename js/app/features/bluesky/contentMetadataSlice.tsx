@@ -26,25 +26,20 @@ export const contentMetadataSlice = createAppSlice({
         {
           contentWarnings = [],
           distributionPolicy = {
-            allowBroadcast: true,
             allowArchive: true,
-            broadcastUntil: "forever",
           },
           rights = {},
         }: {
           contentWarnings?: string[];
           distributionPolicy?: {
-            allowBroadcast: boolean;
-            allowArchive: boolean;
-            broadcastUntil: string;
-            customDuration?: string;
+            allowArchive?: boolean;
+            broadcastUntil?: string;
           };
           rights?: {
-            copyright?: string;
-            copyrightYear?: string;
+            year?: string;
             attribution?: string;
             license?: string;
-            customLicense?: string;
+            usageTerms?: string;
           };
         },
         thunkAPI,
@@ -52,17 +47,18 @@ export const contentMetadataSlice = createAppSlice({
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
-        
+
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
         }
-        
+
         const did = bluesky.oauthSession?.did;
         if (!did) {
           throw new Error("No DID");
         }
 
         const metadataRecord = {
+          $type: "place.stream.default.metadata",
           createdAt: new Date().toISOString(),
           contentWarnings,
           rights,
@@ -71,13 +67,14 @@ export const contentMetadataSlice = createAppSlice({
 
         const result = await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,
-          collection: "place.stream.live.metadata",
+          collection: "place.stream.default.metadata",
+          rkey: "self",
           record: metadataRecord,
         });
 
         // Extract rkey from the URI
-        const rkey = result.data.uri.split('/').pop();
-        
+        const rkey = result.data.uri.split("/").pop();
+
         return {
           record: metadataRecord,
           uri: result.data.uri,
@@ -116,28 +113,29 @@ export const contentMetadataSlice = createAppSlice({
       async (
         {
           rkey,
+          livestreamRef,
           contentWarnings = [],
           distributionPolicy = {
-            allowBroadcast: true,
             allowArchive: true,
-            broadcastUntil: "forever",
+            broadcastUntil: "2025-12-31T23:59:59Z",
           },
           rights = {},
         }: {
-          rkey: string;
+          rkey?: string;
+          livestreamRef?: {
+            uri: string;
+            cid: string;
+          };
           contentWarnings?: string[];
           distributionPolicy?: {
-            allowBroadcast: boolean;
-            allowArchive: boolean;
-            broadcastUntil: string;
-            customDuration?: string;
+            allowArchive?: boolean;
+            broadcastUntil?: string;
           };
           rights?: {
-            copyright?: string;
-            copyrightYear?: string;
+            year?: string;
             attribution?: string;
             license?: string;
-            customLicense?: string;
+            usageTerms?: string;
           };
         },
         thunkAPI,
@@ -145,17 +143,19 @@ export const contentMetadataSlice = createAppSlice({
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
-        
+
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
         }
-        
+
         const did = bluesky.oauthSession?.did;
         if (!did) {
           throw new Error("No DID");
         }
 
         const metadataRecord = {
+          $type: "place.stream.default.metadata",
+          ...(livestreamRef && { livestreamRef }),
           createdAt: new Date().toISOString(),
           contentWarnings,
           rights,
@@ -164,14 +164,14 @@ export const contentMetadataSlice = createAppSlice({
 
         const result = await bluesky.pdsAgent.com.atproto.repo.putRecord({
           repo: did,
-          collection: "place.stream.live.metadata",
-          rkey,
+          collection: "place.stream.default.metadata",
+          rkey: "self",
           record: metadataRecord,
         });
 
         return {
           record: metadataRecord,
-          uri: `at://${did}/place.stream.live.metadata/${rkey}`,
+          uri: `at://${did}/place.stream.default.metadata/self`,
           cid: result.data.cid,
         };
       },
@@ -202,18 +202,15 @@ export const contentMetadataSlice = createAppSlice({
     ),
 
     getContentMetadata: create.asyncThunk(
-      async (
-        { rkey }: { rkey: string },
-        thunkAPI,
-      ) => {
+      async ({ rkey = "self" }: { rkey?: string } = {}, thunkAPI) => {
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
-        
+
         if (!bluesky.pdsAgent) {
           throw new Error("No agent");
         }
-        
+
         const did = bluesky.oauthSession?.did;
         if (!did) {
           throw new Error("No DID");
@@ -221,7 +218,7 @@ export const contentMetadataSlice = createAppSlice({
 
         const result = await bluesky.pdsAgent.com.atproto.repo.getRecord({
           repo: did,
-          collection: "place.stream.live.metadata",
+          collection: "place.stream.default.metadata",
           rkey,
         });
 

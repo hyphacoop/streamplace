@@ -1,5 +1,7 @@
 import { useToastController } from "@tamagui/toast";
-import ContentMetadataForm, { ContentMetadata } from "components/content-metadata-form";
+import ContentMetadataForm, {
+  ContentMetadata,
+} from "components/content-metadata-form";
 import ThumbnailSelector from "components/thumbnail-selector";
 import {
   createLivestreamRecord,
@@ -11,7 +13,18 @@ import { useLiveUser } from "hooks/useLiveUser";
 import { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, H3, Label, Paragraph, ScrollView, TextArea, View, XStack, YStack, isWeb } from "tamagui";
+import {
+  Button,
+  H3,
+  Label,
+  Paragraph,
+  ScrollView,
+  TextArea,
+  View,
+  XStack,
+  YStack,
+  isWeb,
+} from "tamagui";
 
 export default function CreateLivestream() {
   const dispatch = useAppDispatch();
@@ -25,12 +38,11 @@ export default function CreateLivestream() {
   const [contentMetadata, setContentMetadata] = useState<ContentMetadata>({
     contentWarnings: [],
     distributionPolicy: {
-      allowBroadcast: true,
       allowArchive: true,
       broadcastUntil: "forever",
     },
     contentRights: {
-      license: "all-rights-reserved"
+      license: "all-rights-reserved",
     },
   });
   const [showMetadata, setShowMetadata] = useState(false);
@@ -53,7 +65,6 @@ export default function CreateLivestream() {
       setContentMetadata({
         contentWarnings: [],
         distributionPolicy: {
-          allowBroadcast: true,
           allowArchive: true,
           broadcastUntil: "forever",
         },
@@ -108,9 +119,9 @@ export default function CreateLivestream() {
     return (
       <YStack f={1}>
         {/* Fixed Header with Back Button */}
-        <XStack 
-          paddingHorizontal="$3" 
-          paddingVertical="$2" 
+        <XStack
+          paddingHorizontal="$3"
+          paddingVertical="$2"
           backgroundColor="$background"
           borderBottomWidth={1}
           borderBottomColor="$gray4"
@@ -124,7 +135,7 @@ export default function CreateLivestream() {
               Optional metadata for your livestream
             </Paragraph>
           </YStack>
-          
+
           <View position="absolute" left="$3">
             <Button
               size="$2"
@@ -146,7 +157,7 @@ export default function CreateLivestream() {
               initialMetadata={contentMetadata}
               showUpdateButton={true}
             />
-            
+
             {/* Submit Button */}
             <View p="$2" alignItems="center">
               <Button

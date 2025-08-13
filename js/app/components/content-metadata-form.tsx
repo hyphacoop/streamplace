@@ -1,7 +1,17 @@
 import { ChevronDown, Info } from "@tamagui/lucide-icons";
 import { useToastController } from "@tamagui/toast";
-import { createStreamKeyRecord, selectStoredKey } from "features/bluesky/blueskySlice";
-import { createContentMetadata, selectCurrentMetadataRkey, selectError, selectIsCreating, selectIsUpdating, updateContentMetadata } from "features/bluesky/contentMetadataSlice";
+import {
+  createStreamKeyRecord,
+  selectStoredKey,
+} from "features/bluesky/blueskySlice";
+import {
+  createContentMetadata,
+  selectCurrentMetadataRkey,
+  selectError,
+  selectIsCreating,
+  selectIsUpdating,
+  updateContentMetadata,
+} from "features/bluesky/contentMetadataSlice";
 import React, { useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
@@ -19,7 +29,7 @@ import {
   View,
   XStack,
   YStack,
-  isWeb
+  isWeb,
 } from "tamagui";
 
 // Type definitions for metadata
@@ -88,30 +98,49 @@ const LICENSE_OPTIONS = [
 ];
 
 const LICENSE_DESCRIPTIONS: Record<string, string> = {
-  "all-rights-reserved": "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
-  "cc0": "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
-  "cc-by": "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
-  "cc-by-sa": "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms.",
-  "cc-by-nc": "Attribution + non-commercial. Others may adapt and build upon your work for non-commercial purposes only, and must credit you.",
-  "cc-by-nc-sa": "Attribution + non-commercial + share-alike. Others may adapt and build upon your work for non-commercial purposes only, must credit you, and must license their new creations under identical terms.",
-  "cc-by-nd": "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited.",
-  "cc-by-nc-nd": "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially.",
-  "custom": "Custom license. Define your own terms for how others can use, adapt, or share your content."
+  "all-rights-reserved":
+    "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
+  cc0: "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
+  "cc-by":
+    "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
+  "cc-by-sa":
+    "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms.",
+  "cc-by-nc":
+    "Attribution + non-commercial. Others may adapt and build upon your work for non-commercial purposes only, and must credit you.",
+  "cc-by-nc-sa":
+    "Attribution + non-commercial + share-alike. Others may adapt and build upon your work for non-commercial purposes only, must credit you, and must license their new creations under identical terms.",
+  "cc-by-nd":
+    "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited.",
+  "cc-by-nc-nd":
+    "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially.",
+  custom:
+    "Custom license. Define your own terms for how others can use, adapt, or share your content.",
 };
-
 
 // Helper to generate custom date options
 const generateDateOptions = () => {
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-  
+  const minutes = Array.from({ length: 60 }, (_, i) =>
+    String(i).padStart(2, "0"),
+  );
+
   return { months, years, days, hours, minutes };
 };
 
@@ -130,34 +159,37 @@ export default function ContentMetadataForm({
   const error = useAppSelector(selectError);
   const currentMetadataRkey = useAppSelector(selectCurrentMetadataRkey);
   const storedKey = useAppSelector(selectStoredKey);
-  
+
   const isLoading = isUpdating || isCreating;
   const hasMetadata = Boolean(currentMetadataRkey);
   const hasStreamKey = Boolean(storedKey);
 
   const [contentWarnings, setContentWarnings] = useState<string[]>(
-    initialMetadata?.contentWarnings || []
+    initialMetadata?.contentWarnings || [],
   );
-  const [distributionPolicy, setDistributionPolicy] = useState<DistributionPolicy>(
-    initialMetadata?.distributionPolicy || {
-      allowBroadcast: true,
-      allowArchive: true,
-      broadcastUntil: "forever",
-    }
-  );
+  const [distributionPolicy, setDistributionPolicy] =
+    useState<DistributionPolicy>(
+      initialMetadata?.distributionPolicy || {
+        allowBroadcast: true,
+        allowArchive: true,
+        broadcastUntil: "forever",
+      },
+    );
   const [contentRights, setContentRights] = useState<Rights>(
     initialMetadata?.contentRights || {
-      license: "all-rights-reserved"
-    }
+      license: "all-rights-reserved",
+    },
   );
   const [selectedLicense, setSelectedLicense] = useState(
-    initialMetadata?.contentRights?.license || "all-rights-reserved"
+    initialMetadata?.contentRights?.license || "all-rights-reserved",
   );
 
   // Date picker state
   const [customDay, setCustomDay] = useState("1");
   const [customMonth, setCustomMonth] = useState("January");
-  const [customYear, setCustomYear] = useState(String(new Date().getFullYear() + 1));
+  const [customYear, setCustomYear] = useState(
+    String(new Date().getFullYear() + 1),
+  );
   const [customHour, setCustomHour] = useState("12");
   const [customMinute, setCustomMinute] = useState("00");
   const [customPeriod, setCustomPeriod] = useState<"AM" | "PM">("PM");
@@ -165,14 +197,16 @@ export default function ContentMetadataForm({
   const { months, years, days, hours, minutes } = generateDateOptions();
 
   const handleContentWarningChange = (warning: string, checked: boolean) => {
-    const newWarnings = checked 
+    const newWarnings = checked
       ? [...contentWarnings, warning]
       : contentWarnings.filter((w) => w !== warning);
     setContentWarnings(newWarnings);
     updateMetadata({ contentWarnings: newWarnings });
   };
 
-  const handleDistributionPolicyChange = (updates: Partial<DistributionPolicy>) => {
+  const handleDistributionPolicyChange = (
+    updates: Partial<DistributionPolicy>,
+  ) => {
     const newPolicy = { ...distributionPolicy, ...updates };
     setDistributionPolicy(newPolicy);
     updateMetadata({ distributionPolicy: newPolicy });
@@ -204,22 +238,30 @@ export default function ContentMetadataForm({
       } else if (customPeriod === "AM" && hour24 === 12) {
         hour24 = 0;
       }
-      
+
       const date = new Date(
         parseInt(customYear),
         monthIndex,
         parseInt(customDay),
         hour24,
-        parseInt(customMinute)
+        parseInt(customMinute),
       );
       const isoString = date.toISOString();
-      handleDistributionPolicyChange({ 
+      handleDistributionPolicyChange({
         customDuration: isoString,
         customDate: `${customMonth} ${customDay}, ${customYear}`,
-        customTime: `${customHour}:${customMinute} ${customPeriod}`
+        customTime: `${customHour}:${customMinute} ${customPeriod}`,
       });
     }
-  }, [customDay, customMonth, customYear, customHour, customMinute, customPeriod, distributionPolicy.broadcastUntil]);
+  }, [
+    customDay,
+    customMonth,
+    customYear,
+    customHour,
+    customMinute,
+    customPeriod,
+    distributionPolicy.broadcastUntil,
+  ]);
 
   const handleSaveMetadata = async () => {
     try {
@@ -247,23 +289,31 @@ export default function ContentMetadataForm({
 
       if (hasMetadata && currentMetadataRkey) {
         // Update existing metadata
-        await dispatch(updateContentMetadata({
-          rkey: currentMetadataRkey,
-          ...metadataPayload,
-        })).unwrap();
-        toast.show("Success", { message: "Content metadata updated successfully" });
+        await dispatch(
+          updateContentMetadata({
+            rkey: currentMetadataRkey,
+            ...metadataPayload,
+          }),
+        ).unwrap();
+        toast.show("Success", {
+          message: "Content metadata updated successfully",
+        });
       } else {
         // Create new metadata
-        await dispatch((createContentMetadata as any)({
-          contentWarnings,
-          distributionPolicy,
-          rights: contentRights,
-        })).unwrap();
-        toast.show("Success", { message: "Content metadata created successfully" });
+        await dispatch(
+          (createContentMetadata as any)({
+            contentWarnings,
+            distributionPolicy,
+            rights: contentRights,
+          }),
+        ).unwrap();
+        toast.show("Success", {
+          message: "Content metadata created successfully",
+        });
       }
     } catch (error) {
-      toast.show("Error", { 
-        message: `Failed to ${hasMetadata ? 'update' : 'create'} metadata: ${error.message || error}` 
+      toast.show("Error", {
+        message: `Failed to ${hasMetadata ? "update" : "create"} metadata: ${error.message || error}`,
       });
     }
   };
@@ -302,24 +352,15 @@ export default function ContentMetadataForm({
                 (select any that apply)
               </Paragraph>
             </XStack>
-            
+
             {/* Ultra-compact grid layout for content warnings */}
-            <View 
-              flexDirection="row" 
-              flexWrap="wrap"
-              gap={2}
-              w="100%"
-            >
+            <View flexDirection="row" flexWrap="wrap" gap={2} w="100%">
               {CONTENT_WARNINGS.map((warning) => {
                 const isChecked = contentWarnings.includes(warning.value);
                 return (
-                  <View
-                    key={warning.value}
-                    width="49.5%"
-                    minHeight={20}
-                  >
-                    <XStack 
-                      alignItems="center" 
+                  <View key={warning.value} width="49.5%" minHeight={20}>
+                    <XStack
+                      alignItems="center"
                       gap="$1"
                       paddingVertical={2}
                       paddingHorizontal={4}
@@ -343,7 +384,7 @@ export default function ContentMetadataForm({
                         disabled
                       >
                         <Checkbox.Indicator>
-                          <View 
+                          <View
                             backgroundColor="$blue10"
                             width={6}
                             height={6}
@@ -351,7 +392,7 @@ export default function ContentMetadataForm({
                           />
                         </Checkbox.Indicator>
                       </Checkbox>
-                      <Label 
+                      <Label
                         fontSize="$1"
                         cursor="pointer"
                         flex={1}
@@ -377,47 +418,53 @@ export default function ContentMetadataForm({
                 (broadcast & archive)
               </Paragraph>
             </XStack>
-            
+
             <YStack gap="$1">
-              <Label fontSize="$1.5" fontWeight="500">Broadcast Duration</Label>
+              <Label fontSize="$1.5" fontWeight="500">
+                Broadcast Duration
+              </Label>
               <RadioGroup
                 value={distributionPolicy.broadcastUntil}
                 onValueChange={(value) =>
                   handleDistributionPolicyChange({
-                    broadcastUntil: value as DistributionPolicy["broadcastUntil"],
+                    broadcastUntil:
+                      value as DistributionPolicy["broadcastUntil"],
                   })
                 }
               >
                 <XStack flexWrap="wrap" gap={4}>
                   {BROADCAST_OPTIONS.map((option) => {
-                    const isSelected = distributionPolicy.broadcastUntil === option.value;
+                    const isSelected =
+                      distributionPolicy.broadcastUntil === option.value;
                     return (
-                      <Label 
+                      <Label
                         key={option.value}
                         htmlFor={`broadcast-${option.value}`}
                         cursor="pointer"
                         userSelect="none"
                       >
-                        <XStack 
-                          alignItems="center" 
-                          gap="$1" 
+                        <XStack
+                          alignItems="center"
+                          gap="$1"
                           paddingVertical={2}
                           paddingHorizontal={6}
-                          backgroundColor={isSelected ? "$gray3" : "transparent"}
+                          backgroundColor={
+                            isSelected ? "$gray3" : "transparent"
+                          }
                           borderRadius="$1"
                           cursor="pointer"
                           hoverStyle={{ backgroundColor: "$gray3" }}
                           pressStyle={{ backgroundColor: "$gray4" }}
                         >
-                          <RadioGroup.Item 
-                            value={option.value} 
+                          <RadioGroup.Item
+                            value={option.value}
                             id={`broadcast-${option.value}`}
                             size="$2"
                             borderWidth={1.5}
                             borderColor={isSelected ? "$blue10" : "$gray8"}
                           >
                             <RadioGroup.Indicator>
-                              <View 
+                              <View
                                 backgroundColor="$blue10"
                                 width={6}
                                 height={6}
@@ -425,7 +472,7 @@ export default function ContentMetadataForm({
                               />
                             </RadioGroup.Indicator>
                           </RadioGroup.Item>
-                          <Paragraph 
+                          <Paragraph
                             fontSize="$1"
                             cursor="pointer"
                             userSelect="none"
@@ -438,11 +485,19 @@ export default function ContentMetadataForm({
                   })}
                 </XStack>
               </RadioGroup>
-              
+
               {distributionPolicy.broadcastUntil === "custom" && (
-                <YStack gap="$1" mt="$1" p="$1" backgroundColor="$gray2" borderRadius="$2">
-                  <Label fontSize="$1" fontWeight="500">Select End Date & Time</Label>
-                  
+                <YStack
+                  gap="$1"
+                  mt="$1"
+                  p="$1"
+                  backgroundColor="$gray2"
+                  borderRadius="$2"
+                >
+                  <Label fontSize="$1" fontWeight="500">
+                    Select End Date & Time
+                  </Label>
+
                   {/* Date Selection */}
                   <XStack gap="$1" alignItems="center">
                     <Select
@@ -457,15 +512,21 @@ export default function ContentMetadataForm({
                         <Select.Viewport>
                           <Select.Group>
                             {months.map((month) => (
-                              <Select.Item key={month} value={month} index={months.indexOf(month)}>
-                                <Select.ItemText fontSize="$1">{month}</Select.ItemText>
+                              <Select.Item
+                                key={month}
+                                value={month}
+                                index={months.indexOf(month)}
+                              >
+                                <Select.ItemText fontSize="$1">
+                                  {month}
+                                </Select.ItemText>
                               </Select.Item>
                             ))}
                           </Select.Group>
                         </Select.Viewport>
                       </Select.Content>
                     </Select>
-                    
+
                     <Select
                       value={customDay}
                       onValueChange={setCustomDay}
@@ -478,15 +539,21 @@ export default function ContentMetadataForm({
                         <Select.Viewport>
                           <Select.Group>
                             {days.map((day) => (
-                              <Select.Item key={day} value={String(day)} index={day - 1}>
-                                <Select.ItemText fontSize="$1">{day}</Select.ItemText>
+                              <Select.Item
+                                key={day}
+                                value={String(day)}
+                                index={day - 1}
+                              >
+                                <Select.ItemText fontSize="$1">
+                                  {day}
+                                </Select.ItemText>
                               </Select.Item>
                             ))}
                           </Select.Group>
                         </Select.Viewport>
                       </Select.Content>
                     </Select>
-                    
+
                     <Select
                       value={customYear}
                       onValueChange={setCustomYear}
@@ -499,8 +566,14 @@ export default function ContentMetadataForm({
                         <Select.Viewport>
                           <Select.Group>
                             {years.map((year) => (
-                              <Select.Item key={year} value={String(year)} index={years.indexOf(year)}>
-                                <Select.ItemText fontSize="$1">{year}</Select.ItemText>
+                              <Select.Item
+                                key={year}
+                                value={String(year)}
+                                index={years.indexOf(year)}
+                              >
+                                <Select.ItemText fontSize="$1">
+                                  {year}
+                                </Select.ItemText>
                               </Select.Item>
                             ))}
                           </Select.Group>
@@ -508,7 +581,7 @@ export default function ContentMetadataForm({
                       </Select.Content>
                     </Select>
                   </XStack>
-                  
+
                   {/* Time Selection */}
                   <XStack gap="$1" alignItems="center">
                     <Select
@@ -523,17 +596,23 @@ export default function ContentMetadataForm({
                         <Select.Viewport>
                           <Select.Group>
                             {hours.map((hour) => (
-                              <Select.Item key={hour} value={String(hour)} index={hour - 1}>
-                                <Select.ItemText fontSize="$1">{hour}</Select.ItemText>
+                              <Select.Item
+                                key={hour}
+                                value={String(hour)}
+                                index={hour - 1}
+                              >
+                                <Select.ItemText fontSize="$1">
+                                  {hour}
+                                </Select.ItemText>
                               </Select.Item>
                             ))}
                           </Select.Group>
                         </Select.Viewport>
                       </Select.Content>
                     </Select>
-                    
+
                     <Paragraph fontSize="$1">:</Paragraph>
-                    
+
                     <Select
                       value={customMinute}
                       onValueChange={setCustomMinute}
@@ -546,15 +625,21 @@ export default function ContentMetadataForm({
                         <Select.Viewport>
                           <Select.Group>
                             {minutes.map((minute) => (
-                              <Select.Item key={minute} value={minute} index={minutes.indexOf(minute)}>
-                                <Select.ItemText fontSize="$1">{minute}</Select.ItemText>
+                              <Select.Item
+                                key={minute}
+                                value={minute}
+                                index={minutes.indexOf(minute)}
+                              >
+                                <Select.ItemText fontSize="$1">
+                                  {minute}
+                                </Select.ItemText>
                               </Select.Item>
                             ))}
                           </Select.Group>
                         </Select.Viewport>
                       </Select.Content>
                     </Select>
-                    
+
                     <XStack gap="$0.5">
                       {["AM", "PM"].map((period) => {
                         const isSelected = customPeriod === period;
@@ -568,12 +653,18 @@ export default function ContentMetadataForm({
                             backgroundColor={isSelected ? "$blue10" : "$gray3"}
                             borderRadius="$1"
                             cursor="pointer"
-                            hoverStyle={{ backgroundColor: isSelected ? "$blue11" : "$gray4" }}
+                            hoverStyle={{
+                              backgroundColor: isSelected
+                                ? "$blue11"
+                                : "$gray4",
+                            }}
                             pressStyle={{ opacity: 0.8 }}
-                            onPress={() => setCustomPeriod(period as "AM" | "PM")}
+                            onPress={() =>
+                              setCustomPeriod(period as "AM" | "PM")
+                            }
                           >
-                            <Paragraph 
-                              fontSize="$1" 
+                            <Paragraph
+                              fontSize="$1"
                               fontWeight={isSelected ? "600" : "400"}
                               color={isSelected ? "white" : "$gray11"}
                               cursor="pointer"
@@ -585,10 +676,11 @@ export default function ContentMetadataForm({
                       })}
                     </XStack>
                   </XStack>
-                  
+
                   {distributionPolicy.customDate && (
                     <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
-                      Until: {distributionPolicy.customDate} at {distributionPolicy.customTime}
+                      Until: {distributionPolicy.customDate} at{" "}
+                      {distributionPolicy.customTime}
                     </Paragraph>
                   )}
                 </YStack>
@@ -596,19 +688,21 @@ export default function ContentMetadataForm({
             </YStack>
 
             <YStack gap="$0.5">
-              <XStack 
-                alignItems="center" 
+              <XStack
+                alignItems="center"
                 gap="$1"
                 paddingVertical={2}
                 paddingHorizontal={4}
-                backgroundColor={distributionPolicy.allowArchive ? "$gray3" : "transparent"}
+                backgroundColor={
+                  distributionPolicy.allowArchive ? "$gray3" : "transparent"
+                }
                 borderRadius="$1"
                 cursor="pointer"
                 hoverStyle={{ backgroundColor: "$gray3" }}
                 pressStyle={{ backgroundColor: "$gray4" }}
                 onPress={() => {
-                  handleDistributionPolicyChange({ 
-                    allowArchive: !distributionPolicy.allowArchive 
+                  handleDistributionPolicyChange({
+                    allowArchive: !distributionPolicy.allowArchive,
                   });
                 }}
               >
@@ -617,13 +711,17 @@ export default function ContentMetadataForm({
                   checked={distributionPolicy.allowArchive}
                   size="$2"
                   borderWidth={1.5}
-                  borderColor={distributionPolicy.allowArchive ? "$blue10" : "$gray8"}
-                  backgroundColor={distributionPolicy.allowArchive ? "$blue3" : "transparent"}
+                  borderColor={
+                    distributionPolicy.allowArchive ? "$blue10" : "$gray8"
+                  }
+                  backgroundColor={
+                    distributionPolicy.allowArchive ? "$blue3" : "transparent"
+                  }
                   pointerEvents="none"
                   disabled
                 >
                   <Checkbox.Indicator>
-                    <View 
+                    <View
                       backgroundColor="$blue10"
                       width={6}
                       height={6}
@@ -631,7 +729,7 @@ export default function ContentMetadataForm({
                     />
                   </Checkbox.Indicator>
                 </Checkbox>
-                <Label 
+                <Label
                   fontSize="$1"
                   cursor="pointer"
                   userSelect="none"
@@ -668,10 +766,12 @@ export default function ContentMetadataForm({
                   (copyright & attribution)
                 </Paragraph>
               </XStack>
-              
+
               <YStack gap="$1.5">
                 <YStack gap="$0.5">
-                  <Label fontSize="$1.5" fontWeight="500">License</Label>
+                  <Label fontSize="$1.5" fontWeight="500">
+                    License
+                  </Label>
                   <Select
                     value={selectedLicense}
                     onValueChange={(value) => {
@@ -681,7 +781,11 @@ export default function ContentMetadataForm({
                       }
                     }}
                   >
-                    <Select.Trigger width="100%" iconAfter={ChevronDown} size="$2">
+                    <Select.Trigger
+                      width="100%"
+                      iconAfter={ChevronDown}
+                      size="$2"
+                    >
                       <Select.Value placeholder="Select a license" />
                     </Select.Trigger>
 
@@ -706,7 +810,13 @@ export default function ContentMetadataForm({
                     </Adapt>
 
                     <Select.Content zIndex={200000}>
-                      <Select.ScrollUpButton alignItems="center" justifyContent="center" position="relative" width="100%" height="$3">
+                      <Select.ScrollUpButton
+                        alignItems="center"
+                        justifyContent="center"
+                        position="relative"
+                        width="100%"
+                        height="$3"
+                      >
                         <YStack zIndex={10}>
                           <ChevronDown size={20} />
                         </YStack>
@@ -735,20 +845,26 @@ export default function ContentMetadataForm({
                         </Select.Group>
                       </Select.Viewport>
 
-                      <Select.ScrollDownButton alignItems="center" justifyContent="center" position="relative" width="100%" height="$3">
+                      <Select.ScrollDownButton
+                        alignItems="center"
+                        justifyContent="center"
+                        position="relative"
+                        width="100%"
+                        height="$3"
+                      >
                         <YStack zIndex={10}>
                           <ChevronDown size={20} />
                         </YStack>
                       </Select.ScrollDownButton>
                     </Select.Content>
                   </Select>
-                  
+
                   {/* License Description */}
                   {selectedLicense && LICENSE_DESCRIPTIONS[selectedLicense] && (
-                    <XStack 
-                      gap="$1" 
-                      p="$1" 
-                      backgroundColor="$gray2" 
+                    <XStack
+                      gap="$1"
+                      p="$1"
+                      backgroundColor="$gray2"
                       borderRadius="$1"
                       alignItems="flex-start"
                     >
@@ -762,14 +878,16 @@ export default function ContentMetadataForm({
 
                 {selectedLicense === "custom" && (
                   <YStack gap="$0.5">
-                    <Label fontSize="$1" fontWeight="500">Custom License</Label>
+                    <Label fontSize="$1" fontWeight="500">
+                      Custom License
+                    </Label>
                     <TextArea
                       placeholder="Enter custom license terms"
                       value={contentRights.customLicense || ""}
                       onChangeText={(text) =>
-                        handleContentRightsChange({ 
+                        handleContentRightsChange({
                           license: "custom",
-                          customLicense: text 
+                          customLicense: text,
                         })
                       }
                       size="$2"
@@ -781,7 +899,7 @@ export default function ContentMetadataForm({
                       backgroundColor="$gray2"
                       focusStyle={{
                         borderColor: "$blue10",
-                        backgroundColor: "$gray3"
+                        backgroundColor: "$gray3",
                       }}
                     />
                   </YStack>
@@ -789,7 +907,9 @@ export default function ContentMetadataForm({
 
                 <XStack gap="$1.5">
                   <YStack gap="$0.5" f={1}>
-                    <Label fontSize="$1" fontWeight="500">Year</Label>
+                    <Label fontSize="$1" fontWeight="500">
+                      Year
+                    </Label>
                     <Input
                       placeholder="2025"
                       value={contentRights.copyrightYear || ""}
@@ -804,13 +924,15 @@ export default function ContentMetadataForm({
                       backgroundColor="$gray2"
                       focusStyle={{
                         borderColor: "$blue10",
-                        backgroundColor: "$gray3"
+                        backgroundColor: "$gray3",
                       }}
                     />
                   </YStack>
-                  
+
                   <YStack gap="$0.5" f={2}>
-                    <Label fontSize="$1" fontWeight="500">Attribution</Label>
+                    <Label fontSize="$1" fontWeight="500">
+                      Attribution
+                    </Label>
                     <Input
                       placeholder="Your Name / Handle"
                       value={contentRights.attribution || ""}
@@ -825,14 +947,16 @@ export default function ContentMetadataForm({
                       backgroundColor="$gray2"
                       focusStyle={{
                         borderColor: "$blue10",
-                        backgroundColor: "$gray3"
+                        backgroundColor: "$gray3",
                       }}
                     />
                   </YStack>
                 </XStack>
 
                 <YStack gap="$0.5">
-                  <Label fontSize="$1" fontWeight="500">Copyright Notice (Optional)</Label>
+                  <Label fontSize="$1" fontWeight="500">
+                    Copyright Notice (Optional)
+                  </Label>
                   <TextArea
                     placeholder="Additional copyright info"
                     value={contentRights.copyright || ""}
@@ -848,7 +972,7 @@ export default function ContentMetadataForm({
                     backgroundColor="$gray2"
                     focusStyle={{
                       borderColor: "$blue10",
-                      backgroundColor: "$gray3"
+                      backgroundColor: "$gray3",
                     }}
                   />
                 </YStack>
@@ -869,10 +993,13 @@ export default function ContentMetadataForm({
             maxWidth={400}
             onPress={handleSaveMetadata}
           >
-            {isLoading 
-              ? (isCreating ? "Creating..." : "Updating...") 
-              : (hasMetadata ? "Update Content Metadata" : "Create Content Metadata")
-            }
+            {isLoading
+              ? isCreating
+                ? "Creating..."
+                : "Updating..."
+              : hasMetadata
+                ? "Update Content Metadata"
+                : "Create Content Metadata"}
           </Button>
           {error && (
             <Paragraph color="$red10" fontSize="$1" mt="$1">
@@ -884,7 +1011,13 @@ export default function ContentMetadataForm({
 
       {/* Footer Information */}
       <View p="$0.5" maxWidth={900} alignSelf="center">
-        <XStack gap="$1" backgroundColor="$gray2" p="$1" borderRadius="$1" alignItems="center">
+        <XStack
+          gap="$1"
+          backgroundColor="$gray2"
+          p="$1"
+          borderRadius="$1"
+          alignItems="center"
+        >
           <Paragraph fontSize="$1" color="$gray11" flex={1}>
             Metadata is cryptographically signed for authenticity.
             <Paragraph
@@ -897,7 +1030,8 @@ export default function ContentMetadataForm({
                 }
               }}
             >
-              {" "}Learn more
+              {" "}
+              Learn more
             </Paragraph>
           </Paragraph>
         </XStack>

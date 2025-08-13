@@ -143,6 +143,7 @@ function HomeScreenItem({
         category={[]}
         viewers={item.viewerCount?.count}
         isLive={true}
+        livestreamUri={item.uri}
       />
     </AQLink>
   );
@@ -159,6 +160,7 @@ function PlaceholderItem() {
         avatarUrl={
           "https://cdn.bsky.app/img/avatar/plain/did:plc:4ukwiehjoytl56ysom2pdwko/bafkreieal2i74ynzrvofia6fa3efqnyxmox76ohrfldt5kvls73lbspzdm@jpeg"
         }
+        livestreamUri={undefined}
         streamerName={
           "hi! im here to pad out the grid so it doesn't look all wacky"
         }
