@@ -41,27 +41,37 @@
     },
     "contentRights": {
       "type": "object",
-      "description": "Content rights and attribution information",
+      "description": "Content rights and attribution information.",
       "properties": {
-        "attribution": {
+        "creator": {
           "type": "string",
-          "maxLength": 100,
-          "description": "Attribution name or handle."
+          "description": "Name of the creator of the work."
         },
-        "license": {
+        "copyrightNotice": {
           "type": "string",
-          "description": "License identifier (e.g. 'CC BY-NC-SA', 'All Rights Reserved')."
-        },
-        "usageTerms": {
-          "type": "string",
-          "maxLength": 500,
-          "description": "Additional notice or usage terms."
+          "description": "Copyright notice for the work."
         },
         "copyrightYear": {
           "type": "integer",
-          "minLength": 4,
-          "maxLength": 4,
-          "description": "Year of creation or publication (e.g. '2025')."
+          "description": "Year of creation or publication."
+        },
+        "license": {
+          "type": "string",
+          "knownValues": [
+            "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "https://creativecommons.org/licenses/by-nc/4.0/",
+            "https://creativecommons.org/licenses/by-nd/4.0/",
+            "https://creativecommons.org/licenses/by-sa/4.0/",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://creativecommons.org/publicdomain/zero/1.0/",
+            "place.stream.default.metadata#all-rights-reserved"
+          ],
+          "description": "License URL or identifier."
+        },
+        "creditLine": {
+          "type": "string",
+          "description": "Credit line for the work."
         }
       }
     },
@@ -119,6 +129,38 @@
     "violence": {
       "type": "token",
       "description": "The content could be perceived as offensive due to the discussion or display of violence."
+    },
+    "https://creativecommons.org/licenses/by-nc-nd/4.0/": {
+      "type": "token",
+      "description": "Attribution-NonCommercial-NoDerivatives 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-nc-sa/4.0/": {
+      "type": "token",
+      "description": "Attribution-NonCommercial-ShareAlike 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-nc/4.0/": {
+      "type": "token",
+      "description": "Attribution-NonCommercial 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-nd/4.0/": {
+      "type": "token",
+      "description": "Attribution-NoDerivatives 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-sa/4.0/": {
+      "type": "token",
+      "description": "Attribution-ShareAlike 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by/4.0/": {
+      "type": "token",
+      "description": "Attribution 4.0 International"
+    },
+    "https://creativecommons.org/publicdomain/zero/1.0/": {
+      "type": "token",
+      "description": "Public Domain Dedication 1.0"
+    },
+    "all-rights-reserved": {
+      "type": "token",
+      "description": "All rights reserved."
     }
   }
 }
