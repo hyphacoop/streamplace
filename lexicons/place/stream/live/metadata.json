@@ -1,40 +1,20 @@
 {
   "lexicon": 1,
-  "id": "place.stream.live.metadata",
+  "id": "place.stream.default.metadata",
   "defs": {
     "main": {
       "type": "record",
-      "description": "Metadata record for livestream content including warnings, rights, and distribution policy",
-      "key": "tid",
+      "description": "Default metadata record for livestream including content warnings, rights, and distribution policy",
+      "key": "self",
       "record": {
         "type": "object",
-        "required": ["createdAt"],
         "properties": {
-          "createdAt": {
-            "type": "string",
-            "format": "datetime",
-            "description": "iso 8601 with timezone; mirrored to c2pa.metadata (dc:created/xmp:CreateDate)."
-          },
           "contentWarnings": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "prefer contentWarningUris as it maps to iptc uris."
-          },
-          "contentWarningUris": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uri"
-            },
-            "description": "uris from iptc content warning vocabulary (https://cv.iptc.org/newscodes/contentwarning/). these are written into c2pa."
-          },
-          "contentWarningScheme": {
-            "type": "string",
-            "format": "uri",
-            "default": "https://cv.iptc.org/newscodes/contentwarning/",
-            "description": "controlled vocabulary scheme uri."
+            "description": "Content warnings for this stream."
           },
           "rights": {
             "type": "ref",
@@ -43,11 +23,6 @@
           "distributionPolicy": {
             "type": "ref",
             "ref": "#distributionPolicy"
-          },
-          "streamKeyRef": {
-            "type": "ref",
-            "ref": "com.atproto.repo.strongRef",
-            "description": "Reference to the stream key (place.stream.key) this metadata applies to."
           }
         }
       }
@@ -56,73 +31,39 @@
       "type": "object",
       "description": "Content rights and attribution information",
       "properties": {
+        "year": {
+          "type": "string",
+          "maxLength": 4,
+          "description": "Year of creation or publication (e.g. '2025')."
+        },
         "attribution": {
           "type": "string",
           "maxLength": 100,
-          "description": "display credit line; maps to photoshop:Credit."
-        },
-        "creators": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "description": "list of creators; maps to dc:creator."
-        },
-        "copyright": {
-          "type": "string",
-          "maxLength": 200,
-          "description": "copyright notice; maps to photoshop:CopyrightNotice."
-        },
-        "copyrightYear": {
-          "type": "string",
-          "maxLength": 4
+          "description": "Attribution name or handle."
         },
         "license": {
           "type": "string",
-          "description": "ui hint. source of truth is licenseUrl and usageTerms."
-        },
-        "licenseUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "canonical license page; maps to xmpRights:WebStatement."
+          "description": "License identifier (e.g. 'CC BY-NC-SA', 'All Rights Reserved')."
         },
         "usageTerms": {
           "type": "string",
           "maxLength": 500,
-          "description": "human-readable terms; maps to xmpRights:UsageTerms."
+          "description": "Additional copyright notice or usage terms."
         }
       }
     },
     "distributionPolicy": {
       "type": "object",
-      "required": ["allowBroadcast", "allowArchive", "broadcastUntil"],
-      "description": "also emitted as a custom c2pa assertion label: place.stream.distribution/v1",
+      "description": "Distribution and rebroadcast policy.",
       "properties": {
-        "policyId": {
-          "type": "string",
-          "description": "uuid"
-        },
-        "policyVersion": {
-          "type": "string",
-          "description": "e.g. 2025-08-12"
-        },
-        "allowBroadcast": {
-          "type": "boolean",
-          "description": "Whether the content can be rebroadcast."
-        },
         "allowArchive": {
           "type": "boolean",
-          "description": "Whether viewers can save this stream."
+          "description": "Whether nodes can archive this stream."
         },
         "broadcastUntil": {
           "type": "string",
-          "description": "How long the stream can be rebroadcast."
-        },
-        "customDuration": {
-          "type": "string",
           "format": "datetime",
-          "description": "Custom end date/time in ISO 8601 format. Required when broadcastUntil is 'custom'."
+          "description": "When rebroadcast permissions expire (ISO 8601 format). If not specified, no rebroadcast allowed."
         }
       }
     }
