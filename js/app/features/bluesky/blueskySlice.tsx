@@ -847,7 +847,13 @@ export const blueskySlice = createAppSlice({
 
     createLivestreamRecord: create.asyncThunk(
       async (
-        { title, customThumbnail }: { title: string; customThumbnail?: Blob },
+        {
+          title,
+          customThumbnail,
+        }: {
+          title: string;
+          customThumbnail?: Blob;
+        },
         thunkAPI,
       ) => {
         const now = new Date();
@@ -959,11 +965,56 @@ export const blueskySlice = createAppSlice({
           thumb: thumbnail,
         };
 
-        await bluesky.pdsAgent.com.atproto.repo.createRecord({
-          repo: did,
-          collection: "place.stream.livestream",
-          record,
-        });
+        const livestreamResult =
+          await bluesky.pdsAgent.com.atproto.repo.createRecord({
+            repo: did,
+            collection: "place.stream.livestream",
+            record,
+          });
+
+        // Create default metadata record if it doesn't exist
+        try {
+          // Check if default metadata record already exists
+          await bluesky.pdsAgent.com.atproto.repo.getRecord({
+            repo: did,
+            collection: "place.stream.default.metadata",
+            rkey: "self",
+          });
+          // Record exists, no need to create
+        } catch (err) {
+          // Record doesn't exist, create it with default values
+          if (
+            err instanceof Error &&
+            (err.message.includes("not found") ||
+              err.message.includes("mst: not found") ||
+              err.message.includes("RecordNotFound"))
+          ) {
+            const defaultMetadataRecord = {
+              $type: "place.stream.default.metadata",
+              createdAt: new Date().toISOString(),
+              contentWarnings: [],
+              distributionPolicy: {
+                allowArchive: true,
+                broadcastExpiry: undefined, // No expiration means forever
+              },
+              contentRights: {},
+            };
+
+            await bluesky.pdsAgent.com.atproto.repo.createRecord({
+              repo: did,
+              collection: "place.stream.default.metadata",
+              rkey: "self",
+              record: defaultMetadataRecord,
+            });
+          } else {
+            // Some other error occurred, log it but don't fail the livestream creation
+            console.warn(
+              "Failed to check/create default metadata record:",
+              err,
+            );
+          }
+        }
+
         return record;
       },
       {
