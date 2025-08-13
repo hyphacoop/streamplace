@@ -38,13 +38,13 @@ Content rights and attribution information.
 
 **Properties:**
 
-| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------- | --------- | ----- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `https://creativecommons.org/licenses/by-nc-nd/4.0/`, `https://creativecommons.org/licenses/by-nc-sa/4.0/`, `https://creativecommons.org/licenses/by-nc/4.0/`, `https://creativecommons.org/licenses/by-nd/4.0/`, `https://creativecommons.org/licenses/by-sa/4.0/`, `https://creativecommons.org/licenses/by/4.0/`, `https://creativecommons.org/publicdomain/zero/1.0/`, `place.stream.default.metadata#all-rights-reserved` |
-| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------- | --------- | ----- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-nd/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-sa/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-nc/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-nd/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by-sa/4.0/`, `place.stream.default.metadata#https://creativecommons.org/licenses/by/4.0/`, `place.stream.default.metadata#https://creativecommons.org/publicdomain/zero/1.0/` |
+| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ---
 
@@ -58,10 +58,10 @@ Distribution and rebroadcast policy.
 
 **Properties:**
 
-| Name              | Type      | Req'd | Description                                                                                                                | Constraints        |
-| ----------------- | --------- | ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `allowArchive`    | `boolean` | ❌    | Whether nodes can archive this stream.                                                                                     |                    |
-| `broadcastExpiry` | `string`  | ❌    | When rebroadcast permissions expire (ISO 8601 format). If not specified, there is no expiration on rebroadcast permission. | Format: `datetime` |
+| Name              | Type      | Req'd | Description                                                                                              | Constraints        |
+| ----------------- | --------- | ----- | -------------------------------------------------------------------------------------------------------- | ------------------ |
+| `allowArchive`    | `boolean` | ❌    | Whether nodes can archive this stream.                                                                   |                    |
+| `broadcastExpiry` | `string`  | ❌    | When rebroadcast permissions expire. If not specified, there is no expiration on rebroadcast permission. | Format: `datetime` |
 
 ---
 
@@ -245,16 +245,6 @@ Public Domain Dedication 1.0
 
 ---
 
-<a name="allrightsreserved"></a>
-
-### `all-rights-reserved`
-
-**Type:** `token`
-
-All rights reserved.
-
----
-
 ## Lexicon Source
 
 ```json
@@ -318,14 +308,13 @@ All rights reserved.
         "license": {
           "type": "string",
           "knownValues": [
-            "https://creativecommons.org/licenses/by-nc-nd/4.0/",
-            "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-            "https://creativecommons.org/licenses/by-nc/4.0/",
-            "https://creativecommons.org/licenses/by-nd/4.0/",
-            "https://creativecommons.org/licenses/by-sa/4.0/",
-            "https://creativecommons.org/licenses/by/4.0/",
-            "https://creativecommons.org/publicdomain/zero/1.0/",
-            "place.stream.default.metadata#all-rights-reserved"
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nd/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-sa/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/publicdomain/zero/1.0/"
           ],
           "description": "License URL or identifier."
         },
@@ -346,7 +335,7 @@ All rights reserved.
         "broadcastExpiry": {
           "type": "string",
           "format": "datetime",
-          "description": "When rebroadcast permissions expire (ISO 8601 format). If not specified, there is no expiration on rebroadcast permission."
+          "description": "When rebroadcast permissions expire. If not specified, there is no expiration on rebroadcast permission."
         }
       }
     },
@@ -417,10 +406,6 @@ All rights reserved.
     "https://creativecommons.org/publicdomain/zero/1.0/": {
       "type": "token",
       "description": "Public Domain Dedication 1.0"
-    },
-    "all-rights-reserved": {
-      "type": "token",
-      "description": "All rights reserved."
     }
   }
 }

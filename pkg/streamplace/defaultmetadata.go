@@ -42,6 +42,6 @@ type DefaultMetadata_ContentRights struct {
 type DefaultMetadata_DistributionPolicy struct {
 	// allowArchive: Whether nodes can archive this stream.
 	AllowArchive *bool `json:"allowArchive,omitempty" cborgen:"allowArchive,omitempty"`
-	// broadcastExpiry: When rebroadcast permissions expire (ISO 8601 format). If not specified, there is no expiration on rebroadcast permission.
+	// broadcastExpiry: When rebroadcast permissions expire. If not specified, there is no expiration on rebroadcast permission.
 	BroadcastExpiry *string `json:"broadcastExpiry,omitempty" cborgen:"broadcastExpiry,omitempty"`
 }
