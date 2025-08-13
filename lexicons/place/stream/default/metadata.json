@@ -61,7 +61,7 @@
           "type": "boolean",
           "description": "Whether nodes can archive this stream."
         },
-        "broadcastUntil": {
+        "broadcastExpiry": {
           "type": "string",
           "format": "datetime",
           "description": "When rebroadcast permissions expire (ISO 8601 format). If not specified, no rebroadcast allowed."
