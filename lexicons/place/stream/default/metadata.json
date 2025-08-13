@@ -5,7 +5,7 @@
     "main": {
       "type": "record",
       "description": "Default metadata record for livestream including content warnings, rights, and distribution policy",
-      "key": "self",
+      "key": "literal:self",
       "record": {
         "type": "object",
         "properties": {
