@@ -118,6 +118,9 @@ func (m *DBModel) MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDef
 		// Exclude gated messages
 		Joins("LEFT JOIN gates ON gates.repo_did = chat_messages.streamer_repo_did AND gates.hidden_message = chat_messages.uri").
 		Where("gates.hidden_message IS NULL"). // Only include messages where no gate exists
+		// Exclude labeled messages
+		Joins("LEFT JOIN labels ON labels.uri = chat_messages.uri").
+		Where("labels.uri IS NULL"). // Only include messages where no label exists
 		Limit(100).
 		Order("chat_messages.created_at DESC").
 		Find(&dbmessages).Error

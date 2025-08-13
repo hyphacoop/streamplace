@@ -24,11 +24,9 @@ import {
   colors,
   fontSize,
   gap,
-  h,
   layout,
   ml,
   mt,
-  mx,
   p,
   pb,
   pl,
@@ -202,6 +200,8 @@ export const DropdownMenuContent = forwardRef<
   );
 });
 
+/// Responsive Dropdown Menu Content. On mobile this will render a *bottom sheet* that is **portaled to the root of the app**.
+/// Prefer passing scoped content in as **otherwise it may crash the app**.
 export const ResponsiveDropdownMenuContent = forwardRef<any, any>(
   ({ children, ...props }, ref) => {
     const { width } = useWindowDimensions();
@@ -349,13 +349,7 @@ export const DropdownMenuSeparator = forwardRef<
   any,
   DropdownMenuPrimitive.SeparatorProps
 >((props, ref) => {
-  return (
-    <View
-      ref={ref}
-      style={[mx[2], h[0.5] || { height: 0.5 }, bg.gray[800]]}
-      {...props}
-    />
-  );
+  return <View ref={ref} style={[{ height: 0.5 }, bg.gray[800]]} {...props} />;
 });
 
 export function DropdownMenuShortcut(props: any) {
@@ -378,16 +372,16 @@ export const DropdownMenuGroup = forwardRef<
 >((props, ref) => {
   const { inset, title, children, ...rest } = props;
   return (
-    <View style={[pt[2], inset ? gap[2] : gap[1]]} ref={ref} {...rest}>
+    <View style={[pt[2], inset && gap[2]]} ref={ref} {...rest}>
       {title && (
         <Text style={[textColors.gray[400], pb[1], pl[2]]}>{title}</Text>
       )}
       <View
         style={[
           bg.gray[900],
-          Platform.OS === "web" ? px[2] : p[2],
-          gap[2],
-          { borderRadius: borderRadius.lg, gap: 10 },
+          Platform.OS === "web" ? [px[2], py[1]] : p[2],
+          gap.all[1],
+          { borderRadius: borderRadius.lg },
         ]}
       >
         {children}

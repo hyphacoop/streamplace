@@ -30,8 +30,11 @@ func (a *StreamplaceAPI) HandleDidJSON(ctx context.Context) httprouter.Handle {
 
 func (a *StreamplaceAPI) HandleAtprotoDID(ctx context.Context) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		host := a.CLI.PublicHost
-		_, err := fmt.Fprintf(w, "did:web:%s", host)
+		did := a.CLI.AtprotoDID
+		if did == "" {
+			did = fmt.Sprintf("did:web:%s", a.CLI.PublicHost)
+		}
+		_, err := fmt.Fprintf(w, "%s", did)
 		if err != nil {
 			log.Error(ctx, "error writing response", "error", err)
 		}

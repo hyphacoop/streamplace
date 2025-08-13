@@ -1,5 +1,6 @@
 import {
   intoPlayerProtocol,
+  useOffline,
   usePlayerStore,
   useRenditions,
   useSegment,
@@ -212,7 +213,7 @@ export default function Controls(props: { name: string; playerId?: string }) {
   const setMuted = usePlayerStore((state) => state.setMuted, props.playerId);
   const showControls = usePlayerStore((state) => state.showControls, playerId);
   const setPlayTime = usePlayerStore((state) => state.setPlayTime, playerId);
-  const offline = usePlayerStore((state) => state.offline, playerId);
+  const offline = useOffline();
   const muteWasForced = usePlayerStore(
     (state) => state.muteWasForced,
     playerId,

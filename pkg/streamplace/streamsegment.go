@@ -22,6 +22,8 @@ type Segment struct {
 	Id string `json:"id" cborgen:"id"`
 	// signingKey: The DID of the signing key used for this segment
 	SigningKey string `json:"signingKey" cborgen:"signingKey"`
+	// size: The size of the segment in bytes
+	Size *int64 `json:"size,omitempty" cborgen:"size,omitempty"`
 	// startTime: When this segment started
 	StartTime string           `json:"startTime" cborgen:"startTime"`
 	Video     []*Segment_Video `json:"video,omitempty" cborgen:"video,omitempty"`
@@ -48,6 +50,7 @@ type Segment_SegmentView struct {
 
 // Segment_Video is a "video" in the place.stream.segment schema.
 type Segment_Video struct {
+	Bframes   *bool              `json:"bframes,omitempty" cborgen:"bframes,omitempty"`
 	Codec     string             `json:"codec" cborgen:"codec"`
 	Framerate *Segment_Framerate `json:"framerate,omitempty" cborgen:"framerate,omitempty"`
 	Height    int64              `json:"height" cborgen:"height"`

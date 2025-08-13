@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { flex, layout, w, zIndex } from "../../lib/theme/atoms";
-import { useSegment } from "../../livestream-store";
+import { flex, h, layout, w, zIndex } from "../../lib/theme/atoms";
 import {
   PlayerStatus,
   PlayerStatusTracker,
@@ -10,18 +9,28 @@ import { useStreamplaceStore } from "../../streamplace-store";
 import { Text, View } from "../ui";
 import { Fullscreen } from "./fullscreen";
 import { PlayerProps } from "./props";
+import ReportModal from "./ui/report-modal";
 
 const OFFLINE_THRESHOLD = 10000;
 
 export * as PlayerUI from "./ui";
 
-export function Player(props: Partial<PlayerProps>) {
-  const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
-
-  const setOffline = usePlayerStore((x) => x.setOffline);
+export function Player(
+  props: Partial<PlayerProps> & { children?: React.ReactNode },
+) {
   const setIngest = usePlayerStore((x) => x.setIngestConnectionState);
 
   const clearControlsTimeout = usePlayerStore((x) => x.clearControlsTimeout);
+
+  const setReportingURL = usePlayerStore((x) => x.setReportingURL);
+
+  const reportModalOpen = usePlayerStore((x) => x.reportModalOpen);
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const reportSubject = usePlayerStore((x) => x.reportSubject);
+
+  useEffect(() => {
+    setReportingURL(props.reportingURL ?? null);
+  }, [props.reportingURL]);
 
   // Will call back every few seconds to send health updates
   usePlayerStatus();
@@ -44,40 +53,23 @@ export function Player(props: Partial<PlayerProps>) {
     };
   }, []);
 
-  const segment = useSegment();
-  const [lastCheck, setLastCheck] = useState(0);
-
-  useEffect(() => {
-    if (playing) {
-      setOffline(false);
-      return;
-    }
-    if (!segment) {
-      setOffline(false);
-      return;
-    }
-    const startTime = Date.parse(segment.startTime);
-    if (!startTime) {
-      console.error("startTime is not a number", segment.startTime);
-      return;
-    }
-    const timeSinceStart = Date.now() - startTime;
-    if (timeSinceStart > OFFLINE_THRESHOLD) {
-      setOffline(true);
-      return;
-    }
-    const handle = setTimeout(() => {
-      setLastCheck(Date.now());
-    }, 1000);
-    return () => clearTimeout(handle);
-  }, [segment, playing, lastCheck]);
-
   return (
     <>
       <View
-        style={[zIndex[0], flex.values[1], w.percent[100], layout.flex.center]}
+        style={[
+          zIndex[0],
+          w.percent[100],
+          h.percent[100],
+          flex.shrink[1],
+          layout.flex.center,
+        ]}
       >
-        <Fullscreen src={props.src}></Fullscreen>
+        <ReportModal
+          open={reportModalOpen}
+          onOpenChange={setReportModalOpen}
+          subject={reportSubject!}
+        />
+        <Fullscreen src={props.src}>{props.children}</Fullscreen>
       </View>
     </>
   );

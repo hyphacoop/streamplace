@@ -15,8 +15,17 @@ export interface LivestreamState {
   viewers: number | null;
   pendingHides: string[];
   segment: PlaceStreamSegment.Record | null;
+  recentSegments: PlaceStreamSegment.Record[];
+  problems: LivestreamProblem[];
   renditions: PlaceStreamDefs.Rendition[];
   replyToMessage: ChatMessageViewHydrated | null;
   streamKey: string | null;
   setStreamKey: (key: string | null) => void;
+}
+
+export interface LivestreamProblem {
+  code: string;
+  message: string;
+  severity: "error" | "warning" | "info";
+  link?: string;
 }

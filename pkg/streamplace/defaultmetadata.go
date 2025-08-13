@@ -38,7 +38,7 @@ type DefaultMetadata_Rights struct {
 	Attribution *string `json:"attribution,omitempty" cborgen:"attribution,omitempty"`
 	// license: License identifier (e.g. 'CC BY-NC-SA', 'All Rights Reserved').
 	License *string `json:"license,omitempty" cborgen:"license,omitempty"`
-	// usageTerms: Additional copyright notice or usage terms.
+	// usageTerms: Additional notice or usage terms.
 	UsageTerms *string `json:"usageTerms,omitempty" cborgen:"usageTerms,omitempty"`
 	// year: Year of creation or publication (e.g. '2025').
 	Year *string `json:"year,omitempty" cborgen:"year,omitempty"`

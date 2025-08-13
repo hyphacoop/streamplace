@@ -35,13 +35,14 @@ RUN apt update \
   mono-runtime nuget mono-xsp4 squashfs-tools \
   libc6:arm64 libstdc++6:arm64 \
   cmake libssl-dev libssl-dev:arm64 \
+  ruby-rubygems \
   && pip install meson tomli \
   && curl -L --fail https://go.dev/dl/go$GO_VERSION.linux-$TARGETARCH.tar.gz -o go.tar.gz \
   && tar -C /usr/local -xf go.tar.gz \
   && rm go.tar.gz
 
 RUN echo 'deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/winehq-archive.key] https://storage.googleapis.com/streamplace-crap/dl.winehq.org/wine-builds/ubuntu/ jammy main' >> /etc/apt/sources.list \
-  && echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/llvm-snapshot.key] http://apt.llvm.org/jammy/ llvm-toolchain-jammy main' >> /etc/apt/sources.list \
+  && echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/llvm-snapshot.key] http://apt.llvm.org/jammy/ llvm-toolchain-jammy-21 main' >> /etc/apt/sources.list \
   && apt update \
   && apt install -y --install-recommends winehq-stable \
   clang-21 lldb-21 lld-21 clangd-21
@@ -92,6 +93,15 @@ RUN curl -L https://github.com/golangci/golangci-lint/releases/download/v2.1.6/g
   && tar -xf golangci-lint.tar.gz \
   && mv golangci-lint-2.1.6-linux-amd64/golangci-lint /usr/local/bin/ \
   && rm -rf golangci-lint.tar.gz golangci-lint-2.1.6-linux-amd64
+
+RUN gem install fpm
+ENV APTLY_VERSION 1.6.2
+RUN curl --fail -L https://github.com/aptly-dev/aptly/releases/download/v${APTLY_VERSION}/aptly_${APTLY_VERSION}_linux_amd64.zip -o aptly.zip \
+  && unzip aptly.zip \
+  && mv aptly_${APTLY_VERSION}_linux_amd64/aptly /usr/local/bin/ \
+  && rm -rf aptly.zip aptly_${APTLY_VERSION}_linux_amd64
+
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=false
 
 FROM builder-no-darwin AS builder
 

@@ -1,3 +1,4 @@
+import { ComAtprotoModerationCreateReport } from "@atproto/api";
 import { ChatMessageViewHydrated } from "streamplace";
 
 export enum PlayerProtocol {
@@ -99,10 +100,6 @@ export interface PlayerState {
   setPlayTime: (playTime: number) => void;
 
   /** Flag indicating if player is in offline state */
-  offline: boolean;
-
-  /** Function to set the offline state */
-  setOffline: (offline: boolean) => void;
   /** Reference to the video element for direct manipulation (used for PiP) */
   videoRef:
     | React.MutableRefObject<HTMLVideoElement | null>
@@ -180,6 +177,26 @@ export interface PlayerState {
 
   /** Function to set the mod message */
   setModMessage: (message: ChatMessageViewHydrated | null) => void;
+
+  /** URL to send player events to (if not default) */
+  reportingURL: string | null;
+
+  /** Function to set the reporting URL */
+  setReportingURL: (reportingURL: string | null) => void;
+
+  /** Is the report modal open? */
+  reportModalOpen: boolean;
+
+  /** Function to set the report modal open state */
+  setReportModalOpen: (reportModalOpen: boolean) => void;
+
+  /** Subject to report */
+  reportSubject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null;
+
+  /** Function to set the report subject */
+  setReportSubject: (
+    subject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null,
+  ) => void;
 }
 
 export type PlayerEvent = {

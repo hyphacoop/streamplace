@@ -4,13 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { BackHandler, Dimensions, StyleSheet, View } from "react-native";
 import { SystemBars } from "react-native-edge-to-edge";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PlayerProtocol, useLivestreamStore, usePlayerStore } from "../..";
+import {
+  PlayerProtocol,
+  useLivestreamStore,
+  usePlayerStore,
+  VideoRetry,
+} from "../..";
 import Video from "./video.native";
 
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-export function Fullscreen(props: { src: string }) {
+export function Fullscreen(props: { src: string; children?: React.ReactNode }) {
   const ref = useRef<VideoView>(null);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -157,6 +162,7 @@ export function Fullscreen(props: { src: string }) {
           ]}
         >
           <Video />
+          {props.children}
         </View>
       </View>
     );
@@ -165,7 +171,10 @@ export function Fullscreen(props: { src: string }) {
   // Normal non-fullscreen mode
   return (
     <>
-      <Video />
+      <VideoRetry>
+        <Video />
+      </VideoRetry>
+      {props.children}
     </>
   );
 }

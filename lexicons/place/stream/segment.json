@@ -44,6 +44,10 @@
               "type": "ref",
               "ref": "#audio"
             }
+          },
+          "size": {
+            "type": "integer",
+            "description": "The size of the segment in bytes"
           }
         }
       }
@@ -67,7 +71,8 @@
         "framerate": {
           "type": "ref",
           "ref": "#framerate"
-        }
+        },
+        "bframes": { "type": "boolean" }
       }
     },
     "framerate": {

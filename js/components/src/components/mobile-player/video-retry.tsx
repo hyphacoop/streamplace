@@ -1,0 +1,28 @@
+import React, { useEffect, useRef, useState } from "react";
+import { PlayerStatus, usePlayerStore } from "../..";
+
+export default function VideoRetry(props: { children: React.ReactNode }) {
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [retries, setRetries] = useState(0);
+  const playing = usePlayerStore((x) => x.status === PlayerStatus.PLAYING);
+
+  useEffect(() => {
+    if (!playing) {
+      const jitter = 500 + Math.random() * 1500;
+      retryTimeoutRef.current = setTimeout(() => {
+        console.log("Retrying video playback...");
+        setRetries((prevRetries) => prevRetries + 1);
+      }, jitter);
+    }
+
+    return () => {
+      if (retryTimeoutRef.current) {
+        console.log("Clearing retry timeout");
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, [!playing]);
+
+  return <React.Fragment key={retries}>{props.children}</React.Fragment>;
+}

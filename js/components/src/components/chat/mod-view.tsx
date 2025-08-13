@@ -1,4 +1,4 @@
-import { TriggerRef } from "@rn-primitives/dropdown-menu";
+import { TriggerRef, useRootContext } from "@rn-primitives/dropdown-menu";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { gap, mr, w } from "../../lib/theme/atoms";
 import { usePlayerStore } from "../../player-store";
@@ -9,6 +9,7 @@ import {
 import { usePDSAgent } from "../../streamplace-store/xrpc";
 
 import { Linking } from "react-native";
+import { ChatMessageViewHydrated } from "streamplace";
 import { useStreamplaceStore } from "../../streamplace-store";
 import {
   atoms,
@@ -43,6 +44,9 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   let [messageRemoved, setMessageRemoved] = useState(false);
   let { createBlock, isLoading: isBlockLoading } = useCreateBlockRecord();
   let { createHideChat, isLoading: isHideLoading } = useCreateHideChatRecord();
+
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
 
   // get the channel did
   const channelId = usePlayerStore((state) => state.src);
@@ -154,12 +158,17 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
               <DropdownMenuItem
                 onPress={() => {
                   Linking.openURL(
-                    `https://${BSKY_FRONTEND_DOMAIN}/profile/${channelId}`,
+                    `https://${BSKY_FRONTEND_DOMAIN}/profile/${message.author.handle}`,
                   );
                 }}
               >
                 <Text color="primary">View user on {BSKY_FRONTEND_DOMAIN}</Text>
               </DropdownMenuItem>
+              <ReportButton
+                message={message}
+                setReportModalOpen={setReportModalOpen}
+                setReportSubject={setReportSubject}
+              />
             </DropdownMenuGroup>
           </>
         )}
@@ -167,3 +176,31 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
     </DropdownMenu>
   );
 });
+
+export function ReportButton({
+  message,
+  setReportModalOpen,
+  setReportSubject,
+}: {
+  message: ChatMessageViewHydrated;
+  setReportModalOpen: (open: boolean) => void;
+  setReportSubject: (subject: any) => void;
+}) {
+  const { onOpenChange } = useRootContext();
+  return (
+    <DropdownMenuItem
+      onPress={() => {
+        if (!message) return;
+        onOpenChange?.(false);
+        setReportModalOpen(true);
+        setReportSubject({
+          $type: "com.atproto.repo.strongRef",
+          uri: message.uri,
+          cid: message.cid,
+        });
+      }}
+    >
+      <Text color="warning">Report chat...</Text>
+    </DropdownMenuItem>
+  );
+}

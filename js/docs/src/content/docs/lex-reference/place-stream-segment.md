@@ -28,6 +28,7 @@ Media file representing a segment of a livestream
 | `creator`    | `string`                    | ✅    |                                                  | Format: `did`      |
 | `video`      | Array of [`#video`](#video) | ❌    |                                                  |                    |
 | `audio`      | Array of [`#audio`](#audio) | ❌    |                                                  |                    |
+| `size`       | `integer`                   | ❌    | The size of the segment in bytes                 |                    |
 
 ---
 
@@ -61,6 +62,7 @@ Media file representing a segment of a livestream
 | `width`     | `integer`                  | ✅    |             |              |
 | `height`    | `integer`                  | ✅    |             |              |
 | `framerate` | [`#framerate`](#framerate) | ❌    |             |              |
+| `bframes`   | `boolean`                  | ❌    |             |              |
 
 ---
 
@@ -143,6 +145,10 @@ Media file representing a segment of a livestream
               "type": "ref",
               "ref": "#audio"
             }
+          },
+          "size": {
+            "type": "integer",
+            "description": "The size of the segment in bytes"
           }
         }
       }
@@ -180,6 +186,9 @@ Media file representing a segment of a livestream
         "framerate": {
           "type": "ref",
           "ref": "#framerate"
+        },
+        "bframes": {
+          "type": "boolean"
         }
       }
     },

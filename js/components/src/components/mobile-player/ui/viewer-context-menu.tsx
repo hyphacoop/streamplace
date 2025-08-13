@@ -1,4 +1,5 @@
-import { Menu } from "lucide-react-native";
+import { useRootContext } from "@rn-primitives/dropdown-menu";
+import { Settings } from "lucide-react-native";
 import { colors } from "../../../lib/theme";
 import { useLivestreamStore } from "../../../livestream-store";
 import { PlayerProtocol, usePlayerStore } from "../../../player-store/";
@@ -7,6 +8,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuGroup,
   DropdownMenuInfo,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -25,6 +27,10 @@ export function ContextMenu() {
   const debugInfo = usePlayerStore((x) => x.showDebugInfo);
   const setShowDebugInfo = usePlayerStore((x) => x.setShowDebugInfo);
 
+  const livestream = useLivestreamStore((x) => x.livestream);
+  const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
+  const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+
   const lowLatency = protocol === "webrtc";
   const setLowLatency = (value: boolean) => {
     setProtocol(value ? PlayerProtocol.WEBRTC : PlayerProtocol.HLS);
@@ -33,9 +39,9 @@ export function ContextMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
-        <Menu size={32} color={colors.gray[200]} />
+        <Settings color={colors.gray[200]} />
       </DropdownMenuTrigger>
-      <ResponsiveDropdownMenuContent>
+      <ResponsiveDropdownMenuContent side="top" align="end">
         <DropdownMenuGroup title="Resolution">
           <DropdownMenuRadioGroup value={quality} onValueChange={setQuality}>
             <DropdownMenuRadioItem value="source">
@@ -65,7 +71,38 @@ export function ContextMenu() {
             <Text>Show Debug Info</Text>
           </DropdownMenuCheckboxItem>
         </DropdownMenuGroup>
+        <DropdownMenuGroup title="Report">
+          <ReportButton
+            livestream={livestream}
+            setReportModalOpen={setReportModalOpen}
+            setReportSubject={setReportSubject}
+          />
+        </DropdownMenuGroup>
       </ResponsiveDropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function ReportButton({
+  livestream,
+  setReportModalOpen,
+  setReportSubject,
+}) {
+  const { onOpenChange } = useRootContext();
+  return (
+    <DropdownMenuItem
+      onPress={() => {
+        if (!livestream) return;
+        onOpenChange?.(false);
+        setReportModalOpen(true);
+        setReportSubject({
+          $type: "com.atproto.repo.strongRef",
+          uri: livestream.uri,
+          cid: livestream.cid,
+        });
+      }}
+    >
+      <Text>Report Livestream...</Text>
+    </DropdownMenuItem>
   );
 }

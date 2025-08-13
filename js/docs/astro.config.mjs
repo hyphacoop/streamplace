@@ -14,6 +14,7 @@ export default defineConfig({
         "@fontsource/atkinson-hyperlegible-next/600.css",
         "./src/styles/custom-font-face.css",
         "./src/styles/pre-first-table-col.css",
+        "./src/styles/widths.css",
       ],
       social: [
         {
@@ -42,12 +43,22 @@ export default defineConfig({
         ]),
       ],
       sidebar: [
+        { label: "← Back to Streamplace", link: "/../" },
+        {
+          label: "How Streamplace Works (Blog)",
+          link: "https://blog.stream.place/",
+          attrs: { target: "_blank" },
+        },
         {
           label: "Guides",
           items: [
             {
               label: "Start Streaming",
               autogenerate: { directory: "guides/start-streaming" },
+            },
+            {
+              label: "Installing Streamplace",
+              autogenerate: { directory: "guides/installing" },
             },
             {
               label: "Start Contributing",

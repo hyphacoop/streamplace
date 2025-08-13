@@ -1,6 +1,8 @@
-import { useContext } from "react";
+import { ComAtprotoModerationCreateReport } from "@atproto/api";
+import { useContext, useEffect, useState } from "react";
 import { ChatMessageViewHydrated } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
+import { useLivestreamStore } from "../livestream-store";
 import { PlayerContext } from "./context";
 import {
   IngestMediaSource,
@@ -68,9 +70,6 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     playTime: 0,
     setPlayTime: (playTime: number) => set(() => ({ playTime })),
 
-    offline: false,
-    setOffline: (offline: boolean) => set(() => ({ offline })),
-
     videoRef: undefined,
     setVideoRef: (
       videoRef:
@@ -114,6 +113,10 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     ingestLive: false,
     setIngestLive: (ingestLive: boolean) => set(() => ({ ingestLive })),
 
+    reportingURL: null,
+    setReportingURL: (reportingURL: string | null) =>
+      set(() => ({ reportingURL })),
+
     playerEvent: async (
       url: string,
       time: string,
@@ -131,7 +134,8 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
         };
         try {
           // fetch url from sp provider
-          fetch(`${url}/api/player-event`, {
+          const reportingURL = x.reportingURL ?? `${url}/api/player-event`;
+          fetch(reportingURL, {
             method: "POST",
             body: JSON.stringify(data),
           });
@@ -168,6 +172,15 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     modMessage: null,
     setModMessage: (modMessage: ChatMessageViewHydrated | null) =>
       set(() => ({ modMessage })),
+
+    reportModalOpen: false,
+    setReportModalOpen: (reportModalOpen: boolean) =>
+      set(() => ({ reportModalOpen })),
+
+    reportSubject: null,
+    setReportSubject: (
+      subject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null,
+    ) => set(() => ({ reportSubject: subject })),
   }));
 };
 
@@ -241,4 +254,24 @@ export const intoPlayerProtocol = (protocol: string): PlayerProtocol => {
     default:
       return PlayerProtocol.WEBRTC;
   }
+};
+
+// returns true if the livestream has been offline for more than 10 seconds and we're not playing
+export const useOffline = () => {
+  const status = usePlayerStore((x) => x.status);
+  const segment = useLivestreamStore((x) => x.segment);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  if (status === PlayerStatus.PLAYING) {
+    return false;
+  }
+  if (!segment?.startTime) {
+    return false;
+  }
+  return now - Date.parse(segment.startTime) > 10000;
 };

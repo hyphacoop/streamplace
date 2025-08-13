@@ -21,6 +21,10 @@
         "replyTo": {
           "type": "union",
           "refs": ["place.stream.chat.defs#messageView"]
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "If true, this message has been deleted or labeled and should be cleared from the cache"
         }
       }
     }

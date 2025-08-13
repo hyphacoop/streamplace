@@ -601,13 +601,17 @@ func (t *Segment) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 8
+	fieldCount := 9
 
 	if t.Audio == nil {
 		fieldCount--
 	}
 
 	if t.Duration == nil {
+		fieldCount--
+	}
+
+	if t.Size == nil {
 		fieldCount--
 	}
 
@@ -640,6 +644,38 @@ func (t *Segment) MarshalCBOR(w io.Writer) error {
 	}
 	if _, err := cw.WriteString(string(t.Id)); err != nil {
 		return err
+	}
+
+	// t.Size (int64) (int64)
+	if t.Size != nil {
+
+		if len("size") > 1000000 {
+			return xerrors.Errorf("Value in field \"size\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("size"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("size")); err != nil {
+			return err
+		}
+
+		if t.Size == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if *t.Size >= 0 {
+				if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(*t.Size)); err != nil {
+					return err
+				}
+			} else {
+				if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-*t.Size-1)); err != nil {
+					return err
+				}
+			}
+		}
+
 	}
 
 	// t.LexiconTypeID (string) (string)
@@ -873,6 +909,42 @@ func (t *Segment) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.Id = string(sval)
+			}
+			// t.Size (int64) (int64)
+		case "size":
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					maj, extra, err := cr.ReadHeader()
+					if err != nil {
+						return err
+					}
+					var extraI int64
+					switch maj {
+					case cbg.MajUnsignedInt:
+						extraI = int64(extra)
+						if extraI < 0 {
+							return fmt.Errorf("int64 positive overflow")
+						}
+					case cbg.MajNegativeInt:
+						extraI = int64(extra)
+						if extraI < 0 {
+							return fmt.Errorf("int64 negative overflow")
+						}
+						extraI = -1 - extraI
+					default:
+						return fmt.Errorf("wrong type for int64 field: %d", maj)
+					}
+
+					t.Size = (*int64)(&extraI)
+				}
 			}
 			// t.LexiconTypeID (string) (string)
 		case "$type":
@@ -1267,7 +1339,11 @@ func (t *Segment_Video) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 4
+	fieldCount := 5
+
+	if t.Bframes == nil {
+		fieldCount--
+	}
 
 	if t.Framerate == nil {
 		fieldCount--
@@ -1341,6 +1417,31 @@ func (t *Segment_Video) MarshalCBOR(w io.Writer) error {
 	} else {
 		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.Height-1)); err != nil {
 			return err
+		}
+	}
+
+	// t.Bframes (bool) (bool)
+	if t.Bframes != nil {
+
+		if len("bframes") > 1000000 {
+			return xerrors.Errorf("Value in field \"bframes\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("bframes"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("bframes")); err != nil {
+			return err
+		}
+
+		if t.Bframes == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if err := cbg.WriteBool(w, *t.Bframes); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -1468,6 +1569,39 @@ func (t *Segment_Video) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.Height = int64(extraI)
+			}
+			// t.Bframes (bool) (bool)
+		case "bframes":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					maj, extra, err = cr.ReadHeader()
+					if err != nil {
+						return err
+					}
+					if maj != cbg.MajOther {
+						return fmt.Errorf("booleans must be major type 7")
+					}
+
+					var val bool
+					switch extra {
+					case 20:
+						val = false
+					case 21:
+						val = true
+					default:
+						return fmt.Errorf("booleans are either major type 7, value 20 or 21 (got %d)", extra)
+					}
+					t.Bframes = &val
+				}
 			}
 			// t.Framerate (streamplace.Segment_Framerate) (struct)
 		case "framerate":

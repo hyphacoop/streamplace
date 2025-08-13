@@ -51,11 +51,15 @@ if (require("electron-squirrel-startup")) {
       SP_ALLOWED_STREAMS: account.address.toLowerCase(),
     };
     if (args["self-test"]) {
+      app.on("window-all-closed", () => {
+        // need to override this to prevent the app from quitting
+      });
       const success = await runTests(
         args["tests-to-run"].split(","),
         args["self-test-duration"],
         privateKey,
       );
+      console.log("tests finished");
       if (!success) {
         app.exit(1);
       } else {
@@ -82,6 +86,11 @@ if (require("electron-squirrel-startup")) {
   });
 
   const start = async (env: { [k: string]: string }): Promise<void> => {
+    app.on("window-all-closed", () => {
+      if (process.platform !== "darwin") {
+        app.quit();
+      }
+    });
     const { skipNode, nodeFrontend, noUpdate } = getEnv();
     if (!noUpdate) {
       initUpdater();
@@ -110,11 +119,6 @@ if (require("electron-squirrel-startup")) {
   // Quit when all windows are closed, except on macOS. There, it's common
   // for applications and their menu bar to stay active until the user quits
   // explicitly with Cmd + Q.
-  // app.on("window-all-closed", () => {
-  //   if (process.platform !== "darwin") {
-  //     app.quit();
-  //   }
-  // });
 
   app.on("activate", () => {
     // On OS X it's common to re-create a window in the app when the

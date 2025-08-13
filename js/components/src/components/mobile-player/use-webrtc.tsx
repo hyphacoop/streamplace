@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { usePlayerStore, useStreamKey } from "../..";
+import { PlayerStatus, usePlayerStore, useStreamKey } from "../..";
 import { RTCPeerConnection, RTCSessionDescription } from "./webrtc-primitives";
 
 export default function useWebRTC(
@@ -7,6 +7,7 @@ export default function useWebRTC(
 ): [MediaStream | null, boolean] {
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [stuck, setStuck] = useState<boolean>(false);
+  const setStatus = usePlayerStore((x) => x.setStatus);
 
   const lastChange = useRef<number>(0);
 
@@ -29,7 +30,12 @@ export default function useWebRTC(
     });
     peerConnection.addEventListener("connectionstatechange", () => {
       console.log("connection state change", peerConnection.connectionState);
-      if (peerConnection.connectionState === "closed") {
+      if (
+        peerConnection.connectionState === "closed" ||
+        peerConnection.connectionState === "failed" ||
+        peerConnection.connectionState === "disconnected"
+      ) {
+        console.log("setting stuck to true", peerConnection.connectionState);
         setStuck(true);
       }
       if (peerConnection.connectionState !== "connected") {
@@ -52,6 +58,7 @@ export default function useWebRTC(
           if (lastAudioFramesReceived !== audioFramesReceived) {
             lastAudioFramesReceived = audioFramesReceived;
             lastChange.current = Date.now();
+            setStatus(PlayerStatus.PLAYING);
             setStuck(false);
           }
         }
@@ -60,6 +67,7 @@ export default function useWebRTC(
           if (lastFramesReceived !== framesReceived) {
             lastFramesReceived = framesReceived;
             lastChange.current = Date.now();
+            setStatus(PlayerStatus.PLAYING);
             setStuck(false);
           }
         }

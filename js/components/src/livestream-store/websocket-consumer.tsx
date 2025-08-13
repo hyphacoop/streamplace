@@ -9,8 +9,12 @@ import {
   PlaceStreamLivestream,
   PlaceStreamSegment,
 } from "streamplace";
+import { SystemMessages } from "../lib/system-messages";
 import { reduceChat } from "./chat";
 import { LivestreamState } from "./livestream-state";
+import { findProblems } from "./problems";
+
+const MAX_RECENT_SEGMENTS = 10;
 
 export const handleWebSocketMessages = (
   state: LivestreamState,
@@ -18,9 +22,23 @@ export const handleWebSocketMessages = (
 ): LivestreamState => {
   for (const message of messages) {
     if (PlaceStreamLivestream.isLivestreamView(message)) {
+      const newLivestream = message as LivestreamViewHydrated;
+      const oldLivestream = state.livestream;
+
+      // check if this is actually new
+      if (!oldLivestream || oldLivestream.uri !== newLivestream.uri) {
+        const streamTitle = newLivestream.record.title || "something cool!";
+        const systemMessage = SystemMessages.streamStart(streamTitle);
+        // set proper times
+        systemMessage.indexedAt = newLivestream.indexedAt;
+        systemMessage.record.createdAt = newLivestream.record.createdAt;
+
+        state = reduceChat(state, [systemMessage], []);
+      }
+
       state = {
         ...state,
-        livestream: message as LivestreamViewHydrated,
+        livestream: newLivestream,
       };
     } else if (PlaceStreamLivestream.isViewerCount(message)) {
       state = {
@@ -37,12 +55,20 @@ export const handleWebSocketMessages = (
         indexedAt: message.indexedAt,
         chatProfile: (message as any).chatProfile,
         replyTo: (message as any).replyTo,
+        deleted: message.deleted,
       };
       state = reduceChat(state, [hydrated], [], []);
     } else if (PlaceStreamSegment.isRecord(message)) {
+      const newRecentSegments = [...state.recentSegments];
+      newRecentSegments.unshift(message);
+      if (newRecentSegments.length > MAX_RECENT_SEGMENTS) {
+        newRecentSegments.pop();
+      }
       state = {
         ...state,
         segment: message as PlaceStreamSegment.Record,
+        recentSegments: newRecentSegments,
+        problems: findProblems(newRecentSegments),
       };
     } else if (PlaceStreamDefs.isBlockView(message)) {
       const block = message as PlaceStreamDefs.BlockView;

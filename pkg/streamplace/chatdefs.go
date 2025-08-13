@@ -20,10 +20,12 @@ type ChatDefs_MessageView struct {
 	Author        *appbskytypes.ActorDefs_ProfileViewBasic `json:"author" cborgen:"author"`
 	ChatProfile   *ChatProfile                             `json:"chatProfile,omitempty" cborgen:"chatProfile,omitempty"`
 	Cid           string                                   `json:"cid" cborgen:"cid"`
-	IndexedAt     string                                   `json:"indexedAt" cborgen:"indexedAt"`
-	Record        *util.LexiconTypeDecoder                 `json:"record" cborgen:"record"`
-	ReplyTo       *ChatDefs_MessageView_ReplyTo            `json:"replyTo,omitempty" cborgen:"replyTo,omitempty"`
-	Uri           string                                   `json:"uri" cborgen:"uri"`
+	// deleted: If true, this message has been deleted or labeled and should be cleared from the cache
+	Deleted   *bool                         `json:"deleted,omitempty" cborgen:"deleted,omitempty"`
+	IndexedAt string                        `json:"indexedAt" cborgen:"indexedAt"`
+	Record    *util.LexiconTypeDecoder      `json:"record" cborgen:"record"`
+	ReplyTo   *ChatDefs_MessageView_ReplyTo `json:"replyTo,omitempty" cborgen:"replyTo,omitempty"`
+	Uri       string                        `json:"uri" cborgen:"uri"`
 }
 
 type ChatDefs_MessageView_ReplyTo struct {
