@@ -18,9 +18,18 @@ import (
 	"stream.place/streamplace/pkg/log"
 )
 
+type DBType string
+
+const (
+	DBTypeSQLite   DBType = "sqlite"
+	DBTypePostgres DBType = "postgres"
+)
+
 type StatefulDB struct {
-	DB  *gorm.DB
-	CLI *config.CLI
+	DB    *gorm.DB
+	CLI   *config.CLI
+	Type  DBType
+	locks *NamedLocks
 }
 
 // list tables here so we can migrate them
@@ -38,17 +47,16 @@ func MakeDB(cli *config.CLI) (*StatefulDB, error) {
 	dbURL := cli.DBURL
 	log.Log(context.Background(), "starting stateful database", "dbURL", redactDBURL(dbURL))
 	var dial gorm.Dialector
-	isSQLite := false
-	isPostgres := false
+	var dbType DBType
 	if dbURL == ":memory:" {
 		dial = sqlite.Open(":memory:")
-		isSQLite = true
+		dbType = DBTypeSQLite
 	} else if strings.HasPrefix(dbURL, "sqlite://") {
 		dial = sqlite.Open(dbURL[len("sqlite://"):])
-		isSQLite = true
+		dbType = DBTypeSQLite
 	} else if strings.HasPrefix(dbURL, "postgres://") {
 		dial = postgres.Open(dbURL)
-		isPostgres = true
+		dbType = DBTypePostgres
 	} else {
 		return nil, fmt.Errorf("unsupported database URL (most start with sqlite:// or postgres://): %s", redactDBURL(dbURL))
 	}
@@ -56,7 +64,7 @@ func MakeDB(cli *config.CLI) (*StatefulDB, error) {
 	db, err := openDB(dial)
 
 	if err != nil {
-		if isPostgres && strings.Contains(err.Error(), NoPostgresDatabaseCode) {
+		if dbType == DBTypePostgres && strings.Contains(err.Error(), NoPostgresDatabaseCode) {
 			db, err = makePostgresDB(dbURL)
 			if err != nil {
 				return nil, fmt.Errorf("error creating streamplace database: %w", err)
@@ -65,7 +73,7 @@ func MakeDB(cli *config.CLI) (*StatefulDB, error) {
 			return nil, fmt.Errorf("error starting database: %w", err)
 		}
 	}
-	if isSQLite {
+	if dbType == DBTypeSQLite {
 		err = db.Exec("PRAGMA journal_mode=WAL;").Error
 		if err != nil {
 			return nil, fmt.Errorf("error setting journal mode: %w", err)
@@ -82,7 +90,12 @@ func MakeDB(cli *config.CLI) (*StatefulDB, error) {
 			return nil, err
 		}
 	}
-	return &StatefulDB{DB: db, CLI: cli}, nil
+	return &StatefulDB{
+		DB:    db,
+		CLI:   cli,
+		Type:  dbType,
+		locks: NewNamedLocks(),
+	}, nil
 }
 
 func openDB(dial gorm.Dialector) (*gorm.DB, error) {
