@@ -193,7 +193,7 @@ func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, stat
 		return priv.HashAndSign(sb)
 	}
 
-	events, err := mod.GetCommitEventsSince(cli.MyDID(), time.Time{})
+	events, err := state.GetCommitEventsSince(cli.MyDID(), time.Time{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get commit events: %w", err)
 	}
@@ -214,9 +214,18 @@ func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, stat
 		currentRev = evt.Rev
 	}
 
-	LexiconRepo, err = atrepo.OpenRepo(ctx, ses, currentRoot)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open repo: %w", err)
+	if currentRoot == cid.Undef {
+		log.Warn(ctx, "no existing lexicon repo, creating new one")
+		ses, err = CarStore.NewDeltaSession(ctx, RepoUser, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create delta session: %w", err)
+		}
+		LexiconRepo = atrepo.NewRepo(ctx, cli.MyDID(), ses)
+	} else {
+		LexiconRepo, err = atrepo.OpenRepo(ctx, ses, currentRoot)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open repo: %w", err)
+		}
 	}
 
 	LexiconPubMultibase = pub.Multibase()
@@ -300,7 +309,7 @@ func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, stat
 			Ops:    ops,
 			TooBig: false,
 		}
-		err := mod.CreateCommitEvent(commit, signed.Data.String())
+		err := state.CreateCommitEvent(commit, signed.Data.String())
 		if err != nil {
 			return nil, fmt.Errorf("failed to create commit event: %w", err)
 		}

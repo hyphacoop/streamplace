@@ -111,7 +111,7 @@ func (s *Server) handleComAtprotoSyncSubscribeRepos(c echo.Context) error {
 		return err
 	}
 
-	evts, err := s.model.GetCommitEventsSinceSeq(atproto.LexiconRepo.RepoDid(), int64(seq))
+	evts, err := s.statefulDB.GetCommitEventsSinceSeq(atproto.LexiconRepo.RepoDid(), int64(seq))
 	if err != nil {
 		return err
 	}

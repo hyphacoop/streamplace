@@ -39,7 +39,7 @@ func TestLexiconRepo(t *testing.T) {
 	require.NotNil(t, rec)
 	handle.Close()
 
-	evts, err := mod.GetCommitEventsSinceSeq(cli.MyDID(), 0)
+	evts, err := state.GetCommitEventsSinceSeq(cli.MyDID(), 0)
 	require.NoError(t, err)
 	require.Len(t, evts, 1)
 	require.Equal(t, evts[0].RepoDID, cli.MyDID())
@@ -99,7 +99,7 @@ func TestLexiconRepo(t *testing.T) {
 	require.NoError(t, err)
 	handle.Close()
 
-	evts, err = mod.GetCommitEventsSinceSeq(cli.MyDID(), 0)
+	evts, err = state.GetCommitEventsSinceSeq(cli.MyDID(), 0)
 	require.NoError(t, err)
 	require.Len(t, evts, 2)
 	require.Equal(t, evts[0].RepoDID, cli.MyDID())

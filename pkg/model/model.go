@@ -92,10 +92,7 @@ type Model interface {
 	GetServerSettings(ctx context.Context, server string, repoDID string) (*ServerSettings, error)
 	DeleteServerSettings(ctx context.Context, server string, repoDID string) error
 
-	CreateCommitEvent(commit *comatproto.SyncSubscribeRepos_Commit, signedData string) error
-	GetCommitEventsSince(repoDID string, t time.Time) ([]*XrpcStreamEvent, error)
-	GetCommitEventsSinceSeq(repoDID string, seq int64) ([]*XrpcStreamEvent, error)
-	GetMostRecentCommitEvent(repoDID string) (*XrpcStreamEvent, error)
+
 
 	CreateLabeler(did string) (*Labeler, error)
 	GetLabeler(did string) (*Labeler, error)
@@ -162,7 +159,7 @@ func MakeDB(dbURL string) (Model, error) {
 		ChatProfile{},
 		Gate{},
 		ServerSettings{},
-		XrpcStreamEvent{},
+
 		Labeler{},
 		Label{},
 	} {

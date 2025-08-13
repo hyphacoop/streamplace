@@ -28,6 +28,7 @@ var StatefulDBModels = []any{
 	oatproxy.OAuthSession{},
 	Notification{},
 	Config{},
+	XrpcStreamEvent{},
 }
 
 var NoPostgresDatabaseCode = "3D000"
