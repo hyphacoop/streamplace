@@ -45,8 +45,8 @@
           "maxLength": 500,
           "description": "Additional notice or usage terms."
         },
-        "year": {
-          "type": "string",
+        "copyrightYear": {
+          "type": "integer",
           "minLength": 4,
           "maxLength": 4,
           "description": "Year of creation or publication (e.g. '2025')."
