@@ -64,9 +64,7 @@
             "https://creativecommons.org/licenses/by-nd/4.0/",
             "https://creativecommons.org/licenses/by-sa/4.0/",
             "https://creativecommons.org/licenses/by/4.0/",
-            "https://creativecommons.org/publicdomain/zero/1.0/",
-            "place.stream.default.metadata#all-rights-reserved"
-          ],
+            "https://creativecommons.org/publicdomain/zero/1.0/"          ],
           "description": "License URL or identifier."
         },
         "creditLine": {
@@ -157,10 +155,6 @@
     "https://creativecommons.org/publicdomain/zero/1.0/": {
       "type": "token",
       "description": "Public Domain Dedication 1.0"
-    },
-    "all-rights-reserved": {
-      "type": "token",
-      "description": "All rights reserved."
     }
   }
 }
