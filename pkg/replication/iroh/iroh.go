@@ -11,30 +11,41 @@ import (
 // IrohReplicator implements the replication mechanism using iroh
 type IrohReplicator struct {
 	peers []*irohStreamplace.PublicKey
-	endpoint *irohStreamplace.SenderEndpoint
+	sender *irohStreamplace.Sender
 }
 
-func NewIrohReplicator(peers []string) *IrohReplicator {
-	endpoint := irohStreamplace.NewSenderEndpoint()
+func NewIrohReplicator(ctx context.Context, ep *irohStreamplace.Endpoint, peers []string) (*IrohReplicator, error) {
+	sender, err := irohStreamplace.NewSender(ep)
+	if err.AsError() != nil {
+		return nil, err.AsError()
+	}
 
 	nodeIds := make([]*irohStreamplace.PublicKey, len(peers))
 	for i := range(peers) {
-		nodeId := irohStreamplace.PublicKeyFromString(peers[i])
+		nodeId, err := irohStreamplace.PublicKeyFromString(peers[i])
+		if err.AsError() != nil {
+			log.Log(ctx, "invalid Node ID", "warning", err.Error())
+			continue
+		}
 		nodeAddr := irohStreamplace.NewNodeAddr(nodeId, nil, nil)
-		endpoint.AddPeer(nodeAddr)
+		err = sender.AddPeer(nodeAddr)
+		if err.AsError() != nil {
+			log.Log(ctx, "failed to connect to peer", "warning", err.Error())
+			continue
+		}
 		nodeIds[i] = nodeId
 	}
 
 	return &IrohReplicator {
 		peers: nodeIds,
-		endpoint: endpoint,
-	}
+		sender: sender,
+	}, nil
 }
 
 func (rep *IrohReplicator) NewSegment(ctx context.Context, bs []byte) {
 	for _, p := range rep.peers {
 		go func(peer *irohStreamplace.PublicKey) {
-			err := sendSegment(rep.endpoint, peer, bs)
+			err := sendSegment(rep.sender, peer, bs)
 			if err != nil {
 				log.Log(ctx, "error replicating segment", "error", err)
 			}
@@ -42,7 +53,6 @@ func (rep *IrohReplicator) NewSegment(ctx context.Context, bs []byte) {
 	}
 }
 
-func sendSegment(endpoint *irohStreamplace.SenderEndpoint, peer *irohStreamplace.PublicKey, bs []byte) error {
-	endpoint.Send(peer, bs)
-	return nil
+func sendSegment(endpoint *irohStreamplace.Sender, peer *irohStreamplace.PublicKey, bs []byte) error {
+	return endpoint.Send(peer, bs).AsError()
 }

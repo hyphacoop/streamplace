@@ -306,7 +306,7 @@ require (
 	github.com/multiformats/go-multibase v0.2.0 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/n0-computer/iroh-streamplace v0.0.0-20250805111327-449fe3719c26 // indirect
+	github.com/n0-computer/iroh-streamplace v0.0.0-20250813141041-0b3bbbf8912a // indirect
 	github.com/nakabonne/nestif v0.3.1 // indirect
 	github.com/nishanths/exhaustive v0.12.0 // indirect
 	github.com/nishanths/predeclared v0.2.2 // indirect

@@ -27,7 +27,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
-	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/replication/iroh"
 	"stream.place/streamplace/pkg/resync"
 	"stream.place/streamplace/pkg/rtmps"
@@ -268,7 +267,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		log.Log(ctx, "successfully initialized hardware signer", "address", addr)
 		signer = hwsigner
 	}
-	var rep replication.Replicator = iroh.NewIrohReplicator(cli.Peers)
+	irohEndpoint, err2 := irohStreamplace.NewEndpoint()
+	if err2.AsError() != nil {
+		return err2.AsError()
+	}
+	rep, err := iroh.NewIrohReplicator(ctx, irohEndpoint, cli.Peers)
+	if err != nil {
+		return err
+	}
 	mod, err := model.MakeDB(cli.DBPath)
 	if err != nil {
 		return err
@@ -312,7 +318,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	rec := irohStreamplace.NewReceiverEndpoint(mm)
+	rec, err2 := irohStreamplace.NewReceiver(irohEndpoint, mm)
+	if err2.AsError() != nil {
+		return err2.AsError()
+	}
 	go func() {
 		// for now to make sure things are still alive, just print our info every 15 seconds
 		for {
