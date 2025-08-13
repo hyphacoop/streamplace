@@ -16,9 +16,9 @@
             },
             "description": "Content warnings for this stream."
           },
-          "rights": {
+          "contentRights": {
             "type": "ref",
-            "ref": "#rights"
+            "ref": "#contentRights"
           },
           "distributionPolicy": {
             "type": "ref",
@@ -27,7 +27,7 @@
         }
       }
     },
-    "rights": {
+    "contentRights": {
       "type": "object",
       "description": "Content rights and attribution information",
       "properties": {
