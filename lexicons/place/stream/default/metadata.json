@@ -58,13 +58,14 @@
         "license": {
           "type": "string",
           "knownValues": [
-            "https://creativecommons.org/licenses/by-nc-nd/4.0/",
-            "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-            "https://creativecommons.org/licenses/by-nc/4.0/",
-            "https://creativecommons.org/licenses/by-nd/4.0/",
-            "https://creativecommons.org/licenses/by-sa/4.0/",
-            "https://creativecommons.org/licenses/by/4.0/",
-            "https://creativecommons.org/publicdomain/zero/1.0/"          ],
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nd/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-sa/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/publicdomain/zero/1.0/"
+          ],
           "description": "License URL or identifier."
         },
         "creditLine": {
