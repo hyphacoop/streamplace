@@ -13,11 +13,27 @@ func init() {
 } //
 // RECORDTYPE: DefaultMetadata
 type DefaultMetadata struct {
-	LexiconTypeID string `json:"$type,const=place.stream.default.metadata" cborgen:"$type,const=place.stream.default.metadata"`
+	LexiconTypeID string                         `json:"$type,const=place.stream.default.metadata" cborgen:"$type,const=place.stream.default.metadata"`
+	ContentRights *DefaultMetadata_ContentRights `json:"contentRights,omitempty" cborgen:"contentRights,omitempty"`
 	// contentWarnings: Content warnings for this stream.
 	ContentWarnings    []string                            `json:"contentWarnings,omitempty" cborgen:"contentWarnings,omitempty"`
 	DistributionPolicy *DefaultMetadata_DistributionPolicy `json:"distributionPolicy,omitempty" cborgen:"distributionPolicy,omitempty"`
-	Rights             *DefaultMetadata_Rights             `json:"rights,omitempty" cborgen:"rights,omitempty"`
+}
+
+// DefaultMetadata_ContentRights is a "contentRights" in the place.stream.default.metadata schema.
+//
+// Content rights and attribution information.
+type DefaultMetadata_ContentRights struct {
+	// copyrightNotice: Copyright notice for the work.
+	CopyrightNotice *string `json:"copyrightNotice,omitempty" cborgen:"copyrightNotice,omitempty"`
+	// copyrightYear: Year of creation or publication.
+	CopyrightYear *int64 `json:"copyrightYear,omitempty" cborgen:"copyrightYear,omitempty"`
+	// creator: Name of the creator of the work.
+	Creator *string `json:"creator,omitempty" cborgen:"creator,omitempty"`
+	// creditLine: Credit line for the work.
+	CreditLine *string `json:"creditLine,omitempty" cborgen:"creditLine,omitempty"`
+	// license: License URL or identifier.
+	License *string `json:"license,omitempty" cborgen:"license,omitempty"`
 }
 
 // DefaultMetadata_DistributionPolicy is a "distributionPolicy" in the place.stream.default.metadata schema.
@@ -26,20 +42,6 @@ type DefaultMetadata struct {
 type DefaultMetadata_DistributionPolicy struct {
 	// allowArchive: Whether nodes can archive this stream.
 	AllowArchive *bool `json:"allowArchive,omitempty" cborgen:"allowArchive,omitempty"`
-	// broadcastUntil: When rebroadcast permissions expire (ISO 8601 format). If not specified, no rebroadcast allowed.
-	BroadcastUntil *string `json:"broadcastUntil,omitempty" cborgen:"broadcastUntil,omitempty"`
-}
-
-// DefaultMetadata_Rights is a "rights" in the place.stream.default.metadata schema.
-//
-// Content rights and attribution information
-type DefaultMetadata_Rights struct {
-	// attribution: Attribution name or handle.
-	Attribution *string `json:"attribution,omitempty" cborgen:"attribution,omitempty"`
-	// license: License identifier (e.g. 'CC BY-NC-SA', 'All Rights Reserved').
-	License *string `json:"license,omitempty" cborgen:"license,omitempty"`
-	// usageTerms: Additional notice or usage terms.
-	UsageTerms *string `json:"usageTerms,omitempty" cborgen:"usageTerms,omitempty"`
-	// year: Year of creation or publication (e.g. '2025').
-	Year *string `json:"year,omitempty" cborgen:"year,omitempty"`
+	// broadcastExpiry: When rebroadcast permissions expire (ISO 8601 format). If not specified, there is no expiration on rebroadcast permission.
+	BroadcastExpiry *string `json:"broadcastExpiry,omitempty" cborgen:"broadcastExpiry,omitempty"`
 }
