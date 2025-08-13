@@ -12,7 +12,8 @@
           "contentWarnings": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "ref",
+              "ref": "place.stream.default.contentWarning"
             },
             "description": "Content warnings for this stream."
           },
