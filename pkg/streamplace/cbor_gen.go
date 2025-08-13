@@ -250,13 +250,9 @@ func (t *Livestream) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 7
+	fieldCount := 6
 
 	if t.Post == nil {
-		fieldCount--
-	}
-
-	if t.StreamKeyRef == nil {
 		fieldCount--
 	}
 
@@ -406,25 +402,6 @@ func (t *Livestream) MarshalCBOR(w io.Writer) error {
 	if _, err := cw.WriteString(string(t.CreatedAt)); err != nil {
 		return err
 	}
-
-	// t.StreamKeyRef (atproto.RepoStrongRef) (struct)
-	if t.StreamKeyRef != nil {
-
-		if len("streamKeyRef") > 1000000 {
-			return xerrors.Errorf("Value in field \"streamKeyRef\" was too long")
-		}
-
-		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("streamKeyRef"))); err != nil {
-			return err
-		}
-		if _, err := cw.WriteString(string("streamKeyRef")); err != nil {
-			return err
-		}
-
-		if err := t.StreamKeyRef.MarshalCBOR(cw); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -453,7 +430,7 @@ func (t *Livestream) UnmarshalCBOR(r io.Reader) (err error) {
 
 	n := extra
 
-	nameBuf := make([]byte, 12)
+	nameBuf := make([]byte, 9)
 	for i := uint64(0); i < n; i++ {
 		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
 		if err != nil {
@@ -562,26 +539,6 @@ func (t *Livestream) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.CreatedAt = string(sval)
-			}
-			// t.StreamKeyRef (atproto.RepoStrongRef) (struct)
-		case "streamKeyRef":
-
-			{
-
-				b, err := cr.ReadByte()
-				if err != nil {
-					return err
-				}
-				if b != cbg.CborNull[0] {
-					if err := cr.UnreadByte(); err != nil {
-						return err
-					}
-					t.StreamKeyRef = new(atproto.RepoStrongRef)
-					if err := t.StreamKeyRef.UnmarshalCBOR(cr); err != nil {
-						return xerrors.Errorf("unmarshaling t.StreamKeyRef pointer: %w", err)
-					}
-				}
-
 			}
 
 		default:
