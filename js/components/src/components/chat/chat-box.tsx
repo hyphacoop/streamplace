@@ -246,6 +246,14 @@ export function ChatBox({
       reply: replyTo || undefined,
     });
     setSubmitting(false);
+
+    // try a few times to refocus
+    if (textAreaRef.current) {
+      textAreaRef.current.focus();
+      requestAnimationFrame(() => {
+        textAreaRef.current?.focus();
+      });
+    }
   };
   useEffect(() => {
     if (replyTo && textAreaRef.current) {
@@ -327,7 +335,10 @@ export function ChatBox({
           numberOfLines={1}
           value={message}
           enterKeyHint="send"
-          onSubmitEditing={submit}
+          onSubmitEditing={(e) => {
+            e.preventDefault();
+            submit();
+          }}
           multiline={false}
           onChangeText={(text) => {
             setMessage(text);
@@ -346,6 +357,9 @@ export function ChatBox({
                 if (filteredEmojis.length > 0) {
                   handleEmojiSelect(filteredEmojis[highlightedIndex]);
                 }
+              } else {
+                k.preventDefault();
+                submit();
               }
             } else if (k.nativeEvent.key === "ArrowUp") {
               if (showSuggestions || showEmojiSuggestions) {
