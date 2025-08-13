@@ -1,4 +1,7 @@
 import { useToastController } from "@tamagui/toast";
+import ContentMetadataForm, {
+  ContentMetadata,
+} from "components/content-metadata-form";
 import ThumbnailSelector from "components/thumbnail-selector";
 import {
   createLivestreamRecord,
@@ -8,9 +11,20 @@ import {
 import { useCaptureVideoFrame } from "hooks/useCaptureVideoFrame";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useEffect, useState } from "react";
-import { ScrollView, useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, Label, Paragraph, TextArea, View, isWeb } from "tamagui";
+import {
+  Button,
+  H3,
+  Label,
+  Paragraph,
+  ScrollView,
+  TextArea,
+  View,
+  XStack,
+  YStack,
+  isWeb,
+} from "tamagui";
 
 export default function CreateLivestream() {
   const dispatch = useAppDispatch();
@@ -21,6 +35,17 @@ export default function CreateLivestream() {
   const [customThumbnail, setCustomThumbnail] = useState<Blob | undefined>(
     undefined,
   );
+  const [contentMetadata, setContentMetadata] = useState<ContentMetadata>({
+    contentWarnings: [],
+    distributionPolicy: {
+      allowArchive: true,
+      broadcastExpiry: undefined, // No expiration means forever
+    },
+    contentRights: {
+      license: "all-rights-reserved",
+    },
+  });
+  const [showMetadata, setShowMetadata] = useState(false);
   const profile = useAppSelector(selectUserProfile);
   const newLivestream = useAppSelector(selectNewLivestream);
   const captureFrame = useCaptureVideoFrame();
@@ -37,6 +62,15 @@ export default function CreateLivestream() {
       });
       setTitle("");
       setCustomThumbnail(undefined);
+      setContentMetadata({
+        contentWarnings: [],
+        distributionPolicy: {
+          allowArchive: true,
+          broadcastExpiry: undefined, // No expiration means forever
+        },
+        contentRights: {},
+      });
+      setShowMetadata(false);
     }
   }, [newLivestream?.record]);
   useEffect(() => {
@@ -80,6 +114,68 @@ export default function CreateLivestream() {
     : !userIsLive
       ? "Waiting for stream to start..."
       : "Announce Livestream!";
+
+  if (showMetadata) {
+    return (
+      <YStack f={1}>
+        {/* Header with Back Button */}
+        <XStack
+          paddingHorizontal="$3"
+          paddingVertical="$2"
+          backgroundColor="$background"
+          borderBottomWidth={1}
+          borderBottomColor="$gray4"
+          alignItems="center"
+          justifyContent="center"
+          position="relative"
+        >
+          <YStack alignItems="center">
+            <H3 fontSize="$4">Content Metadata</H3>
+            <Paragraph fontSize="$1" color="$gray11">
+              Optional metadata for your livestream
+            </Paragraph>
+          </YStack>
+
+          <View position="absolute" left="$3">
+            <Button
+              size="$2"
+              variant="outlined"
+              onPress={() => setShowMetadata(false)}
+              icon={<Paragraph fontSize="$2">←</Paragraph>}
+            >
+              Back to Basic Info
+            </Button>
+          </View>
+        </XStack>
+
+        {/* Scrollable Content */}
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <YStack f={1} gap="$2" pb="$3">
+            {/* Content Metadata Form */}
+            <ContentMetadataForm
+              onMetadataChange={setContentMetadata}
+              initialMetadata={contentMetadata}
+              showUpdateButton={true}
+            />
+
+            {/* Submit Button */}
+            <View p="$2" alignItems="center">
+              <Button
+                disabled={disabled}
+                opacity={disabled ? 0.5 : 1}
+                size="$3"
+                w="100%"
+                maxWidth={400}
+                onPress={handleSubmit}
+              >
+                {buttonText}
+              </Button>
+            </View>
+          </YStack>
+        </ScrollView>
+      </YStack>
+    );
+  }
 
   return (
     <ScrollView
@@ -131,7 +227,14 @@ export default function CreateLivestream() {
               </View>
             </View>
           </Label>
-          <View w="100%" alignItems="center" mt="$4">
+          <View w="100%" alignItems="center" mt="$4" gap="$3">
+            <Button
+              size="$4"
+              variant="outlined"
+              onPress={() => setShowMetadata(true)}
+            >
+              Add Content Metadata
+            </Button>
             <Button
               disabled={disabled}
               opacity={disabled ? 0.5 : 1}
