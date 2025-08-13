@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bluesky-social/indigo/carstore"
 	"github.com/livepeer/go-livepeer/cmd/livepeer/starter"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
@@ -305,6 +306,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 
 	mod, err := model.MakeDB(cli.IndexDBPath)
+	if err != nil {
+		return err
+	}
+	out := carstore.SQLiteStore{}
+	err = out.Open(":memory:")
 	if err != nil {
 		return err
 	}

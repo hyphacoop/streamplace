@@ -23,8 +23,6 @@ import (
 	"github.com/bluesky-social/indigo/util"
 	"github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"github.com/whyrusleeping/go-did"
 	"stream.place/streamplace/lexicons"
@@ -125,33 +123,23 @@ type Closer interface {
 	Close() error
 }
 
+type NoopCloser struct{}
+
+func (c *NoopCloser) Close() error {
+	return nil
+}
+
 func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, state *statedb.StatefulDB) (Closer, error) {
 	ctx = log.WithLogValues(ctx, "func", "MakeLexiconRepo")
-	fd, err := cli.DataFileCreate([]string{"carstore", "empty"}, true)
-	if err != nil {
-		return nil, err
-	}
-	sqlitePath := cli.DataFilePath([]string{"carstore", "meta.sqlite"})
+	var err error
 
-	db, err := gorm.Open(sqlite.Open(sqlitePath))
-	if err != nil {
-		return nil, err
-	}
-	err = fd.Close()
-	if err != nil {
-		return nil, err
-	}
-	CarStore, err = carstore.NewCarStore(db, []string{
-		cli.DataFilePath([]string{"carstore"}),
-	})
-	if err != nil {
-		return nil, err
-	}
+	sqliteStore := &carstore.SQLiteStore{}
 
-	sqlDB, err := db.DB()
+	err = sqliteStore.Open(":memory:")
 	if err != nil {
 		return nil, err
 	}
+	CarStore = sqliteStore
 
 	var priv *atcrypto.PrivateKeyK256
 
@@ -205,28 +193,30 @@ func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, stat
 		return priv.HashAndSign(sb)
 	}
 
-	ses, err := CarStore.NewDeltaSession(ctx, RepoUser, nil)
+	events, err := mod.GetCommitEventsSince(cli.MyDID(), time.Time{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create delta session: %w", err)
+		return nil, fmt.Errorf("failed to get commit events: %w", err)
 	}
 
-	currentRoot, err := CarStore.GetUserRepoHead(ctx, RepoUser)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user repo head: %w", err)
-	}
-	currentRev := ""
+	var ses *carstore.DeltaSession
+	var currentRoot cid.Cid
+	var currentRev string
 
-	if currentRoot == cid.Undef {
-		LexiconRepo = atrepo.NewRepo(ctx, cli.MyDID(), ses)
-	} else {
-		LexiconRepo, err = atrepo.OpenRepo(ctx, ses, currentRoot)
+	for _, event := range events {
+		evt, err := event.ToCommitEvent()
 		if err != nil {
-			return nil, fmt.Errorf("failed to open repo: %w", err)
+			return nil, fmt.Errorf("failed to convert event to commit event: %w", err)
 		}
-		currentRev, err = CarStore.GetUserRepoRev(ctx, RepoUser)
+		currentRoot, ses, err = CarStore.ImportSlice(ctx, RepoUser, nil, evt.Blocks)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user repo rev: %w", err)
+			return nil, fmt.Errorf("failed to import slice: %w", err)
 		}
+		currentRev = evt.Rev
+	}
+
+	LexiconRepo, err = atrepo.OpenRepo(ctx, ses, currentRoot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open repo: %w", err)
 	}
 
 	LexiconPubMultibase = pub.Multibase()
@@ -316,7 +306,7 @@ func MakeLexiconRepo(ctx context.Context, cli *config.CLI, mod model.Model, stat
 		}
 	}
 
-	return sqlDB, nil
+	return &NoopCloser{}, nil
 }
 
 func OpenLexiconRepo(ctx context.Context) (*atrepo.Repo, *carstore.DeltaSession, error) {

@@ -72,6 +72,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 	google.golang.org/api v0.228.0
 	gorm.io/datatypes v1.2.4
+	gorm.io/driver/postgres v1.5.7
 	gorm.io/driver/sqlite v1.5.7
 )
 
@@ -518,7 +519,6 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
-	gorm.io/driver/postgres v1.5.7 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 	howett.net/plist v1.0.0 // indirect
