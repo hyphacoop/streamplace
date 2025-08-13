@@ -92,8 +92,6 @@ type Model interface {
 	GetServerSettings(ctx context.Context, server string, repoDID string) (*ServerSettings, error)
 	DeleteServerSettings(ctx context.Context, server string, repoDID string) error
 
-
-
 	CreateLabeler(did string) (*Labeler, error)
 	GetLabeler(did string) (*Labeler, error)
 	UpdateLabelerCursor(did string, cursor int64) error
