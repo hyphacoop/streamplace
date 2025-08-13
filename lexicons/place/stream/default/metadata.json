@@ -5,20 +5,32 @@
     "main": {
       "type": "record",
       "description": "Default metadata record for livestream including content warnings, rights, and distribution policy",
-      "key": "self",
+      "key": "literal:self",
       "record": {
         "type": "object",
         "properties": {
           "contentWarnings": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "knownValues": [
+                "place.stream.default.metadata#death",
+                "place.stream.default.metadata#drugUse",
+                "place.stream.default.metadata#fantasyViolence",
+                "place.stream.default.metadata#flashingLights",
+                "place.stream.default.metadata#language",
+                "place.stream.default.metadata#nudity",
+                "place.stream.default.metadata#PII",
+                "place.stream.default.metadata#sexuality",
+                "place.stream.default.metadata#suffering",
+                "place.stream.default.metadata#violence"
+              ]
             },
             "description": "Content warnings for this stream."
           },
-          "rights": {
+          "contentRights": {
             "type": "ref",
-            "ref": "#rights"
+            "ref": "#contentRights"
           },
           "distributionPolicy": {
             "type": "ref",
@@ -27,29 +39,38 @@
         }
       }
     },
-    "rights": {
+    "contentRights": {
       "type": "object",
-      "description": "Content rights and attribution information",
+      "description": "Content rights and attribution information.",
       "properties": {
-        "attribution": {
+        "creator": {
           "type": "string",
-          "maxLength": 100,
-          "description": "Attribution name or handle."
+          "description": "Name of the creator of the work."
+        },
+        "copyrightNotice": {
+          "type": "string",
+          "description": "Copyright notice for the work."
+        },
+        "copyrightYear": {
+          "type": "integer",
+          "description": "Year of creation or publication."
         },
         "license": {
           "type": "string",
-          "description": "License identifier (e.g. 'CC BY-NC-SA', 'All Rights Reserved')."
+          "knownValues": [
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nc/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-nd/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by-sa/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/licenses/by/4.0/",
+            "place.stream.default.metadata#https://creativecommons.org/publicdomain/zero/1.0/"
+          ],
+          "description": "License URL or identifier."
         },
-        "usageTerms": {
+        "creditLine": {
           "type": "string",
-          "maxLength": 500,
-          "description": "Additional notice or usage terms."
-        },
-        "year": {
-          "type": "string",
-          "minLength": 4,
-          "maxLength": 4,
-          "description": "Year of creation or publication (e.g. '2025')."
+          "description": "Credit line for the work."
         }
       }
     },
@@ -61,12 +82,80 @@
           "type": "boolean",
           "description": "Whether nodes can archive this stream."
         },
-        "broadcastUntil": {
+        "broadcastExpiry": {
           "type": "string",
           "format": "datetime",
-          "description": "When rebroadcast permissions expire (ISO 8601 format). If not specified, no rebroadcast allowed."
+          "description": "When rebroadcast permissions expire. If not specified, there is no expiration on rebroadcast permission."
         }
       }
+    },
+    "death": {
+      "type": "token",
+      "description": "The content could be perceived as offensive due to the discussion or display of death."
+    },
+    "drugUse": {
+      "type": "token",
+      "description": "The content contains a portrayal of the use or abuse of mind altering substances."
+    },
+    "fantasyViolence": {
+      "type": "token",
+      "description": "The content contains violent actions of a fantasy nature, involving human or non-human characters in situations easily distinguishable from real life."
+    },
+    "flashingLights": {
+      "type": "token",
+      "description": "The content contains flashing lights that could be harmful to viewers with seizure disorders such as photosensitive epilepsy."
+    },
+    "language": {
+      "type": "token",
+      "description": "The content could be perceived as offensive due to the language used."
+    },
+    "nudity": {
+      "type": "token",
+      "description": "The content could be perceived as offensive due to nudity."
+    },
+    "PII": {
+      "type": "token",
+      "description": "The content contains information that can be used to identify a particular individual, such as a name, phone number, email address, physical address, or IP address."
+    },
+    "sexuality": {
+      "type": "token",
+      "description": "The content could be perceived as offensive due to the discussion or display of sexuality."
+    },
+    "suffering": {
+      "type": "token",
+      "description": "The content could be perceived as distressing due to the discussion or display of suffering or triggering topics, including suicide, eating disorders or self harm."
+    },
+    "violence": {
+      "type": "token",
+      "description": "The content could be perceived as offensive due to the discussion or display of violence."
+    },
+    "https://creativecommons.org/licenses/by-nc-nd/4.0/": {
+      "type": "token",
+      "description": "Attribution-NonCommercial-NoDerivatives 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-nc-sa/4.0/": {
+      "type": "token",
+      "description": "Attribution-NonCommercial-ShareAlike 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-nc/4.0/": {
+      "type": "token",
+      "description": "Attribution-NonCommercial 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-nd/4.0/": {
+      "type": "token",
+      "description": "Attribution-NoDerivatives 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by-sa/4.0/": {
+      "type": "token",
+      "description": "Attribution-ShareAlike 4.0 International"
+    },
+    "https://creativecommons.org/licenses/by/4.0/": {
+      "type": "token",
+      "description": "Attribution 4.0 International"
+    },
+    "https://creativecommons.org/publicdomain/zero/1.0/": {
+      "type": "token",
+      "description": "Public Domain Dedication 1.0"
     }
   }
 }
