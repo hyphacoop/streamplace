@@ -92,6 +92,11 @@ streamplace_deps = []
 #   streamplace_deps += mistserver
 # endif
 
+x264_proj = subproject(
+  'x264',
+  default_options: {},
+)
+
 ffmpeg_opts = {
   'aac_adtstoasc_bsf': 'enabled',
   'aac_decoder': 'enabled',
@@ -105,7 +110,6 @@ ffmpeg_opts = {
   'concat_filter': 'enabled',
   'concat_protocol': 'enabled',
   'concatf_protocol': 'enabled',
-  'cuda': 'enabled',
   'extract_extradata_bsf': 'enabled',
   'fd_protocol': 'enabled',
   'fifo_muxer': 'enabled',
@@ -131,7 +135,6 @@ ffmpeg_opts = {
   'hls_muxer': 'enabled',
   'http_protocol': 'enabled',
   'hwdownload_filter': 'enabled',
-  'hwupload_cuda_filter': 'enabled',
   'image2_demuxer': 'enabled',
   'libxcb': 'enabled',
   'matroska_audio_muxer': 'enabled',
@@ -153,12 +156,10 @@ ffmpeg_opts = {
   'png_decoder': 'enabled',
   'png_parser': 'enabled',
   'rtmp_protocol': 'enabled',
-  'scale_cuda_filter': 'enabled',
   'scale_filter': 'enabled',
   'segment_muxer': 'enabled',
   'stream_segment_muxer': 'enabled',
   'select_filter': 'enabled',
-  'signature_cuda_filter': 'enabled',
   'signature_filter': 'enabled',
   'tcp_protocol': 'enabled',
   'vorbis_decoder': 'enabled',
@@ -175,11 +176,36 @@ ffmpeg_opts = {
   'vp9_superframe_bsf': 'enabled',
   'ac3_parser': 'enabled',
   'pgs_frame_merge_bsf': 'enabled',
+  'libx264': 'enabled',
+  'libx264_encoder': 'enabled',
+  'libx264rgb_encoder': 'enabled',
+  'mpegtsraw_demuxer': 'enabled',
+  'adts_muxer': 'enabled',
+  'latm_muxer': 'enabled',
+  'vvc_mp4toannexb_bsf': 'enabled',
 }
 
 if host_machine.system() != 'windows'
   ffmpeg_opts += {'nanosleep': 'enabled'}
 endif
+
+# Someday maybe once the meson port of ffmpeg supports cuda
+
+# if host_machine.system() != 'darwin'
+#   ffmpeg_opts += {
+#     'ff_cuda_llvm': 'enabled',
+#     'cuda': 'enabled',
+#     'hwupload_cuda_filter': 'enabled',
+#     'scale_cuda_filter': 'enabled',
+#     # 'signature_cuda_filter': 'enabled',
+#     'ffnvcodec': 'enabled',
+#     'h264_nvenc_encoder': 'enabled',
+#     'nvenc': 'enabled',
+#     'nvdec': 'enabled',
+#     'h264_nvdec_hwaccel': 'enabled',
+#     'libdl': 'enabled',
+#   }
+# endif
 
 ffmpeg_proj = subproject(
   'FFmpeg',
@@ -305,7 +331,7 @@ if not meson.is_cross_build()
     args: [
       'test',
       '-p', '1',
-      '-timeout', '300s',
+      '-timeout', '600s',
       '@0@/pkg/...'.format(meson.current_source_dir()),
       '@0@/cmd/...'.format(meson.current_source_dir()),
     ],
