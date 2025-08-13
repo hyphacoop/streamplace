@@ -420,6 +420,21 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			log.Error(ctx, "failed to create signing key", "err", err)
 		}
 
+	case *streamplace.DefaultMetadata:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		log.Debug(ctx, "creating default metadata", "metadata", rec)
+		metadata := &model.DefaultMetadata{
+			RepoDID: userDID,
+			Record:  recCBOR,
+			Repo:    repo,
+		}
+		err = atsync.Model.CreateDefaultMetadata(ctx, metadata)
+		if err != nil {
+			log.Error(ctx, "failed to create default metadata", "err", err)
+		}
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))
 	}
