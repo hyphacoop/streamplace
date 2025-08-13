@@ -25,6 +25,9 @@ func main() {
 		streamplace.ChatMessage_ReplyRef{},
 		streamplace.ServerSettings{},
 		streamplace.ChatGate{},
+		streamplace.DefaultMetadata{},
+		streamplace.DefaultMetadata_DistributionPolicy{},
+		streamplace.DefaultMetadata_Rights{},
 	); err != nil {
 		panic(err)
 	}
