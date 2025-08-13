@@ -35,9 +35,6 @@ import {
 export interface DistributionPolicy {
   allowArchive: boolean;
   broadcastExpiry?: string;
-  customDuration?: string;
-  customDate?: string;
-  customTime?: string;
 }
 
 export interface Rights {
@@ -186,16 +183,13 @@ export default function ContentMetadataForm({
     initialMetadata?.contentRights?.license || "all-rights-reserved",
   );
 
-  // Date picker state
-  const [useCustomExpiry, setUseCustomExpiry] = useState(false);
-  const [customDay, setCustomDay] = useState("1");
-  const [customMonth, setCustomMonth] = useState("January");
-  const [customYear, setCustomYear] = useState(
-    String(new Date().getFullYear() + 1),
-  );
-  const [customHour, setCustomHour] = useState("12");
-  const [customMinute, setCustomMinute] = useState("00");
-  const [customPeriod, setCustomPeriod] = useState<"AM" | "PM">("PM");
+  // Date picker state - only set broadcastExpiry when user actually selects
+  const [customDay, setCustomDay] = useState("");
+  const [customMonth, setCustomMonth] = useState("");
+  const [customYear, setCustomYear] = useState("");
+  const [customHour, setCustomHour] = useState("");
+  const [customMinute, setCustomMinute] = useState("");
+  const [customPeriod, setCustomPeriod] = useState<"AM" | "PM">("AM");
 
   const { months, years, days, hours, minutes } = generateDateOptions();
 
@@ -230,31 +224,36 @@ export default function ContentMetadataForm({
     onMetadataChange(metadata);
   };
 
-  // Update custom date/time when values change
+  // Update broadcastExpiry only when user has selected all date/time fields
   React.useEffect(() => {
-    const monthIndex = months.indexOf(customMonth);
-    // Handle 12-hour format correctly
-    let hour24 = parseInt(customHour);
-    if (customPeriod === "PM" && hour24 !== 12) {
-      hour24 += 12;
-    } else if (customPeriod === "AM" && hour24 === 12) {
-      hour24 = 0;
-    }
+    // Only set broadcastExpiry if user has selected all required fields
+    if (customMonth && customDay && customYear && customHour && customMinute) {
+      const monthIndex = months.indexOf(customMonth);
+      // Handle 12-hour format correctly
+      let hour24 = parseInt(customHour);
+      if (customPeriod === "PM" && hour24 !== 12) {
+        hour24 += 12;
+      } else if (customPeriod === "AM" && hour24 === 12) {
+        hour24 = 0;
+      }
 
-    const date = new Date(
-      parseInt(customYear),
-      monthIndex,
-      parseInt(customDay),
-      hour24,
-      parseInt(customMinute),
-    );
-    const isoString = date.toISOString();
-    handleDistributionPolicyChange({
-      broadcastExpiry: isoString,
-      customDuration: isoString,
-      customDate: `${customMonth} ${customDay}, ${customYear}`,
-      customTime: `${customHour}:${customMinute} ${customPeriod}`,
-    });
+      const date = new Date(
+        parseInt(customYear),
+        monthIndex,
+        parseInt(customDay),
+        hour24,
+        parseInt(customMinute),
+      );
+      const isoString = date.toISOString();
+      handleDistributionPolicyChange({
+        broadcastExpiry: isoString,
+      });
+    } else {
+      // Clear broadcastExpiry if fields are incomplete
+      handleDistributionPolicyChange({
+        broadcastExpiry: undefined,
+      });
+    }
   }, [
     customDay,
     customMonth,
@@ -613,10 +612,9 @@ export default function ContentMetadataForm({
                   </XStack>
                 </XStack>
 
-                {distributionPolicy.customDate && (
+                {distributionPolicy.broadcastExpiry && (
                   <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
-                    Until: {distributionPolicy.customDate} at{" "}
-                    {distributionPolicy.customTime}
+                    Until: {new Date(distributionPolicy.broadcastExpiry).toLocaleString()}
                   </Paragraph>
                 )}
               </YStack>
