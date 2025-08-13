@@ -39,7 +39,7 @@ export default function CreateLivestream() {
     contentWarnings: [],
     distributionPolicy: {
       allowArchive: true,
-      broadcastUntil: "forever",
+      broadcastExpiry: undefined, // No expiration means forever
     },
     contentRights: {
       license: "all-rights-reserved",
@@ -66,7 +66,7 @@ export default function CreateLivestream() {
         contentWarnings: [],
         distributionPolicy: {
           allowArchive: true,
-          broadcastUntil: "forever",
+          broadcastExpiry: undefined, // No expiration means forever
         },
         contentRights: {},
       });

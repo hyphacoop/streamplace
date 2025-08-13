@@ -22,7 +22,6 @@ import {
   Input,
   Label,
   Paragraph,
-  RadioGroup,
   Select,
   Sheet,
   TextArea,
@@ -34,19 +33,19 @@ import {
 
 // Type definitions for metadata
 export interface DistributionPolicy {
-  allowBroadcast: boolean;
   allowArchive: boolean;
-  broadcastUntil: string;
+  broadcastExpiry?: string;
   customDuration?: string;
   customDate?: string;
   customTime?: string;
 }
 
 export interface Rights {
-  copyright?: string;
+  creator?: string;
+  copyrightNotice?: string;
   copyrightYear?: string;
-  attribution?: string;
   license?: string;
+  creditLine?: string;
   customLicense?: string;
 }
 
@@ -62,28 +61,33 @@ interface ContentMetadataFormProps {
   showUpdateButton?: boolean;
 }
 
-// Content warnings list based on IPTC NewsCodes Scheme
-// https://cv.iptc.org/newscodes/contentwarning/
+// Content warnings list based on lexicon metadata.json
 const CONTENT_WARNINGS = [
-  { value: "death", label: "Death" },
-  { value: "drugUse", label: "Drug Use" },
-  { value: "fantasyViolence", label: "Fantasy Violence" },
-  { value: "flashingLights", label: "Flashing Lights" },
-  { value: "language", label: "Language" },
-  { value: "nudity", label: "Nudity" },
-  { value: "PII", label: "Personally Identifiable Information" },
-  { value: "sexuality", label: "Sexuality" },
-  { value: "suffering", label: "Upsetting or Disturbing" },
-  { value: "violence", label: "Violence" },
+  { value: "place.stream.default.metadata#death", label: "Death" },
+  { value: "place.stream.default.metadata#drugUse", label: "Drug Use" },
+  {
+    value: "place.stream.default.metadata#fantasyViolence",
+    label: "Fantasy Violence",
+  },
+  {
+    value: "place.stream.default.metadata#flashingLights",
+    label: "Flashing Lights",
+  },
+  { value: "place.stream.default.metadata#language", label: "Language" },
+  { value: "place.stream.default.metadata#nudity", label: "Nudity" },
+  {
+    value: "place.stream.default.metadata#PII",
+    label: "Personally Identifiable Information",
+  },
+  { value: "place.stream.default.metadata#sexuality", label: "Sexuality" },
+  {
+    value: "place.stream.default.metadata#suffering",
+    label: "Upsetting or Disturbing",
+  },
+  { value: "place.stream.default.metadata#violence", label: "Violence" },
 ];
 
-const BROADCAST_OPTIONS = [
-  { value: "forever", label: "Forever" },
-  { value: "1year", label: "1 Year" },
-  { value: "1month", label: "1 Month" },
-  { value: "1day", label: "1 Day" },
-  { value: "custom", label: "Custom" },
-];
+// No predefined options - just optional expiry date-time picker
 
 const LICENSE_OPTIONS = [
   { value: "all-rights-reserved", label: "All Rights Reserved" },
@@ -170,9 +174,7 @@ export default function ContentMetadataForm({
   const [distributionPolicy, setDistributionPolicy] =
     useState<DistributionPolicy>(
       initialMetadata?.distributionPolicy || {
-        allowBroadcast: true,
         allowArchive: true,
-        broadcastUntil: "forever",
       },
     );
   const [contentRights, setContentRights] = useState<Rights>(
@@ -229,30 +231,29 @@ export default function ContentMetadataForm({
 
   // Update custom date/time when values change
   React.useEffect(() => {
-    if (distributionPolicy.broadcastUntil === "custom") {
-      const monthIndex = months.indexOf(customMonth);
-      // Handle 12-hour format correctly
-      let hour24 = parseInt(customHour);
-      if (customPeriod === "PM" && hour24 !== 12) {
-        hour24 += 12;
-      } else if (customPeriod === "AM" && hour24 === 12) {
-        hour24 = 0;
-      }
-
-      const date = new Date(
-        parseInt(customYear),
-        monthIndex,
-        parseInt(customDay),
-        hour24,
-        parseInt(customMinute),
-      );
-      const isoString = date.toISOString();
-      handleDistributionPolicyChange({
-        customDuration: isoString,
-        customDate: `${customMonth} ${customDay}, ${customYear}`,
-        customTime: `${customHour}:${customMinute} ${customPeriod}`,
-      });
+    const monthIndex = months.indexOf(customMonth);
+    // Handle 12-hour format correctly
+    let hour24 = parseInt(customHour);
+    if (customPeriod === "PM" && hour24 !== 12) {
+      hour24 += 12;
+    } else if (customPeriod === "AM" && hour24 === 12) {
+      hour24 = 0;
     }
+
+    const date = new Date(
+      parseInt(customYear),
+      monthIndex,
+      parseInt(customDay),
+      hour24,
+      parseInt(customMinute),
+    );
+    const isoString = date.toISOString();
+    handleDistributionPolicyChange({
+      broadcastExpiry: isoString,
+      customDuration: isoString,
+      customDate: `${customMonth} ${customDay}, ${customYear}`,
+      customTime: `${customHour}:${customMinute} ${customPeriod}`,
+    });
   }, [
     customDay,
     customMonth,
@@ -260,7 +261,6 @@ export default function ContentMetadataForm({
     customHour,
     customMinute,
     customPeriod,
-    distributionPolicy.broadcastUntil,
   ]);
 
   const handleSaveMetadata = async () => {
@@ -273,17 +273,15 @@ export default function ContentMetadataForm({
       const metadataPayload = {
         contentWarnings,
         distributionPolicy: {
-          allowBroadcast: distributionPolicy.allowBroadcast,
           allowArchive: distributionPolicy.allowArchive,
-          broadcastUntil: distributionPolicy.broadcastUntil,
-          customDuration: distributionPolicy.customDuration,
+          broadcastExpiry: distributionPolicy.broadcastExpiry,
         },
-        rights: {
-          copyright: contentRights.copyright,
+        contentRights: {
+          creator: contentRights.creator,
+          copyrightNotice: contentRights.copyrightNotice,
           copyrightYear: contentRights.copyrightYear,
-          attribution: contentRights.attribution,
           license: contentRights.license,
-          customLicense: contentRights.customLicense,
+          creditLine: contentRights.creditLine,
         },
       };
 
@@ -304,7 +302,7 @@ export default function ContentMetadataForm({
           (createContentMetadata as any)({
             contentWarnings,
             distributionPolicy,
-            rights: contentRights,
+            contentRights,
           }),
         ).unwrap();
         toast.show("Success", {
@@ -421,270 +419,206 @@ export default function ContentMetadataForm({
 
             <YStack gap="$1">
               <Label fontSize="$1.5" fontWeight="500">
-                Broadcast Duration
+                Broadcast Expiry (Optional)
               </Label>
-              <RadioGroup
-                value={distributionPolicy.broadcastUntil}
-                onValueChange={(value) =>
-                  handleDistributionPolicyChange({
-                    broadcastUntil:
-                      value as DistributionPolicy["broadcastUntil"],
-                  })
-                }
+              <Paragraph fontSize="$1" color="$gray11">
+                Leave empty for no restrictions, or set a specific end date and
+                time
+              </Paragraph>
+
+              <YStack
+                gap="$1"
+                mt="$1"
+                p="$1"
+                backgroundColor="$gray2"
+                borderRadius="$2"
               >
-                <XStack flexWrap="wrap" gap={4}>
-                  {BROADCAST_OPTIONS.map((option) => {
-                    const isSelected =
-                      distributionPolicy.broadcastUntil === option.value;
-                    return (
-                      <Label
-                        key={option.value}
-                        htmlFor={`broadcast-${option.value}`}
-                        cursor="pointer"
-                        userSelect="none"
-                      >
+                <Label fontSize="$1" fontWeight="500">
+                  Select End Date & Time
+                </Label>
+
+                {/* Date Selection */}
+                <XStack gap="$1" alignItems="center">
+                  <Select
+                    value={customMonth}
+                    onValueChange={setCustomMonth}
+                    size="$1"
+                  >
+                    <Select.Trigger width={90} size="$2">
+                      <Select.Value placeholder="Month" fontSize="$1" />
+                    </Select.Trigger>
+                    <Select.Content zIndex={200000}>
+                      <Select.Viewport>
+                        <Select.Group>
+                          {months.map((month) => (
+                            <Select.Item
+                              key={month}
+                              value={month}
+                              index={months.indexOf(month)}
+                            >
+                              <Select.ItemText fontSize="$1">
+                                {month}
+                              </Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Group>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select>
+
+                  <Select
+                    value={customDay}
+                    onValueChange={setCustomDay}
+                    size="$1"
+                  >
+                    <Select.Trigger width={50} size="$2">
+                      <Select.Value placeholder="Day" fontSize="$1" />
+                    </Select.Trigger>
+                    <Select.Content zIndex={200000}>
+                      <Select.Viewport>
+                        <Select.Group>
+                          {days.map((day) => (
+                            <Select.Item
+                              key={day}
+                              value={String(day)}
+                              index={day - 1}
+                            >
+                              <Select.ItemText fontSize="$1">
+                                {day}
+                              </Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Group>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select>
+
+                  <Select
+                    value={customYear}
+                    onValueChange={setCustomYear}
+                    size="$1"
+                  >
+                    <Select.Trigger width={65} size="$2">
+                      <Select.Value placeholder="Year" fontSize="$1" />
+                    </Select.Trigger>
+                    <Select.Content zIndex={200000}>
+                      <Select.Viewport>
+                        <Select.Group>
+                          {years.map((year) => (
+                            <Select.Item
+                              key={year}
+                              value={String(year)}
+                              index={years.indexOf(year)}
+                            >
+                              <Select.ItemText fontSize="$1">
+                                {year}
+                              </Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Group>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select>
+                </XStack>
+
+                {/* Time Selection */}
+                <XStack gap="$1" alignItems="center">
+                  <Select
+                    value={customHour}
+                    onValueChange={setCustomHour}
+                    size="$1"
+                  >
+                    <Select.Trigger width={50} size="$2">
+                      <Select.Value placeholder="HH" fontSize="$1" />
+                    </Select.Trigger>
+                    <Select.Content zIndex={200000}>
+                      <Select.Viewport>
+                        <Select.Group>
+                          {hours.map((hour) => (
+                            <Select.Item
+                              key={hour}
+                              value={String(hour)}
+                              index={hour - 1}
+                            >
+                              <Select.ItemText fontSize="$1">
+                                {hour}
+                              </Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Group>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select>
+
+                  <Paragraph fontSize="$1">:</Paragraph>
+
+                  <Select
+                    value={customMinute}
+                    onValueChange={setCustomMinute}
+                    size="$1"
+                  >
+                    <Select.Trigger width={50} size="$2">
+                      <Select.Value placeholder="MM" fontSize="$1" />
+                    </Select.Trigger>
+                    <Select.Content zIndex={200000}>
+                      <Select.Viewport>
+                        <Select.Group>
+                          {minutes.map((minute) => (
+                            <Select.Item
+                              key={minute}
+                              value={minute}
+                              index={minutes.indexOf(minute)}
+                            >
+                              <Select.ItemText fontSize="$1">
+                                {minute}
+                              </Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Group>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select>
+
+                  <XStack gap="$0.5">
+                    {["AM", "PM"].map((period) => {
+                      const isSelected = customPeriod === period;
+                      return (
                         <XStack
+                          key={period}
                           alignItems="center"
-                          gap="$1"
-                          paddingVertical={2}
+                          gap="$0.5"
                           paddingHorizontal={6}
-                          backgroundColor={
-                            isSelected ? "$gray3" : "transparent"
-                          }
+                          paddingVertical={2}
+                          backgroundColor={isSelected ? "$blue10" : "$gray3"}
                           borderRadius="$1"
                           cursor="pointer"
-                          hoverStyle={{ backgroundColor: "$gray3" }}
-                          pressStyle={{ backgroundColor: "$gray4" }}
+                          hoverStyle={{
+                            backgroundColor: isSelected ? "$blue11" : "$gray4",
+                          }}
+                          pressStyle={{ opacity: 0.8 }}
+                          onPress={() => setCustomPeriod(period as "AM" | "PM")}
                         >
-                          <RadioGroup.Item
-                            value={option.value}
-                            id={`broadcast-${option.value}`}
-                            size="$2"
-                            borderWidth={1.5}
-                            borderColor={isSelected ? "$blue10" : "$gray8"}
-                          >
-                            <RadioGroup.Indicator>
-                              <View
-                                backgroundColor="$blue10"
-                                width={6}
-                                height={6}
-                                borderRadius="$10"
-                              />
-                            </RadioGroup.Indicator>
-                          </RadioGroup.Item>
                           <Paragraph
                             fontSize="$1"
+                            fontWeight={isSelected ? "600" : "400"}
+                            color={isSelected ? "white" : "$gray11"}
                             cursor="pointer"
-                            userSelect="none"
                           >
-                            {option.label}
+                            {period}
                           </Paragraph>
                         </XStack>
-                      </Label>
-                    );
-                  })}
+                      );
+                    })}
+                  </XStack>
                 </XStack>
-              </RadioGroup>
 
-              {distributionPolicy.broadcastUntil === "custom" && (
-                <YStack
-                  gap="$1"
-                  mt="$1"
-                  p="$1"
-                  backgroundColor="$gray2"
-                  borderRadius="$2"
-                >
-                  <Label fontSize="$1" fontWeight="500">
-                    Select End Date & Time
-                  </Label>
-
-                  {/* Date Selection */}
-                  <XStack gap="$1" alignItems="center">
-                    <Select
-                      value={customMonth}
-                      onValueChange={setCustomMonth}
-                      size="$1"
-                    >
-                      <Select.Trigger width={90} size="$2">
-                        <Select.Value placeholder="Month" fontSize="$1" />
-                      </Select.Trigger>
-                      <Select.Content zIndex={200000}>
-                        <Select.Viewport>
-                          <Select.Group>
-                            {months.map((month) => (
-                              <Select.Item
-                                key={month}
-                                value={month}
-                                index={months.indexOf(month)}
-                              >
-                                <Select.ItemText fontSize="$1">
-                                  {month}
-                                </Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Group>
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select>
-
-                    <Select
-                      value={customDay}
-                      onValueChange={setCustomDay}
-                      size="$1"
-                    >
-                      <Select.Trigger width={50} size="$2">
-                        <Select.Value placeholder="Day" fontSize="$1" />
-                      </Select.Trigger>
-                      <Select.Content zIndex={200000}>
-                        <Select.Viewport>
-                          <Select.Group>
-                            {days.map((day) => (
-                              <Select.Item
-                                key={day}
-                                value={String(day)}
-                                index={day - 1}
-                              >
-                                <Select.ItemText fontSize="$1">
-                                  {day}
-                                </Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Group>
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select>
-
-                    <Select
-                      value={customYear}
-                      onValueChange={setCustomYear}
-                      size="$1"
-                    >
-                      <Select.Trigger width={65} size="$2">
-                        <Select.Value placeholder="Year" fontSize="$1" />
-                      </Select.Trigger>
-                      <Select.Content zIndex={200000}>
-                        <Select.Viewport>
-                          <Select.Group>
-                            {years.map((year) => (
-                              <Select.Item
-                                key={year}
-                                value={String(year)}
-                                index={years.indexOf(year)}
-                              >
-                                <Select.ItemText fontSize="$1">
-                                  {year}
-                                </Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Group>
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select>
-                  </XStack>
-
-                  {/* Time Selection */}
-                  <XStack gap="$1" alignItems="center">
-                    <Select
-                      value={customHour}
-                      onValueChange={setCustomHour}
-                      size="$1"
-                    >
-                      <Select.Trigger width={50} size="$2">
-                        <Select.Value placeholder="HH" fontSize="$1" />
-                      </Select.Trigger>
-                      <Select.Content zIndex={200000}>
-                        <Select.Viewport>
-                          <Select.Group>
-                            {hours.map((hour) => (
-                              <Select.Item
-                                key={hour}
-                                value={String(hour)}
-                                index={hour - 1}
-                              >
-                                <Select.ItemText fontSize="$1">
-                                  {hour}
-                                </Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Group>
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select>
-
-                    <Paragraph fontSize="$1">:</Paragraph>
-
-                    <Select
-                      value={customMinute}
-                      onValueChange={setCustomMinute}
-                      size="$1"
-                    >
-                      <Select.Trigger width={50} size="$2">
-                        <Select.Value placeholder="MM" fontSize="$1" />
-                      </Select.Trigger>
-                      <Select.Content zIndex={200000}>
-                        <Select.Viewport>
-                          <Select.Group>
-                            {minutes.map((minute) => (
-                              <Select.Item
-                                key={minute}
-                                value={minute}
-                                index={minutes.indexOf(minute)}
-                              >
-                                <Select.ItemText fontSize="$1">
-                                  {minute}
-                                </Select.ItemText>
-                              </Select.Item>
-                            ))}
-                          </Select.Group>
-                        </Select.Viewport>
-                      </Select.Content>
-                    </Select>
-
-                    <XStack gap="$0.5">
-                      {["AM", "PM"].map((period) => {
-                        const isSelected = customPeriod === period;
-                        return (
-                          <XStack
-                            key={period}
-                            alignItems="center"
-                            gap="$0.5"
-                            paddingHorizontal={6}
-                            paddingVertical={2}
-                            backgroundColor={isSelected ? "$blue10" : "$gray3"}
-                            borderRadius="$1"
-                            cursor="pointer"
-                            hoverStyle={{
-                              backgroundColor: isSelected
-                                ? "$blue11"
-                                : "$gray4",
-                            }}
-                            pressStyle={{ opacity: 0.8 }}
-                            onPress={() =>
-                              setCustomPeriod(period as "AM" | "PM")
-                            }
-                          >
-                            <Paragraph
-                              fontSize="$1"
-                              fontWeight={isSelected ? "600" : "400"}
-                              color={isSelected ? "white" : "$gray11"}
-                              cursor="pointer"
-                            >
-                              {period}
-                            </Paragraph>
-                          </XStack>
-                        );
-                      })}
-                    </XStack>
-                  </XStack>
-
-                  {distributionPolicy.customDate && (
-                    <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
-                      Until: {distributionPolicy.customDate} at{" "}
-                      {distributionPolicy.customTime}
-                    </Paragraph>
-                  )}
-                </YStack>
-              )}
+                {distributionPolicy.customDate && (
+                  <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
+                    Until: {distributionPolicy.customDate} at{" "}
+                    {distributionPolicy.customTime}
+                  </Paragraph>
+                )}
+              </YStack>
             </YStack>
 
             <YStack gap="$0.5">
@@ -931,13 +865,13 @@ export default function ContentMetadataForm({
 
                   <YStack gap="$0.5" f={2}>
                     <Label fontSize="$1" fontWeight="500">
-                      Attribution
+                      Creator
                     </Label>
                     <Input
                       placeholder="Your Name / Handle"
-                      value={contentRights.attribution || ""}
+                      value={contentRights.creator || ""}
                       onChangeText={(text) =>
-                        handleContentRightsChange({ attribution: text })
+                        handleContentRightsChange({ creator: text })
                       }
                       size="$2"
                       fontSize="$1"
@@ -959,9 +893,33 @@ export default function ContentMetadataForm({
                   </Label>
                   <TextArea
                     placeholder="Additional copyright info"
-                    value={contentRights.copyright || ""}
+                    value={contentRights.copyrightNotice || ""}
                     onChangeText={(text) =>
-                      handleContentRightsChange({ copyright: text })
+                      handleContentRightsChange({ copyrightNotice: text })
+                    }
+                    size="$2"
+                    fontSize="$1"
+                    minHeight={30}
+                    maxLength={200}
+                    borderWidth={1}
+                    borderColor="$gray8"
+                    backgroundColor="$gray2"
+                    focusStyle={{
+                      borderColor: "$blue10",
+                      backgroundColor: "$gray3",
+                    }}
+                  />
+                </YStack>
+
+                <YStack gap="$0.5">
+                  <Label fontSize="$1" fontWeight="500">
+                    Credit Line (Optional)
+                  </Label>
+                  <TextArea
+                    placeholder="How you'd like to be credited"
+                    value={contentRights.creditLine || ""}
+                    onChangeText={(text) =>
+                      handleContentRightsChange({ creditLine: text })
                     }
                     size="$2"
                     fontSize="$1"

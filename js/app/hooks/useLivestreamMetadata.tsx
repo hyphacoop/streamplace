@@ -8,9 +8,9 @@ interface LivestreamMetadata {
   createdAt: string;
   distributionPolicy?: {
     allowArchive: boolean;
-    broadcastUntil: string;
+    broadcastExpiry?: string; // Make this optional
   };
-  rights?: {
+  contentRights?: {
     attribution?: string;
     license?: string;
     usageTerms?: string;
@@ -54,7 +54,7 @@ export function useLivestreamMetadata(streamerDid?: string) {
             contentWarnings: metadataValue.contentWarnings || [],
             createdAt: metadataValue.createdAt,
             distributionPolicy: metadataValue.distributionPolicy,
-            rights: metadataValue.rights,
+            contentRights: metadataValue.contentRights,
           });
         } else {
           // No metadata record found
@@ -77,9 +77,9 @@ export function useLivestreamMetadata(streamerDid?: string) {
                 contentWarnings: [],
                 distributionPolicy: {
                   allowArchive: true,
-                  broadcastUntil: "2025-12-31T23:59:59Z",
+                  broadcastExpiry: undefined, // No expiration means forever
                 },
-                rights: {},
+                contentRights: {},
               };
 
               await pdsAgent.com.atproto.repo.createRecord({
@@ -94,7 +94,7 @@ export function useLivestreamMetadata(streamerDid?: string) {
                 contentWarnings: [],
                 createdAt: defaultMetadataRecord.createdAt,
                 distributionPolicy: defaultMetadataRecord.distributionPolicy,
-                rights: defaultMetadataRecord.rights,
+                contentRights: defaultMetadataRecord.contentRights,
               });
               setError(null);
             } catch (createErr) {

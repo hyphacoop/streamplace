@@ -995,9 +995,9 @@ export const blueskySlice = createAppSlice({
               contentWarnings: [],
               distributionPolicy: {
                 allowArchive: true,
-                broadcastUntil: "2025-12-31T23:59:59Z",
+                broadcastExpiry: undefined, // No expiration means forever
               },
-              rights: {},
+              contentRights: {},
             };
 
             await bluesky.pdsAgent.com.atproto.repo.createRecord({

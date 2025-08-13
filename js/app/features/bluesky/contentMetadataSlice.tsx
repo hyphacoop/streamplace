@@ -28,18 +28,19 @@ export const contentMetadataSlice = createAppSlice({
           distributionPolicy = {
             allowArchive: true,
           },
-          rights = {},
+          contentRights = {},
         }: {
           contentWarnings?: string[];
           distributionPolicy?: {
             allowArchive?: boolean;
-            broadcastUntil?: string;
+            broadcastExpiry?: string;
           };
-          rights?: {
-            year?: string;
-            attribution?: string;
+          contentRights?: {
+            creator?: string;
+            copyrightNotice?: string;
+            copyrightYear?: string;
             license?: string;
-            usageTerms?: string;
+            creditLine?: string;
           };
         },
         thunkAPI,
@@ -61,7 +62,7 @@ export const contentMetadataSlice = createAppSlice({
           $type: "place.stream.default.metadata",
           createdAt: new Date().toISOString(),
           contentWarnings,
-          rights,
+          contentRights,
           distributionPolicy,
         };
 
@@ -117,9 +118,9 @@ export const contentMetadataSlice = createAppSlice({
           contentWarnings = [],
           distributionPolicy = {
             allowArchive: true,
-            broadcastUntil: "2025-12-31T23:59:59Z",
+            broadcastExpiry: undefined, // No expiration means forever
           },
-          rights = {},
+          contentRights = {},
         }: {
           rkey?: string;
           livestreamRef?: {
@@ -129,9 +130,9 @@ export const contentMetadataSlice = createAppSlice({
           contentWarnings?: string[];
           distributionPolicy?: {
             allowArchive?: boolean;
-            broadcastUntil?: string;
+            broadcastExpiry?: string;
           };
-          rights?: {
+          contentRights?: {
             year?: string;
             attribution?: string;
             license?: string;
@@ -158,7 +159,7 @@ export const contentMetadataSlice = createAppSlice({
           ...(livestreamRef && { livestreamRef }),
           createdAt: new Date().toISOString(),
           contentWarnings,
-          rights,
+          contentRights,
           distributionPolicy,
         };
 
