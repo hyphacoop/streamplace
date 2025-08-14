@@ -12,6 +12,16 @@ import (
 	"stream.place/streamplace/pkg/streamplace"
 )
 
+// ManifestBuilder is responsible for creating C2PA (Content Credentials) manifests
+// for livestream segments.
+// The builder creates manifests that include:
+// - Basic livestream information (title, creator, date)
+// - Content rights and copyright information
+// - Content warnings for sensitive material
+// - Distribution policies
+// - C2PA action history (created, published)
+// The manifest is meant to align closely with the IPTC Video Metadata Recommendations.
+// See https://iptc.org/std/videometadatahub/recommendation/IPTC-VideoMetadataHub-props-Rec_1.6.html
 type ManifestBuilder struct {
 	model model.Model
 }
