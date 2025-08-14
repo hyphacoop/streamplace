@@ -89,31 +89,32 @@ const CONTENT_WARNINGS = [
 
 const LICENSE_OPTIONS = [
   { value: "all-rights-reserved", label: "All Rights Reserved" },
-  { value: "cc0", label: "CC0 (Public Domain)" },
-  { value: "cc-by", label: "CC BY" },
-  { value: "cc-by-sa", label: "CC BY-SA" },
-  { value: "cc-by-nc", label: "CC BY-NC" },
-  { value: "cc-by-nc-sa", label: "CC BY-NC-SA" },
-  { value: "cc-by-nd", label: "CC BY-ND" },
-  { value: "cc-by-nc-nd", label: "CC BY-NC-ND" },
+  { value: "cc0_1__0", label: "CC0 (Public Domain) 1.0" },
+  { value: "cc-by_4__0", label: "CC BY 4.0" },
+  { value: "cc-by-sa_4__0", label: "CC BY-SA 4.0" },
+  { value: "cc-by-nc_4__0", label: "CC BY-NC 4.0" },
+  { value: "cc-by-nc-sa_4__0", label: "CC BY-NC-SA 4.0" },
+  { value: "cc-by-nd_4__0", label: "CC BY-ND 4.0" },
+  { value: "cc-by-nc-nd_4__0", label: "CC BY-NC-ND 4.0" },
   { value: "custom", label: "Custom License" },
 ];
 
 const LICENSE_DESCRIPTIONS: Record<string, string> = {
   "all-rights-reserved":
     "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
-  cc0: "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
-  "cc-by":
+  cc0_1__0:
+    "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
+  "cc-by_4__0":
     "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
-  "cc-by-sa":
+  "cc-by-sa_4__0":
     "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms.",
-  "cc-by-nc":
+  "cc-by-nc_4__0":
     "Attribution + non-commercial. Others may adapt and build upon your work for non-commercial purposes only, and must credit you.",
-  "cc-by-nc-sa":
+  "cc-by-nc-sa_4__0":
     "Attribution + non-commercial + share-alike. Others may adapt and build upon your work for non-commercial purposes only, must credit you, and must license their new creations under identical terms.",
-  "cc-by-nd":
+  "cc-by-nd_4__0":
     "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited.",
-  "cc-by-nc-nd":
+  "cc-by-nc-nd_4__0":
     "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially.",
   custom:
     "Custom license. Define your own terms for how others can use, adapt, or share your content.",

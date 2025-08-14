@@ -57,7 +57,18 @@
         },
         "license": {
           "type": "string",
-          "description": "License URL or identifier."
+          "description": "License URL or identifier.",
+          "knownValues": [
+            "place.stream.default.metadata#all-rights-reserved",
+            "place.stream.default.metadata#cc0_1__0",
+            "place.stream.default.metadata#cc-by_4_00",
+            "place.stream.default.metadata#cc-by-sa_4__0",
+            "place.stream.default.metadata#cc-by-nc_4__0",
+            "place.stream.default.metadata#cc-by-nc-sa_4__0",
+            "place.stream.default.metadata#cc-by-nd_4__0",
+            "place.stream.default.metadata#cc-by-nc-nd_4__0",
+            "place.stream.default.metadata#custom"
+          ]
         },
         "creditLine": {
           "type": "string",
@@ -119,6 +130,42 @@
     "violence": {
       "type": "token",
       "description": "The content could be perceived as offensive due to the discussion or display of violence."
+    },
+    "all-rights-reserved": {
+      "type": "token",
+      "description": "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization."
+    },
+    "cc0_1__0": {
+      "type": "token",
+      "description": "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution."
+    },
+    "cc-by_4_00": {
+      "type": "token",
+      "description": "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you."
+    },
+    "cc-by-sa_4__0": {
+      "type": "token",
+      "description": "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms."
+    },
+    "cc-by-nc_4__0": {
+      "type": "token",
+      "description": "Attribution + non-commercial. Others may adapt and build upon your work for non-commercial purposes only, and must credit you."
+    },
+    "cc-by-nc-sa_4__0": {
+      "type": "token",
+      "description": "Attribution + non-commercial + share-alike. Others may adapt and build upon your work for non-commercial purposes only, must credit you, and must license their new creations under identical terms."
+    },
+    "cc-by-nd_4__0": {
+      "type": "token",
+      "description": "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited."
+    },
+    "cc-by-nc-nd_4__0": {
+      "type": "token",
+      "description": "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially."
+    },
+    "custom": {
+      "type": "token",
+      "description": "Custom license. Define your own terms for how others can use, adapt, or share your content."
     }
   }
 }
