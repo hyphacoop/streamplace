@@ -203,7 +203,10 @@ export const contentMetadataSlice = createAppSlice({
     ),
 
     getContentMetadata: create.asyncThunk(
-      async ({ rkey = "self" }: { rkey?: string } = {}, thunkAPI) => {
+      async (
+        { userDid, rkey = "self" }: { userDid?: string; rkey?: string } = {},
+        thunkAPI,
+      ) => {
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
@@ -212,26 +215,114 @@ export const contentMetadataSlice = createAppSlice({
           throw new Error("No agent");
         }
 
-        const did = bluesky.oauthSession?.did;
-        if (!did) {
-          throw new Error("No DID");
+        // Use provided userDid or fall back to current user's DID
+        const targetDid = userDid || bluesky.oauthSession?.did;
+        if (!targetDid) {
+          throw new Error("No DID provided or user not authenticated");
         }
 
-        const result = await bluesky.pdsAgent.com.atproto.repo.getRecord({
-          repo: did,
-          collection: "place.stream.default.metadata",
+        // Add debugging information
+        console.log(`[getContentMetadata] Debug info:`, {
+          targetDid,
           rkey,
+          pdsAgentType: bluesky.pdsAgent.constructor.name,
+          hasOAuthSession: !!bluesky.oauthSession,
+          currentUserDid: bluesky.oauthSession?.did,
+          pdsAgentHost:
+            (bluesky.pdsAgent as any)?.host ||
+            (bluesky.pdsAgent as any)?.service?.host ||
+            "unknown",
+          pdsAgentUrl:
+            (bluesky.pdsAgent as any)?.url ||
+            (bluesky.pdsAgent as any)?.service?.url ||
+            "unknown",
         });
 
-        if (!result.success) {
-          throw new Error("Failed to get content metadata record");
-        }
+        try {
+          // First, try to resolve the correct PDS for the target user
+          let targetPDS = null;
+          try {
+            const didResponse = await fetch(
+              `https://plc.directory/${targetDid}`,
+            );
+            if (didResponse.ok) {
+              const didDoc = await didResponse.json();
+              const pdsService = didDoc.service?.find(
+                (s: any) => s.id === "#atproto_pds",
+              );
+              if (pdsService) {
+                targetPDS = pdsService.serviceEndpoint;
+                console.log(
+                  `[getContentMetadata] Resolved PDS for ${targetDid}:`,
+                  targetPDS,
+                );
+              }
+            }
+          } catch (pdsResolveError) {
+            console.log(
+              `[getContentMetadata] Failed to resolve PDS for ${targetDid}:`,
+              pdsResolveError,
+            );
+          }
 
-        return {
-          record: result.data.value,
-          uri: result.data.uri,
-          cid: result.data.cid,
-        };
+          // Use the target PDS if available, otherwise fall back to the current agent
+          let agent = bluesky.pdsAgent;
+          if (targetPDS && targetPDS !== (bluesky.pdsAgent as any)?.host) {
+            // Create a new agent pointing to the target PDS
+            const { StreamplaceAgent } = await import("streamplace");
+            agent = new StreamplaceAgent(targetPDS) as any;
+            console.log(
+              `[getContentMetadata] Created new agent for PDS:`,
+              targetPDS,
+            );
+          }
+
+          console.log(`[getContentMetadata] Attempting to fetch record from:`, {
+            repo: targetDid,
+            collection: "place.stream.default.metadata",
+            rkey,
+            usingPDS: targetPDS || "default",
+          });
+
+          const result = await agent.com.atproto.repo.getRecord({
+            repo: targetDid,
+            collection: "place.stream.default.metadata",
+            rkey,
+          });
+
+          console.log(`[getContentMetadata] API response:`, result);
+
+          if (!result.success) {
+            throw new Error("Failed to get content metadata record");
+          }
+
+          return {
+            userDid: targetDid,
+            record: result.data.value,
+            uri: result.data.uri,
+            cid: result.data.cid,
+          };
+        } catch (error) {
+          console.log(`[getContentMetadata] Error details:`, {
+            error: error.message,
+            errorType: error.constructor.name,
+            errorStack: error.stack,
+          });
+
+          // If user doesn't have metadata record, return null instead of throwing
+          if (
+            error.message?.includes("not found") ||
+            error.message?.includes("RecordNotFound")
+          ) {
+            return {
+              userDid: targetDid,
+              record: null,
+              uri: null,
+              cid: null,
+            };
+          }
+          throw error;
+        }
       },
       {
         pending: (state) => {

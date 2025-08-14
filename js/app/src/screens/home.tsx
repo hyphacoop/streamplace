@@ -9,6 +9,7 @@ import LiveDot from "components/home/live-dot";
 import Loading from "components/loading/loading";
 import Title from "components/title";
 import useAvatars from "hooks/useAvatars";
+import { useContentWarnings } from "hooks/useContentWarnings";
 import { useEffect, useState } from "react";
 import { RefreshControl } from "react-native";
 import { PlaceStreamLivestream } from "streamplace";
@@ -119,6 +120,8 @@ function HomeScreenItem({
   horizontal?: boolean;
 }) {
   const user = item.author.handle || item.author.did;
+  const { warnings } = useContentWarnings(item.author.did);
+
   return (
     <AQLink
       to={{
@@ -143,6 +146,7 @@ function HomeScreenItem({
         category={[]}
         viewers={item.viewerCount?.count}
         isLive={true}
+        contentWarnings={warnings}
       />
     </AQLink>
   );

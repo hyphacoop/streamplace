@@ -10,6 +10,8 @@ import {
   zero,
 } from "@streamplace/components";
 import { ChevronLeft } from "@tamagui/lucide-icons";
+import ContentWarnings from "components/content-warnings";
+import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronRight } from "lucide-react-native";
 import { Image, View } from "react-native";
 const { gap, px, py, colors } = zero;
@@ -24,6 +26,15 @@ export function BottomMetadata({
   const { profile } = useLivestreamInfo();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
   const ls = useLivestreamStore((x) => x.livestream);
+
+  // Get content warnings for the streamer
+  const { warnings: contentWarnings } = useContentWarnings(profile?.did);
+
+  console.log(`[BottomMetadata] Content warnings debug:`, {
+    profileDid: profile?.did,
+    contentWarnings,
+    contentWarningsLength: contentWarnings.length,
+  });
 
   return (
     <View
@@ -90,6 +101,13 @@ export function BottomMetadata({
           </Button>
         </View>
       </View>
+
+      {/* Content Warnings - Below the main profile/controls bar */}
+      {contentWarnings.length > 0 && (
+        <View style={[py[2]]}>
+          <ContentWarnings warnings={contentWarnings} compact={true} />
+        </View>
+      )}
     </View>
   );
 }
