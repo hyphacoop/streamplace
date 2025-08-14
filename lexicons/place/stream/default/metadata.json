@@ -66,8 +66,7 @@
             "place.stream.default.metadata#cc-by-nc_4__0",
             "place.stream.default.metadata#cc-by-nc-sa_4__0",
             "place.stream.default.metadata#cc-by-nd_4__0",
-            "place.stream.default.metadata#cc-by-nc-nd_4__0",
-            "place.stream.default.metadata#custom"
+            "place.stream.default.metadata#cc-by-nc-nd_4__0"
           ]
         },
         "creditLine": {
@@ -162,10 +161,6 @@
     "cc-by-nc-nd_4__0": {
       "type": "token",
       "description": "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially."
-    },
-    "custom": {
-      "type": "token",
-      "description": "Custom license. Define your own terms for how others can use, adapt, or share your content."
     }
   }
 }

@@ -38,13 +38,13 @@ Content rights and attribution information.
 
 **Properties:**
 
-| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------- | --------- | ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `place.stream.default.metadata#all-rights-reserved`, `place.stream.default.metadata#cc0_1__0`, `place.stream.default.metadata#cc-by_4_00`, `place.stream.default.metadata#cc-by-sa_4__0`, `place.stream.default.metadata#cc-by-nc_4__0`, `place.stream.default.metadata#cc-by-nc-sa_4__0`, `place.stream.default.metadata#cc-by-nd_4__0`, `place.stream.default.metadata#cc-by-nc-nd_4__0`, `place.stream.default.metadata#custom` |
-| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | --------- | ----- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `place.stream.default.metadata#all-rights-reserved`, `place.stream.default.metadata#cc0_1__0`, `place.stream.default.metadata#cc-by_4_00`, `place.stream.default.metadata#cc-by-sa_4__0`, `place.stream.default.metadata#cc-by-nc_4__0`, `place.stream.default.metadata#cc-by-nc-sa_4__0`, `place.stream.default.metadata#cc-by-nd_4__0`, `place.stream.default.metadata#cc-by-nc-nd_4__0` |
+| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ---
 
@@ -266,17 +266,6 @@ your work with credit, but cannot change it or use it commercially.
 
 ---
 
-<a name="custom"></a>
-
-### `custom`
-
-**Type:** `token`
-
-Custom license. Define your own terms for how others can use, adapt, or share
-your content.
-
----
-
 ## Lexicon Source
 
 ```json
@@ -348,8 +337,7 @@ your content.
             "place.stream.default.metadata#cc-by-nc_4__0",
             "place.stream.default.metadata#cc-by-nc-sa_4__0",
             "place.stream.default.metadata#cc-by-nd_4__0",
-            "place.stream.default.metadata#cc-by-nc-nd_4__0",
-            "place.stream.default.metadata#custom"
+            "place.stream.default.metadata#cc-by-nc-nd_4__0"
           ]
         },
         "creditLine": {
@@ -444,10 +432,6 @@ your content.
     "cc-by-nc-nd_4__0": {
       "type": "token",
       "description": "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially."
-    },
-    "custom": {
-      "type": "token",
-      "description": "Custom license. Define your own terms for how others can use, adapt, or share your content."
     }
   }
 }
