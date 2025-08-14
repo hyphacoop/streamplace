@@ -268,7 +268,7 @@ export default function ContentMetadataForm({
         const rights = {
           creator: record.contentRights.creator || "",
           copyrightNotice: record.contentRights.copyrightNotice || "",
-          copyrightYear: record.contentRights.copyrightYear || "",
+          copyrightYear: record.contentRights.copyrightYear || undefined,
           license: record.contentRights.license || "",
           creditLine: record.contentRights.creditLine || "",
           customLicense: record.contentRights.customLicense || "",
