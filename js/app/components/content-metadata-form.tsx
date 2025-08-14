@@ -6,13 +6,15 @@ import {
 } from "features/bluesky/blueskySlice";
 import {
   createContentMetadata,
+  getContentMetadata,
   selectCurrentMetadataRkey,
   selectError,
   selectIsCreating,
   selectIsUpdating,
+  selectLastCreatedRecord,
   updateContentMetadata,
 } from "features/bluesky/contentMetadataSlice";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
@@ -159,10 +161,12 @@ export default function ContentMetadataForm({
   const isCreating = useAppSelector(selectIsCreating);
   const error = useAppSelector(selectError);
   const currentMetadataRkey = useAppSelector(selectCurrentMetadataRkey);
+  const lastCreatedRecord = useAppSelector(selectLastCreatedRecord);
   const storedKey = useAppSelector(selectStoredKey);
 
   const isLoading = isUpdating || isCreating;
-  const hasMetadata = Boolean(currentMetadataRkey);
+  // Check if we have metadata based on the fetched record
+  const hasMetadata = Boolean(lastCreatedRecord?.record);
   const hasStreamKey = Boolean(storedKey);
 
   const [contentWarnings, setContentWarnings] = useState<string[]>(
@@ -191,7 +195,87 @@ export default function ContentMetadataForm({
   const [customMinute, setCustomMinute] = useState("");
   const [customPeriod, setCustomPeriod] = useState<"AM" | "PM">("AM");
 
+  // Track if we've already populated the form to prevent overriding user input
+  const [hasPopulated, setHasPopulated] = useState(false);
+
   const { months, years, days, hours, minutes } = generateDateOptions();
+
+  // Fetch existing metadata on component mount
+  useEffect(() => {
+    // Always check if metadata record exists when component mounts
+    dispatch(getContentMetadata({ rkey: "self" }));
+  }, [dispatch]);
+
+  // Pre-populate form fields when existing metadata is fetched
+  useEffect(() => {
+    if (lastCreatedRecord?.record && !hasPopulated) {
+      const record = lastCreatedRecord.record;
+
+      // Update content warnings
+      if (record.contentWarnings && Array.isArray(record.contentWarnings)) {
+        setContentWarnings(record.contentWarnings);
+      }
+
+      // Update distribution policy
+      if (record.distributionPolicy) {
+        setDistributionPolicy({
+          allowArchive: record.distributionPolicy.allowArchive ?? true,
+          broadcastExpiry: record.distributionPolicy.broadcastExpiry,
+        });
+
+        // Parse broadcast expiry date if it exists
+        if (record.distributionPolicy.broadcastExpiry) {
+          const expiryDate = new Date(
+            record.distributionPolicy.broadcastExpiry,
+          );
+          if (!isNaN(expiryDate.getTime())) {
+            setCustomMonth(months[expiryDate.getMonth()]);
+            setCustomDay(String(expiryDate.getDate()));
+            setCustomYear(String(expiryDate.getFullYear()));
+
+            let hours = expiryDate.getHours();
+            const period = hours >= 12 ? "PM" : "AM";
+            if (hours > 12) hours -= 12;
+            if (hours === 0) hours = 12;
+
+            setCustomHour(String(hours));
+            setCustomMinute(String(expiryDate.getMinutes()).padStart(2, "0"));
+            setCustomPeriod(period);
+          }
+        }
+      }
+
+      // Update content rights
+      if (record.contentRights) {
+        const rights = {
+          creator: record.contentRights.creator || "",
+          copyrightNotice: record.contentRights.copyrightNotice || "",
+          copyrightYear: record.contentRights.copyrightYear || "",
+          license: record.contentRights.license || "all-rights-reserved",
+          creditLine: record.contentRights.creditLine || "",
+          customLicense: record.contentRights.customLicense || "",
+        };
+        setContentRights(rights);
+        setSelectedLicense(rights.license);
+      }
+
+      // Update the parent component with the loaded metadata
+      const metadata: ContentMetadata = {
+        contentWarnings: record.contentWarnings || [],
+        distributionPolicy: {
+          allowArchive: record.distributionPolicy?.allowArchive ?? true,
+          broadcastExpiry: record.distributionPolicy?.broadcastExpiry,
+        },
+        contentRights: record.contentRights || {
+          license: "all-rights-reserved",
+        },
+      };
+      onMetadataChange(metadata);
+
+      // Mark as populated to prevent future overwrites
+      setHasPopulated(true);
+    }
+  }, [lastCreatedRecord, onMetadataChange, months, hasPopulated]);
 
   const handleContentWarningChange = (warning: string, checked: boolean) => {
     const newWarnings = checked
@@ -285,11 +369,11 @@ export default function ContentMetadataForm({
         },
       };
 
-      if (hasMetadata && currentMetadataRkey) {
+      if (hasMetadata) {
         // Update existing metadata
         await dispatch(
           updateContentMetadata({
-            rkey: currentMetadataRkey,
+            rkey: "self",
             ...metadataPayload,
           }),
         ).unwrap();
@@ -614,7 +698,10 @@ export default function ContentMetadataForm({
 
                 {distributionPolicy.broadcastExpiry && (
                   <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
-                    Until: {new Date(distributionPolicy.broadcastExpiry).toLocaleString()}
+                    Until:{" "}
+                    {new Date(
+                      distributionPolicy.broadcastExpiry,
+                    ).toLocaleString()}
                   </Paragraph>
                 )}
               </YStack>
