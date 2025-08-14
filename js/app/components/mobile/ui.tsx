@@ -12,7 +12,9 @@ import {
   View,
   zero,
 } from "@streamplace/components";
+import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
+import { useContentRights } from "hooks/useContentRights";
 import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -48,13 +50,16 @@ export function MobileUi() {
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
-  // Get content warnings for the streamer
+  // Get content warnings and rights for the streamer
   const { warnings: contentWarnings } = useContentWarnings(profile?.did);
+  const { contentRights } = useContentRights(profile?.did);
 
-  console.log(`[MobileUi] Content warnings debug:`, {
+  console.log(`[MobileUi] Content metadata debug:`, {
     profileDid: profile?.did,
     contentWarnings,
     contentWarningsLength: contentWarnings.length,
+    contentRights,
+    hasContentRights: contentRights && Object.keys(contentRights).length > 0,
   });
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
@@ -167,8 +172,9 @@ export function MobileUi() {
               </View>
             </View>
 
-            {/* Content Warnings - positioned below profile info */}
-            {contentWarnings.length > 0 && (
+            {/* Content Metadata - positioned below profile info */}
+            {(contentWarnings.length > 0 ||
+              (contentRights && Object.keys(contentRights).length > 0)) && (
               <View
                 style={[
                   layout.position.absolute,
@@ -178,6 +184,7 @@ export function MobileUi() {
                 ]}
               >
                 <ContentWarnings warnings={contentWarnings} compact={true} />
+                <ContentRights contentRights={contentRights} compact={true} />
               </View>
             )}
 

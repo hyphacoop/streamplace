@@ -1,3 +1,4 @@
+import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
 import Viewers from "components/viewers";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
@@ -17,6 +18,13 @@ interface StreamCardProps {
   category: string[];
   isLive?: boolean;
   contentWarnings?: string[];
+  contentRights?: {
+    creator?: string;
+    copyrightNotice?: string;
+    copyrightYear?: string | number;
+    license?: string;
+    creditLine?: string;
+  };
 }
 
 const StreamCard = ({
@@ -30,6 +38,7 @@ const StreamCard = ({
   category = [],
   isLive = true,
   contentWarnings = [],
+  contentRights = {},
 }: StreamCardProps) => {
   const media = useMedia();
 
@@ -184,6 +193,7 @@ const StreamCard = ({
             </Text>
           )}
           <ContentWarnings warnings={contentWarnings} compact={true} />
+          <ContentRights contentRights={contentRights} compact={true} />
           {category.length > 0 && (
             <XStack flexWrap="wrap" gap={4} alignItems="center">
               {category.map((cat, index) => (
