@@ -41,7 +41,7 @@ export interface DistributionPolicy {
 export interface Rights {
   creator?: string;
   copyrightNotice?: string;
-  copyrightYear?: string;
+  copyrightYear?: number;
   license?: string;
   creditLine?: string;
   customLicense?: string;
@@ -246,7 +246,7 @@ export default function ContentMetadataForm({
         const rights = {
           creator: record.contentRights.creator || "",
           copyrightNotice: record.contentRights.copyrightNotice || "",
-          copyrightYear: record.contentRights.copyrightYear || "",
+          copyrightYear: record.contentRights.copyrightYear || undefined,
           license: record.contentRights.license || "all-rights-reserved",
           creditLine: record.contentRights.creditLine || "",
           customLicense: record.contentRights.customLicense || "",
@@ -940,13 +940,23 @@ export default function ContentMetadataForm({
                     </Label>
                     <Input
                       placeholder="2025"
-                      value={contentRights.copyrightYear || ""}
-                      onChangeText={(text) =>
-                        handleContentRightsChange({ copyrightYear: text })
-                      }
+                      value={contentRights.copyrightYear?.toString() || ""}
+                      onChangeText={(text) => {
+                        if (text === "") {
+                          handleContentRightsChange({
+                            copyrightYear: undefined,
+                          });
+                        } else {
+                          const year = parseInt(text, 10);
+                          if (!isNaN(year)) {
+                            handleContentRightsChange({ copyrightYear: year });
+                          }
+                        }
+                      }}
                       size="$2"
                       fontSize="$1"
                       maxLength={4}
+                      keyboardType="numeric"
                       borderWidth={1}
                       borderColor="$gray8"
                       backgroundColor="$gray2"

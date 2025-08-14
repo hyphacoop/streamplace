@@ -36,7 +36,7 @@ export const contentMetadataSlice = createAppSlice({
           contentRights?: {
             creator?: string;
             copyrightNotice?: string;
-            copyrightYear?: string;
+            copyrightYear?: number;
             license?: string;
             creditLine?: string;
           };
