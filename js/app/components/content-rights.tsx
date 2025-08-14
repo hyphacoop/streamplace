@@ -88,7 +88,7 @@ export default function ContentRights({
       borderRadius="$2"
       padding={compact ? "$1.5" : "$2"}
       marginVertical="$1"
-      width="auto"
+      width="fit-content"
     >
       <XStack alignItems="center" gap="$2">
         <Info size={compact ? 14 : 16} color="$blue11" />
