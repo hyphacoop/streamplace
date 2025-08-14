@@ -7,7 +7,6 @@ import {
 import {
   createContentMetadata,
   getContentMetadata,
-  selectCurrentMetadataRkey,
   selectError,
   selectIsCreating,
   selectIsUpdating,
@@ -160,7 +159,6 @@ export default function ContentMetadataForm({
   const isUpdating = useAppSelector(selectIsUpdating);
   const isCreating = useAppSelector(selectIsCreating);
   const error = useAppSelector(selectError);
-  const currentMetadataRkey = useAppSelector(selectCurrentMetadataRkey);
   const lastCreatedRecord = useAppSelector(selectLastCreatedRecord);
   const storedKey = useAppSelector(selectStoredKey);
 
