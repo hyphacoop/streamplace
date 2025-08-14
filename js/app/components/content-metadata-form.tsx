@@ -175,12 +175,10 @@ export default function ContentMetadataForm({
       },
     );
   const [contentRights, setContentRights] = useState<Rights>(
-    initialMetadata?.contentRights || {
-      license: "all-rights-reserved",
-    },
+    initialMetadata?.contentRights || {},
   );
   const [selectedLicense, setSelectedLicense] = useState(
-    initialMetadata?.contentRights?.license || "all-rights-reserved",
+    initialMetadata?.contentRights?.license || "",
   );
 
   // Date picker state - only set broadcastExpiry when user actually selects
@@ -274,14 +272,22 @@ export default function ContentMetadataForm({
         contentWarnings,
         distributionPolicy: {
           allowArchive: distributionPolicy.allowArchive,
-          broadcastExpiry: distributionPolicy.broadcastExpiry,
+          ...(distributionPolicy.broadcastExpiry && {
+            broadcastExpiry: distributionPolicy.broadcastExpiry,
+          }),
         },
         contentRights: {
-          creator: contentRights.creator,
-          copyrightNotice: contentRights.copyrightNotice,
-          copyrightYear: contentRights.copyrightYear,
-          license: contentRights.license,
-          creditLine: contentRights.creditLine,
+          ...(contentRights.creator && { creator: contentRights.creator }),
+          ...(contentRights.copyrightNotice && {
+            copyrightNotice: contentRights.copyrightNotice,
+          }),
+          ...(contentRights.copyrightYear && {
+            copyrightYear: contentRights.copyrightYear,
+          }),
+          ...(contentRights.license && { license: contentRights.license }),
+          ...(contentRights.creditLine && {
+            creditLine: contentRights.creditLine,
+          }),
         },
       };
 
@@ -614,7 +620,10 @@ export default function ContentMetadataForm({
 
                 {distributionPolicy.broadcastExpiry && (
                   <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
-                    Until: {new Date(distributionPolicy.broadcastExpiry).toLocaleString()}
+                    Until:{" "}
+                    {new Date(
+                      distributionPolicy.broadcastExpiry,
+                    ).toLocaleString()}
                   </Paragraph>
                 )}
               </YStack>
@@ -706,7 +715,7 @@ export default function ContentMetadataForm({
                     License
                   </Label>
                   <Select
-                    value={selectedLicense}
+                    value={selectedLicense || undefined}
                     onValueChange={(value) => {
                       setSelectedLicense(value);
                       if (value !== "custom") {
