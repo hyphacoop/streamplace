@@ -268,6 +268,20 @@ export default function ContentMetadataForm({
         await dispatch(createStreamKeyRecord({ store: true })).unwrap();
       }
 
+      const contentRightsData = {
+        ...(contentRights.creator && { creator: contentRights.creator }),
+        ...(contentRights.copyrightNotice && {
+          copyrightNotice: contentRights.copyrightNotice,
+        }),
+        ...(contentRights.copyrightYear && {
+          copyrightYear: contentRights.copyrightYear,
+        }),
+        ...(contentRights.license && { license: contentRights.license }),
+        ...(contentRights.creditLine && {
+          creditLine: contentRights.creditLine,
+        }),
+      };
+
       const metadataPayload = {
         contentWarnings,
         distributionPolicy: {
@@ -276,19 +290,9 @@ export default function ContentMetadataForm({
             broadcastExpiry: distributionPolicy.broadcastExpiry,
           }),
         },
-        contentRights: {
-          ...(contentRights.creator && { creator: contentRights.creator }),
-          ...(contentRights.copyrightNotice && {
-            copyrightNotice: contentRights.copyrightNotice,
-          }),
-          ...(contentRights.copyrightYear && {
-            copyrightYear: contentRights.copyrightYear,
-          }),
-          ...(contentRights.license && { license: contentRights.license }),
-          ...(contentRights.creditLine && {
-            creditLine: contentRights.creditLine,
-          }),
-        },
+        ...(Object.keys(contentRightsData).length > 0 && {
+          contentRights: contentRightsData,
+        }),
       };
 
       if (hasMetadata && currentMetadataRkey) {
