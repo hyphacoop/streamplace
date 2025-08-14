@@ -6,7 +6,6 @@ export interface ContentMetadataState {
   updating: boolean;
   error: string | null;
   lastCreatedRecord: any | null;
-  currentMetadataRkey: string | null;
 }
 
 const initialState: ContentMetadataState = {
@@ -14,7 +13,6 @@ const initialState: ContentMetadataState = {
   updating: false,
   error: null,
   lastCreatedRecord: null,
-  currentMetadataRkey: null,
 };
 
 export const contentMetadataSlice = createAppSlice({
@@ -97,7 +95,6 @@ export const contentMetadataSlice = createAppSlice({
             creating: false,
             error: null,
             lastCreatedRecord: action.payload,
-            currentMetadataRkey: action.payload.rkey ?? null,
           };
         },
         rejected: (state, action) => {
@@ -270,7 +267,6 @@ export const contentMetadataSlice = createAppSlice({
     selectIsUpdating: (state) => state.updating,
     selectError: (state) => state.error,
     selectLastCreatedRecord: (state) => state.lastCreatedRecord,
-    selectCurrentMetadataRkey: (state) => state.currentMetadataRkey,
   },
 });
 
@@ -287,5 +283,4 @@ export const {
   selectIsUpdating,
   selectError,
   selectLastCreatedRecord,
-  selectCurrentMetadataRkey,
 } = contentMetadataSlice.selectors;
