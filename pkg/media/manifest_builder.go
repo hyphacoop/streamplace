@@ -112,6 +112,26 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 	}
 
 	if len(metadata.ContentWarnings) > 0 {
+		// Map internal warning codes to C2PA warning codes
+		var warningCodeMap = map[string]string{
+			"place.stream.default.metadata#death":           "cwarn:death",
+			"place.stream.default.metadata#drugUse":         "cwarn:drugUse",
+			"place.stream.default.metadata#fantasyViolence": "cwarn:fantasyViolence",
+			"place.stream.default.metadata#flashingLights":  "cwarn:flashingLights",
+			"place.stream.default.metadata#language":        "cwarn:language",
+			"place.stream.default.metadata#nudity":          "cwarn:nudity",
+			"place.stream.default.metadata#PII":             "cwarn:PII",
+			"place.stream.default.metadata#sexuality":       "cwarn:sexuality",
+			"place.stream.default.metadata#suffering":       "cwarn:suffering",
+			"place.stream.default.metadata#violence":        "cwarn:violence",
+		}
+		
+		for i, warning := range metadata.ContentWarnings {
+			if mappedCode, exists := warningCodeMap[warning]; exists {
+				metadata.ContentWarnings[i] = mappedCode
+			}
+			// Unknown warnings remain unchanged
+		}
 		mani["assertions"].([]obj)[1]["data"].(obj)["Iptc4xmpExt:ContentWarning"] = metadata.ContentWarnings
 	}
 
