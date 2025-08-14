@@ -13,13 +13,14 @@ interface ContentRightsProps {
 }
 
 const LICENSE_LABELS: Record<string, string> = {
-  cc0: "CC0 - Public Domain",
-  "cc-by": "CC BY - Attribution",
-  "cc-by-sa": "CC BY-SA - Attribution ShareAlike",
-  "cc-by-nc": "CC BY-NC - Attribution NonCommercial",
-  "cc-by-nc-sa": "CC BY-NC-SA - Attribution NonCommercial ShareAlike",
-  "cc-by-nd": "CC BY-ND - Attribution NoDerivatives",
-  "cc-by-nc-nd": "CC BY-NC-ND - Attribution NonCommercial NoDerivatives",
+  cc0_1__0: "CC0 - Public Domain 1.0",
+  "cc-by_4__0": "CC BY - Attribution 4.0",
+  "cc-by-sa_4__0": "CC BY-SA - Attribution ShareAlike 4.0",
+  "cc-by-nc_4__0": "CC BY-NC - Attribution NonCommercial 4.0",
+  "cc-by-nc-sa_4__0": "CC BY-NC-SA - Attribution NonCommercial ShareAlike 4.0",
+  "cc-by-nd_4__0": "CC BY-ND - Attribution NoDerivatives 4.0",
+  "cc-by-nc-nd_4__0":
+    "CC BY-NC-ND - Attribution NonCommercial NoDerivatives 4.0",
   "all-rights-reserved": "All Rights Reserved",
   proprietary: "Proprietary License",
 };
@@ -54,8 +55,11 @@ export default function ContentRights({
 
   // Handle license
   if (contentRights.license) {
-    const licenseLabel =
-      LICENSE_LABELS[contentRights.license] || contentRights.license;
+    // Handle both formats: "cc0_1__0" and "place.stream.default.metadata#cc0_1__0"
+    const cleanLicense = contentRights.license.includes("#")
+      ? contentRights.license.split("#")[1]
+      : contentRights.license;
+    const licenseLabel = LICENSE_LABELS[cleanLicense] || cleanLicense;
     rightsParts.push(`License: ${licenseLabel}`);
   }
 
