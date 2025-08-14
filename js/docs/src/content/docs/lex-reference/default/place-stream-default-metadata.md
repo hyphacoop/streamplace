@@ -198,9 +198,9 @@ purpose without attribution.
 
 ---
 
-<a name="ccby400"></a>
+<a name="ccby40"></a>
 
-### `cc-by_4_00`
+### `cc-by_4__0`
 
 **Type:** `token`
 
@@ -421,7 +421,7 @@ your content.
       "type": "token",
       "description": "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution."
     },
-    "cc-by_4_00": {
+    "cc-by_4__0": {
       "type": "token",
       "description": "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you."
     },
