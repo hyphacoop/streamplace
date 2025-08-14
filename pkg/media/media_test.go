@@ -48,7 +48,7 @@ func getStaticTestMediaManager(t *testing.T) (*MediaManager, MediaSigner) {
 	}
 	mm, err := MakeMediaManager(context.Background(), cli, signer, &boring.BoringReplicator{}, mod, bus.NewBus(), atsync)
 	require.NoError(t, err)
-	ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer)
+	ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer, mod)
 	require.NoError(t, err)
 	return mm, ms
 }

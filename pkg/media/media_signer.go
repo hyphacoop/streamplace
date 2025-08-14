@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -14,12 +13,12 @@ import (
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqio"
-	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
@@ -28,15 +27,19 @@ type MediaSigner interface {
 	Pub() aqpub.Pub
 	Streamer() string
 	DID() string
+	// New method for manifest generation
+	BuildManifest(ctx context.Context, start int64) (*c2pa.ManifestDefinition, error)
 }
 
 type MediaSignerLocal struct {
-	StreamerName string
-	Signer       crypto.Signer
-	AQPub        aqpub.Pub
-	Cert         []byte
-	TAURL        string
-	did          string
+	StreamerName     string
+	Signer           crypto.Signer
+	AQPub            aqpub.Pub
+	Cert             []byte
+	TAURL            string
+	did              string
+	manifestBuilder  *ManifestBuilder
+	Manifest         *c2pa.ManifestDefinition  // Add optional manifest field
 }
 
 func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]byte, string, error) {
@@ -71,7 +74,7 @@ func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]
 	return cert, fPath, nil
 }
 
-func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, signer crypto.Signer) (MediaSigner, error) {
+func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, signer crypto.Signer, model model.Model) (MediaSigner, error) {
 	cert, _, err := prepareCert(ctx, cli, signer)
 	if err != nil {
 		return nil, err
@@ -85,12 +88,13 @@ func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, sign
 		return nil, err
 	}
 	return &MediaSignerLocal{
-		Signer:       signer,
-		Cert:         cert,
-		StreamerName: streamer,
-		TAURL:        cli.TAURL,
-		AQPub:        pub,
-		did:          did.DIDKey(),
+		Signer:           signer,
+		Cert:             cert,
+		StreamerName:     streamer,
+		TAURL:            cli.TAURL,
+		AQPub:            pub,
+		did:              did.DIDKey(),
+		manifestBuilder:  NewManifestBuilder(model),
 	}, nil
 }
 
@@ -102,43 +106,20 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	startTime := time.Now()
 	ctx, span := otel.Tracer("signer").Start(ctx, "SignMP4")
 	defer span.End()
-	title := "livestream"
-	mani := obj{
-		"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
-		"assertions": []obj{
-			{
-				"label": "c2pa.actions",
-				"data": obj{
-					"actions": []obj{
-						{"action": "c2pa.created"},
-						{"action": "c2pa.published"},
-					},
-				},
-			},
-			{
-				"label": StreamplaceMetadata,
-				"data": obj{
-					"@context": obj{
-						"dc": "http://purl.org/dc/elements/1.1/",
-					},
-					"dc:creator": ms.StreamerName,
-					"dc:title":   []string{title},
-					"dc:date":    []string{aqtime.FromMillis(start).String()},
-				},
-			},
-		},
+	
+	var manifest *c2pa.ManifestDefinition
+	
+	if ms.Manifest != nil {
+		// Use provided manifest (from external signer)
+		manifest = ms.Manifest
+	} else {
+		// Generate manifest using shared builder
+		var err error
+		manifest, err = ms.BuildManifest(ctx, start)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build manifest: %w", err)
+		}
 	}
-	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_MarshalManifest")
-	manifestBs, err := json.Marshal(mani)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal manifest: %w", err)
-	}
-	var manifest c2pa.ManifestDefinition
-	err = json.Unmarshal(manifestBs, &manifest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal manifest: %w", err)
-	}
-	span.End()
 
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_GetSigningAlgorithm")
 	alg, err := c2pa.GetSigningAlgorithm(string(c2pa.ES256K))
@@ -148,7 +129,7 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	span.End()
 
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_NewBuilder")
-	b, err := c2pa.NewBuilder(&manifest, &c2pa.BuilderParams{
+	b, err := c2pa.NewBuilder(manifest, &c2pa.BuilderParams{
 		Cert:      ms.Cert,
 		Signer:    ms.Signer,
 		Algorithm: alg,
@@ -184,4 +165,8 @@ func (ms *MediaSignerLocal) Pub() aqpub.Pub {
 
 func (ms *MediaSignerLocal) DID() string {
 	return ms.did
+}
+
+func (ms *MediaSignerLocal) BuildManifest(ctx context.Context, start int64) (*c2pa.ManifestDefinition, error) {
+	return ms.manifestBuilder.BuildManifest(ctx, ms.StreamerName, start)
 }
