@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqtime"
@@ -43,6 +44,14 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
+	
+	// Apply content filtering after metadata is parsed
+	if mm.cli.ContentFilters != nil {
+		if err := mm.applyContentFilters(ctx, meta); err != nil {
+			return err
+		}
+	}
+	
 	// special case for test signers that are only signed with a key
 	var repoDID string
 	var signingKeyDID string
@@ -101,4 +110,48 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	aqt := aqtime.FromTime(meta.StartTime.Time())
 	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *mani.Label)
 	return nil
+}
+
+// applyContentFilters applies content filtering based on configured rules
+func (mm *MediaManager) applyContentFilters(ctx context.Context, meta *SegmentMetadata) error {
+	// Check content warnings (if enabled)
+	if mm.cli.ContentFilters.ContentWarnings.Enabled {
+		for _, warning := range meta.ContentWarnings {
+			if mm.isWarningBlocked(warning) {
+				reason := fmt.Sprintf("content warning blocked: %s", warning)
+				log.Log(ctx, "content filtered", 
+					"reason", reason, 
+					"filter_type", "content_warning",
+					"creator", meta.Creator,
+					"warning", warning)
+				return fmt.Errorf("content filtered: %s", reason)
+			}
+		}
+	}
+	
+	// Check distribution policy (if enabled)
+	if mm.cli.ContentFilters.DistributionPolicy.Enabled && meta.DistributionPolicy != nil {
+		if meta.DistributionPolicy.ExpiresAt != nil && time.Now().After(*meta.DistributionPolicy.ExpiresAt) {
+			reason := fmt.Sprintf("distribution policy expired: %s", meta.DistributionPolicy.ExpiresAt)
+			log.Log(ctx, "content filtered", 
+				"reason", reason, 
+				"filter_type", "distribution_policy",
+				"creator", meta.Creator,
+				"expires_at", meta.DistributionPolicy.ExpiresAt)
+			return fmt.Errorf("content filtered: %s", reason)
+		}
+	}
+	
+	return nil
+}
+
+// isWarningBlocked checks if a content warning is in the blocked list
+func (mm *MediaManager) isWarningBlocked(warning string) bool {
+	// Direct string comparison - no mapping needed
+	for _, blocked := range mm.cli.ContentFilters.ContentWarnings.BlockedWarnings {
+		if warning == blocked {
+			return true
+		}
+	}
+	return false
 }

@@ -21,6 +21,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/peterbourgon/ff/v3"
+	"gopkg.in/yaml.v3"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/aqpub"
@@ -109,6 +110,19 @@ type CLI struct {
 	AndroidCertFingerprint string
 	Labelers               []string
 	AtprotoDID             string
+	ContentFiltersPath     string
+	ContentFilters         *ContentFilters
+}
+
+// ContentFilters represents the content filtering configuration
+type ContentFilters struct {
+	ContentWarnings struct {
+		Enabled         bool     `yaml:"enabled"`
+		BlockedWarnings []string `yaml:"blocked_warnings"`
+	} `yaml:"content_warnings"`
+	DistributionPolicy struct {
+		Enabled bool `yaml:"enabled"`
+	} `yaml:"distribution_policy"`
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -168,6 +182,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.AndroidCertFingerprint, "android-cert-fingerprint", "", "android cert fingerprint for deep linking")
 	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
+	fs.StringVar(&cli.ContentFiltersPath, "content-filters", "", "path to YAML file with content filtering rules")
 
 	if runtime.GOOS == "linux" {
 		fs.BoolVar(&cli.NoMist, "no-mist", true, "Disable MistServer")
@@ -176,6 +191,26 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 		fs.IntVar(&cli.MistHTTPPort, "mist-http-port", 18080, "MistServer HTTP port (internal use only)")
 	}
 	return fs
+}
+
+// LoadContentFilters loads content filtering configuration from YAML file
+func (cli *CLI) LoadContentFilters() error {
+	if cli.ContentFiltersPath == "" {
+		return nil
+	}
+	
+	data, err := os.ReadFile(cli.ContentFiltersPath)
+	if err != nil {
+		return fmt.Errorf("failed to read content filters file: %w", err)
+	}
+	
+	var filters ContentFilters
+	if err := yaml.Unmarshal(data, &filters); err != nil {
+		return fmt.Errorf("failed to parse content filters YAML: %w", err)
+	}
+	
+	cli.ContentFilters = &filters
+	return nil
 }
 
 var StreamplaceSchemePrefix = "streamplace://"
