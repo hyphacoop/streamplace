@@ -12,7 +12,9 @@ import {
   View,
   zero,
 } from "@streamplace/components";
+import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
+import { useContentRights } from "hooks/useContentRights";
 import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -48,14 +50,9 @@ export function MobileUi() {
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
-  // Get content warnings for the streamer
+  // Get content warnings and rights for the streamer
   const { warnings: contentWarnings } = useContentWarnings(profile?.did);
-
-  console.log(`[MobileUi] Content warnings debug:`, {
-    profileDid: profile?.did,
-    contentWarnings,
-    contentWarningsLength: contentWarnings.length,
-  });
+  const { contentRights } = useContentRights(profile?.did);
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
@@ -167,17 +164,19 @@ export function MobileUi() {
               </View>
             </View>
 
-            {/* Content Warnings - positioned below profile info */}
-            {contentWarnings.length > 0 && (
+            {/* Content Metadata - positioned below profile info */}
+            {(contentWarnings.length > 0 ||
+              (contentRights && Object.keys(contentRights).length > 0)) && (
               <View
                 style={[
                   layout.position.absolute,
-                  position.left[1],
+                  { left: 12 },
                   { top: 60 }, // Position below the profile section
                   { maxWidth: width * 0.8 }, // Limit width to not interfere with other UI
                 ]}
               >
                 <ContentWarnings warnings={contentWarnings} compact={true} />
+                <ContentRights contentRights={contentRights} compact={true} />
               </View>
             )}
 
