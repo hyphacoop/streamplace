@@ -283,7 +283,7 @@ export default function ContentMetadataForm({
       };
 
       const metadataPayload = {
-        contentWarnings,
+        ...(contentWarnings.length > 0 && { contentWarnings }),
         distributionPolicy: {
           allowArchive: distributionPolicy.allowArchive,
           ...(distributionPolicy.broadcastExpiry && {

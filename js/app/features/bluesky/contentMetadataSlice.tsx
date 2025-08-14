@@ -61,9 +61,12 @@ export const contentMetadataSlice = createAppSlice({
         const metadataRecord = {
           $type: "place.stream.default.metadata",
           createdAt: new Date().toISOString(),
-          contentWarnings,
-          contentRights,
+          ...(contentWarnings.length > 0 && { contentWarnings }),
           distributionPolicy,
+          ...(contentRights &&
+            Object.keys(contentRights).length > 0 && {
+              contentRights,
+            }),
         };
 
         const result = await bluesky.pdsAgent.com.atproto.repo.createRecord({
@@ -158,9 +161,12 @@ export const contentMetadataSlice = createAppSlice({
           $type: "place.stream.default.metadata",
           ...(livestreamRef && { livestreamRef }),
           createdAt: new Date().toISOString(),
-          contentWarnings,
-          contentRights,
+          ...(contentWarnings.length > 0 && { contentWarnings }),
           distributionPolicy,
+          ...(contentRights &&
+            Object.keys(contentRights).length > 0 && {
+              contentRights,
+            }),
         };
 
         const result = await bluesky.pdsAgent.com.atproto.repo.putRecord({
