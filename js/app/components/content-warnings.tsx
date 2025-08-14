@@ -43,6 +43,7 @@ export default function ContentWarnings({
       borderRadius="$2"
       padding={compact ? "$1.5" : "$2"}
       marginVertical="$1"
+      width="auto"
     >
       <XStack alignItems="center" gap="$2">
         <AlertTriangle size={compact ? 14 : 16} color="$orange11" />
@@ -51,6 +52,7 @@ export default function ContentWarnings({
             fontSize={compact ? "$1" : "$2"}
             color="$orange12"
             fontWeight="500"
+            flexWrap="wrap"
           >
             Content Warning:{" "}
             {warnings

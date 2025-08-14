@@ -1,4 +1,3 @@
-import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
 import Viewers from "components/viewers";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
@@ -193,7 +192,6 @@ const StreamCard = ({
             </Text>
           )}
           <ContentWarnings warnings={contentWarnings} compact={true} />
-          <ContentRights contentRights={contentRights} compact={true} />
           {category.length > 0 && (
             <XStack flexWrap="wrap" gap={4} alignItems="center">
               {category.map((cat, index) => (

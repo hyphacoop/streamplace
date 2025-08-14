@@ -178,7 +178,7 @@ export function MobileUi() {
               <View
                 style={[
                   layout.position.absolute,
-                  position.left[1],
+                  { left: 12 },
                   { top: 60 }, // Position below the profile section
                   { maxWidth: width * 0.8 }, // Limit width to not interfere with other UI
                 ]}

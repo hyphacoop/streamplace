@@ -84,6 +84,7 @@ export default function ContentRights({
       borderRadius="$2"
       padding={compact ? "$1.5" : "$2"}
       marginVertical="$1"
+      width="auto"
     >
       <XStack alignItems="center" gap="$2">
         <Info size={compact ? 14 : 16} color="$blue11" />
@@ -92,6 +93,7 @@ export default function ContentRights({
             fontSize={compact ? "$1" : "$2"}
             color="$blue12"
             fontWeight="500"
+            flexWrap="wrap"
           >
             Content Rights: {rightsParts.join(" • ")}
           </Paragraph>
