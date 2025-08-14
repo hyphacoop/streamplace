@@ -249,7 +249,7 @@ export function ChatBox({
 
     // if we press "send" button, we want the same action as pressing "Enter"
     // if we're already focused no need to do extra work
-    if (textAreaRef.current && textAreaRef.current.isFocused()) {
+    if (textAreaRef.current && !textAreaRef.current.isFocused()) {
       textAreaRef.current.focus();
       requestAnimationFrame(() => {
         textAreaRef.current?.focus();
