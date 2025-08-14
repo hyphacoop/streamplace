@@ -177,12 +177,10 @@ export default function ContentMetadataForm({
       },
     );
   const [contentRights, setContentRights] = useState<Rights>(
-    initialMetadata?.contentRights || {
-      license: "all-rights-reserved",
-    },
+    initialMetadata?.contentRights || {},
   );
   const [selectedLicense, setSelectedLicense] = useState(
-    initialMetadata?.contentRights?.license || "all-rights-reserved",
+    initialMetadata?.contentRights?.license || "",
   );
 
   // Date picker state - only set broadcastExpiry when user actually selects
@@ -352,19 +350,31 @@ export default function ContentMetadataForm({
         await dispatch(createStreamKeyRecord({ store: true })).unwrap();
       }
 
+      const contentRightsData = {
+        ...(contentRights.creator && { creator: contentRights.creator }),
+        ...(contentRights.copyrightNotice && {
+          copyrightNotice: contentRights.copyrightNotice,
+        }),
+        ...(contentRights.copyrightYear && {
+          copyrightYear: contentRights.copyrightYear,
+        }),
+        ...(contentRights.license && { license: contentRights.license }),
+        ...(contentRights.creditLine && {
+          creditLine: contentRights.creditLine,
+        }),
+      };
+
       const metadataPayload = {
         contentWarnings,
         distributionPolicy: {
           allowArchive: distributionPolicy.allowArchive,
-          broadcastExpiry: distributionPolicy.broadcastExpiry,
+          ...(distributionPolicy.broadcastExpiry && {
+            broadcastExpiry: distributionPolicy.broadcastExpiry,
+          }),
         },
-        contentRights: {
-          creator: contentRights.creator,
-          copyrightNotice: contentRights.copyrightNotice,
-          copyrightYear: contentRights.copyrightYear,
-          license: contentRights.license,
-          creditLine: contentRights.creditLine,
-        },
+        ...(Object.keys(contentRightsData).length > 0 && {
+          contentRights: contentRightsData,
+        }),
       };
 
       if (hasMetadata) {
@@ -791,7 +801,7 @@ export default function ContentMetadataForm({
                     License
                   </Label>
                   <Select
-                    value={selectedLicense}
+                    value={selectedLicense || undefined}
                     onValueChange={(value) => {
                       setSelectedLicense(value);
                       if (value !== "custom") {
