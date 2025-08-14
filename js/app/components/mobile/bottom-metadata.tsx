@@ -16,6 +16,7 @@ import { useContentRights } from "hooks/useContentRights";
 import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronRight } from "lucide-react-native";
 import { Image, View } from "react-native";
+import { isWeb, XStack } from "tamagui";
 const { gap, px, py, colors } = zero;
 
 export function BottomMetadata({
@@ -111,8 +112,17 @@ export function BottomMetadata({
       {(contentWarnings.length > 0 ||
         (contentRights && Object.keys(contentRights).length > 0)) && (
         <View style={[py[2]]}>
-          <ContentWarnings warnings={contentWarnings} compact={true} />
-          <ContentRights contentRights={contentRights} compact={true} />
+          {isWeb ? (
+            <XStack flexWrap="wrap" gap={4} alignItems="center">
+              <ContentWarnings warnings={contentWarnings} compact={true} />
+              <ContentRights contentRights={contentRights} compact={true} />
+            </XStack>
+          ) : (
+            <>
+              <ContentWarnings warnings={contentWarnings} compact={true} />
+              <ContentRights contentRights={contentRights} compact={true} />
+            </>
+          )}
         </View>
       )}
     </View>
