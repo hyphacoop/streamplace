@@ -17,13 +17,6 @@ interface StreamCardProps {
   category: string[];
   isLive?: boolean;
   contentWarnings?: string[];
-  contentRights?: {
-    creator?: string;
-    copyrightNotice?: string;
-    copyrightYear?: string | number;
-    license?: string;
-    creditLine?: string;
-  };
 }
 
 const StreamCard = ({
@@ -37,7 +30,6 @@ const StreamCard = ({
   category = [],
   isLive = true,
   contentWarnings = [],
-  contentRights = {},
 }: StreamCardProps) => {
   const media = useMedia();
 
