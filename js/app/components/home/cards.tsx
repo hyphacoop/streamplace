@@ -1,3 +1,4 @@
+import ContentWarnings from "components/content-warnings";
 import Viewers from "components/viewers";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { Image } from "react-native";
@@ -15,6 +16,7 @@ interface StreamCardProps {
   viewers?: number;
   category: string[];
   isLive?: boolean;
+  contentWarnings?: string[];
 }
 
 const StreamCard = ({
@@ -27,6 +29,7 @@ const StreamCard = ({
   viewers = 0,
   category = [],
   isLive = true,
+  contentWarnings = [],
 }: StreamCardProps) => {
   const media = useMedia();
 
@@ -180,6 +183,7 @@ const StreamCard = ({
               @{streamerName}
             </Text>
           )}
+          <ContentWarnings warnings={contentWarnings} compact={true} />
           {category.length > 0 && (
             <XStack flexWrap="wrap" gap={4} alignItems="center">
               {category.map((cat, index) => (

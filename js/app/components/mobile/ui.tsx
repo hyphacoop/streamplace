@@ -12,6 +12,8 @@ import {
   View,
   zero,
 } from "@streamplace/components";
+import ContentWarnings from "components/content-warnings";
+import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, TouchableWithoutFeedback } from "react-native";
@@ -45,6 +47,15 @@ export function MobileUi() {
   const { isPlayerRatioGreater } = useSegmentDimensions();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
+
+  // Get content warnings for the streamer
+  const { warnings: contentWarnings } = useContentWarnings(profile?.did);
+
+  console.log(`[MobileUi] Content warnings debug:`, {
+    profileDid: profile?.did,
+    contentWarnings,
+    contentWarningsLength: contentWarnings.length,
+  });
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
@@ -155,6 +166,20 @@ export function MobileUi() {
                 )}
               </View>
             </View>
+
+            {/* Content Warnings - positioned below profile info */}
+            {contentWarnings.length > 0 && (
+              <View
+                style={[
+                  layout.position.absolute,
+                  position.left[1],
+                  { top: 60 }, // Position below the profile section
+                  { maxWidth: width * 0.8 }, // Limit width to not interfere with other UI
+                ]}
+              >
+                <ContentWarnings warnings={contentWarnings} compact={true} />
+              </View>
+            )}
 
             {shouldShowFloatingMetrics && (
               <View
