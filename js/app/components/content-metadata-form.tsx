@@ -96,7 +96,7 @@ const LICENSE_OPTIONS = [
     value: "place.stream.default.metadata#cc0_1__0",
     label: "CC0 (Public Domain) 1.0",
   },
-  { value: "place.stream.default.metadata#cc-by_4_00", label: "CC BY 4.0" },
+  { value: "place.stream.default.metadata#cc-by_4__0", label: "CC BY 4.0" },
   {
     value: "place.stream.default.metadata#cc-by-sa_4__0",
     label: "CC BY-SA 4.0",
@@ -125,7 +125,7 @@ const LICENSE_DESCRIPTIONS: Record<string, string> = {
     "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
   "place.stream.default.metadata#cc0_1__0":
     "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
-  "place.stream.default.metadata#cc-by_4_00":
+  "place.stream.default.metadata#cc-by_4__0":
     "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
   "place.stream.default.metadata#cc-by-sa_4__0":
     "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms.",
