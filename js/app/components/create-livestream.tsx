@@ -41,9 +41,7 @@ export default function CreateLivestream() {
       allowArchive: true,
       broadcastExpiry: undefined, // No expiration means forever
     },
-    contentRights: {
-      license: "all-rights-reserved",
-    },
+    contentRights: {},
   });
   const [showMetadata, setShowMetadata] = useState(false);
   const profile = useAppSelector(selectUserProfile);
