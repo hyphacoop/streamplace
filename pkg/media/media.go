@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pion/interceptor"
@@ -175,9 +176,16 @@ type ExpandedSchemaOrg []struct {
 }
 
 type SegmentMetadata struct {
-	StartTime aqtime.AQTime
-	Title     string
-	Creator   string
+	StartTime           aqtime.AQTime
+	Title               string
+	Creator             string
+	ContentWarnings     []string           // Add this field
+	DistributionPolicy  *DistributionPolicy // Add this field
+}
+
+// DistributionPolicy represents distribution policy information
+type DistributionPolicy struct {
+	ExpiresAt *time.Time
 }
 
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
@@ -227,10 +235,99 @@ func ParseSegmentAssertions(ctx context.Context, mani *manifeststore.Manifest) (
 	if err != nil {
 		return nil, err
 	}
+	
+	contentWarnings := extractContentWarnings(mani)
+	distributionPolicy := extractDistributionPolicy(mani)
+	
 	out := SegmentMetadata{
-		StartTime: start,
-		Title:     meta.Title[0].Value,
-		Creator:   meta.Creator[0].Value,
+		StartTime:           start,
+		Title:               meta.Title[0].Value,
+		Creator:             meta.Creator[0].Value,
+		ContentWarnings:     contentWarnings,
+		DistributionPolicy:  distributionPolicy,
 	}
 	return &out, nil
+}
+
+// TODO: We should be using the schemas for better validation
+func extractContentWarnings(mani *manifeststore.Manifest) []string {
+	ass := findAssertion(mani, StreamplaceMetadata)
+	if ass == nil {
+		return nil
+	}
+	
+	data, ok := ass.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	
+	warnings, ok := data["Iptc4xmpExt:ContentWarning"]
+	if !ok {
+		return nil
+	}
+	
+	warningList, ok := warnings.([]interface{})
+	if !ok {
+		return nil
+	}
+	
+	result := make([]string, 0, len(warningList))
+	for _, warning := range warningList {
+		if warningStr, ok := warning.(string); ok {
+			result = append(result, warningStr)
+		}
+	}
+	
+	return result
+}
+
+func extractDistributionPolicy(mani *manifeststore.Manifest) *DistributionPolicy {
+	ass := findAssertion(mani, StreamplaceMetadata)
+	if ass == nil {
+		return nil
+	}
+	
+	data, ok := ass.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	
+	policy, ok := data["distributionPolicy"]
+	if !ok {
+		return nil
+	}
+	
+	policyMap, ok := policy.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	
+	expiry, ok := policyMap["broadcastExpiry"]
+	if !ok {
+		return nil
+	}
+	
+	expiryStr, ok := expiry.(string)
+	if !ok {
+		return nil
+	}
+	
+	expiryTime, err := time.Parse(time.RFC3339, expiryStr)
+	if err != nil {
+		return nil
+	}
+	
+	return &DistributionPolicy{
+		ExpiresAt: &expiryTime,
+	}
+}
+
+// findAssertion finds an assertion by label
+func findAssertion(mani *manifeststore.Manifest, label string) *manifeststore.ManifestAssertion {
+	for _, a := range mani.Assertions {
+		if a.Label == label {
+			return &a
+		}
+	}
+	return nil
 }
