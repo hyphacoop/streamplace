@@ -88,35 +88,56 @@ const CONTENT_WARNINGS = [
 // No predefined options - just optional expiry date-time picker
 
 const LICENSE_OPTIONS = [
-  { value: "all-rights-reserved", label: "All Rights Reserved" },
-  { value: "cc0_1__0", label: "CC0 (Public Domain) 1.0" },
-  { value: "cc-by_4__0", label: "CC BY 4.0" },
-  { value: "cc-by-sa_4__0", label: "CC BY-SA 4.0" },
-  { value: "cc-by-nc_4__0", label: "CC BY-NC 4.0" },
-  { value: "cc-by-nc-sa_4__0", label: "CC BY-NC-SA 4.0" },
-  { value: "cc-by-nd_4__0", label: "CC BY-ND 4.0" },
-  { value: "cc-by-nc-nd_4__0", label: "CC BY-NC-ND 4.0" },
-  { value: "custom", label: "Custom License" },
+  {
+    value: "place.stream.default.metadata#all-rights-reserved",
+    label: "All Rights Reserved",
+  },
+  {
+    value: "place.stream.default.metadata#cc0_1__0",
+    label: "CC0 (Public Domain) 1.0",
+  },
+  { value: "place.stream.default.metadata#cc-by_4_00", label: "CC BY 4.0" },
+  {
+    value: "place.stream.default.metadata#cc-by-sa_4__0",
+    label: "CC BY-SA 4.0",
+  },
+  {
+    value: "place.stream.default.metadata#cc-by-nc_4__0",
+    label: "CC BY-NC 4.0",
+  },
+  {
+    value: "place.stream.default.metadata#cc-by-nc-sa_4__0",
+    label: "CC BY-NC-SA 4.0",
+  },
+  {
+    value: "place.stream.default.metadata#cc-by-nd_4__0",
+    label: "CC BY-ND 4.0",
+  },
+  {
+    value: "place.stream.default.metadata#cc-by-nc-nd_4__0",
+    label: "CC BY-NC-ND 4.0",
+  },
+  { value: "place.stream.default.metadata#custom", label: "Custom License" },
 ];
 
 const LICENSE_DESCRIPTIONS: Record<string, string> = {
-  "all-rights-reserved":
+  "place.stream.default.metadata#all-rights-reserved":
     "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
-  "cc0_1__0":
+  "place.stream.default.metadata#cc0_1__0":
     "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
-  "cc-by_4__0":
+  "place.stream.default.metadata#cc-by_4_00":
     "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
-  "cc-by-sa_4__0":
+  "place.stream.default.metadata#cc-by-sa_4__0":
     "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms.",
-  "cc-by-nc_4__0":
+  "place.stream.default.metadata#cc-by-nc_4__0":
     "Attribution + non-commercial. Others may adapt and build upon your work for non-commercial purposes only, and must credit you.",
-  "cc-by-nc-sa_4__0":
+  "place.stream.default.metadata#cc-by-nc-sa_4__0":
     "Attribution + non-commercial + share-alike. Others may adapt and build upon your work for non-commercial purposes only, must credit you, and must license their new creations under identical terms.",
-  "cc-by-nd_4__0":
+  "place.stream.default.metadata#cc-by-nd_4__0":
     "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited.",
-  "cc-by-nc-nd_4__0":
+  "place.stream.default.metadata#cc-by-nc-nd_4__0":
     "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially.",
-  custom:
+  "place.stream.default.metadata#custom":
     "Custom license. Define your own terms for how others can use, adapt, or share your content.",
 };
 
@@ -248,7 +269,7 @@ export default function ContentMetadataForm({
           creator: record.contentRights.creator || "",
           copyrightNotice: record.contentRights.copyrightNotice || "",
           copyrightYear: record.contentRights.copyrightYear || "",
-          license: record.contentRights.license || "all-rights-reserved",
+          license: record.contentRights.license || "",
           creditLine: record.contentRights.creditLine || "",
           customLicense: record.contentRights.customLicense || "",
         };
@@ -263,9 +284,7 @@ export default function ContentMetadataForm({
           allowArchive: record.distributionPolicy?.allowArchive ?? true,
           broadcastExpiry: record.distributionPolicy?.broadcastExpiry,
         },
-        contentRights: record.contentRights || {
-          license: "all-rights-reserved",
-        },
+        contentRights: record.contentRights || {},
       };
       onMetadataChange(metadata);
 
@@ -805,7 +824,7 @@ export default function ContentMetadataForm({
                     value={selectedLicense || undefined}
                     onValueChange={(value) => {
                       setSelectedLicense(value);
-                      if (value !== "custom") {
+                      if (value !== "place.stream.default.metadata#custom") {
                         handleContentRightsChange({ license: value });
                       }
                     }}
@@ -905,7 +924,7 @@ export default function ContentMetadataForm({
                   )}
                 </YStack>
 
-                {selectedLicense === "custom" && (
+                {selectedLicense === "place.stream.default.metadata#custom" && (
                   <YStack gap="$0.5">
                     <Label fontSize="$1" fontWeight="500">
                       Custom License
@@ -915,7 +934,7 @@ export default function ContentMetadataForm({
                       value={contentRights.customLicense || ""}
                       onChangeText={(text) =>
                         handleContentRightsChange({
-                          license: "custom",
+                          license: "place.stream.default.metadata#custom",
                           customLicense: text,
                         })
                       }
