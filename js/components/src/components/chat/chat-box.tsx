@@ -247,8 +247,9 @@ export function ChatBox({
     });
     setSubmitting(false);
 
-    // try a few times to refocus
-    if (textAreaRef.current) {
+    // if we press "send" button, we want the same action as pressing "Enter"
+    // if we're already focused no need to do extra work
+    if (textAreaRef.current && textAreaRef.current.isFocused()) {
       textAreaRef.current.focus();
       requestAnimationFrame(() => {
         textAreaRef.current?.focus();
@@ -390,6 +391,9 @@ export function ChatBox({
             }
           }}
           style={[chatBoxStyle]}
+          // "submit" won't blur on enter
+          submitBehavior="submit"
+          placeholder="Type a message..."
         />
         <Button
           disabled={submitting}
