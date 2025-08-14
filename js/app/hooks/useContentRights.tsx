@@ -92,20 +92,9 @@ class ContentRightsManager {
 
   private async performFetch(userDid: string, dispatch: any): Promise<void> {
     try {
-      console.log(`[ContentRightsManager] Fetching metadata for ${userDid}`);
-
       const result = await dispatch(getContentMetadata({ userDid })).unwrap();
-      console.log(
-        `[ContentRightsManager] Metadata result for ${userDid}:`,
-        result,
-      );
 
       const contentRights = result.record?.contentRights || {};
-
-      console.log(
-        `[ContentRightsManager] Content rights for ${userDid}:`,
-        contentRights,
-      );
 
       // Cache the result
       this.cache.set(userDid, {
@@ -143,12 +132,7 @@ export function useContentRights(
   const manager = ContentRightsManager.getInstance();
 
   useEffect(() => {
-    console.log(
-      `[useContentRights] Effect running with userDid: ${userDid}, pdsAgent: ${!!pdsAgent}`,
-    );
-
     if (!userDid) {
-      console.log(`[useContentRights] No userDid provided, clearing state`);
       setContentRights({});
       setLoading(false);
       setError(null);

@@ -54,14 +54,6 @@ export function MobileUi() {
   const { warnings: contentWarnings } = useContentWarnings(profile?.did);
   const { contentRights } = useContentRights(profile?.did);
 
-  console.log(`[MobileUi] Content metadata debug:`, {
-    profileDid: profile?.did,
-    contentWarnings,
-    contentWarningsLength: contentWarnings.length,
-    contentRights,
-    hasContentRights: contentRights && Object.keys(contentRights).length > 0,
-  });
-
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
   const setMuted = usePlayerStore((state) => state.setMuted);

@@ -33,14 +33,6 @@ export function BottomMetadata({
   const { warnings: contentWarnings } = useContentWarnings(profile?.did);
   const { contentRights } = useContentRights(profile?.did);
 
-  console.log(`[BottomMetadata] Content metadata debug:`, {
-    profileDid: profile?.did,
-    contentWarnings,
-    contentWarningsLength: contentWarnings.length,
-    contentRights,
-    hasContentRights: contentRights && Object.keys(contentRights).length > 0,
-  });
-
   return (
     <View
       style={[
