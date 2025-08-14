@@ -5,33 +5,38 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"time"
 
+	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"github.com/decred/dcrd/dcrec/secp256k1"
 	"github.com/mr-tron/base58"
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/aqpub"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
 type MediaSignerExt struct {
-	cli      *config.CLI
-	signer   crypto.Signer
-	pub      aqpub.Pub
-	certPath string
-	streamer string
-	keyBs    []byte
-	taURL    string
-	did      string
+	cli             *config.CLI
+	signer          crypto.Signer
+	pub             aqpub.Pub
+	certPath        string
+	streamer        string
+	keyBs           []byte
+	taURL           string
+	did             string
+	manifestBuilder *ManifestBuilder
 }
 
-func MakeMediaSignerExt(ctx context.Context, cli *config.CLI, streamer string, keyBs []byte) (MediaSigner, error) {
+func MakeMediaSignerExt(ctx context.Context, cli *config.CLI, streamer string, keyBs []byte, model model.Model) (MediaSigner, error) {
 	key, _ := secp256k1.PrivKeyFromBytes(keyBs)
 	if key == nil {
 		return nil, fmt.Errorf("invalid authorization key (not valid secp256k1)")
@@ -50,14 +55,14 @@ func MakeMediaSignerExt(ctx context.Context, cli *config.CLI, streamer string, k
 		return nil, err
 	}
 	return &MediaSignerExt{
-		// cli:        cli,
-		signer:   signer,
-		certPath: certPath,
-		streamer: streamer,
-		pub:      pub,
-		keyBs:    keyBs,
-		taURL:    cli.TAURL,
-		did:      did.DIDKey(),
+		signer:          signer,
+		certPath:        certPath,
+		streamer:        streamer,
+		pub:             pub,
+		keyBs:           keyBs,
+		taURL:           cli.TAURL,
+		did:             did.DIDKey(),
+		manifestBuilder: NewManifestBuilder(model),
 	}, nil
 }
 
@@ -65,6 +70,21 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 	startTime := time.Now()
 	_, span := otel.Tracer("signer").Start(ctx, "SignMP4_Ext")
 	defer span.End()
+	
+	// Generate manifest using shared builder
+	manifest, err := ms.BuildManifest(ctx, start)
+	if err != nil {
+		log.Error(ctx, "MediaSignerExt: failed to build manifest", "error", err)
+		return nil, fmt.Errorf("failed to build manifest: %w", err)
+	}
+	
+	// Serialize manifest to JSON
+	manifestJSON, err := json.Marshal(manifest)
+	if err != nil {
+		log.Error(ctx, "MediaSignerExt: failed to serialize manifest", "error", err)
+		return nil, fmt.Errorf("failed to serialize manifest: %w", err)
+	}
+	
 	// Get the path to the current executable
 	execPath, err := os.Executable()
 	if err != nil {
@@ -73,13 +93,14 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 
 	enc := base58.Encode(ms.keyBs)
 
-	// Prepare command
+	// Prepare command with manifest
 	cmd := exec.Command(execPath, "sign",
 		"--key", enc,
 		"--cert", ms.certPath,
 		"--ta-url", ms.taURL,
 		"--streamer", ms.streamer,
-		"--start-time", fmt.Sprintf("%d", start))
+		"--start-time", fmt.Sprintf("%d", start),
+		"--manifest", string(manifestJSON))
 
 	// overwrite so that our subprocesses don't do their own leak checking
 	cmd.Env = append(os.Environ(), "LD_PRELOAD=")
@@ -109,10 +130,16 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 
 	// Wait for the command to complete
 	if err := cmd.Wait(); err != nil {
+		log.Error(ctx, "MediaSignerExt: subprocess failed", "error", err, "stderr", stderr.String())
 		return nil, fmt.Errorf("command failed: %w, stderr: %s", err, stderr.String())
 	}
+	
 	spmetrics.SigningDuration.WithLabelValues(ms.streamer).Observe(float64(time.Since(startTime).Milliseconds()))
 	return stdout.Bytes(), nil
+}
+
+func (ms *MediaSignerExt) BuildManifest(ctx context.Context, start int64) (*c2pa.ManifestDefinition, error) {
+	return ms.manifestBuilder.BuildManifest(ctx, ms.streamer, start)
 }
 
 func (ms *MediaSignerExt) Pub() aqpub.Pub {

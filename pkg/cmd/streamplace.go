@@ -310,7 +310,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
+	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer, mod)
 	if err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 		did := atkey.DIDKey()
-		testMediaSigner, err := media.MakeMediaSigner(ctx, &cli, did, testSigner)
+		testMediaSigner, err := media.MakeMediaSigner(ctx, &cli, did, testSigner, mod)
 		if err != nil {
 			return err
 		}
@@ -443,7 +443,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 		did2 := atkey2.DIDKey()
-		intermittentMediaSigner, err := media.MakeMediaSigner(ctx, &cli, did2, intermittentSigner)
+		intermittentMediaSigner, err := media.MakeMediaSigner(ctx, &cli, did2, intermittentSigner, mod)
 		if err != nil {
 			return err
 		}
