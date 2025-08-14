@@ -102,7 +102,7 @@ const LICENSE_OPTIONS = [
 const LICENSE_DESCRIPTIONS: Record<string, string> = {
   "all-rights-reserved":
     "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
-  cc0_1__0:
+  "cc0_1__0":
     "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
   "cc-by_4__0":
     "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
