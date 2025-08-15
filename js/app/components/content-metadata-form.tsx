@@ -44,7 +44,6 @@ export interface Rights {
   copyrightYear?: number;
   license?: string;
   creditLine?: string;
-  customLicense?: string;
 }
 
 export interface ContentMetadata {
@@ -117,7 +116,7 @@ const LICENSE_OPTIONS = [
     value: "place.stream.default.metadata#cc-by-nc-nd_4__0",
     label: "CC BY-NC-ND 4.0",
   },
-  { value: "place.stream.default.metadata#custom", label: "Custom License" },
+  { value: "custom", label: "Custom License" },
 ];
 
 const LICENSE_DESCRIPTIONS: Record<string, string> = {
@@ -137,7 +136,7 @@ const LICENSE_DESCRIPTIONS: Record<string, string> = {
     "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited.",
   "place.stream.default.metadata#cc-by-nc-nd_4__0":
     "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially.",
-  "place.stream.default.metadata#custom":
+  custom:
     "Custom license. Define your own terms for how others can use, adapt, or share your content.",
 };
 
@@ -271,7 +270,6 @@ export default function ContentMetadataForm({
           copyrightYear: record.contentRights.copyrightYear || undefined,
           license: record.contentRights.license || "",
           creditLine: record.contentRights.creditLine || "",
-          customLicense: record.contentRights.customLicense || "",
         };
         setContentRights(rights);
         setSelectedLicense(rights.license);
@@ -824,7 +822,7 @@ export default function ContentMetadataForm({
                     value={selectedLicense || undefined}
                     onValueChange={(value) => {
                       setSelectedLicense(value);
-                      if (value !== "place.stream.default.metadata#custom") {
+                      if (value !== "custom") {
                         handleContentRightsChange({ license: value });
                       }
                     }}
@@ -924,18 +922,17 @@ export default function ContentMetadataForm({
                   )}
                 </YStack>
 
-                {selectedLicense === "place.stream.default.metadata#custom" && (
+                {selectedLicense === "custom" && (
                   <YStack gap="$0.5">
                     <Label fontSize="$1" fontWeight="500">
                       Custom License
                     </Label>
                     <TextArea
                       placeholder="Enter custom license terms"
-                      value={contentRights.customLicense || ""}
+                      value={contentRights.license || ""}
                       onChangeText={(text) =>
                         handleContentRightsChange({
-                          license: "place.stream.default.metadata#custom",
-                          customLicense: text,
+                          license: text,
                         })
                       }
                       size="$2"
