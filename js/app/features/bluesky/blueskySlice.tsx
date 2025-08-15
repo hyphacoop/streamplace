@@ -39,6 +39,7 @@ const initialState: BlueskyState = {
   anonPDSAgent: null,
   profiles: {},
   profileCache: {},
+  metadataCache: {},
   client: null,
   login: {
     loading: false,

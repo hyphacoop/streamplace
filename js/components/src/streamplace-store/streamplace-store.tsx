@@ -19,8 +19,10 @@ import { StreamplaceContext } from "../streamplace-provider/context";
 export interface StreamplaceState {
   url: string;
   liveUsers: PlaceStreamLivestream.LivestreamView[] | null;
+  liveUsersMetadata: any[] | null; // Metadata corresponding to liveUsers
   setLiveUsers: (opts: {
     liveUsers?: PlaceStreamLivestream.LivestreamView[];
+    liveUsersMetadata?: any[];
     liveUsersLoading?: boolean;
     liveUsersError?: string | null;
     liveUsersRefresh?: number;
@@ -43,8 +45,10 @@ export const makeStreamplaceStore = ({
   return createStore<StreamplaceState>()((set) => ({
     url,
     liveUsers: null,
+    liveUsersMetadata: null,
     setLiveUsers: (opts: {
       liveUsers?: PlaceStreamLivestream.LivestreamView[];
+      liveUsersMetadata?: any[];
       liveUsersLoading?: boolean;
       liveUsersError?: string | null;
       liveUsersRefresh?: number;

@@ -16,6 +16,7 @@ import { useAppSelector } from "store/hooks";
 import { store } from "store/store";
 import { PortalProvider, TamaguiProvider } from "tamagui";
 import config from "tamagui.config";
+import MetadataSync from "../metadata-sync";
 import { CurrentToast } from "./CurrentToast";
 export default function Provider({
   children,
@@ -31,6 +32,7 @@ export default function Provider({
           <StreamplaceProvider>
             <BlueskyProvider>
               <NewStreamplaceProvider>
+                <MetadataSync />
                 <PortalProvider>
                   <ToastProvider
                     swipeDirection="vertical"

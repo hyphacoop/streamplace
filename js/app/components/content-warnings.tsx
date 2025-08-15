@@ -23,15 +23,7 @@ export default function ContentWarnings({
   warnings,
   compact = false,
 }: ContentWarningsProps) {
-  console.log(
-    `[ContentWarnings] Rendering with warnings:`,
-    warnings,
-    `compact:`,
-    compact,
-  );
-
   if (!warnings || warnings.length === 0) {
-    console.log(`[ContentWarnings] No warnings to display, returning null`);
     return null;
   }
 

@@ -51,8 +51,8 @@ export function MobileUi() {
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
 
   // Get content warnings and rights for the streamer
-  const { warnings: contentWarnings } = useContentWarnings(profile?.did);
-  const { contentRights } = useContentRights(profile?.did);
+  const { warnings: contentWarnings } = useContentWarnings();
+  const { contentRights } = useContentRights();
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);

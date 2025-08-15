@@ -86,8 +86,31 @@ func (s *Server) handlePlaceStreamLiveGetLiveUsers(ctx context.Context, before s
 		streams[i] = stream
 	}
 
+	// Fetch metadata for all users in parallel
+	var metadata []*util.LexiconTypeDecoder
+	for _, l := range ls {
+		userMetadata, err := s.model.GetDefaultMetadata(ctx, l.RepoDID)
+		if err != nil {
+			// If metadata fetch fails, just add nil and continue
+			metadata = append(metadata, nil)
+			continue
+		}
+		
+		if userMetadata != nil {
+			metadataRecord, err := userMetadata.ToStreamplaceDefaultMetadata()
+			if err == nil {
+				metadata = append(metadata, &util.LexiconTypeDecoder{Val: metadataRecord})
+			} else {
+				metadata = append(metadata, nil)
+			}
+		} else {
+			metadata = append(metadata, nil)
+		}
+	}
+
 	liveUsers := &placestreamtypes.LiveGetLiveUsers_Output{
-		Streams: streams,
+		Streams:  streams,
+		Metadata: metadata,
 	}
 
 	return liveUsers, nil

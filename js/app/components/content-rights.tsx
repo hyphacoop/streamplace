@@ -29,15 +29,7 @@ export default function ContentRights({
   contentRights,
   compact = false,
 }: ContentRightsProps) {
-  console.log(
-    `[ContentRights] Rendering with rights:`,
-    contentRights,
-    `compact:`,
-    compact,
-  );
-
   if (!contentRights || Object.keys(contentRights).length === 0) {
-    console.log(`[ContentRights] No content rights to display, returning null`);
     return null;
   }
 
@@ -74,9 +66,6 @@ export default function ContentRights({
   }
 
   if (rightsParts.length === 0) {
-    console.log(
-      `[ContentRights] No displayable rights information, returning null`,
-    );
     return null;
   }
 

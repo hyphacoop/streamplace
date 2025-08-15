@@ -5,357 +5,194 @@ export interface ContentMetadataState {
   creating: boolean;
   updating: boolean;
   error: string | null;
-  lastCreatedRecord: any | null;
+  metadata: any | null;
+  metadataCache: { [key: string]: any };
 }
 
 const initialState: ContentMetadataState = {
   creating: false,
   updating: false,
   error: null,
-  lastCreatedRecord: null,
+  metadata: null,
+  metadataCache: {},
 };
 
 export const contentMetadataSlice = createAppSlice({
   name: "contentMetadata",
   initialState,
   reducers: (create) => ({
-    createContentMetadata: create.asyncThunk(
+    saveContentMetadata: create.asyncThunk(
       async (
-        {
-          contentWarnings = [],
-          distributionPolicy = {
-            allowArchive: true,
-          },
-          contentRights = {},
-        }: {
+        payload: {
           contentWarnings?: string[];
           distributionPolicy?: {
             allowArchive?: boolean;
             broadcastExpiry?: string;
           };
-          contentRights?: {
-            creator?: string;
-            copyrightNotice?: string;
-            copyrightYear?: number;
-            license?: string;
-            creditLine?: string;
-          };
+          contentRights?: Record<string, any>;
         },
         thunkAPI,
       ) => {
-        const { bluesky } = thunkAPI.getState() as {
-          bluesky: BlueskyState;
-        };
+        const { bluesky } = thunkAPI.getState() as { bluesky: BlueskyState };
 
-        if (!bluesky.pdsAgent) {
-          throw new Error("No agent");
-        }
-
-        const did = bluesky.oauthSession?.did;
-        if (!did) {
-          throw new Error("No DID");
+        if (!bluesky.pdsAgent || !bluesky.oauthSession?.did) {
+          throw new Error("Not authenticated");
         }
 
         const metadataRecord = {
           $type: "place.stream.default.metadata",
           createdAt: new Date().toISOString(),
-          ...(contentWarnings.length > 0 && { contentWarnings }),
-          distributionPolicy,
-          ...(contentRights &&
-            Object.keys(contentRights).length > 0 && {
-              contentRights,
+          ...(payload.contentWarnings &&
+            payload.contentWarnings.length > 0 && {
+              contentWarnings: payload.contentWarnings,
             }),
-        };
-
-        const result = await bluesky.pdsAgent.com.atproto.repo.createRecord({
-          repo: did,
-          collection: "place.stream.default.metadata",
-          rkey: "self",
-          record: metadataRecord,
-        });
-
-        // Extract rkey from the URI
-        const rkey = result.data.uri.split("/").pop();
-
-        return {
-          record: metadataRecord,
-          uri: result.data.uri,
-          cid: result.data.cid,
-          rkey,
-        };
-      },
-      {
-        pending: (state) => {
-          return {
-            ...state,
-            creating: true,
-            error: null,
-          };
-        },
-        fulfilled: (state, action) => {
-          return {
-            ...state,
-            creating: false,
-            error: null,
-            lastCreatedRecord: action.payload,
-          };
-        },
-        rejected: (state, action) => {
-          return {
-            ...state,
-            creating: false,
-            error: action.error?.message ?? "Failed to create content metadata",
-          };
-        },
-      },
-    ),
-
-    updateContentMetadata: create.asyncThunk(
-      async (
-        {
-          rkey,
-          livestreamRef,
-          contentWarnings = [],
-          distributionPolicy = {
+          distributionPolicy: payload.distributionPolicy || {
             allowArchive: true,
-            broadcastExpiry: undefined, // No expiration means forever
           },
-          contentRights = {},
-        }: {
-          rkey?: string;
-          livestreamRef?: {
-            uri: string;
-            cid: string;
-          };
-          contentWarnings?: string[];
-          distributionPolicy?: {
-            allowArchive?: boolean;
-            broadcastExpiry?: string;
-          };
-          contentRights?: {
-            year?: string;
-            attribution?: string;
-            license?: string;
-            usageTerms?: string;
-          };
-        },
-        thunkAPI,
-      ) => {
-        const { bluesky } = thunkAPI.getState() as {
-          bluesky: BlueskyState;
-        };
-
-        if (!bluesky.pdsAgent) {
-          throw new Error("No agent");
-        }
-
-        const did = bluesky.oauthSession?.did;
-        if (!did) {
-          throw new Error("No DID");
-        }
-
-        const metadataRecord = {
-          $type: "place.stream.default.metadata",
-          ...(livestreamRef && { livestreamRef }),
-          createdAt: new Date().toISOString(),
-          ...(contentWarnings.length > 0 && { contentWarnings }),
-          distributionPolicy,
-          ...(contentRights &&
-            Object.keys(contentRights).length > 0 && {
-              contentRights,
+          ...(payload.contentRights &&
+            Object.keys(payload.contentRights).length > 0 && {
+              contentRights: payload.contentRights,
             }),
         };
 
         const result = await bluesky.pdsAgent.com.atproto.repo.putRecord({
-          repo: did,
+          repo: bluesky.oauthSession.did,
           collection: "place.stream.default.metadata",
           rkey: "self",
           record: metadataRecord,
         });
 
-        return {
-          record: metadataRecord,
-          uri: `at://${did}/place.stream.default.metadata/self`,
-          cid: result.data.cid,
-        };
+        return metadataRecord;
       },
       {
-        pending: (state) => {
-          return {
-            ...state,
-            updating: true,
-            error: null,
-          };
-        },
-        fulfilled: (state, action) => {
-          return {
-            ...state,
-            updating: false,
-            error: null,
-            lastCreatedRecord: action.payload,
-          };
-        },
-        rejected: (state, action) => {
-          return {
-            ...state,
-            updating: false,
-            error: action.error?.message ?? "Failed to update content metadata",
-          };
-        },
+        pending: (state) => ({
+          ...state,
+          creating: true,
+          updating: true,
+          error: null,
+        }),
+        fulfilled: (state, action) => ({
+          ...state,
+          creating: false,
+          updating: false,
+          metadata: action.payload,
+        }),
+        rejected: (state, action) => ({
+          ...state,
+          creating: false,
+          updating: false,
+          error: action.error?.message || "Failed to save metadata",
+        }),
       },
     ),
 
     getContentMetadata: create.asyncThunk(
-      async (
-        { userDid, rkey = "self" }: { userDid?: string; rkey?: string } = {},
-        thunkAPI,
-      ) => {
-        const { bluesky } = thunkAPI.getState() as {
-          bluesky: BlueskyState;
-        };
+      async (payload: { userDid?: string; rkey?: string } = {}, thunkAPI) => {
+        const { bluesky } = thunkAPI.getState() as { bluesky: BlueskyState };
+        const { userDid, rkey = "self" } = payload;
 
-        if (!bluesky.pdsAgent) {
-          throw new Error("No agent");
+        if (!bluesky.pdsAgent || !bluesky.oauthSession?.did) {
+          throw new Error("Not authenticated");
         }
 
-        // Use provided userDid or fall back to current user's DID
         const targetDid = userDid || bluesky.oauthSession?.did;
         if (!targetDid) {
-          throw new Error("No DID provided or user not authenticated");
+          throw new Error("No DID provided");
         }
 
-        // Add debugging information
-        console.log(`[getContentMetadata] Debug info:`, {
-          targetDid,
-          rkey,
-          pdsAgentType: bluesky.pdsAgent.constructor.name,
-          hasOAuthSession: !!bluesky.oauthSession,
-          currentUserDid: bluesky.oauthSession?.did,
-          pdsAgentHost:
-            (bluesky.pdsAgent as any)?.host ||
-            (bluesky.pdsAgent as any)?.service?.host ||
-            "unknown",
-          pdsAgentUrl:
-            (bluesky.pdsAgent as any)?.url ||
-            (bluesky.pdsAgent as any)?.service?.url ||
-            "unknown",
-        });
-
         try {
-          // First, try to resolve the correct PDS for the target user
-          let targetPDS = null;
-          try {
-            const didResponse = await fetch(
-              `https://plc.directory/${targetDid}`,
-            );
-            if (didResponse.ok) {
-              const didDoc = await didResponse.json();
-              const pdsService = didDoc.service?.find(
-                (s: any) => s.id === "#atproto_pds",
-              );
-              if (pdsService) {
-                targetPDS = pdsService.serviceEndpoint;
-                console.log(
-                  `[getContentMetadata] Resolved PDS for ${targetDid}:`,
-                  targetPDS,
-                );
-              }
-            }
-          } catch (pdsResolveError) {
-            console.log(
-              `[getContentMetadata] Failed to resolve PDS for ${targetDid}:`,
-              pdsResolveError,
-            );
-          }
-
-          // Use the target PDS if available, otherwise fall back to the current agent
-          let agent = bluesky.pdsAgent;
-          if (targetPDS && targetPDS !== (bluesky.pdsAgent as any)?.host) {
-            // Create a new agent pointing to the target PDS
-            const { StreamplaceAgent } = await import("streamplace");
-            agent = new StreamplaceAgent(targetPDS) as any;
-            console.log(
-              `[getContentMetadata] Created new agent for PDS:`,
-              targetPDS,
-            );
-          }
-
-          console.log(`[getContentMetadata] Attempting to fetch record from:`, {
-            repo: targetDid,
-            collection: "place.stream.default.metadata",
-            rkey,
-            usingPDS: targetPDS || "default",
-          });
-
-          const result = await agent.com.atproto.repo.getRecord({
+          // Use the authenticated pdsAgent to ensure proper DPoP authentication
+          const result = await bluesky.pdsAgent.com.atproto.repo.getRecord({
             repo: targetDid,
             collection: "place.stream.default.metadata",
             rkey,
           });
-
-          console.log(`[getContentMetadata] API response:`, result);
-
-          if (!result.success) {
-            throw new Error("Failed to get content metadata record");
-          }
 
           return {
             userDid: targetDid,
-            record: result.data.value,
-            uri: result.data.uri,
-            cid: result.data.cid,
+            record: result.success ? result.data.value : null,
+            uri: result.success ? result.data.uri : null,
+            cid: result.success ? result.data.cid : null,
           };
         } catch (error) {
-          console.log(`[getContentMetadata] Error details:`, {
-            error: error.message,
-            errorType: error.constructor.name,
-            errorStack: error.stack,
-          });
-
-          // If user doesn't have metadata record, return null instead of throwing
+          // Return null for not found, rather than throwing
           if (
             error.message?.includes("not found") ||
             error.message?.includes("RecordNotFound")
           ) {
-            return {
-              userDid: targetDid,
-              record: null,
-              uri: null,
-              cid: null,
-            };
+            return { userDid: targetDid, record: null, uri: null, cid: null };
           }
           throw error;
         }
       },
       {
-        pending: (state) => {
-          return {
-            ...state,
-            error: null,
-          };
-        },
+        pending: (state) => ({ ...state, error: null }),
         fulfilled: (state, action) => {
+          const { userDid, record } = action.payload;
           return {
             ...state,
             error: null,
-            lastCreatedRecord: action.payload,
+            metadata: record,
+            metadataCache: { ...state.metadataCache, [userDid]: record },
           };
         },
-        rejected: (state, action) => {
-          return {
-            ...state,
-            error: action.error?.message ?? "Failed to get content metadata",
-          };
-        },
+        rejected: (state, action) => ({
+          ...state,
+          error: action.error?.message || "Failed to get metadata",
+        }),
       },
     ),
 
-    clearError: create.reducer((state) => {
-      return {
+    getMultipleMetadata: create.asyncThunk(
+      async (userDids: string[], thunkAPI) => {
+        const { bluesky } = thunkAPI.getState() as { bluesky: BlueskyState };
+
+        if (!bluesky.pdsAgent || !bluesky.oauthSession?.did) {
+          throw new Error("Not authenticated");
+        }
+
+        const results: { [key: string]: any } = {};
+
+        // Process each DID using the authenticated agent
+        for (const userDid of userDids) {
+          try {
+            const result = await bluesky.pdsAgent.com.atproto.repo.getRecord({
+              repo: userDid,
+              collection: "place.stream.default.metadata",
+              rkey: "self",
+            });
+
+            results[userDid] = result.success ? result.data.value : null;
+          } catch (error) {
+            // Set to null for not found or any other error
+            results[userDid] = null;
+          }
+        }
+
+        return results;
+      },
+      {
+        pending: (state) => ({ ...state, error: null }),
+        fulfilled: (state, action) => ({
+          ...state,
+          error: null,
+          metadataCache: { ...state.metadataCache, ...action.payload },
+        }),
+        rejected: (state, action) => ({
+          ...state,
+          error: action.error?.message || "Failed to get multiple metadata",
+        }),
+      },
+    ),
+
+    clearError: create.reducer((state) => ({ ...state, error: null })),
+
+    updateMultipleMetadataFromPoller: create.reducer(
+      (state, action: { payload: { [key: string]: any } }) => ({
         ...state,
-        error: null,
-      };
-    }),
+        metadataCache: action.payload, // Replace cache with live users only
+      }),
+    ),
   }),
 
   selectors: {
@@ -363,15 +200,17 @@ export const contentMetadataSlice = createAppSlice({
     selectIsCreating: (state) => state.creating,
     selectIsUpdating: (state) => state.updating,
     selectError: (state) => state.error,
-    selectLastCreatedRecord: (state) => state.lastCreatedRecord,
+    selectMetadata: (state) => state.metadata,
+    selectCachedMetadata: (state) => state.metadataCache,
   },
 });
 
 export const {
-  createContentMetadata,
-  updateContentMetadata,
+  saveContentMetadata,
   getContentMetadata,
+  getMultipleMetadata,
   clearError,
+  updateMultipleMetadataFromPoller,
 } = contentMetadataSlice.actions;
 
 export const {
@@ -379,5 +218,6 @@ export const {
   selectIsCreating,
   selectIsUpdating,
   selectError,
-  selectLastCreatedRecord,
+  selectMetadata,
+  selectCachedMetadata,
 } = contentMetadataSlice.selectors;

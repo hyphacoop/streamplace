@@ -4,6 +4,7 @@ import { OAuthSession } from "@atproto/oauth-client";
 import { StreamKey } from "features/base/baseSlice";
 import {
   PlaceStreamChatProfile,
+  PlaceStreamDefaultMetadata,
   PlaceStreamLivestream,
   PlaceStreamServerSettings,
   StreamplaceAgent,
@@ -25,6 +26,8 @@ export interface BlueskyState {
   profiles: { [key: string]: ProfileViewDetailed };
   // for e.g. others' avatars
   profileCache: { [key: string]: ProfileViewDetailed };
+  // for e.g. others' metadata
+  metadataCache: { [key: string]: PlaceStreamDefaultMetadata.Record };
   client: null | StreamplaceOAuthClient;
   login: {
     loading: boolean;

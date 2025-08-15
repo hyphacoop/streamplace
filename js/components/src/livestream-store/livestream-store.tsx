@@ -22,6 +22,7 @@ export const makeLivestreamStore = (): StoreApi<LivestreamState> => {
     authors: {},
     recentSegments: [],
     problems: [],
+    defaultMetadata: null,
   }));
 };
 
@@ -60,3 +61,6 @@ export const useLivestream = () => useLivestreamStore((x) => x.livestream);
 export const useSegment = () => useLivestreamStore((x) => x.segment);
 
 export const useRenditions = () => useLivestreamStore((x) => x.renditions);
+
+export const useDefaultMetadata = () =>
+  useLivestreamStore((x) => x.defaultMetadata);

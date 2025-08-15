@@ -2,6 +2,7 @@ import { AppBskyActorDefs } from "@atproto/api";
 import {
   ChatMessageViewHydrated,
   LivestreamViewHydrated,
+  PlaceStreamDefaultMetadata,
   PlaceStreamDefs,
   PlaceStreamSegment,
 } from "streamplace";
@@ -21,6 +22,7 @@ export interface LivestreamState {
   replyToMessage: ChatMessageViewHydrated | null;
   streamKey: string | null;
   setStreamKey: (key: string | null) => void;
+  defaultMetadata: PlaceStreamDefaultMetadata.Record | null;
 }
 
 export interface LivestreamProblem {

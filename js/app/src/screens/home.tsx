@@ -9,7 +9,7 @@ import LiveDot from "components/home/live-dot";
 import Loading from "components/loading/loading";
 import Title from "components/title";
 import useAvatars from "hooks/useAvatars";
-import { useContentWarnings } from "hooks/useContentWarnings";
+import useMetadata from "hooks/useMetadata";
 import { useEffect, useState } from "react";
 import { RefreshControl } from "react-native";
 import { PlaceStreamLivestream } from "streamplace";
@@ -111,16 +111,20 @@ function HomeScreenItem({
   media,
   size,
   avatarUrl,
+  metadata,
   horizontal = false,
 }: {
   item: PlaceStreamLivestream.LivestreamView;
   media: UseMediaState;
   size: StreamCardSize;
   avatarUrl?: string;
+  metadata?: any;
   horizontal?: boolean;
 }) {
   const user = item.author.handle || item.author.did;
-  const { warnings } = useContentWarnings(item.author.did);
+
+  // Get content warnings from the passed metadata
+  const contentWarnings = metadata?.contentWarnings || [];
 
   return (
     <AQLink
@@ -146,7 +150,7 @@ function HomeScreenItem({
         category={[]}
         viewers={item.viewerCount?.count}
         isLive={true}
-        contentWarnings={warnings}
+        contentWarnings={contentWarnings}
       />
     </AQLink>
   );
@@ -198,6 +202,7 @@ export default function HomeScreen({
   const media = useMedia();
 
   const avis = useAvatars((segments || []).map((s) => s.author.did));
+  const metadata = useMetadata((segments || []).map((s) => s.author.did));
 
   useEffect(() => {
     if (!liveUsersLoading) {
@@ -338,6 +343,7 @@ export default function HomeScreen({
                     media={media}
                     size={size}
                     avatarUrl={avis[item.author.did]?.avatar}
+                    metadata={metadata[item.author.did]}
                     horizontal={itemIndex == 0 && cols > 2}
                   />
                 </View>
@@ -377,6 +383,7 @@ export default function HomeScreen({
                           media={media}
                           size={size}
                           avatarUrl={avis[item.author.did]?.avatar}
+                          metadata={metadata[item.author.did]}
                         />
                       </View>
                     ) : (

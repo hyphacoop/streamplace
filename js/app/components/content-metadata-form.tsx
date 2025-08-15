@@ -1,17 +1,12 @@
 import { ChevronDown, Info } from "@tamagui/lucide-icons";
 import { useToastController } from "@tamagui/toast";
 import {
-  createStreamKeyRecord,
-  selectStoredKey,
-} from "features/bluesky/blueskySlice";
-import {
-  createContentMetadata,
   getContentMetadata,
+  saveContentMetadata,
   selectError,
   selectIsCreating,
   selectIsUpdating,
-  selectLastCreatedRecord,
-  updateContentMetadata,
+  selectMetadata,
 } from "features/bluesky/contentMetadataSlice";
 import React, { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
@@ -180,13 +175,9 @@ export default function ContentMetadataForm({
   const isUpdating = useAppSelector(selectIsUpdating);
   const isCreating = useAppSelector(selectIsCreating);
   const error = useAppSelector(selectError);
-  const lastCreatedRecord = useAppSelector(selectLastCreatedRecord);
-  const storedKey = useAppSelector(selectStoredKey);
+  const metadata = useAppSelector(selectMetadata);
 
   const isLoading = isUpdating || isCreating;
-  // Check if we have metadata based on the fetched record
-  const hasMetadata = Boolean(lastCreatedRecord?.record);
-  const hasStreamKey = Boolean(storedKey);
 
   const [contentWarnings, setContentWarnings] = useState<string[]>(
     initialMetadata?.contentWarnings || [],
@@ -225,8 +216,8 @@ export default function ContentMetadataForm({
 
   // Pre-populate form fields when existing metadata is fetched
   useEffect(() => {
-    if (lastCreatedRecord?.record && !hasPopulated) {
-      const record = lastCreatedRecord.record;
+    if (metadata && !hasPopulated) {
+      const record = metadata;
 
       // Update content warnings
       if (record.contentWarnings && Array.isArray(record.contentWarnings)) {
@@ -276,7 +267,7 @@ export default function ContentMetadataForm({
       }
 
       // Update the parent component with the loaded metadata
-      const metadata: ContentMetadata = {
+      const updatedMetadata: ContentMetadata = {
         contentWarnings: record.contentWarnings || [],
         distributionPolicy: {
           allowArchive: record.distributionPolicy?.allowArchive ?? true,
@@ -284,12 +275,12 @@ export default function ContentMetadataForm({
         },
         contentRights: record.contentRights || {},
       };
-      onMetadataChange(metadata);
+      onMetadataChange(updatedMetadata);
 
       // Mark as populated to prevent future overwrites
       setHasPopulated(true);
     }
-  }, [lastCreatedRecord, onMetadataChange, months, hasPopulated]);
+  }, [metadata, onMetadataChange, months, hasPopulated]);
 
   const handleContentWarningChange = (warning: string, checked: boolean) => {
     const newWarnings = checked
@@ -363,11 +354,6 @@ export default function ContentMetadataForm({
 
   const handleSaveMetadata = async () => {
     try {
-      // First ensure we have a stream key
-      if (!hasStreamKey) {
-        await dispatch(createStreamKeyRecord({ store: true })).unwrap();
-      }
-
       const contentRightsData = {
         ...(contentRights.creator && { creator: contentRights.creator }),
         ...(contentRights.copyrightNotice && {
@@ -395,33 +381,14 @@ export default function ContentMetadataForm({
         }),
       };
 
-      if (hasMetadata) {
-        // Update existing metadata
-        await dispatch(
-          updateContentMetadata({
-            rkey: "self",
-            ...metadataPayload,
-          }),
-        ).unwrap();
-        toast.show("Success", {
-          message: "Content metadata updated successfully",
-        });
-      } else {
-        // Create new metadata
-        await dispatch(
-          (createContentMetadata as any)({
-            contentWarnings,
-            distributionPolicy,
-            contentRights,
-          }),
-        ).unwrap();
-        toast.show("Success", {
-          message: "Content metadata created successfully",
-        });
-      }
+      // Use saveContentMetadata (follows chat profile pattern with putRecord)
+      await dispatch(saveContentMetadata(metadataPayload)).unwrap();
+      toast.show("Success", {
+        message: "Content metadata saved successfully",
+      });
     } catch (error) {
       toast.show("Error", {
-        message: `Failed to ${hasMetadata ? "update" : "create"} metadata: ${error.message || error}`,
+        message: `Failed to save metadata: ${error.message || error}`,
       });
     }
   };
@@ -1072,13 +1039,7 @@ export default function ContentMetadataForm({
             maxWidth={400}
             onPress={handleSaveMetadata}
           >
-            {isLoading
-              ? isCreating
-                ? "Creating..."
-                : "Updating..."
-              : hasMetadata
-                ? "Update Content Metadata"
-                : "Create Content Metadata"}
+            {isLoading ? "Saving..." : "Save Content Metadata"}
           </Button>
           {error && (
             <Paragraph color="$red10" fontSize="$1" mt="$1">

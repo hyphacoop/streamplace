@@ -12,7 +12,9 @@ import (
 
 // LiveGetLiveUsers_Output is the output of a place.stream.live.getLiveUsers call.
 type LiveGetLiveUsers_Output struct {
-	Streams []*Livestream_LivestreamView `json:"streams,omitempty" cborgen:"streams,omitempty"`
+	// metadata: Content metadata records for the livestream users
+	Metadata []*util.LexiconTypeDecoder   `json:"metadata,omitempty" cborgen:"metadata,omitempty"`
+	Streams  []*Livestream_LivestreamView `json:"streams,omitempty" cborgen:"streams,omitempty"`
 }
 
 // LiveGetLiveUsers calls the XRPC method "place.stream.live.getLiveUsers".

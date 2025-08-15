@@ -28,6 +28,13 @@
                 "type": "ref",
                 "ref": "place.stream.livestream#livestreamView"
               }
+            },
+            "metadata": {
+              "type": "array",
+              "items": {
+                "type": "unknown"
+              },
+              "description": "Content metadata records for the livestream users"
             }
           }
         }
