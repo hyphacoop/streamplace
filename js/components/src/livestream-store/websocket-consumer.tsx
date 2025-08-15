@@ -5,6 +5,7 @@ import {
   PlaceStreamChatDefs,
   PlaceStreamChatGate,
   PlaceStreamChatMessage,
+  PlaceStreamDefaultMetadata,
   PlaceStreamDefs,
   PlaceStreamLivestream,
   PlaceStreamSegment,
@@ -96,6 +97,12 @@ export const handleWebSocketMessages = (
         pendingHides: newPendingHides,
       };
       state = reduceChat(state, [], [], [hiddenMessageUri]);
+    } else if (PlaceStreamDefaultMetadata.isRecord(message)) {
+      const metadata = message as PlaceStreamDefaultMetadata.Record;
+      state = {
+        ...state,
+        defaultMetadata: metadata,
+      };
     }
   }
   return reduceChat(state, [], [], []);

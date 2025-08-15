@@ -434,6 +434,14 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		err = atsync.Model.CreateDefaultMetadata(ctx, metadata)
 		if err != nil {
 			log.Error(ctx, "failed to create default metadata", "err", err)
+		} else {
+			// Publish metadata update to websocket subscribers
+			streamplaceMetadata, err := metadata.ToStreamplaceDefaultMetadata()
+			if err != nil {
+				log.Error(ctx, "failed to convert metadata to streamplace format", "err", err)
+			} else {
+				go atsync.Bus.Publish(userDID, streamplaceMetadata)
+			}
 		}
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))

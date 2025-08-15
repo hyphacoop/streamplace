@@ -241,6 +241,22 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 			}
 		}()
 
+		go func() {
+			metadata, err := a.Model.GetDefaultMetadata(ctx, repoDID)
+			if err != nil {
+				log.Error(ctx, "could not get default metadata", "error", err)
+				return
+			}
+			if metadata != nil {
+				streamplaceMetadata, err := metadata.ToStreamplaceDefaultMetadata()
+				if err != nil {
+					log.Error(ctx, "could not convert metadata to streamplace format", "error", err)
+					return
+				}
+				initialBurst <- streamplaceMetadata
+			}
+		}()
+
 		for {
 			messageType, message, err := conn.ReadMessage()
 			if err != nil {
