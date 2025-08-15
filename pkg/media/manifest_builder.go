@@ -53,6 +53,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 						"dc": "http://purl.org/dc/elements/1.1/",
 						"Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
 						"photoshop": "http://ns.adobe.com/photoshop/1.0/",
+						"xmpRights": "http://ns.adobe.com/xap/1.0/rights/",
 					},
 					"dc:creator": streamerName,
 					// TODO: Add the title of the livestream. This should come from the livestream record.
@@ -115,9 +116,32 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 			mani["assertions"].([]obj)[1]["data"].(obj)["photoshop:Credit"] = *metadata.ContentRights.CreditLine
 		}
 
-		// Linked Enc Rights Expr
+		// Build the license field
 		if metadata.ContentRights.License != nil {
-			mani["assertions"].([]obj)[1]["data"].(obj)["Iptc4xmpExt:LinkedEncRightsExpr"] = *metadata.ContentRights.License
+			// Map internal license codes to known licenses
+			var licenseCodeMap = map[string]string{
+				"place.stream.default.metadata#cc0_1__0": "http://creativecommons.org/publicdomain/zero/1.0/",
+				"place.stream.default.metadata#cc-by_4__0": "http://creativecommons.org/licenses/by/4.0/",
+				"place.stream.default.metadata#cc-by-sa_4__0": "http://creativecommons.org/licenses/by-sa/4.0/",
+				"place.stream.default.metadata#cc-by-nc_4__0": "http://creativecommons.org/licenses/by-nc/4.0/",
+				"place.stream.default.metadata#cc-by-nc-sa_4__0": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+				"place.stream.default.metadata#cc-by-nd_4__0": "http://creativecommons.org/licenses/by-nd/4.0/",
+				"place.stream.default.metadata#cc-by-nc-nd_4__0": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
+			}
+			if mappedCode, exists := licenseCodeMap[*metadata.ContentRights.License]; exists {
+				// it's a known linked license, so we can use the mapped code
+				mani["assertions"].([]obj)[1]["data"].(obj)["Iptc4xmpExt:LinkedEncRightsExpr"] = mappedCode
+			} else {
+				// This is either an unknown or an unlinked license, so we need to put it in the UsageTerms field
+				// which allows for licensing terms expressed in free text
+				if *metadata.ContentRights.License == "place.stream.default.metadata#all-rights-reserved" {
+					// if all rights reserved, we can put the string "All rights reserved" in the UsageTerms field
+					mani["assertions"].([]obj)[1]["data"].(obj)["xmpRights:UsageTerms"] = "All rights reserved"
+				} else {
+					// it's an unknown license, so we need to put it directly in the UsageTerms field
+					mani["assertions"].([]obj)[1]["data"].(obj)["xmpRights:UsageTerms"] = *metadata.ContentRights.License
+				}
+			}
 		}
 	}
 
