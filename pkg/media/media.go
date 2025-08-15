@@ -28,7 +28,7 @@ import (
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa/generated/manifeststore"
 	"github.com/piprate/json-gold/ld"
 
-	irohStreamplace "github.com/n0-computer/iroh-streamplace/pkg/iroh_streamplace/generated/iroh_streamplace"
+	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 // #cgo pkg-config: streamplacedeps-uninstalled

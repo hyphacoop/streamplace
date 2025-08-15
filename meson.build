@@ -85,11 +85,6 @@ triple = meson.get_external_property('RUST_TRIPLE', '')
 if triple != ''
   iroh_streamplace_opts += {'RUST_TRIPLE': triple}
 endif
-iroh_streamplace_proj = subproject(
-  'iroh_streamplace',
-  default_options: iroh_streamplace_opts,
-)
-iroh_streamplace_dep = iroh_streamplace_proj.get_variable('iroh_streamplace_dep')
 
 streamplace_deps = []
 # if host_machine.system() == 'linux'

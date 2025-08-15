@@ -40,7 +40,7 @@ import (
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
 
-	irohStreamplace "github.com/n0-computer/iroh-streamplace/pkg/iroh_streamplace/generated/iroh_streamplace"
+	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 // Additional jobs that can be injected by platforms

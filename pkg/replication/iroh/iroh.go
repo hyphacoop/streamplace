@@ -5,12 +5,12 @@ import (
 
 	"stream.place/streamplace/pkg/log"
 
-	irohStreamplace "github.com/n0-computer/iroh-streamplace/pkg/iroh_streamplace/generated/iroh_streamplace"
+	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 // IrohReplicator implements the replication mechanism using iroh
 type IrohReplicator struct {
-	peers []*irohStreamplace.PublicKey
+	peers  []*irohStreamplace.PublicKey
 	sender *irohStreamplace.Sender
 }
 
@@ -21,7 +21,7 @@ func NewIrohReplicator(ctx context.Context, ep *irohStreamplace.Endpoint, peers 
 	}
 
 	nodeIds := make([]*irohStreamplace.PublicKey, len(peers))
-	for i := range(peers) {
+	for i := range peers {
 		nodeId, err := irohStreamplace.PublicKeyFromString(peers[i])
 		if err.AsError() != nil {
 			log.Log(ctx, "invalid Node ID", "warning", err.Error())
@@ -36,8 +36,8 @@ func NewIrohReplicator(ctx context.Context, ep *irohStreamplace.Endpoint, peers 
 		nodeIds[i] = nodeId
 	}
 
-	return &IrohReplicator {
-		peers: nodeIds,
+	return &IrohReplicator{
+		peers:  nodeIds,
 		sender: sender,
 	}, nil
 }

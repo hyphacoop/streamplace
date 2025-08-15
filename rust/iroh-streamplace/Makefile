@@ -9,7 +9,7 @@ rust:
 .PHONY: go
 go:
 	mkdir -p dist
-	uniffi-bindgen-go --out-dir pkg/iroh_streamplace/generated --library ./target/release/libiroh_streamplace.dylib
+	uniffi-bindgen-go --out-dir ../../pkg/iroh/generated --library ./target/release/libiroh_streamplace.dylib
 
 .PHONY: test
 test:
