@@ -80,12 +80,6 @@ c2pa_go_proj = subproject(
 )
 c2pa_go_dep = c2pa_go_proj.get_variable('c2pa_go_dep')
 
-iroh_streamplace_opts = {}
-triple = meson.get_external_property('RUST_TRIPLE', '')
-if triple != ''
-  iroh_streamplace_opts += {'RUST_TRIPLE': triple}
-endif
-
 streamplace_deps = []
 # if host_machine.system() == 'linux'
 #   mistserver_proj = subproject(
@@ -236,6 +230,8 @@ libstreamplace = custom_target(
   build_always_stale: true,
   env: env,
 )
+
+subdir('rust/iroh-streamplace')
 
 if host_machine.system() == 'darwin'
   streamplace_deps += [dependency('appleframeworks', modules: ['CoreFoundation', 'Security', 'SystemConfiguration'])]

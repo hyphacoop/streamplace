@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	iroh "github.com/n0-computer/iroh-streamplace/pkg/iroh_streamplace/generated/iroh_streamplace"
+	iroh "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 type TestHandler struct {

@@ -4,6 +4,7 @@ import (
 	_ "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
-// #cgo LDFLAGS: -L../../target/release -liroh_streamplace -lm
+// #cgo LDFLAGS: -lm
+// #cgo pkg-config: streamplacedeps-uninstalled
 // #cgo darwin LDFLAGS: -framework Security -framework SystemConfiguration
 import "C"
