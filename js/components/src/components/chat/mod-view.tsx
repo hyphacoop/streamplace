@@ -47,6 +47,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
 
   const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
   const setReportSubject = usePlayerStore((x) => x.setReportSubject);
+  const setModMessage = usePlayerStore((x) => x.setModMessage);
 
   // get the channel did
   const channelId = usePlayerStore((state) => state.src);
@@ -58,6 +59,12 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
       <Text>Log in to submit mod actions</Text>
     </View>;
   }
+
+  const cleanup = () => {
+    setReportModalOpen(false);
+    setReportSubject(null);
+    setModMessage(null);
+  };
 
   useEffect(() => {
     if (message) {
@@ -73,6 +80,11 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   return (
     <DropdownMenu
       style={[layout.flex.row, layout.flex.alignCenter, gap.all[2], w[80]]}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          cleanup();
+        }
+      }}
     >
       <DropdownMenuTrigger ref={triggerRef}>
         {/* Hidden trigger */}
