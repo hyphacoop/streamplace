@@ -3,14 +3,22 @@ prog_cargo = find_program('cargo')
 if get_option('default_library') == 'shared'
   cargo_cmd = '@0@ build'.format(prog_cargo.full_path())
 
+  if host_machine.system() == 'darwin'
+    ext = 'dylib'
+  elif host_machine.system() == 'linux'
+    ext = 'so'
+  else
+    error('Unsupported dev system: @0@'.format(host_machine.system()))
+  endif
+
   iroh_streamplace_dep = custom_target(
     'libiroh_streamplace',
     input: [],
-    output: ['libiroh_streamplace.so'],
+    output: ['libiroh_streamplace.' + ext],
     command: [
       'sh',
       '-c',
-      'cd "@2@/../.." && @0@ && cp "@2@/../../target/debug/libiroh_streamplace.so" "@1@/libiroh_streamplace.so"'.format(cargo_cmd, meson.current_build_dir(), meson.current_source_dir()),
+      'cd "@2@/../.." && @0@ && cp "@2@/../../target/debug/libiroh_streamplace.@3@" "@1@/libiroh_streamplace.@3@"'.format(cargo_cmd, meson.current_build_dir(), meson.current_source_dir(), ext),
     ],
     build_by_default: true,
   )

@@ -66,6 +66,7 @@ dev-setup-meson:
 
 .PHONY: dev-setup-meson-configure
 dev-setup-meson-configure:
+	if ! which uniffi-bindgen-go; then cargo install uniffi-bindgen-go --git https://github.com/NordSecurity/uniffi-bindgen-go --tag v0.3.0+v0.28.3; fi
 	meson setup --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 	meson configure --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 
@@ -78,6 +79,7 @@ dev-setup-meson-compile:
 dev:
 	cp ./util/streamplace-dev.sh $(BUILDDIR)/streamplace
 	cargo build
+	$(MAKE) iroh-streamplace-codegen
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
 	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH) \
 	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH) \
@@ -839,6 +841,8 @@ ci-homebrew:
 	&& git commit -m "Update streamplace $(VERSION)" \
 	&& git push
 
-.PHONY: iroh-streamplace
-iroh-streamplace:
-	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.so
+.PHONY: iroh-streamplace-codegen
+iroh-streamplace-codegen:
+	EXT=so; \
+	if [ "$(BUILDOS)" = "darwin" ]; then EXT=dylib; fi; \
+	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT
