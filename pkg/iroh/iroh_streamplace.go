@@ -5,6 +5,5 @@ import (
 )
 
 // #cgo pkg-config: streamplacedeps-uninstalled
-// #cgo LDFLAGS: -lm
 // #cgo darwin LDFLAGS: -framework Security -framework SystemConfiguration
 import "C"

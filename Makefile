@@ -22,6 +22,7 @@ BUILDDIR?=build-$(BUILDOS)-$(BUILDARCH)
 SHARED_LD_LIBRARY_PATH=$(shell pwd)/$(BUILDDIR)/lib/usr/local/lib/x86_64-linux-gnu
 SHARED_DYLD_LIBRARY_PATH=$(shell pwd)/$(BUILDDIR)/lib/usr/local/lib
 SHARED_PKG_CONFIG_PATH=$(shell pwd)/$(BUILDDIR)/meson-uninstalled
+RUST_BUILD_PATH=$(shell pwd)/target/debug
 
 .PHONY: version
 version:
@@ -81,8 +82,8 @@ dev:
 	cargo build
 	$(MAKE) iroh-streamplace-codegen
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
-	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH) \
-	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH) \
+	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH):$(RUST_BUILD_PATH) \
+	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH):$(RUST_BUILD_PATH) \
 	go build -o $(BUILDDIR)/libstreamplace ./cmd/libstreamplace/...
 
 .PHONY: golangci-lint
@@ -93,8 +94,8 @@ golangci-lint:
 .PHONY: dev-test
 dev-test:
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
-	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH) \
-	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH) \
+	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH):$(RUST_BUILD_PATH) \
+	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH):$(RUST_BUILD_PATH) \
 	go test -p 1 -timeout 300s ./...
 
 .PHONY: schema
