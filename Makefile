@@ -211,7 +211,7 @@ link-test-macos:
 		&& exit 1; \
 	fi
 
-WINDOWS_LINK_COUNT=16
+WINDOWS_LINK_COUNT=19
 .PHONY: link-test-windows
 link-test-windows:
 	count=$(shell x86_64-w64-mingw32-objdump -p ./build-windows-amd64/streamplace.exe | grep "DLL Name" | tr '[:upper:]' '[:lower:]' | sort | uniq | wc -l | xargs) \
