@@ -77,6 +77,7 @@ dev-setup-meson-compile:
 .PHONY: dev
 dev:
 	cp ./util/streamplace-dev.sh $(BUILDDIR)/streamplace
+	cargo build
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
 	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH) \
 	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH) \
