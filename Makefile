@@ -837,3 +837,7 @@ ci-homebrew:
 	&& git add . \
 	&& git commit -m "Update streamplace $(VERSION)" \
 	&& git push
+
+.PHONY: iroh-streamplace
+iroh-streamplace:
+	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.so
