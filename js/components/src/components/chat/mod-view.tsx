@@ -61,8 +61,6 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   }
 
   const cleanup = () => {
-    setReportModalOpen(false);
-    setReportSubject(null);
     setModMessage(null);
   };
 
@@ -209,6 +207,7 @@ export function ReportButton({
           $type: "com.atproto.repo.strongRef",
           uri: message.uri,
           cid: message.cid,
+          context: message,
         });
       }}
     >
