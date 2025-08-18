@@ -551,6 +551,41 @@ export default function ContentMetadataForm({
                 );
               })}
             </View>
+
+            {/* Content Warning Descriptions */}
+            {contentWarnings.length > 0 && (
+              <YStack gap="$0.5" mt="$1">
+                {contentWarnings.map((warningValue) => {
+                  const warning = CONTENT_WARNINGS.find(
+                    (w) => w.value === warningValue,
+                  );
+                  return warning?.description ? (
+                    <XStack
+                      key={warningValue}
+                      gap="$1"
+                      p="$1"
+                      backgroundColor="$orange2"
+                      borderRadius="$1"
+                      alignItems="flex-start"
+                    >
+                      <Info size={12} color="$orange11" mt={2} />
+                      <YStack flex={1}>
+                        <Paragraph
+                          fontSize="$1"
+                          fontWeight="500"
+                          color="$orange12"
+                        >
+                          {warning.label}
+                        </Paragraph>
+                        <Paragraph fontSize="$1" color="$orange11">
+                          {warning.description}
+                        </Paragraph>
+                      </YStack>
+                    </XStack>
+                  ) : null;
+                })}
+              </YStack>
+            )}
           </YStack>
 
           {/* Distribution Policy Section */}
