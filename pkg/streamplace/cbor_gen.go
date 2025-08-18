@@ -3033,7 +3033,7 @@ func (t *ChatGate) UnmarshalCBOR(r io.Reader) (err error) {
 
 	return nil
 }
-func (t *DefaultMetadata) MarshalCBOR(w io.Writer) error {
+func (t *MetadataConfiguration) MarshalCBOR(w io.Writer) error {
 	if t == nil {
 		_, err := w.Write(cbg.CborNull)
 		return err
@@ -3070,14 +3070,14 @@ func (t *DefaultMetadata) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("place.stream.default.metadata"))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("place.stream.metadata.configuration"))); err != nil {
 		return err
 	}
-	if _, err := cw.WriteString(string("place.stream.default.metadata")); err != nil {
+	if _, err := cw.WriteString(string("place.stream.metadata.configuration")); err != nil {
 		return err
 	}
 
-	// t.ContentRights (streamplace.DefaultMetadata_ContentRights) (struct)
+	// t.ContentRights (streamplace.MetadataConfiguration_ContentRights) (struct)
 	if t.ContentRights != nil {
 
 		if len("contentRights") > 1000000 {
@@ -3132,7 +3132,7 @@ func (t *DefaultMetadata) MarshalCBOR(w io.Writer) error {
 		}
 	}
 
-	// t.DistributionPolicy (streamplace.DefaultMetadata_DistributionPolicy) (struct)
+	// t.DistributionPolicy (streamplace.MetadataConfiguration_DistributionPolicy) (struct)
 	if t.DistributionPolicy != nil {
 
 		if len("distributionPolicy") > 1000000 {
@@ -3153,8 +3153,8 @@ func (t *DefaultMetadata) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
-	*t = DefaultMetadata{}
+func (t *MetadataConfiguration) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataConfiguration{}
 
 	cr := cbg.NewCborReader(r)
 
@@ -3173,7 +3173,7 @@ func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 
 	if extra > cbg.MaxLength {
-		return fmt.Errorf("DefaultMetadata: map struct too large (%d)", extra)
+		return fmt.Errorf("MetadataConfiguration: map struct too large (%d)", extra)
 	}
 
 	n := extra
@@ -3205,7 +3205,7 @@ func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
 
 				t.LexiconTypeID = string(sval)
 			}
-			// t.ContentRights (streamplace.DefaultMetadata_ContentRights) (struct)
+			// t.ContentRights (streamplace.MetadataConfiguration_ContentRights) (struct)
 		case "contentRights":
 
 			{
@@ -3218,7 +3218,7 @@ func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
 					if err := cr.UnreadByte(); err != nil {
 						return err
 					}
-					t.ContentRights = new(DefaultMetadata_ContentRights)
+					t.ContentRights = new(MetadataConfiguration_ContentRights)
 					if err := t.ContentRights.UnmarshalCBOR(cr); err != nil {
 						return xerrors.Errorf("unmarshaling t.ContentRights pointer: %w", err)
 					}
@@ -3265,7 +3265,7 @@ func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
 
 				}
 			}
-			// t.DistributionPolicy (streamplace.DefaultMetadata_DistributionPolicy) (struct)
+			// t.DistributionPolicy (streamplace.MetadataConfiguration_DistributionPolicy) (struct)
 		case "distributionPolicy":
 
 			{
@@ -3278,7 +3278,7 @@ func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
 					if err := cr.UnreadByte(); err != nil {
 						return err
 					}
-					t.DistributionPolicy = new(DefaultMetadata_DistributionPolicy)
+					t.DistributionPolicy = new(MetadataConfiguration_DistributionPolicy)
 					if err := t.DistributionPolicy.UnmarshalCBOR(cr); err != nil {
 						return xerrors.Errorf("unmarshaling t.DistributionPolicy pointer: %w", err)
 					}
@@ -3296,20 +3296,16 @@ func (t *DefaultMetadata) UnmarshalCBOR(r io.Reader) (err error) {
 
 	return nil
 }
-func (t *DefaultMetadata_DistributionPolicy) MarshalCBOR(w io.Writer) error {
+func (t *MetadataConfiguration_DistributionPolicy) MarshalCBOR(w io.Writer) error {
 	if t == nil {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 2
+	fieldCount := 1
 
-	if t.AllowArchive == nil {
-		fieldCount--
-	}
-
-	if t.BroadcastExpiry == nil {
+	if t.DeleteAfter == nil {
 		fieldCount--
 	}
 
@@ -3317,58 +3313,33 @@ func (t *DefaultMetadata_DistributionPolicy) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.AllowArchive (bool) (bool)
-	if t.AllowArchive != nil {
+	// t.DeleteAfter (string) (string)
+	if t.DeleteAfter != nil {
 
-		if len("allowArchive") > 1000000 {
-			return xerrors.Errorf("Value in field \"allowArchive\" was too long")
+		if len("deleteAfter") > 1000000 {
+			return xerrors.Errorf("Value in field \"deleteAfter\" was too long")
 		}
 
-		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("allowArchive"))); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("deleteAfter"))); err != nil {
 			return err
 		}
-		if _, err := cw.WriteString(string("allowArchive")); err != nil {
+		if _, err := cw.WriteString(string("deleteAfter")); err != nil {
 			return err
 		}
 
-		if t.AllowArchive == nil {
+		if t.DeleteAfter == nil {
 			if _, err := cw.Write(cbg.CborNull); err != nil {
 				return err
 			}
 		} else {
-			if err := cbg.WriteBool(w, *t.AllowArchive); err != nil {
+			if len(*t.DeleteAfter) > 1000000 {
+				return xerrors.Errorf("Value in field t.DeleteAfter was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.DeleteAfter))); err != nil {
 				return err
 			}
-		}
-	}
-
-	// t.BroadcastExpiry (string) (string)
-	if t.BroadcastExpiry != nil {
-
-		if len("broadcastExpiry") > 1000000 {
-			return xerrors.Errorf("Value in field \"broadcastExpiry\" was too long")
-		}
-
-		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("broadcastExpiry"))); err != nil {
-			return err
-		}
-		if _, err := cw.WriteString(string("broadcastExpiry")); err != nil {
-			return err
-		}
-
-		if t.BroadcastExpiry == nil {
-			if _, err := cw.Write(cbg.CborNull); err != nil {
-				return err
-			}
-		} else {
-			if len(*t.BroadcastExpiry) > 1000000 {
-				return xerrors.Errorf("Value in field t.BroadcastExpiry was too long")
-			}
-
-			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.BroadcastExpiry))); err != nil {
-				return err
-			}
-			if _, err := cw.WriteString(string(*t.BroadcastExpiry)); err != nil {
+			if _, err := cw.WriteString(string(*t.DeleteAfter)); err != nil {
 				return err
 			}
 		}
@@ -3376,8 +3347,8 @@ func (t *DefaultMetadata_DistributionPolicy) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *DefaultMetadata_DistributionPolicy) UnmarshalCBOR(r io.Reader) (err error) {
-	*t = DefaultMetadata_DistributionPolicy{}
+func (t *MetadataConfiguration_DistributionPolicy) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataConfiguration_DistributionPolicy{}
 
 	cr := cbg.NewCborReader(r)
 
@@ -3396,12 +3367,12 @@ func (t *DefaultMetadata_DistributionPolicy) UnmarshalCBOR(r io.Reader) (err err
 	}
 
 	if extra > cbg.MaxLength {
-		return fmt.Errorf("DefaultMetadata_DistributionPolicy: map struct too large (%d)", extra)
+		return fmt.Errorf("MetadataConfiguration_DistributionPolicy: map struct too large (%d)", extra)
 	}
 
 	n := extra
 
-	nameBuf := make([]byte, 15)
+	nameBuf := make([]byte, 11)
 	for i := uint64(0); i < n; i++ {
 		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
 		if err != nil {
@@ -3417,41 +3388,8 @@ func (t *DefaultMetadata_DistributionPolicy) UnmarshalCBOR(r io.Reader) (err err
 		}
 
 		switch string(nameBuf[:nameLen]) {
-		// t.AllowArchive (bool) (bool)
-		case "allowArchive":
-
-			{
-				b, err := cr.ReadByte()
-				if err != nil {
-					return err
-				}
-				if b != cbg.CborNull[0] {
-					if err := cr.UnreadByte(); err != nil {
-						return err
-					}
-
-					maj, extra, err = cr.ReadHeader()
-					if err != nil {
-						return err
-					}
-					if maj != cbg.MajOther {
-						return fmt.Errorf("booleans must be major type 7")
-					}
-
-					var val bool
-					switch extra {
-					case 20:
-						val = false
-					case 21:
-						val = true
-					default:
-						return fmt.Errorf("booleans are either major type 7, value 20 or 21 (got %d)", extra)
-					}
-					t.AllowArchive = &val
-				}
-			}
-			// t.BroadcastExpiry (string) (string)
-		case "broadcastExpiry":
+		// t.DeleteAfter (string) (string)
+		case "deleteAfter":
 
 			{
 				b, err := cr.ReadByte()
@@ -3468,7 +3406,7 @@ func (t *DefaultMetadata_DistributionPolicy) UnmarshalCBOR(r io.Reader) (err err
 						return err
 					}
 
-					t.BroadcastExpiry = (*string)(&sval)
+					t.DeleteAfter = (*string)(&sval)
 				}
 			}
 
@@ -3482,7 +3420,7 @@ func (t *DefaultMetadata_DistributionPolicy) UnmarshalCBOR(r io.Reader) (err err
 
 	return nil
 }
-func (t *DefaultMetadata_ContentRights) MarshalCBOR(w io.Writer) error {
+func (t *MetadataConfiguration_ContentRights) MarshalCBOR(w io.Writer) error {
 	if t == nil {
 		_, err := w.Write(cbg.CborNull)
 		return err
@@ -3677,8 +3615,8 @@ func (t *DefaultMetadata_ContentRights) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *DefaultMetadata_ContentRights) UnmarshalCBOR(r io.Reader) (err error) {
-	*t = DefaultMetadata_ContentRights{}
+func (t *MetadataConfiguration_ContentRights) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataConfiguration_ContentRights{}
 
 	cr := cbg.NewCborReader(r)
 
@@ -3697,7 +3635,7 @@ func (t *DefaultMetadata_ContentRights) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 
 	if extra > cbg.MaxLength {
-		return fmt.Errorf("DefaultMetadata_ContentRights: map struct too large (%d)", extra)
+		return fmt.Errorf("MetadataConfiguration_ContentRights: map struct too large (%d)", extra)
 	}
 
 	n := extra

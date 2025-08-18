@@ -235,7 +235,7 @@ export function useCreateStreamRecord() {
       // Check if default metadata record already exists
       await agent.com.atproto.repo.getRecord({
         repo: agent.did,
-        collection: "place.stream.default.metadata",
+        collection: "place.stream.metadata.configuration",
         rkey: "self",
       });
       // Record exists, no need to create
@@ -248,19 +248,18 @@ export function useCreateStreamRecord() {
           err.message.includes("RecordNotFound"))
       ) {
         const defaultMetadataRecord = {
-          $type: "place.stream.default.metadata",
+          $type: "place.stream.metadata.configuration",
           createdAt: new Date().toISOString(),
           contentWarnings: [],
           distributionPolicy: {
-            allowArchive: true,
-            broadcastExpiry: undefined, // No expiration means forever
+            deleteAfter: undefined, // No expiration means forever
           },
           contentRights: {},
         };
 
         await agent.com.atproto.repo.createRecord({
           repo: agent.did,
-          collection: "place.stream.default.metadata",
+          collection: "place.stream.metadata.configuration",
           rkey: "self",
           record: defaultMetadataRecord,
         });

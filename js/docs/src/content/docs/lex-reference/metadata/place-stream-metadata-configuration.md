@@ -1,6 +1,6 @@
 ---
-title: place.stream.default.metadata
-description: Reference for the place.stream.default.metadata lexicon
+title: place.stream.metadata.configuration
+description: Reference for the place.stream.metadata.configuration lexicon
 ---
 
 **Lexicon Version:** 1
@@ -38,13 +38,13 @@ Content rights and attribution information.
 
 **Properties:**
 
-| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                              |
-| ----------------- | --------- | ----- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `place.stream.default.metadata#all-rights-reserved`, `place.stream.default.metadata#cc0_1__0`, `place.stream.default.metadata#cc-by_4_00`, `place.stream.default.metadata#cc-by-sa_4__0`, `place.stream.default.metadata#cc-by-nc_4__0`, `place.stream.default.metadata#cc-by-nc-sa_4__0`, `place.stream.default.metadata#cc-by-nd_4__0`, `place.stream.default.metadata#cc-by-nc-nd_4__0` |
-| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Name              | Type      | Req'd | Description                      | Constraints                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | --------- | ----- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `creator`         | `string`  | ❌    | Name of the creator of the work. |                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `copyrightNotice` | `string`  | ❌    | Copyright notice for the work.   |                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `copyrightYear`   | `integer` | ❌    | Year of creation or publication. |                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `license`         | `string`  | ❌    | License URL or identifier.       | Known Values: `place.stream.metadata.configuration#all-rights-reserved`, `place.stream.metadata.configuration#cc0_1__0`, `place.stream.metadata.configuration#cc-by_4_00`, `place.stream.metadata.configuration#cc-by-sa_4__0`, `place.stream.metadata.configuration#cc-by-nc_4__0`, `place.stream.metadata.configuration#cc-by-nc-sa_4__0`, `place.stream.metadata.configuration#cc-by-nd_4__0`, `place.stream.metadata.configuration#cc-by-nc-nd_4__0` |
+| `creditLine`      | `string`  | ❌    | Credit line for the work.        |                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ---
 
@@ -58,10 +58,9 @@ Distribution and rebroadcast policy.
 
 **Properties:**
 
-| Name              | Type      | Req'd | Description                                                                                              | Constraints        |
-| ----------------- | --------- | ----- | -------------------------------------------------------------------------------------------------------- | ------------------ |
-| `allowArchive`    | `boolean` | ❌    | Whether nodes can archive this stream.                                                                   |                    |
-| `broadcastExpiry` | `string`  | ❌    | When rebroadcast permissions expire. If not specified, there is no expiration on rebroadcast permission. | Format: `datetime` |
+| Name          | Type     | Req'd | Description                                                                                 | Constraints        |
+| ------------- | -------- | ----- | ------------------------------------------------------------------------------------------- | ------------------ |
+| `deleteAfter` | `string` | ❌    | When this stream should be deleted. If not specified, the stream will be kept indefinitely. | Format: `datetime` |
 
 ---
 
@@ -271,7 +270,7 @@ your work with credit, but cannot change it or use it commercially.
 ```json
 {
   "lexicon": 1,
-  "id": "place.stream.default.metadata",
+  "id": "place.stream.metadata.configuration",
   "defs": {
     "main": {
       "type": "record",
@@ -285,16 +284,16 @@ your work with credit, but cannot change it or use it commercially.
             "items": {
               "type": "string",
               "knownValues": [
-                "place.stream.default.metadata#death",
-                "place.stream.default.metadata#drugUse",
-                "place.stream.default.metadata#fantasyViolence",
-                "place.stream.default.metadata#flashingLights",
-                "place.stream.default.metadata#language",
-                "place.stream.default.metadata#nudity",
-                "place.stream.default.metadata#PII",
-                "place.stream.default.metadata#sexuality",
-                "place.stream.default.metadata#suffering",
-                "place.stream.default.metadata#violence"
+                "place.stream.metadata.configuration#death",
+                "place.stream.metadata.configuration#drugUse",
+                "place.stream.metadata.configuration#fantasyViolence",
+                "place.stream.metadata.configuration#flashingLights",
+                "place.stream.metadata.configuration#language",
+                "place.stream.metadata.configuration#nudity",
+                "place.stream.metadata.configuration#PII",
+                "place.stream.metadata.configuration#sexuality",
+                "place.stream.metadata.configuration#suffering",
+                "place.stream.metadata.configuration#violence"
               ]
             },
             "description": "Content warnings for this stream."
@@ -330,14 +329,14 @@ your work with credit, but cannot change it or use it commercially.
           "type": "string",
           "description": "License URL or identifier.",
           "knownValues": [
-            "place.stream.default.metadata#all-rights-reserved",
-            "place.stream.default.metadata#cc0_1__0",
-            "place.stream.default.metadata#cc-by_4_00",
-            "place.stream.default.metadata#cc-by-sa_4__0",
-            "place.stream.default.metadata#cc-by-nc_4__0",
-            "place.stream.default.metadata#cc-by-nc-sa_4__0",
-            "place.stream.default.metadata#cc-by-nd_4__0",
-            "place.stream.default.metadata#cc-by-nc-nd_4__0"
+            "place.stream.metadata.configuration#all-rights-reserved",
+            "place.stream.metadata.configuration#cc0_1__0",
+            "place.stream.metadata.configuration#cc-by_4_00",
+            "place.stream.metadata.configuration#cc-by-sa_4__0",
+            "place.stream.metadata.configuration#cc-by-nc_4__0",
+            "place.stream.metadata.configuration#cc-by-nc-sa_4__0",
+            "place.stream.metadata.configuration#cc-by-nd_4__0",
+            "place.stream.metadata.configuration#cc-by-nc-nd_4__0"
           ]
         },
         "creditLine": {
@@ -350,14 +349,10 @@ your work with credit, but cannot change it or use it commercially.
       "type": "object",
       "description": "Distribution and rebroadcast policy.",
       "properties": {
-        "allowArchive": {
-          "type": "boolean",
-          "description": "Whether nodes can archive this stream."
-        },
-        "broadcastExpiry": {
+        "deleteAfter": {
           "type": "string",
           "format": "datetime",
-          "description": "When rebroadcast permissions expire. If not specified, there is no expiration on rebroadcast permission."
+          "description": "When this stream should be deleted. If not specified, the stream will be kept indefinitely."
         }
       }
     },

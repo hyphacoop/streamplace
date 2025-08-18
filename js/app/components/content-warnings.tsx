@@ -57,7 +57,7 @@ export default function ContentWarnings({
             Content Warning:{" "}
             {warnings
               .map((warning) => {
-                // Handle both formats: "flashingLights" and "place.stream.default.metadata#flashingLights"
+                // Handle both formats: "flashingLights" and "place.stream.metadata.configuration#flashingLights"
                 const cleanWarning = warning.includes("#")
                   ? warning.split("#")[1]
                   : warning;
