@@ -78,7 +78,10 @@ dev-setup-meson-compile:
 .PHONY: dev-rust
 dev-rust:
 	cargo build
-	$(MAKE) iroh-streamplace-codegen
+	EXT=so; \
+	if [ "$(BUILDOS)" = "darwin" ]; then EXT=dylib; fi; \
+	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT \
+	&& cp ./target/debug/libiroh_streamplace.$$EXT build-darwin-arm64/rust/iroh-streamplace/libiroh_streamplace.$$EXT
 
 .PHONY: dev
 dev:
@@ -844,9 +847,3 @@ ci-homebrew:
 	&& git add . \
 	&& git commit -m "Update streamplace $(VERSION)" \
 	&& git push
-
-.PHONY: iroh-streamplace-codegen
-iroh-streamplace-codegen:
-	EXT=so; \
-	if [ "$(BUILDOS)" = "darwin" ]; then EXT=dylib; fi; \
-	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT
