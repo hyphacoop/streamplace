@@ -135,7 +135,7 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 		Recorder: metrics.NewRecorder(metrics.Config{}),
 	})
 	var xrpc http.Handler
-	xrpc, err := spxrpc.NewServer(ctx, a.CLI, a.Model, a.op, mdlw)
+	xrpc, err := spxrpc.NewServer(ctx, a.CLI, a.Model, a.op, mdlw, a.ATSync)
 	if err != nil {
 		return nil, err
 	}
