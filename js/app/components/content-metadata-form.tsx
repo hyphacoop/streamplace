@@ -140,31 +140,18 @@ const LICENSE_DESCRIPTIONS: Record<string, string> = {
     "Custom license. Define your own terms for how others can use, adapt, or share your content.",
 };
 
-// Helper to generate custom date options
+// Helper to generate custom date options starting from today
 const generateDateOptions = () => {
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
+  const months = Array.from({ length: 12 }, (_, i) =>
+    new Date(2000, i, 1).toLocaleString("en-US", { month: "long" }),
+  );
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = Array.from({ length: 60 }, (_, i) =>
     String(i).padStart(2, "0"),
   );
 
-  return { months, years, days, hours, minutes };
+  return { months, days, hours, minutes };
 };
 
 export default function ContentMetadataForm({
@@ -215,7 +202,7 @@ export default function ContentMetadataForm({
   // Track if we've already populated the form to prevent overriding user input
   const [hasPopulated, setHasPopulated] = useState(false);
 
-  const { months, years, days, hours, minutes } = generateDateOptions();
+  const { months, days, hours, minutes } = generateDateOptions();
 
   // Fetch existing metadata on component mount
   useEffect(() => {
@@ -363,6 +350,24 @@ export default function ContentMetadataForm({
 
   const handleSaveMetadata = async () => {
     try {
+      // Validate date if expiry is set
+      if (
+        customMonth &&
+        customDay &&
+        customYear &&
+        customHour &&
+        customMinute
+      ) {
+        const monthIndex = months.indexOf(customMonth);
+        const year = parseInt(customYear);
+        const day = parseInt(customDay);
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+        if (day > daysInMonth) {
+          throw new Error(`Invalid date: ${customMonth} ${day}, ${customYear}`);
+        }
+      }
+
       // First ensure we have a stream key
       if (!hasStreamKey) {
         await dispatch(createStreamKeyRecord({ store: true })).unwrap();
@@ -603,32 +608,23 @@ export default function ContentMetadataForm({
                     </Select.Content>
                   </Select>
 
-                  <Select
+                  <Input
+                    placeholder={String(new Date().getFullYear())}
                     value={customYear}
-                    onValueChange={setCustomYear}
-                    size="$1"
-                  >
-                    <Select.Trigger width={65} size="$2">
-                      <Select.Value placeholder="Year" fontSize="$1" />
-                    </Select.Trigger>
-                    <Select.Content zIndex={200000}>
-                      <Select.Viewport>
-                        <Select.Group>
-                          {years.map((year) => (
-                            <Select.Item
-                              key={year}
-                              value={String(year)}
-                              index={years.indexOf(year)}
-                            >
-                              <Select.ItemText fontSize="$1">
-                                {year}
-                              </Select.ItemText>
-                            </Select.Item>
-                          ))}
-                        </Select.Group>
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select>
+                    onChangeText={setCustomYear}
+                    size="$2"
+                    fontSize="$1"
+                    width={65}
+                    maxLength={4}
+                    keyboardType="numeric"
+                    borderWidth={1}
+                    borderColor="$gray8"
+                    backgroundColor="$gray2"
+                    focusStyle={{
+                      borderColor: "$blue10",
+                      backgroundColor: "$gray3",
+                    }}
+                  />
                 </XStack>
 
                 {/* Time Selection */}
