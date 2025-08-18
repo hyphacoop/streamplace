@@ -23,6 +23,13 @@ SHARED_LD_LIBRARY_PATH=$(shell pwd)/$(BUILDDIR)/lib/usr/local/lib/x86_64-linux-g
 SHARED_DYLD_LIBRARY_PATH=$(shell pwd)/$(BUILDDIR)/lib/usr/local/lib
 SHARED_PKG_CONFIG_PATH=$(shell pwd)/$(BUILDDIR)/meson-uninstalled
 
+ifeq ($(BUILDOS),darwin)
+	SHARED_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH)
+endif
+ifeq ($(BUILDOS),linux)
+	SHARED_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH)
+endif
+
 .PHONY: version
 version:
 	@go run ./pkg/config/git/git.go -v \
@@ -81,7 +88,8 @@ dev-rust:
 	EXT=so; \
 	if [ "$(BUILDOS)" = "darwin" ]; then EXT=dylib; fi; \
 	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT \
-	&& cp ./target/debug/libiroh_streamplace.$$EXT build-darwin-arm64/rust/iroh-streamplace/libiroh_streamplace.$$EXT
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT \
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(SHARED_LIBRARY_PATH)/libiroh_streamplace.$$EXT
 
 .PHONY: dev
 dev:
