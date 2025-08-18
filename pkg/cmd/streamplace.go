@@ -152,11 +152,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	// Load content filters after CLI parsing
-	if err := cli.LoadContentFilters(); err != nil {
-		return fmt.Errorf("failed to load content filters: %w", err)
-	}
-
 	err = flag.CommandLine.Parse(nil)
 	if err != nil {
 		return err
