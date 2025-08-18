@@ -16,6 +16,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
+import { schemas } from "streamplace";
 import {
   Adapt,
   Button,
@@ -58,87 +59,123 @@ interface ContentMetadataFormProps {
   showUpdateButton?: boolean;
 }
 
-// Content warnings list based on lexicon metadata.json
-const CONTENT_WARNINGS = [
-  { value: "place.stream.default.metadata#death", label: "Death" },
-  { value: "place.stream.default.metadata#drugUse", label: "Drug Use" },
-  {
-    value: "place.stream.default.metadata#fantasyViolence",
-    label: "Fantasy Violence",
-  },
-  {
-    value: "place.stream.default.metadata#flashingLights",
-    label: "Flashing Lights",
-  },
-  { value: "place.stream.default.metadata#language", label: "Language" },
-  { value: "place.stream.default.metadata#nudity", label: "Nudity" },
-  {
-    value: "place.stream.default.metadata#PII",
-    label: "Personally Identifiable Information",
-  },
-  { value: "place.stream.default.metadata#sexuality", label: "Sexuality" },
-  {
-    value: "place.stream.default.metadata#suffering",
-    label: "Upsetting or Disturbing",
-  },
-  { value: "place.stream.default.metadata#violence", label: "Violence" },
-];
+// Content warnings derived from lexicon schema
+const CONTENT_WARNINGS = (() => {
+  // Find the metadata schema
+  const metadataSchema = schemas.find(
+    (schema) => schema.id === "place.stream.default.metadata",
+  );
+  if (!metadataSchema?.defs) {
+    throw new Error("Could not find place.stream.default.metadata schema");
+  }
+
+  const contentWarningConstants = [
+    { constant: "place.stream.default.metadata#death", label: "Death" },
+    { constant: "place.stream.default.metadata#drugUse", label: "Drug Use" },
+    {
+      constant: "place.stream.default.metadata#fantasyViolence",
+      label: "Fantasy Violence",
+    },
+    {
+      constant: "place.stream.default.metadata#flashingLights",
+      label: "Flashing Lights",
+    },
+    { constant: "place.stream.default.metadata#language", label: "Language" },
+    { constant: "place.stream.default.metadata#nudity", label: "Nudity" },
+    {
+      constant: "place.stream.default.metadata#PII",
+      label: "Personally Identifiable Information",
+    },
+    { constant: "place.stream.default.metadata#sexuality", label: "Sexuality" },
+    {
+      constant: "place.stream.default.metadata#suffering",
+      label: "Upsetting or Disturbing",
+    },
+    { constant: "place.stream.default.metadata#violence", label: "Violence" },
+  ];
+
+  return contentWarningConstants.map(({ constant, label }) => {
+    // Extract the key from the constant by splitting on '#'
+    const key = constant.split("#")[1];
+    const def = metadataSchema.defs[key];
+    const description = def?.description || `Description for ${label}`;
+    return {
+      value: constant,
+      label: label,
+      description: description,
+    };
+  });
+})();
 
 // No predefined options - just optional expiry date-time picker
 
-const LICENSE_OPTIONS = [
-  {
-    value: "place.stream.default.metadata#all-rights-reserved",
-    label: "All Rights Reserved",
-  },
-  {
-    value: "place.stream.default.metadata#cc0_1__0",
-    label: "CC0 (Public Domain) 1.0",
-  },
-  { value: "place.stream.default.metadata#cc-by_4__0", label: "CC BY 4.0" },
-  {
-    value: "place.stream.default.metadata#cc-by-sa_4__0",
-    label: "CC BY-SA 4.0",
-  },
-  {
-    value: "place.stream.default.metadata#cc-by-nc_4__0",
-    label: "CC BY-NC 4.0",
-  },
-  {
-    value: "place.stream.default.metadata#cc-by-nc-sa_4__0",
-    label: "CC BY-NC-SA 4.0",
-  },
-  {
-    value: "place.stream.default.metadata#cc-by-nd_4__0",
-    label: "CC BY-ND 4.0",
-  },
-  {
-    value: "place.stream.default.metadata#cc-by-nc-nd_4__0",
-    label: "CC BY-NC-ND 4.0",
-  },
-  { value: "custom", label: "Custom License" },
-];
+// License options derived from lexicon schema
+const LICENSE_OPTIONS = (() => {
+  // Find the metadata schema
+  const metadataSchema = schemas.find(
+    (schema) => schema.id === "place.stream.default.metadata",
+  );
+  if (!metadataSchema?.defs) {
+    throw new Error("Could not find place.stream.default.metadata schema");
+  }
 
-const LICENSE_DESCRIPTIONS: Record<string, string> = {
-  "place.stream.default.metadata#all-rights-reserved":
-    "All rights reserved to the creator — others cannot use, modify, or share without explicit authorization.",
-  "place.stream.default.metadata#cc0_1__0":
-    "Public domain dedication. You waive all copyright and related rights where possible. Others may copy, modify, distribute, or perform your work for any purpose without attribution.",
-  "place.stream.default.metadata#cc-by_4__0":
-    "Attribution required. Others may copy, distribute, remix, and build upon your work, even commercially, if they credit you.",
-  "place.stream.default.metadata#cc-by-sa_4__0":
-    "Attribution + share-alike. Others may adapt and build upon your work, even commercially, if they credit you and license their new creations under identical terms.",
-  "place.stream.default.metadata#cc-by-nc_4__0":
-    "Attribution + non-commercial. Others may adapt and build upon your work for non-commercial purposes only, and must credit you.",
-  "place.stream.default.metadata#cc-by-nc-sa_4__0":
-    "Attribution + non-commercial + share-alike. Others may adapt and build upon your work for non-commercial purposes only, must credit you, and must license their new creations under identical terms.",
-  "place.stream.default.metadata#cc-by-nd_4__0":
-    "Attribution + no derivatives. Others may reuse your work, even commercially, but it must remain unchanged and you must be credited.",
-  "place.stream.default.metadata#cc-by-nc-nd_4__0":
-    "Attribution + non-commercial + no derivatives. Others may download and share your work with credit, but cannot change it or use it commercially.",
-  custom:
-    "Custom license. Define your own terms for how others can use, adapt, or share your content.",
-};
+  const licenseConstants = [
+    {
+      constant: "place.stream.default.metadata#all-rights-reserved",
+      label: "All Rights Reserved",
+    },
+    {
+      constant: "place.stream.default.metadata#cc0_1__0",
+      label: "CC0 (Public Domain) 1.0",
+    },
+    {
+      constant: "place.stream.default.metadata#cc-by_4__0",
+      label: "CC BY 4.0",
+    },
+    {
+      constant: "place.stream.default.metadata#cc-by-sa_4__0",
+      label: "CC BY-SA 4.0",
+    },
+    {
+      constant: "place.stream.default.metadata#cc-by-nc_4__0",
+      label: "CC BY-NC 4.0",
+    },
+    {
+      constant: "place.stream.default.metadata#cc-by-nc-sa_4__0",
+      label: "CC BY-NC-SA 4.0",
+    },
+    {
+      constant: "place.stream.default.metadata#cc-by-nd_4__0",
+      label: "CC BY-ND 4.0",
+    },
+    {
+      constant: "place.stream.default.metadata#cc-by-nc-nd_4__0",
+      label: "CC BY-NC-ND 4.0",
+    },
+  ];
+
+  const options = licenseConstants.map(({ constant, label }) => {
+    // Extract the key from the constant by splitting on '#'
+    const key = constant.split("#")[1];
+    const def = metadataSchema.defs[key];
+    const description = def?.description || `Description for ${label}`;
+    return {
+      value: constant,
+      label: label,
+      description: description,
+    };
+  });
+
+  // Add custom license option
+  options.push({
+    value: "custom",
+    label: "Custom License",
+    description:
+      "Custom license. Define your own terms for how others can use, adapt, or share your content.",
+  });
+
+  return options;
+})();
 
 // Helper to generate custom date options
 const generateDateOptions = () => {
@@ -906,20 +943,25 @@ export default function ContentMetadataForm({
                   </Select>
 
                   {/* License Description */}
-                  {selectedLicense && LICENSE_DESCRIPTIONS[selectedLicense] && (
-                    <XStack
-                      gap="$1"
-                      p="$1"
-                      backgroundColor="$gray2"
-                      borderRadius="$1"
-                      alignItems="flex-start"
-                    >
-                      <Info size={12} color="$gray11" mt={2} />
-                      <Paragraph fontSize="$1" color="$gray11" flex={1}>
-                        {LICENSE_DESCRIPTIONS[selectedLicense]}
-                      </Paragraph>
-                    </XStack>
-                  )}
+                  {(() => {
+                    const selectedOption = LICENSE_OPTIONS.find(
+                      (option) => option.value === selectedLicense,
+                    );
+                    return selectedOption?.description ? (
+                      <XStack
+                        gap="$1"
+                        p="$1"
+                        backgroundColor="$gray2"
+                        borderRadius="$1"
+                        alignItems="flex-start"
+                      >
+                        <Info size={12} color="$gray11" mt={2} />
+                        <Paragraph fontSize="$1" color="$gray11" flex={1}>
+                          {selectedOption.description}
+                        </Paragraph>
+                      </XStack>
+                    ) : null;
+                  })()}
                 </YStack>
 
                 {selectedLicense === "custom" && (
