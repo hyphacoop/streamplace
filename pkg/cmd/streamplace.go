@@ -271,10 +271,15 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err2.AsError() != nil {
 		return err2.AsError()
 	}
-	rep, err := iroh.NewIrohReplicator(ctx, irohEndpoint, cli.Peers)
+	// TODO: something more useful
+	defaultTopic := "iroh-topic"
+	rep, err := iroh.NewIrohReplicator(ctx, irohEndpoint, defaultTopic)
 	if err != nil {
 		return err
 	}
+	addr := irohEndpoint.NodeAddr()
+	fmt.Printf("iroh running, ID: %s\nHome Relay: %s\n", addr.NodeId().String(), *addr.RelayUrl())
+
 	mod, err := model.MakeDB(cli.DBPath)
 	if err != nil {
 		return err
@@ -318,18 +323,12 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	rec, err2 := irohStreamplace.NewReceiver(irohEndpoint, mm)
-	if err2.AsError() != nil {
-		return err2.AsError()
-	}
-	go func() {
-		// for now to make sure things are still alive, just print our info every 15 seconds
-		for {
-			addr := rec.NodeAddr()
-			fmt.Printf("iroh replicator running, ID: %s\nHome Relay: %s\n", addr.NodeId().String(), *addr.RelayUrl())
-			time.Sleep(15 * time.Second)
-		}
-	}()
+	// TODO: based on a flag, subscribe
+	// rec, err2 := irohStreamplace.NewReceiver(irohEndpoint, mm)
+	// if err2.AsError() != nil {
+	// 	return err2.AsError()
+	// }
+	// rec.Subscribe(peer, defaultTopic)
 
 	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
 	if err != nil {
