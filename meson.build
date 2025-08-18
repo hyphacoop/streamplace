@@ -8,7 +8,7 @@ project(
     'auto_features': 'disabled',
     'force_fallback_for': 'gio-2.0,gstreamer-controller-1.0,gstreamer-app-1.0,gstreamer-pbutils-1.0,glib-2.0,gobject-2.0,gio-2.0,gio-unix-2.0,fdk-aac,zlib,libffi,pcre2,intl,x264,freetype2,libpng,libjpeg,fontconfig,pango,opus,fribidi,harfbuzz,nettle,cairo,pixman,expat,openssl',
     'buildtype': 'debugoptimized',
-    'prefix': '/usr/local', # otherwise mac meson will try and do /opt/homebrew sometimes
+    'prefix': meson.current_build_dir(), # otherwise mac meson will try and do /opt/homebrew sometimes
   },
 )
 
@@ -35,9 +35,16 @@ flags = custom_target(
   build_always_stale: true,
 )
 
-version_cmd = run_command(prog_go, 'run', 'pkg/config/git/git.go', '-v', check: true, env: {
-  'CGO_ENABLED': '0',
-})
+version_cmd = run_command(
+  prog_go,
+  'run',
+  'pkg/config/git/git.go',
+  '-v',
+  check: true,
+  env: {
+    'CGO_ENABLED': '0',
+  },
+)
 version = version_cmd.stdout().strip()
 
 streamplace_go = custom_target(
@@ -49,7 +56,7 @@ streamplace_go = custom_target(
 
 # todo: teach meson to automatically populate this CPATH thing for go
 env = {
-  'PKG_CONFIG_PATH': meson.current_build_dir() + '/meson-uninstalled',
+  'PKG_CONFIG_PATH': meson.current_build_dir() + '/lib/pkgconfig',
 }
 
 GOOS = meson.get_external_property('GOOS', host_machine.system())
@@ -234,7 +241,12 @@ libstreamplace = custom_target(
 subdir('rust/iroh-streamplace')
 
 if host_machine.system() == 'darwin'
-  streamplace_deps += [dependency('appleframeworks', modules: ['CoreFoundation', 'Security', 'SystemConfiguration'])]
+  streamplace_deps += [
+    dependency(
+      'appleframeworks',
+      modules: ['CoreFoundation', 'Security', 'SystemConfiguration'],
+    ),
+  ]
 endif
 if host_machine.system() == 'windows'
   add_project_link_arguments(
@@ -279,7 +291,7 @@ if build_machine.system() == 'linux' and host_machine.system() == 'darwin'
       '-o', '@OUTPUT0@',
       '-tags', 'netgo',
       'streamplace.go',
-      '@INPUT1@'
+      '@INPUT1@',
     ],
     build_always_stale: true,
     env: env,
@@ -294,7 +306,6 @@ else
     link_with: [c2pa_go_dep, iroh_streamplace_dep],
   )
 endif
-
 
 if not meson.is_cross_build()
   test(

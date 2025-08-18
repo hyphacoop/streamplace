@@ -19,16 +19,7 @@ ifeq ($(BUILDARCH),x86_64)
 		BUILDARCH=amd64
 endif
 BUILDDIR?=build-$(BUILDOS)-$(BUILDARCH)
-SHARED_LD_LIBRARY_PATH=$(shell pwd)/$(BUILDDIR)/lib/usr/local/lib/x86_64-linux-gnu
-SHARED_DYLD_LIBRARY_PATH=$(shell pwd)/$(BUILDDIR)/lib/usr/local/lib
-SHARED_PKG_CONFIG_PATH=$(shell pwd)/$(BUILDDIR)/meson-uninstalled
-
-ifeq ($(BUILDOS),darwin)
-	SHARED_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH)
-endif
-ifeq ($(BUILDOS),linux)
-	SHARED_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH)
-endif
+SHARED_PKG_CONFIG_PATH=$(shell pwd)/$(BUILDDIR)/lib/pkgconfig
 
 .PHONY: version
 version:
@@ -57,6 +48,7 @@ app: schema install
 node: schema
 	$(MAKE) meson-setup
 	meson compile -C $(BUILDDIR) streamplace
+	meson install --no-rebuild -C $(BUILDDIR)
 
 js/app/dist/index.html: install
 	pnpm run build
@@ -80,7 +72,7 @@ dev-setup-meson-configure:
 .PHONY: dev-setup-meson-compile
 dev-setup-meson-compile:
 	meson compile -C $(BUILDDIR) streamplace
-	meson install --destdir lib -C $(BUILDDIR)
+	meson install --no-rebuild -C $(BUILDDIR)
 
 .PHONY: dev-rust
 dev-rust:
@@ -89,15 +81,13 @@ dev-rust:
 	if [ "$(BUILDOS)" = "darwin" ]; then EXT=dylib; fi; \
 	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT \
 	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT \
-	&& cp ./target/debug/libiroh_streamplace.$$EXT $(SHARED_LIBRARY_PATH)/libiroh_streamplace.$$EXT
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/lib/libiroh_streamplace.$$EXT
 
 .PHONY: dev
 dev:
 	cp ./util/streamplace-dev.sh $(BUILDDIR)/streamplace
 	$(MAKE) dev-rust
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
-	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH) \
-	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH) \
 	go build -o $(BUILDDIR)/libstreamplace ./cmd/libstreamplace/...
 
 .PHONY: golangci-lint
@@ -108,8 +98,6 @@ golangci-lint:
 .PHONY: dev-test
 dev-test:
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
-	LD_LIBRARY_PATH=$(SHARED_LD_LIBRARY_PATH) \
-	DYLD_LIBRARY_PATH=$(SHARED_DYLD_LIBRARY_PATH) \
 	go test -p 1 -timeout 300s ./...
 
 .PHONY: schema
@@ -584,7 +572,7 @@ golangci-lint-container: docker-build-builder
 	podman run \
 		-v $$(pwd):$$(pwd) \
 		-w $$(pwd) \
-		-e PKG_CONFIG_PATH=$$(pwd)/build-linux-amd64/meson-uninstalled \
+		-e PKG_CONFIG_PATH=$$(pwd)/build-linux-amd64/lib/pkgconfig \
 		-d \
 		--name golangci-lint \
 		dist.stream.place/streamplace/streamplace:$(BUILDER_TARGET) \

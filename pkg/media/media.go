@@ -31,7 +31,7 @@ import (
 	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
-// #cgo pkg-config: streamplacedeps-uninstalled
+// #cgo pkg-config: streamplacedeps
 import "C"
 
 const CertFile = "cert.pem"
