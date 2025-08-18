@@ -434,6 +434,8 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		err = atsync.Model.CreateMetadataConfiguration(ctx, metadata)
 		if err != nil {
 			log.Error(ctx, "failed to create metadata configuration", "err", err)
+		} else {
+			go atsync.Bus.Publish(userDID, rec)
 		}
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))

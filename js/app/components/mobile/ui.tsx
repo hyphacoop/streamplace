@@ -6,6 +6,7 @@ import {
   useAvatars,
   useCameraToggle,
   useLivestreamInfo,
+  useLivestreamStore,
   usePlayerDimensions,
   usePlayerStore,
   useSegmentDimensions,
@@ -14,8 +15,6 @@ import {
 } from "@streamplace/components";
 import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
-import { useContentRights } from "hooks/useContentRights";
-import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, TouchableWithoutFeedback } from "react-native";
@@ -49,10 +48,13 @@ export function MobileUi() {
   const { isPlayerRatioGreater } = useSegmentDimensions();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
+  const metadataConfiguration = useLivestreamStore(
+    (x) => x.metadataConfiguration,
+  );
 
-  // Get content warnings and rights for the streamer
-  const { warnings: contentWarnings } = useContentWarnings(profile?.did);
-  const { contentRights } = useContentRights(profile?.did);
+  // Get content warnings and rights from WebSocket metadata configuration
+  const contentWarnings = metadataConfiguration?.contentWarnings || [];
+  const contentRights = metadataConfiguration?.contentRights;
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);

@@ -96,6 +96,13 @@ export const handleWebSocketMessages = (
         pendingHides: newPendingHides,
       };
       state = reduceChat(state, [], [], [hiddenMessageUri]);
+    } else if (
+      (message as any).$type === "place.stream.metadata.configuration"
+    ) {
+      state = {
+        ...state,
+        metadataConfiguration: message,
+      };
     }
   }
   return reduceChat(state, [], [], []);
