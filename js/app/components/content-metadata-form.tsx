@@ -431,13 +431,17 @@ export default function ContentMetadataForm({
         }),
       };
 
+      const distributionPolicyData = {
+        ...(distributionPolicy.deleteAfter && {
+          deleteAfter: distributionPolicy.deleteAfter,
+        }),
+      };
+
       const metadataPayload = {
         ...(contentWarnings.length > 0 && { contentWarnings }),
-        distributionPolicy: {
-          ...(distributionPolicy.deleteAfter && {
-            deleteAfter: distributionPolicy.deleteAfter,
-          }),
-        },
+        ...(Object.keys(distributionPolicyData).length > 0 && {
+          distributionPolicy: distributionPolicyData,
+        }),
         ...(Object.keys(contentRightsData).length > 0 && {
           contentRights: contentRightsData,
         }),

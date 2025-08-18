@@ -59,7 +59,7 @@ export const contentMetadataSlice = createAppSlice({
           $type: "place.stream.metadata.configuration",
           createdAt: new Date().toISOString(),
           ...(contentWarnings.length > 0 && { contentWarnings }),
-          distributionPolicy,
+          ...distributionPolicy,
           ...(contentRights &&
             Object.keys(contentRights).length > 0 && {
               contentRights,
@@ -156,7 +156,12 @@ export const contentMetadataSlice = createAppSlice({
           ...(livestreamRef && { livestreamRef }),
           createdAt: new Date().toISOString(),
           ...(contentWarnings.length > 0 && { contentWarnings }),
-          distributionPolicy,
+          ...(distributionPolicy &&
+            Object.keys(distributionPolicy).some(
+              (key) => distributionPolicy[key] !== undefined,
+            ) && {
+              distributionPolicy,
+            }),
           ...(contentRights &&
             Object.keys(contentRights).length > 0 && {
               contentRights,
