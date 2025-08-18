@@ -115,9 +115,9 @@ type Model interface {
 	CreateLabel(label *Label) error
 	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
 
-	CreateDefaultMetadata(ctx context.Context, metadata *DefaultMetadata) error
-	GetDefaultMetadata(ctx context.Context, repoDID string) (*DefaultMetadata, error)
-	DeleteDefaultMetadata(ctx context.Context, repoDID string) error
+	CreateMetadataConfiguration(ctx context.Context, metadata *MetadataConfiguration) error
+	GetMetadataConfiguration(ctx context.Context, repoDID string) (*MetadataConfiguration, error)
+	DeleteMetadataConfiguration(ctx context.Context, repoDID string) error
 }
 
 func MakeDB(dbURL string) (Model, error) {
@@ -182,7 +182,7 @@ func MakeDB(dbURL string) (Model, error) {
 		XrpcStreamEvent{},
 		Labeler{},
 		Label{},
-		DefaultMetadata{},
+		MetadataConfiguration{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

@@ -977,7 +977,7 @@ export const blueskySlice = createAppSlice({
           // Check if default metadata record already exists
           await bluesky.pdsAgent.com.atproto.repo.getRecord({
             repo: did,
-            collection: "place.stream.default.metadata",
+            collection: "place.stream.metadata.configuration",
             rkey: "self",
           });
           // Record exists, no need to create
@@ -990,19 +990,18 @@ export const blueskySlice = createAppSlice({
               err.message.includes("RecordNotFound"))
           ) {
             const defaultMetadataRecord = {
-              $type: "place.stream.default.metadata",
+              $type: "place.stream.metadata.configuration",
               createdAt: new Date().toISOString(),
               contentWarnings: [],
               distributionPolicy: {
-                allowArchive: true,
-                broadcastExpiry: undefined, // No expiration means forever
+                deleteAfter: undefined, // No expiration means forever
               },
               contentRights: {},
             };
 
             await bluesky.pdsAgent.com.atproto.repo.createRecord({
               repo: did,
-              collection: "place.stream.default.metadata",
+              collection: "place.stream.metadata.configuration",
               rkey: "self",
               record: defaultMetadataRecord,
             });

@@ -66,11 +66,11 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 
 	// Add database metadata if available
 	if mb.model != nil {
-		metadata, err := mb.model.GetDefaultMetadata(ctx, streamerName)
+		metadata, err := mb.model.GetMetadataConfiguration(ctx, streamerName)
 		if err != nil {
 			log.Warn(ctx, "ManifestBuilder: failed to retrieve metadata, using defaults", "error", err, "did", streamerName)
 		} else if metadata != nil {
-			streamplaceMetadata, err := metadata.ToStreamplaceDefaultMetadata()
+			streamplaceMetadata, err := metadata.ToStreamplaceMetadataConfiguration()
 			if err != nil {
 				log.Warn(ctx, "ManifestBuilder: failed to convert metadata, using defaults", "error", err, "did", streamerName)
 			} else {
@@ -94,7 +94,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 	return &manifest, nil
 }
 
-func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *streamplace.DefaultMetadata) obj {
+func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *streamplace.MetadataConfiguration) obj {
 	if metadata.ContentRights != nil {
 		// TODO: We are currently validating the creator in the ValidateMP4 function to be the streamer DID
 		// if metadata.ContentRights.Creator != nil {
@@ -120,13 +120,13 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 		if metadata.ContentRights.License != nil {
 			// Map internal license codes to known licenses
 			var licenseCodeMap = map[string]string{
-				"place.stream.default.metadata#cc0_1__0": "http://creativecommons.org/publicdomain/zero/1.0/",
-				"place.stream.default.metadata#cc-by_4__0": "http://creativecommons.org/licenses/by/4.0/",
-				"place.stream.default.metadata#cc-by-sa_4__0": "http://creativecommons.org/licenses/by-sa/4.0/",
-				"place.stream.default.metadata#cc-by-nc_4__0": "http://creativecommons.org/licenses/by-nc/4.0/",
-				"place.stream.default.metadata#cc-by-nc-sa_4__0": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
-				"place.stream.default.metadata#cc-by-nd_4__0": "http://creativecommons.org/licenses/by-nd/4.0/",
-				"place.stream.default.metadata#cc-by-nc-nd_4__0": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
+				"place.stream.metadata.configuration#cc0_1__0": "http://creativecommons.org/publicdomain/zero/1.0/",
+				"place.stream.metadata.configuration#cc-by_4__0": "http://creativecommons.org/licenses/by/4.0/",
+				"place.stream.metadata.configuration#cc-by-sa_4__0": "http://creativecommons.org/licenses/by-sa/4.0/",
+				"place.stream.metadata.configuration#cc-by-nc_4__0": "http://creativecommons.org/licenses/by-nc/4.0/",
+				"place.stream.metadata.configuration#cc-by-nc-sa_4__0": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+				"place.stream.metadata.configuration#cc-by-nd_4__0": "http://creativecommons.org/licenses/by-nd/4.0/",
+				"place.stream.metadata.configuration#cc-by-nc-nd_4__0": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
 			}
 			if mappedCode, exists := licenseCodeMap[*metadata.ContentRights.License]; exists {
 				// it's a known linked license, so we can use the mapped code
@@ -134,7 +134,7 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 			} else {
 				// This is either an unknown or an unlinked license, so we need to put it in the UsageTerms field
 				// which allows for licensing terms expressed in free text
-				if *metadata.ContentRights.License == "place.stream.default.metadata#all-rights-reserved" {
+				if *metadata.ContentRights.License == "place.stream.metadata.configuration#all-rights-reserved" {
 					// if all rights reserved, we can put the string "All rights reserved" in the UsageTerms field
 					mani["assertions"].([]obj)[1]["data"].(obj)["xmpRights:UsageTerms"] = "All rights reserved"
 				} else {
@@ -148,16 +148,16 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 	if len(metadata.ContentWarnings) > 0 {
 		// Map internal warning codes to C2PA warning codes
 		var warningCodeMap = map[string]string{
-			"place.stream.default.metadata#death":           "cwarn:death",
-			"place.stream.default.metadata#drugUse":         "cwarn:drugUse",
-			"place.stream.default.metadata#fantasyViolence": "cwarn:fantasyViolence",
-			"place.stream.default.metadata#flashingLights":  "cwarn:flashingLights",
-			"place.stream.default.metadata#language":        "cwarn:language",
-			"place.stream.default.metadata#nudity":          "cwarn:nudity",
-			"place.stream.default.metadata#PII":             "cwarn:PII",
-			"place.stream.default.metadata#sexuality":       "cwarn:sexuality",
-			"place.stream.default.metadata#suffering":       "cwarn:suffering",
-			"place.stream.default.metadata#violence":        "cwarn:violence",
+			"place.stream.metadata.configuration#death":           "cwarn:death",
+			"place.stream.metadata.configuration#drugUse":         "cwarn:drugUse",
+			"place.stream.metadata.configuration#fantasyViolence": "cwarn:fantasyViolence",
+			"place.stream.metadata.configuration#flashingLights":  "cwarn:flashingLights",
+			"place.stream.metadata.configuration#language":        "cwarn:language",
+			"place.stream.metadata.configuration#nudity":          "cwarn:nudity",
+			"place.stream.metadata.configuration#PII":             "cwarn:PII",
+			"place.stream.metadata.configuration#sexuality":       "cwarn:sexuality",
+			"place.stream.metadata.configuration#suffering":       "cwarn:suffering",
+			"place.stream.metadata.configuration#violence":        "cwarn:violence",
 		}
 		
 		for i, warning := range metadata.ContentWarnings {

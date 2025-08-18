@@ -302,7 +302,7 @@ func extractDistributionPolicy(mani *manifeststore.Manifest) *DistributionPolicy
 		return nil
 	}
 	
-	expiry, ok := policyMap["broadcastExpiry"]
+	expiry, ok := policyMap["deleteAfter"]
 	if !ok {
 		return nil
 	}

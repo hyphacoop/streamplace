@@ -24,14 +24,13 @@ export const contentMetadataSlice = createAppSlice({
         {
           contentWarnings = [],
           distributionPolicy = {
-            allowArchive: true,
+            deleteAfter: undefined,
           },
           contentRights = {},
         }: {
           contentWarnings?: string[];
           distributionPolicy?: {
-            allowArchive?: boolean;
-            broadcastExpiry?: string;
+            deleteAfter?: string;
           };
           contentRights?: {
             creator?: string;
@@ -57,7 +56,7 @@ export const contentMetadataSlice = createAppSlice({
         }
 
         const metadataRecord = {
-          $type: "place.stream.default.metadata",
+          $type: "place.stream.metadata.configuration",
           createdAt: new Date().toISOString(),
           ...(contentWarnings.length > 0 && { contentWarnings }),
           distributionPolicy,
@@ -69,7 +68,7 @@ export const contentMetadataSlice = createAppSlice({
 
         const result = await bluesky.pdsAgent.com.atproto.repo.createRecord({
           repo: did,
-          collection: "place.stream.default.metadata",
+          collection: "place.stream.metadata.configuration",
           rkey: "self",
           record: metadataRecord,
         });
@@ -117,8 +116,7 @@ export const contentMetadataSlice = createAppSlice({
           livestreamRef,
           contentWarnings = [],
           distributionPolicy = {
-            allowArchive: true,
-            broadcastExpiry: undefined, // No expiration means forever
+            deleteAfter: undefined, // No expiration means forever
           },
           contentRights = {},
         }: {
@@ -129,8 +127,7 @@ export const contentMetadataSlice = createAppSlice({
           };
           contentWarnings?: string[];
           distributionPolicy?: {
-            allowArchive?: boolean;
-            broadcastExpiry?: string;
+            deleteAfter?: string;
           };
           contentRights?: {
             year?: string;
@@ -155,7 +152,7 @@ export const contentMetadataSlice = createAppSlice({
         }
 
         const metadataRecord = {
-          $type: "place.stream.default.metadata",
+          $type: "place.stream.metadata.configuration",
           ...(livestreamRef && { livestreamRef }),
           createdAt: new Date().toISOString(),
           ...(contentWarnings.length > 0 && { contentWarnings }),
@@ -168,14 +165,14 @@ export const contentMetadataSlice = createAppSlice({
 
         const result = await bluesky.pdsAgent.com.atproto.repo.putRecord({
           repo: did,
-          collection: "place.stream.default.metadata",
+          collection: "place.stream.metadata.configuration",
           rkey: "self",
           record: metadataRecord,
         });
 
         return {
           record: metadataRecord,
-          uri: `at://${did}/place.stream.default.metadata/self`,
+          uri: `at://${did}/place.stream.metadata.configuration/self`,
           cid: result.data.cid,
         };
       },
@@ -282,14 +279,14 @@ export const contentMetadataSlice = createAppSlice({
 
           console.log(`[getContentMetadata] Attempting to fetch record from:`, {
             repo: targetDid,
-            collection: "place.stream.default.metadata",
+            collection: "place.stream.metadata.configuration",
             rkey,
             usingPDS: targetPDS || "default",
           });
 
           const result = await agent.com.atproto.repo.getRecord({
             repo: targetDid,
-            collection: "place.stream.default.metadata",
+            collection: "place.stream.metadata.configuration",
             rkey,
           });
 

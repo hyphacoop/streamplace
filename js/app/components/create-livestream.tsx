@@ -38,8 +38,7 @@ export default function CreateLivestream() {
   const [contentMetadata, setContentMetadata] = useState<ContentMetadata>({
     contentWarnings: [],
     distributionPolicy: {
-      allowArchive: true,
-      broadcastExpiry: undefined, // No expiration means forever
+      deleteAfter: undefined, // No expiration means forever
     },
     contentRights: {},
   });
@@ -63,8 +62,7 @@ export default function CreateLivestream() {
       setContentMetadata({
         contentWarnings: [],
         distributionPolicy: {
-          allowArchive: true,
-          broadcastExpiry: undefined, // No expiration means forever
+          deleteAfter: undefined, // No expiration means forever
         },
         contentRights: {},
       });

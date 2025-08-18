@@ -55,7 +55,7 @@ export default function ContentRights({
 
   // Handle license
   if (contentRights.license) {
-    // Handle both formats: "cc0_1__0" and "place.stream.default.metadata#cc0_1__0"
+    // Handle both formats: "cc0_1__0" and "place.stream.metadata.configuration#cc0_1__0"
     const cleanLicense = contentRights.license.includes("#")
       ? contentRights.license.split("#")[1]
       : contentRights.license;

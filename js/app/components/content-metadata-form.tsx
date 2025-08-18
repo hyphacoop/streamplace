@@ -35,8 +35,7 @@ import {
 
 // Type definitions for metadata
 export interface DistributionPolicy {
-  allowArchive: boolean;
-  broadcastExpiry?: string;
+  deleteAfter?: string;
 }
 
 export interface Rights {
@@ -63,35 +62,49 @@ interface ContentMetadataFormProps {
 const CONTENT_WARNINGS = (() => {
   // Find the metadata schema
   const metadataSchema = schemas.find(
-    (schema) => schema.id === "place.stream.default.metadata",
+    (schema) => schema.id === "place.stream.metadata.configuration",
   );
   if (!metadataSchema?.defs) {
-    throw new Error("Could not find place.stream.default.metadata schema");
+    throw new Error(
+      "Could not find place.stream.metadata.configuration schema",
+    );
   }
 
   const contentWarningConstants = [
-    { constant: "place.stream.default.metadata#death", label: "Death" },
-    { constant: "place.stream.default.metadata#drugUse", label: "Drug Use" },
+    { constant: "place.stream.metadata.configuration#death", label: "Death" },
     {
-      constant: "place.stream.default.metadata#fantasyViolence",
+      constant: "place.stream.metadata.configuration#drugUse",
+      label: "Drug Use",
+    },
+    {
+      constant: "place.stream.metadata.configuration#fantasyViolence",
       label: "Fantasy Violence",
     },
     {
-      constant: "place.stream.default.metadata#flashingLights",
+      constant: "place.stream.metadata.configuration#flashingLights",
       label: "Flashing Lights",
     },
-    { constant: "place.stream.default.metadata#language", label: "Language" },
-    { constant: "place.stream.default.metadata#nudity", label: "Nudity" },
     {
-      constant: "place.stream.default.metadata#PII",
+      constant: "place.stream.metadata.configuration#language",
+      label: "Language",
+    },
+    { constant: "place.stream.metadata.configuration#nudity", label: "Nudity" },
+    {
+      constant: "place.stream.metadata.configuration#PII",
       label: "Personally Identifiable Information",
     },
-    { constant: "place.stream.default.metadata#sexuality", label: "Sexuality" },
     {
-      constant: "place.stream.default.metadata#suffering",
+      constant: "place.stream.metadata.configuration#sexuality",
+      label: "Sexuality",
+    },
+    {
+      constant: "place.stream.metadata.configuration#suffering",
       label: "Upsetting or Disturbing",
     },
-    { constant: "place.stream.default.metadata#violence", label: "Violence" },
+    {
+      constant: "place.stream.metadata.configuration#violence",
+      label: "Violence",
+    },
   ];
 
   return contentWarningConstants.map(({ constant, label }) => {
@@ -113,43 +126,45 @@ const CONTENT_WARNINGS = (() => {
 const LICENSE_OPTIONS = (() => {
   // Find the metadata schema
   const metadataSchema = schemas.find(
-    (schema) => schema.id === "place.stream.default.metadata",
+    (schema) => schema.id === "place.stream.metadata.configuration",
   );
   if (!metadataSchema?.defs) {
-    throw new Error("Could not find place.stream.default.metadata schema");
+    throw new Error(
+      "Could not find place.stream.metadata.configuration schema",
+    );
   }
 
   const licenseConstants = [
     {
-      constant: "place.stream.default.metadata#all-rights-reserved",
+      constant: "place.stream.metadata.configuration#all-rights-reserved",
       label: "All Rights Reserved",
     },
     {
-      constant: "place.stream.default.metadata#cc0_1__0",
+      constant: "place.stream.metadata.configuration#cc0_1__0",
       label: "CC0 (Public Domain) 1.0",
     },
     {
-      constant: "place.stream.default.metadata#cc-by_4__0",
+      constant: "place.stream.metadata.configuration#cc-by_4__0",
       label: "CC BY 4.0",
     },
     {
-      constant: "place.stream.default.metadata#cc-by-sa_4__0",
+      constant: "place.stream.metadata.configuration#cc-by-sa_4__0",
       label: "CC BY-SA 4.0",
     },
     {
-      constant: "place.stream.default.metadata#cc-by-nc_4__0",
+      constant: "place.stream.metadata.configuration#cc-by-nc_4__0",
       label: "CC BY-NC 4.0",
     },
     {
-      constant: "place.stream.default.metadata#cc-by-nc-sa_4__0",
+      constant: "place.stream.metadata.configuration#cc-by-nc-sa_4__0",
       label: "CC BY-NC-SA 4.0",
     },
     {
-      constant: "place.stream.default.metadata#cc-by-nd_4__0",
+      constant: "place.stream.metadata.configuration#cc-by-nd_4__0",
       label: "CC BY-ND 4.0",
     },
     {
-      constant: "place.stream.default.metadata#cc-by-nc-nd_4__0",
+      constant: "place.stream.metadata.configuration#cc-by-nc-nd_4__0",
       label: "CC BY-NC-ND 4.0",
     },
   ];
@@ -216,11 +231,7 @@ export default function ContentMetadataForm({
     initialMetadata?.contentWarnings || [],
   );
   const [distributionPolicy, setDistributionPolicy] =
-    useState<DistributionPolicy>(
-      initialMetadata?.distributionPolicy || {
-        allowArchive: true,
-      },
-    );
+    useState<DistributionPolicy>(initialMetadata?.distributionPolicy || {});
   const [contentRights, setContentRights] = useState<Rights>(
     initialMetadata?.contentRights || {},
   );
@@ -228,7 +239,7 @@ export default function ContentMetadataForm({
     initialMetadata?.contentRights?.license || "",
   );
 
-  // Date picker state - only set broadcastExpiry when user actually selects
+  // Date picker state - only set deleteAfter when user actually selects
   const [customDay, setCustomDay] = useState("");
   const [customMonth, setCustomMonth] = useState("");
   const [customYear, setCustomYear] = useState("");
@@ -260,15 +271,12 @@ export default function ContentMetadataForm({
       // Update distribution policy
       if (record.distributionPolicy) {
         setDistributionPolicy({
-          allowArchive: record.distributionPolicy.allowArchive ?? true,
-          broadcastExpiry: record.distributionPolicy.broadcastExpiry,
+          deleteAfter: record.distributionPolicy.deleteAfter,
         });
 
-        // Parse broadcast expiry date if it exists
-        if (record.distributionPolicy.broadcastExpiry) {
-          const expiryDate = new Date(
-            record.distributionPolicy.broadcastExpiry,
-          );
+        // Parse delete after date if it exists
+        if (record.distributionPolicy.deleteAfter) {
+          const expiryDate = new Date(record.distributionPolicy.deleteAfter);
           if (!isNaN(expiryDate.getTime())) {
             setCustomMonth(months[expiryDate.getMonth()]);
             setCustomDay(String(expiryDate.getDate()));
@@ -303,8 +311,7 @@ export default function ContentMetadataForm({
       const metadata: ContentMetadata = {
         contentWarnings: record.contentWarnings || [],
         distributionPolicy: {
-          allowArchive: record.distributionPolicy?.allowArchive ?? true,
-          broadcastExpiry: record.distributionPolicy?.broadcastExpiry,
+          deleteAfter: record.distributionPolicy?.deleteAfter,
         },
         contentRights: record.contentRights || {},
       };
@@ -346,9 +353,9 @@ export default function ContentMetadataForm({
     onMetadataChange(metadata);
   };
 
-  // Update broadcastExpiry only when user has selected all date/time fields
+  // Update deleteAfter only when user has selected all date/time fields
   React.useEffect(() => {
-    // Only set broadcastExpiry if user has selected all required fields
+    // Only set deleteAfter if user has selected all required fields
     if (customMonth && customDay && customYear && customHour && customMinute) {
       const monthIndex = months.indexOf(customMonth);
       // Handle 12-hour format correctly
@@ -368,12 +375,12 @@ export default function ContentMetadataForm({
       );
       const isoString = date.toISOString();
       handleDistributionPolicyChange({
-        broadcastExpiry: isoString,
+        deleteAfter: isoString,
       });
     } else {
-      // Clear broadcastExpiry if fields are incomplete
+      // Clear deleteAfter if fields are incomplete
       handleDistributionPolicyChange({
-        broadcastExpiry: undefined,
+        deleteAfter: undefined,
       });
     }
   }, [
@@ -427,9 +434,8 @@ export default function ContentMetadataForm({
       const metadataPayload = {
         ...(contentWarnings.length > 0 && { contentWarnings }),
         distributionPolicy: {
-          allowArchive: distributionPolicy.allowArchive,
-          ...(distributionPolicy.broadcastExpiry && {
-            broadcastExpiry: distributionPolicy.broadcastExpiry,
+          ...(distributionPolicy.deleteAfter && {
+            deleteAfter: distributionPolicy.deleteAfter,
           }),
         },
         ...(Object.keys(contentRightsData).length > 0 && {
@@ -790,68 +796,13 @@ export default function ContentMetadataForm({
                   </XStack>
                 </XStack>
 
-                {distributionPolicy.broadcastExpiry && (
+                {distributionPolicy.deleteAfter && (
                   <Paragraph fontSize="$1" color="$gray11" mt="$0.5">
                     Until:{" "}
-                    {new Date(
-                      distributionPolicy.broadcastExpiry,
-                    ).toLocaleString()}
+                    {new Date(distributionPolicy.deleteAfter).toLocaleString()}
                   </Paragraph>
                 )}
               </YStack>
-            </YStack>
-
-            <YStack gap="$0.5">
-              <XStack
-                alignItems="center"
-                gap="$1"
-                paddingVertical={2}
-                paddingHorizontal={4}
-                backgroundColor={
-                  distributionPolicy.allowArchive ? "$gray3" : "transparent"
-                }
-                borderRadius="$1"
-                cursor="pointer"
-                hoverStyle={{ backgroundColor: "$gray3" }}
-                pressStyle={{ backgroundColor: "$gray4" }}
-                onPress={() => {
-                  handleDistributionPolicyChange({
-                    allowArchive: !distributionPolicy.allowArchive,
-                  });
-                }}
-              >
-                <Checkbox
-                  id="allow-archive"
-                  checked={distributionPolicy.allowArchive}
-                  size="$2"
-                  borderWidth={1.5}
-                  borderColor={
-                    distributionPolicy.allowArchive ? "$blue10" : "$gray8"
-                  }
-                  backgroundColor={
-                    distributionPolicy.allowArchive ? "$blue3" : "transparent"
-                  }
-                  pointerEvents="none"
-                  disabled
-                >
-                  <Checkbox.Indicator>
-                    <View
-                      backgroundColor="$blue10"
-                      width={6}
-                      height={6}
-                      borderRadius="$0.5"
-                    />
-                  </Checkbox.Indicator>
-                </Checkbox>
-                <Label
-                  fontSize="$1"
-                  cursor="pointer"
-                  userSelect="none"
-                  pointerEvents="none"
-                >
-                  Allow viewers to save this stream
-                </Label>
-              </XStack>
             </YStack>
           </YStack>
         </View>
