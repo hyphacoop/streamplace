@@ -29,7 +29,8 @@ export function BottomMetadata({
   const segment = useLivestreamStore((x) => x.segment);
 
   // Get content warnings and rights directly from the latest segment
-  const contentWarnings = (segment?.contentWarnings?.warnings as string[]) || [];
+  const contentWarnings =
+    (segment?.contentWarnings?.warnings as string[]) || [];
   const contentRights = segment?.contentRights;
 
   return (
@@ -103,7 +104,9 @@ export function BottomMetadata({
         (contentRights && Object.keys(contentRights).length > 0)) && (
         <View style={[py[2]]}>
           <ContentWarnings warnings={contentWarnings} compact={true} />
-                        {contentRights && <ContentRights contentRights={contentRights} compact={true} />}
+          {contentRights && (
+            <ContentRights contentRights={contentRights} compact={true} />
+          )}
         </View>
       )}
     </View>

@@ -88,7 +88,10 @@ const CONTENT_WARNINGS = (() => {
       constant: "place.stream.metadata.contentWarnings#language",
       label: "Language",
     },
-    { constant: "place.stream.metadata.contentWarnings#nudity", label: "Nudity" },
+    {
+      constant: "place.stream.metadata.contentWarnings#nudity",
+      label: "Nudity",
+    },
     {
       constant: "place.stream.metadata.contentWarnings#PII",
       label: "Personally Identifiable Information",
@@ -119,7 +122,6 @@ const CONTENT_WARNINGS = (() => {
     };
   });
 })();
-
 
 // License options derived from lexicon schema
 const LICENSE_OPTIONS = (() => {
@@ -263,8 +265,8 @@ export default function ContentMetadataForm({
       const record = lastCreatedRecord.record;
 
       // Update content warnings
-      if (record.contentWarnings && Array.isArray(record.contentWarnings)) {
-        setContentWarnings(record.contentWarnings);
+      if (record.contentWarnings && record.contentWarnings.warnings) {
+        setContentWarnings(record.contentWarnings.warnings);
       }
 
       // Update distribution policy
@@ -308,7 +310,7 @@ export default function ContentMetadataForm({
 
       // Update the parent component with the loaded metadata
       const metadata: ContentMetadata = {
-        contentWarnings: record.contentWarnings || [],
+        contentWarnings: record.contentWarnings || { warnings: [] },
         distributionPolicy: {
           deleteAfter: record.distributionPolicy?.deleteAfter,
         },
@@ -1007,8 +1009,6 @@ export default function ContentMetadataForm({
                     />
                   </YStack>
 
-
-
                   {/* TODO: Add creator - currently not supported by the backend     
                   <YStack gap="$0.5" f={2}>
                     <Label fontSize="$1" fontWeight="500">
@@ -1032,7 +1032,7 @@ export default function ContentMetadataForm({
                       }}
                     />
                   </YStack>
-                  */} 
+                  */}
                 </XStack>
 
                 <YStack gap="$0.5">

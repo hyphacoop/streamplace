@@ -36,7 +36,7 @@ export default function CreateLivestream() {
     undefined,
   );
   const [contentMetadata, setContentMetadata] = useState<ContentMetadata>({
-    contentWarnings: [],
+    contentWarnings: { warnings: [] },
     distributionPolicy: {
       deleteAfter: undefined, // No expiration means forever
     },
@@ -60,7 +60,7 @@ export default function CreateLivestream() {
       setTitle("");
       setCustomThumbnail(undefined);
       setContentMetadata({
-        contentWarnings: [],
+        contentWarnings: { warnings: [] },
         distributionPolicy: {
           deleteAfter: undefined, // No expiration means forever
         },

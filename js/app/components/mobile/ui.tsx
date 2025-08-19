@@ -51,7 +51,8 @@ export function MobileUi() {
   const segment = useLivestreamStore((x) => x.segment);
 
   // Get content warnings and rights directly from the latest segment
-  const contentWarnings = (segment?.contentWarnings?.warnings as string[]) || [];
+  const contentWarnings =
+    (segment?.contentWarnings?.warnings as string[]) || [];
   const contentRights = segment?.contentRights;
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
@@ -176,7 +177,9 @@ export function MobileUi() {
                 ]}
               >
                 <ContentWarnings warnings={contentWarnings} compact={true} />
-                {contentRights && <ContentRights contentRights={contentRights} compact={true} />}
+                {contentRights && (
+                  <ContentRights contentRights={contentRights} compact={true} />
+                )}
               </View>
             )}
 
