@@ -241,6 +241,17 @@ func (a *StreamplaceAPI) HandleWebsocket(ctx context.Context) httprouter.Handle 
 			}
 		}()
 
+		go func() {
+			metadataConfig, err := a.Model.GetMetadataConfiguration(ctx, repoDID)
+			if err != nil {
+				log.Error(ctx, "could not get metadata configuration", "error", err)
+				return
+			}
+			if metadataConfig != nil {
+				initialBurst <- metadataConfig
+			}
+		}()
+
 		for {
 			messageType, message, err := conn.ReadMessage()
 			if err != nil {
