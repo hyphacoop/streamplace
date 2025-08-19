@@ -80,6 +80,28 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 		}
 	}
 
+	// Add livestream title if available
+	livestreamTitle := "livestream" // default fallback
+	if mb.model != nil {
+		livestream, err := mb.model.GetLatestLivestreamForRepo(streamerName)
+		if err != nil {
+			log.Warn(ctx, "ManifestBuilder: failed to retrieve livestream, using default title", "error", err, "did", streamerName)
+		} else if livestream != nil {
+			// Extract title from livestream record
+			livestreamRecord, err := livestream.ToLivestreamView()
+			if err != nil {
+				log.Warn(ctx, "ManifestBuilder: failed to convert livestream to view, using default title", "error", err, "did", streamerName)
+			} else {
+				if ls, ok := livestreamRecord.Record.Val.(*streamplace.Livestream); ok {
+					livestreamTitle = ls.Title
+				}
+			}
+		}
+	}
+
+	// Update the manifest title with the retrieved livestream title
+	mani["assertions"].([]obj)[1]["data"].(obj)["dc:title"] = []string{livestreamTitle}
+
 	// Convert to C2PA manifest
 	manifestBs, err := json.Marshal(mani)
 	if err != nil {
