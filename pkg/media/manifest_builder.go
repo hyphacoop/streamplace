@@ -69,7 +69,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 	if mb.model != nil {
 		metadata, err := mb.model.GetMetadataConfiguration(ctx, streamerName)
 		if err != nil {
-			log.Warn(ctx, "ManifestBuilder: failed to retrieve metadata, using defaults", "error", err, "did", streamerName)
+			return nil, fmt.Errorf("failed to retrieve metadata: %w", err)
 		} else if metadata != nil {
 			streamplaceMetadata, err := metadata.ToStreamplaceMetadataConfiguration()
 			if err != nil {
