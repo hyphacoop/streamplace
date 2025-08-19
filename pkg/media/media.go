@@ -26,6 +26,7 @@ import (
 
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa/generated/manifeststore"
 	"github.com/piprate/json-gold/ld"
+	"stream.place/streamplace/pkg/constants"
 )
 
 // #cgo pkg-config: streamplacedeps-uninstalled
@@ -34,7 +35,7 @@ import "C"
 const CertFile = "cert.pem"
 const SegmentsDir = "segments"
 
-var StreamplaceMetadata = "place.stream.metadata"
+var StreamplaceMetadata = constants.StreamplaceMetadata
 
 type MediaManager struct {
 	cli                 *config.CLI

@@ -7,6 +7,7 @@ import (
 
 	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/streamplace"
@@ -47,7 +48,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 				},
 			},
 			{
-				"label": StreamplaceMetadata,
+				"label": constants.StreamplaceMetadata,
 				"data": obj{
 					"@context": obj{
 						"dc":          "http://purl.org/dc/elements/1.1/",
@@ -93,6 +94,35 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 	return &manifest, nil
 }
 
+// getLicenseCodeMap returns a map of internal license codes to their corresponding URLs
+func getLicenseCodeMap() map[string]string {
+	return map[string]string{
+		constants.LicenseCC0_1_0:      constants.LicenseURLCC0_1_0,
+		constants.LicenseCCBy_4_0:     constants.LicenseURLCCBy_4_0,
+		constants.LicenseCCBySA_4_0:   constants.LicenseURLCCBySA_4_0,
+		constants.LicenseCCByNC_4_0:   constants.LicenseURLCCByNC_4_0,
+		constants.LicenseCCByNCSA_4_0: constants.LicenseURLCCByNCSA_4_0,
+		constants.LicenseCCByND_4_0:   constants.LicenseURLCCByND_4_0,
+		constants.LicenseCCByNCND_4_0: constants.LicenseURLCCByNCND_4_0,
+	}
+}
+
+// getWarningCodeMap returns a map of internal warning codes to their corresponding C2PA codes
+func getWarningCodeMap() map[string]string {
+	return map[string]string{
+		constants.WarningDeath:           constants.WarningC2PADeath,
+		constants.WarningDrugUse:         constants.WarningC2PADrugUse,
+		constants.WarningFantasyViolence: constants.WarningC2PAFantasyViolence,
+		constants.WarningFlashingLights:  constants.WarningC2PAFlashingLights,
+		constants.WarningLanguage:        constants.WarningC2PALanguage,
+		constants.WarningNudity:          constants.WarningC2PANudity,
+		constants.WarningPII:             constants.WarningC2PAPII,
+		constants.WarningSexuality:       constants.WarningC2PASexuality,
+		constants.WarningSuffering:       constants.WarningC2PASuffering,
+		constants.WarningViolence:        constants.WarningC2PAViolence,
+	}
+}
+
 func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *streamplace.MetadataConfiguration) obj {
 	if metadata.ContentRights != nil {
 		// TODO: We are currently validating the creator in the ValidateMP4 function to be the streamer DID
@@ -118,22 +148,14 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 		// Build the license field
 		if metadata.ContentRights.License != nil {
 			// Map internal license codes to known licenses
-			var licenseCodeMap = map[string]string{
-				"place.stream.metadata.configuration#cc0_1__0":         "http://creativecommons.org/publicdomain/zero/1.0/",
-				"place.stream.metadata.configuration#cc-by_4__0":       "http://creativecommons.org/licenses/by/4.0/",
-				"place.stream.metadata.configuration#cc-by-sa_4__0":    "http://creativecommons.org/licenses/by-sa/4.0/",
-				"place.stream.metadata.configuration#cc-by-nc_4__0":    "http://creativecommons.org/licenses/by-nc/4.0/",
-				"place.stream.metadata.configuration#cc-by-nc-sa_4__0": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
-				"place.stream.metadata.configuration#cc-by-nd_4__0":    "http://creativecommons.org/licenses/by-nd/4.0/",
-				"place.stream.metadata.configuration#cc-by-nc-nd_4__0": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
-			}
+			licenseCodeMap := getLicenseCodeMap()
 			if mappedCode, exists := licenseCodeMap[*metadata.ContentRights.License]; exists {
 				// it's a known linked license, so we can use the mapped code
 				mani["assertions"].([]obj)[1]["data"].(obj)["Iptc4xmpExt:LinkedEncRightsExpr"] = mappedCode
 			} else {
 				// This is either an unknown or an unlinked license, so we need to put it in the UsageTerms field
 				// which allows for licensing terms expressed in free text
-				if *metadata.ContentRights.License == "place.stream.metadata.configuration#all-rights-reserved" {
+				if *metadata.ContentRights.License == constants.LicenseAllRightsReserved {
 					// if all rights reserved, we can put the string "All rights reserved" in the UsageTerms field
 					mani["assertions"].([]obj)[1]["data"].(obj)["xmpRights:UsageTerms"] = "All rights reserved"
 				} else {
@@ -146,18 +168,7 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 
 	if metadata.ContentWarnings != nil && len(metadata.ContentWarnings.Warnings) > 0 {
 		// Map internal warning codes to C2PA warning codes
-		var warningCodeMap = map[string]string{
-			"place.stream.metadata.configuration#death":           "cwarn:death",
-			"place.stream.metadata.configuration#drugUse":         "cwarn:drugUse",
-			"place.stream.metadata.configuration#fantasyViolence": "cwarn:fantasyViolence",
-			"place.stream.metadata.configuration#flashingLights":  "cwarn:flashingLights",
-			"place.stream.metadata.configuration#language":        "cwarn:language",
-			"place.stream.metadata.configuration#nudity":          "cwarn:nudity",
-			"place.stream.metadata.configuration#PII":             "cwarn:PII",
-			"place.stream.metadata.configuration#sexuality":       "cwarn:sexuality",
-			"place.stream.metadata.configuration#suffering":       "cwarn:suffering",
-			"place.stream.metadata.configuration#violence":        "cwarn:violence",
-		}
+		warningCodeMap := getWarningCodeMap()
 
 		for i, warning := range metadata.ContentWarnings.Warnings {
 			if mappedCode, exists := warningCodeMap[warning]; exists {
