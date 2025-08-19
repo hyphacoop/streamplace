@@ -70,21 +70,21 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 	startTime := time.Now()
 	_, span := otel.Tracer("signer").Start(ctx, "SignMP4_Ext")
 	defer span.End()
-	
+
 	// Generate manifest using shared builder
 	manifest, err := ms.BuildManifest(ctx, start)
 	if err != nil {
 		log.Error(ctx, "MediaSignerExt: failed to build manifest", "error", err)
 		return nil, fmt.Errorf("failed to build manifest: %w", err)
 	}
-	
+
 	// Serialize manifest to JSON
 	manifestJSON, err := json.Marshal(manifest)
 	if err != nil {
 		log.Error(ctx, "MediaSignerExt: failed to serialize manifest", "error", err)
 		return nil, fmt.Errorf("failed to serialize manifest: %w", err)
 	}
-	
+
 	// Get the path to the current executable
 	execPath, err := os.Executable()
 	if err != nil {
@@ -133,7 +133,7 @@ func (ms *MediaSignerExt) SignMP4(ctx context.Context, input io.ReadSeeker, star
 		log.Error(ctx, "MediaSignerExt: subprocess failed", "error", err, "stderr", stderr.String())
 		return nil, fmt.Errorf("command failed: %w, stderr: %s", err, stderr.String())
 	}
-	
+
 	spmetrics.SigningDuration.WithLabelValues(ms.streamer).Observe(float64(time.Since(startTime).Milliseconds()))
 	return stdout.Bytes(), nil
 }

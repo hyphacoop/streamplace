@@ -47,7 +47,7 @@ export interface Rights {
 }
 
 export interface ContentMetadata {
-  contentWarnings: string[];
+  contentWarnings: { warnings: string[] };
   distributionPolicy: DistributionPolicy;
   contentRights: Rights;
 }
@@ -60,49 +60,52 @@ interface ContentMetadataFormProps {
 
 // Content warnings derived from lexicon schema
 const CONTENT_WARNINGS = (() => {
-  // Find the metadata schema
-  const metadataSchema = schemas.find(
-    (schema) => schema.id === "place.stream.metadata.configuration",
+  // Find the content warnings schema
+  const contentWarningsSchema = schemas.find(
+    (schema) => schema.id === "place.stream.metadata.contentWarnings",
   );
-  if (!metadataSchema?.defs) {
+  if (!contentWarningsSchema?.defs) {
     throw new Error(
-      "Could not find place.stream.metadata.configuration schema",
+      "Could not find place.stream.metadata.contentWarnings schema",
     );
   }
 
   const contentWarningConstants = [
-    { constant: "place.stream.metadata.configuration#death", label: "Death" },
+    { constant: "place.stream.metadata.contentWarnings#death", label: "Death" },
     {
-      constant: "place.stream.metadata.configuration#drugUse",
+      constant: "place.stream.metadata.contentWarnings#drugUse",
       label: "Drug Use",
     },
     {
-      constant: "place.stream.metadata.configuration#fantasyViolence",
+      constant: "place.stream.metadata.contentWarnings#fantasyViolence",
       label: "Fantasy Violence",
     },
     {
-      constant: "place.stream.metadata.configuration#flashingLights",
+      constant: "place.stream.metadata.contentWarnings#flashingLights",
       label: "Flashing Lights",
     },
     {
-      constant: "place.stream.metadata.configuration#language",
+      constant: "place.stream.metadata.contentWarnings#language",
       label: "Language",
     },
-    { constant: "place.stream.metadata.configuration#nudity", label: "Nudity" },
     {
-      constant: "place.stream.metadata.configuration#PII",
+      constant: "place.stream.metadata.contentWarnings#nudity",
+      label: "Nudity",
+    },
+    {
+      constant: "place.stream.metadata.contentWarnings#PII",
       label: "Personally Identifiable Information",
     },
     {
-      constant: "place.stream.metadata.configuration#sexuality",
+      constant: "place.stream.metadata.contentWarnings#sexuality",
       label: "Sexuality",
     },
     {
-      constant: "place.stream.metadata.configuration#suffering",
+      constant: "place.stream.metadata.contentWarnings#suffering",
       label: "Upsetting or Disturbing",
     },
     {
-      constant: "place.stream.metadata.configuration#violence",
+      constant: "place.stream.metadata.contentWarnings#violence",
       label: "Violence",
     },
   ];
@@ -110,7 +113,7 @@ const CONTENT_WARNINGS = (() => {
   return contentWarningConstants.map(({ constant, label }) => {
     // Extract the key from the constant by splitting on '#'
     const key = constant.split("#")[1];
-    const def = metadataSchema.defs[key];
+    const def = contentWarningsSchema.defs[key];
     const description = def?.description || `Description for ${label}`;
     return {
       value: constant,
@@ -120,51 +123,49 @@ const CONTENT_WARNINGS = (() => {
   });
 })();
 
-// No predefined options - just optional expiry date-time picker
-
 // License options derived from lexicon schema
 const LICENSE_OPTIONS = (() => {
-  // Find the metadata schema
-  const metadataSchema = schemas.find(
-    (schema) => schema.id === "place.stream.metadata.configuration",
+  // Find the content rights schema
+  const contentRightsSchema = schemas.find(
+    (schema) => schema.id === "place.stream.metadata.contentRights",
   );
-  if (!metadataSchema?.defs) {
+  if (!contentRightsSchema?.defs) {
     throw new Error(
-      "Could not find place.stream.metadata.configuration schema",
+      "Could not find place.stream.metadata.contentRights schema",
     );
   }
 
   const licenseConstants = [
     {
-      constant: "place.stream.metadata.configuration#all-rights-reserved",
+      constant: "place.stream.metadata.contentRights#all-rights-reserved",
       label: "All Rights Reserved",
     },
     {
-      constant: "place.stream.metadata.configuration#cc0_1__0",
+      constant: "place.stream.metadata.contentRights#cc0_1__0",
       label: "CC0 (Public Domain) 1.0",
     },
     {
-      constant: "place.stream.metadata.configuration#cc-by_4__0",
+      constant: "place.stream.metadata.contentRights#cc-by_4__0",
       label: "CC BY 4.0",
     },
     {
-      constant: "place.stream.metadata.configuration#cc-by-sa_4__0",
+      constant: "place.stream.metadata.contentRights#cc-by-sa_4__0",
       label: "CC BY-SA 4.0",
     },
     {
-      constant: "place.stream.metadata.configuration#cc-by-nc_4__0",
+      constant: "place.stream.metadata.contentRights#cc-by-nc_4__0",
       label: "CC BY-NC 4.0",
     },
     {
-      constant: "place.stream.metadata.configuration#cc-by-nc-sa_4__0",
+      constant: "place.stream.metadata.contentRights#cc-by-nc-sa_4__0",
       label: "CC BY-NC-SA 4.0",
     },
     {
-      constant: "place.stream.metadata.configuration#cc-by-nd_4__0",
+      constant: "place.stream.metadata.contentRights#cc-by-nd_4__0",
       label: "CC BY-ND 4.0",
     },
     {
-      constant: "place.stream.metadata.configuration#cc-by-nc-nd_4__0",
+      constant: "place.stream.metadata.contentRights#cc-by-nc-nd_4__0",
       label: "CC BY-NC-ND 4.0",
     },
   ];
@@ -172,7 +173,7 @@ const LICENSE_OPTIONS = (() => {
   const options = licenseConstants.map(({ constant, label }) => {
     // Extract the key from the constant by splitting on '#'
     const key = constant.split("#")[1];
-    const def = metadataSchema.defs[key];
+    const def = contentRightsSchema.defs[key];
     const description = def?.description || `Description for ${label}`;
     return {
       value: constant,
@@ -228,7 +229,7 @@ export default function ContentMetadataForm({
   const hasStreamKey = Boolean(storedKey);
 
   const [contentWarnings, setContentWarnings] = useState<string[]>(
-    initialMetadata?.contentWarnings || [],
+    initialMetadata?.contentWarnings?.warnings || [],
   );
   const [distributionPolicy, setDistributionPolicy] =
     useState<DistributionPolicy>(initialMetadata?.distributionPolicy || {});
@@ -264,8 +265,8 @@ export default function ContentMetadataForm({
       const record = lastCreatedRecord.record;
 
       // Update content warnings
-      if (record.contentWarnings && Array.isArray(record.contentWarnings)) {
-        setContentWarnings(record.contentWarnings);
+      if (record.contentWarnings && record.contentWarnings.warnings) {
+        setContentWarnings(record.contentWarnings.warnings);
       }
 
       // Update distribution policy
@@ -309,7 +310,7 @@ export default function ContentMetadataForm({
 
       // Update the parent component with the loaded metadata
       const metadata: ContentMetadata = {
-        contentWarnings: record.contentWarnings || [],
+        contentWarnings: record.contentWarnings || { warnings: [] },
         distributionPolicy: {
           deleteAfter: record.distributionPolicy?.deleteAfter,
         },
@@ -327,7 +328,7 @@ export default function ContentMetadataForm({
       ? [...contentWarnings, warning]
       : contentWarnings.filter((w) => w !== warning);
     setContentWarnings(newWarnings);
-    updateMetadata({ contentWarnings: newWarnings });
+    updateMetadata({ contentWarnings: { warnings: newWarnings } });
   };
 
   const handleDistributionPolicyChange = (
@@ -346,7 +347,7 @@ export default function ContentMetadataForm({
 
   const updateMetadata = (updates: Partial<ContentMetadata>) => {
     const metadata: ContentMetadata = {
-      contentWarnings: updates.contentWarnings || contentWarnings,
+      contentWarnings: updates.contentWarnings || { warnings: contentWarnings },
       distributionPolicy: updates.distributionPolicy || distributionPolicy,
       contentRights: updates.contentRights || contentRights,
     };
@@ -1012,6 +1013,7 @@ export default function ContentMetadataForm({
                     />
                   </YStack>
 
+                  {/* TODO: Add creator - currently not supported by the backend     
                   <YStack gap="$0.5" f={2}>
                     <Label fontSize="$1" fontWeight="500">
                       Creator
@@ -1034,6 +1036,7 @@ export default function ContentMetadataForm({
                       }}
                     />
                   </YStack>
+                  */}
                 </XStack>
 
                 <YStack gap="$0.5">

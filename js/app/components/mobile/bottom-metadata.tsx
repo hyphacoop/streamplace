@@ -12,8 +12,6 @@ import {
 import { ChevronLeft } from "@tamagui/lucide-icons";
 import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
-import { useContentRights } from "hooks/useContentRights";
-import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronRight } from "lucide-react-native";
 import { Image, View } from "react-native";
 const { gap, px, py, colors } = zero;
@@ -28,10 +26,12 @@ export function BottomMetadata({
   const { profile } = useLivestreamInfo();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
   const ls = useLivestreamStore((x) => x.livestream);
+  const segment = useLivestreamStore((x) => x.segment);
 
-  // Get content warnings and rights for the streamer
-  const { warnings: contentWarnings } = useContentWarnings(profile?.did);
-  const { contentRights } = useContentRights(profile?.did);
+  // Get content warnings and rights directly from the latest segment
+  const contentWarnings =
+    (segment?.contentWarnings?.warnings as string[]) || [];
+  const contentRights = segment?.contentRights;
 
   return (
     <View
@@ -104,7 +104,9 @@ export function BottomMetadata({
         (contentRights && Object.keys(contentRights).length > 0)) && (
         <View style={[py[2]]}>
           <ContentWarnings warnings={contentWarnings} compact={true} />
-          <ContentRights contentRights={contentRights} compact={true} />
+          {contentRights && (
+            <ContentRights contentRights={contentRights} compact={true} />
+          )}
         </View>
       )}
     </View>

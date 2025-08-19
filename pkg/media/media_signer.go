@@ -32,14 +32,14 @@ type MediaSigner interface {
 }
 
 type MediaSignerLocal struct {
-	StreamerName     string
-	Signer           crypto.Signer
-	AQPub            aqpub.Pub
-	Cert             []byte
-	TAURL            string
-	did              string
-	manifestBuilder  *ManifestBuilder
-	Manifest         *c2pa.ManifestDefinition  // Add optional manifest field
+	StreamerName    string
+	Signer          crypto.Signer
+	AQPub           aqpub.Pub
+	Cert            []byte
+	TAURL           string
+	did             string
+	manifestBuilder *ManifestBuilder
+	Manifest        *c2pa.ManifestDefinition // Add optional manifest field
 }
 
 func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]byte, string, error) {
@@ -88,13 +88,13 @@ func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, sign
 		return nil, err
 	}
 	return &MediaSignerLocal{
-		Signer:           signer,
-		Cert:             cert,
-		StreamerName:     streamer,
-		TAURL:            cli.TAURL,
-		AQPub:            pub,
-		did:              did.DIDKey(),
-		manifestBuilder:  NewManifestBuilder(model),
+		Signer:          signer,
+		Cert:            cert,
+		StreamerName:    streamer,
+		TAURL:           cli.TAURL,
+		AQPub:           pub,
+		did:             did.DIDKey(),
+		manifestBuilder: NewManifestBuilder(model),
 	}, nil
 }
 
@@ -106,9 +106,9 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	startTime := time.Now()
 	ctx, span := otel.Tracer("signer").Start(ctx, "SignMP4")
 	defer span.End()
-	
+
 	var manifest *c2pa.ManifestDefinition
-	
+
 	if ms.Manifest != nil {
 		// Use provided manifest (from external signer)
 		manifest = ms.Manifest

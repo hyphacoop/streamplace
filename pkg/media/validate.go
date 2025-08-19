@@ -44,14 +44,14 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
-	
+
 	// Apply content filtering after metadata is parsed
 	if mm.cli.ContentFilters != nil {
 		if err := mm.applyContentFilters(ctx, meta); err != nil {
 			return err
 		}
 	}
-	
+
 	// special case for test signers that are only signed with a key
 	var repoDID string
 	var signingKeyDID string
@@ -89,13 +89,16 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		return err
 	}
 	seg := &model.Segment{
-		ID:            *mani.Label,
-		SigningKeyDID: signingKeyDID,
-		RepoDID:       repoDID,
-		StartTime:     meta.StartTime.Time(),
-		Title:         meta.Title,
-		Size:          len(buf),
-		MediaData:     mediaData,
+		ID:                 *mani.Label,
+		SigningKeyDID:      signingKeyDID,
+		RepoDID:            repoDID,
+		StartTime:          meta.StartTime.Time(),
+		Title:              meta.Title,
+		Size:               len(buf),
+		MediaData:          mediaData,
+		ContentWarnings:    model.ContentWarningsSlice(meta.ContentWarnings),
+		ContentRights:      meta.ContentRights,
+		DistributionPolicy: meta.DistributionPolicy,
 	}
 	mm.newSegmentSubsMutex.RLock()
 	defer mm.newSegmentSubsMutex.RUnlock()
@@ -119,8 +122,8 @@ func (mm *MediaManager) applyContentFilters(ctx context.Context, meta *SegmentMe
 		for _, warning := range meta.ContentWarnings {
 			if mm.isWarningBlocked(warning) {
 				reason := fmt.Sprintf("content warning blocked: %s", warning)
-				log.Log(ctx, "content filtered", 
-					"reason", reason, 
+				log.Log(ctx, "content filtered",
+					"reason", reason,
 					"filter_type", "content_warning",
 					"creator", meta.Creator,
 					"warning", warning)
@@ -128,20 +131,20 @@ func (mm *MediaManager) applyContentFilters(ctx context.Context, meta *SegmentMe
 			}
 		}
 	}
-	
+
 	// Check distribution policy (if enabled)
 	if mm.cli.ContentFilters.DistributionPolicy.Enabled && meta.DistributionPolicy != nil {
 		if meta.DistributionPolicy.ExpiresAt != nil && time.Now().After(*meta.DistributionPolicy.ExpiresAt) {
 			reason := fmt.Sprintf("distribution policy expired: %s", meta.DistributionPolicy.ExpiresAt)
-			log.Log(ctx, "content filtered", 
-				"reason", reason, 
+			log.Log(ctx, "content filtered",
+				"reason", reason,
 				"filter_type", "distribution_policy",
 				"creator", meta.Creator,
 				"expires_at", meta.DistributionPolicy.ExpiresAt)
 			return fmt.Errorf("content filtered: %s", reason)
 		}
 	}
-	
+
 	return nil
 }
 

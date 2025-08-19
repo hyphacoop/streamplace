@@ -176,16 +176,12 @@ type ExpandedSchemaOrg []struct {
 }
 
 type SegmentMetadata struct {
-	StartTime           aqtime.AQTime
-	Title               string
-	Creator             string
-	ContentWarnings     []string           // Add this field
-	DistributionPolicy  *DistributionPolicy // Add this field
-}
-
-// DistributionPolicy represents distribution policy information
-type DistributionPolicy struct {
-	ExpiresAt *time.Time
+	StartTime          aqtime.AQTime
+	Title              string
+	Creator            string
+	ContentWarnings    []string
+	ContentRights      *model.ContentRights
+	DistributionPolicy *model.DistributionPolicy
 }
 
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
@@ -235,16 +231,18 @@ func ParseSegmentAssertions(ctx context.Context, mani *manifeststore.Manifest) (
 	if err != nil {
 		return nil, err
 	}
-	
+
 	contentWarnings := extractContentWarnings(mani)
+	contentRights := extractContentRights(mani)
 	distributionPolicy := extractDistributionPolicy(mani)
-	
+
 	out := SegmentMetadata{
-		StartTime:           start,
-		Title:               meta.Title[0].Value,
-		Creator:             meta.Creator[0].Value,
-		ContentWarnings:     contentWarnings,
-		DistributionPolicy:  distributionPolicy,
+		StartTime:          start,
+		Title:              meta.Title[0].Value,
+		Creator:            meta.Creator[0].Value,
+		ContentWarnings:    contentWarnings,
+		ContentRights:      contentRights,
+		DistributionPolicy: distributionPolicy,
 	}
 	return &out, nil
 }
@@ -255,69 +253,131 @@ func extractContentWarnings(mani *manifeststore.Manifest) []string {
 	if ass == nil {
 		return nil
 	}
-	
+
 	data, ok := ass.Data.(map[string]interface{})
 	if !ok {
 		return nil
 	}
-	
+
 	warnings, ok := data["Iptc4xmpExt:ContentWarning"]
 	if !ok {
 		return nil
 	}
-	
+
 	warningList, ok := warnings.([]interface{})
 	if !ok {
 		return nil
 	}
-	
+
 	result := make([]string, 0, len(warningList))
 	for _, warning := range warningList {
 		if warningStr, ok := warning.(string); ok {
 			result = append(result, warningStr)
 		}
 	}
-	
+
 	return result
 }
 
-func extractDistributionPolicy(mani *manifeststore.Manifest) *DistributionPolicy {
+func extractContentRights(mani *manifeststore.Manifest) *model.ContentRights {
 	ass := findAssertion(mani, StreamplaceMetadata)
 	if ass == nil {
 		return nil
 	}
-	
+
 	data, ok := ass.Data.(map[string]interface{})
 	if !ok {
 		return nil
 	}
-	
+
+	rights := &model.ContentRights{}
+
+	// Extract copyright notice
+	if notice, ok := data["dc:rights"]; ok {
+		if noticeStr, ok := notice.(string); ok {
+			rights.CopyrightNotice = &noticeStr
+		}
+	}
+
+	// Extract copyright year
+	if year, ok := data["Iptc4xmpExt:CopyrightYear"]; ok {
+		if yearNum, ok := year.(float64); ok {
+			yearInt := int64(yearNum)
+			rights.CopyrightYear = &yearInt
+		}
+	}
+
+	// Extract creator (already handled in main parsing, but could be overridden)
+	if creator, ok := data["dc:creator"]; ok {
+		if creatorStr, ok := creator.(string); ok {
+			rights.Creator = &creatorStr
+		}
+	}
+
+	// Extract credit line
+	if credit, ok := data["photoshop:Credit"]; ok {
+		if creditStr, ok := credit.(string); ok {
+			rights.CreditLine = &creditStr
+		}
+	}
+
+	// Extract license information
+	if license, ok := data["Iptc4xmpExt:LinkedEncRightsExpr"]; ok {
+		if licenseStr, ok := license.(string); ok {
+			rights.License = &licenseStr
+		}
+	} else if usageTerms, ok := data["xmpRights:UsageTerms"]; ok {
+		if usageStr, ok := usageTerms.(string); ok {
+			rights.License = &usageStr
+		}
+	}
+
+	// Return nil if no rights information was found
+	if rights.CopyrightNotice == nil && rights.CopyrightYear == nil && 
+	   rights.Creator == nil && rights.CreditLine == nil && rights.License == nil {
+		return nil
+	}
+
+	return rights
+}
+
+func extractDistributionPolicy(mani *manifeststore.Manifest) *model.DistributionPolicy {
+	ass := findAssertion(mani, StreamplaceMetadata)
+	if ass == nil {
+		return nil
+	}
+
+	data, ok := ass.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
 	policy, ok := data["distributionPolicy"]
 	if !ok {
 		return nil
 	}
-	
+
 	policyMap, ok := policy.(map[string]interface{})
 	if !ok {
 		return nil
 	}
-	
+
 	expiry, ok := policyMap["deleteAfter"]
 	if !ok {
 		return nil
 	}
-	
+
 	expiryStr, ok := expiry.(string)
 	if !ok {
 		return nil
 	}
-	
+
 	expiryTime, err := time.Parse(time.RFC3339, expiryStr)
 	if err != nil {
 		return nil
 	}
-	
-	return &DistributionPolicy{
+
+	return &model.DistributionPolicy{
 		ExpiresAt: &expiryTime,
 	}
 }

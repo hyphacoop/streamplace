@@ -1,0 +1,17 @@
+{
+  "lexicon": 1,
+  "id": "place.stream.metadata.distributionPolicy",
+  "defs": {
+    "main": {
+      "type": "object",
+      "description": "Distribution and rebroadcast policy.",
+      "properties": {
+        "deleteAfter": {
+          "type": "string",
+          "format": "datetime",
+          "description": "When this stream should be deleted. If not specified, the stream will be kept indefinitely."
+        }
+      }
+    }
+  }
+}

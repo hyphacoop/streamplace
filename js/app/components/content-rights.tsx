@@ -44,9 +44,10 @@ export default function ContentRights({
   const rightsParts: string[] = [];
 
   // Handle creator
-  if (contentRights.creator) {
-    rightsParts.push(`Creator: ${contentRights.creator}`);
-  }
+  // TODO: Creator field is commented out - not shown in UI
+  // if (contentRights.creator) {
+  //   rightsParts.push(`Creator: ${contentRights.creator}`);
+  // }
 
   // Handle copyright year
   if (contentRights.copyrightYear) {
