@@ -58,8 +58,10 @@ export const contentMetadataSlice = createAppSlice({
         const metadataRecord = {
           $type: "place.stream.metadata.configuration",
           createdAt: new Date().toISOString(),
-          ...(contentWarnings.length > 0 && { contentWarnings }),
-          distributionPolicy,
+          ...(contentWarnings.length > 0 && { 
+            contentWarnings: { warnings: contentWarnings } 
+          }),
+          ...(distributionPolicy.deleteAfter && { distributionPolicy }),
           ...(contentRights &&
             Object.keys(contentRights).length > 0 && {
               contentRights,
@@ -155,8 +157,10 @@ export const contentMetadataSlice = createAppSlice({
           $type: "place.stream.metadata.configuration",
           ...(livestreamRef && { livestreamRef }),
           createdAt: new Date().toISOString(),
-          ...(contentWarnings.length > 0 && { contentWarnings }),
-          distributionPolicy,
+          ...(contentWarnings.length > 0 && { 
+            contentWarnings: { warnings: contentWarnings } 
+          }),
+          ...(distributionPolicy.deleteAfter && { distributionPolicy }),
           ...(contentRights &&
             Object.keys(contentRights).length > 0 && {
               contentRights,
