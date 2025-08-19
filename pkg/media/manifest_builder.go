@@ -50,15 +50,15 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 				"label": StreamplaceMetadata,
 				"data": obj{
 					"@context": obj{
-						"dc": "http://purl.org/dc/elements/1.1/",
+						"dc":          "http://purl.org/dc/elements/1.1/",
 						"Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
-						"photoshop": "http://ns.adobe.com/photoshop/1.0/",
-						"xmpRights": "http://ns.adobe.com/xap/1.0/rights/",
+						"photoshop":   "http://ns.adobe.com/photoshop/1.0/",
+						"xmpRights":   "http://ns.adobe.com/xap/1.0/rights/",
 					},
 					"dc:creator": streamerName,
 					// TODO: Add the title of the livestream. This should come from the livestream record.
-					"dc:title":   []string{"livestream"},
-					"dc:date":    []string{aqtime.FromMillis(start).String()},
+					"dc:title": []string{"livestream"},
+					"dc:date":  []string{aqtime.FromMillis(start).String()},
 				},
 			},
 		},
@@ -78,7 +78,6 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 			}
 		}
 	}
-
 
 	// Convert to C2PA manifest
 	manifestBs, err := json.Marshal(mani)
@@ -120,12 +119,12 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 		if metadata.ContentRights.License != nil {
 			// Map internal license codes to known licenses
 			var licenseCodeMap = map[string]string{
-				"place.stream.metadata.configuration#cc0_1__0": "http://creativecommons.org/publicdomain/zero/1.0/",
-				"place.stream.metadata.configuration#cc-by_4__0": "http://creativecommons.org/licenses/by/4.0/",
-				"place.stream.metadata.configuration#cc-by-sa_4__0": "http://creativecommons.org/licenses/by-sa/4.0/",
-				"place.stream.metadata.configuration#cc-by-nc_4__0": "http://creativecommons.org/licenses/by-nc/4.0/",
+				"place.stream.metadata.configuration#cc0_1__0":         "http://creativecommons.org/publicdomain/zero/1.0/",
+				"place.stream.metadata.configuration#cc-by_4__0":       "http://creativecommons.org/licenses/by/4.0/",
+				"place.stream.metadata.configuration#cc-by-sa_4__0":    "http://creativecommons.org/licenses/by-sa/4.0/",
+				"place.stream.metadata.configuration#cc-by-nc_4__0":    "http://creativecommons.org/licenses/by-nc/4.0/",
 				"place.stream.metadata.configuration#cc-by-nc-sa_4__0": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
-				"place.stream.metadata.configuration#cc-by-nd_4__0": "http://creativecommons.org/licenses/by-nd/4.0/",
+				"place.stream.metadata.configuration#cc-by-nd_4__0":    "http://creativecommons.org/licenses/by-nd/4.0/",
 				"place.stream.metadata.configuration#cc-by-nc-nd_4__0": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
 			}
 			if mappedCode, exists := licenseCodeMap[*metadata.ContentRights.License]; exists {
@@ -145,7 +144,7 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 		}
 	}
 
-	if len(metadata.ContentWarnings) > 0 {
+	if metadata.ContentWarnings != nil && len(metadata.ContentWarnings.Warnings) > 0 {
 		// Map internal warning codes to C2PA warning codes
 		var warningCodeMap = map[string]string{
 			"place.stream.metadata.configuration#death":           "cwarn:death",
@@ -159,14 +158,14 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 			"place.stream.metadata.configuration#suffering":       "cwarn:suffering",
 			"place.stream.metadata.configuration#violence":        "cwarn:violence",
 		}
-		
-		for i, warning := range metadata.ContentWarnings {
+
+		for i, warning := range metadata.ContentWarnings.Warnings {
 			if mappedCode, exists := warningCodeMap[warning]; exists {
-				metadata.ContentWarnings[i] = mappedCode
+				metadata.ContentWarnings.Warnings[i] = mappedCode
 			}
 			// Unknown warnings remain unchanged
 		}
-		mani["assertions"].([]obj)[1]["data"].(obj)["Iptc4xmpExt:ContentWarning"] = metadata.ContentWarnings
+		mani["assertions"].([]obj)[1]["data"].(obj)["Iptc4xmpExt:ContentWarning"] = metadata.ContentWarnings.Warnings
 	}
 
 	if metadata.DistributionPolicy != nil {
@@ -174,4 +173,4 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 	}
 
 	return mani
-} 
+}

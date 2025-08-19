@@ -52,16 +52,33 @@ func (j SegmentMediaData) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
+// ContentRights represents content rights and attribution information
+type ContentRights struct {
+	CopyrightNotice *string `json:"copyrightNotice,omitempty"`
+	CopyrightYear   *int64  `json:"copyrightYear,omitempty"`
+	Creator         *string `json:"creator,omitempty"`
+	CreditLine      *string `json:"creditLine,omitempty"`
+	License         *string `json:"license,omitempty"`
+}
+
+// DistributionPolicy represents distribution policy information
+type DistributionPolicy struct {
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+}
+
 type Segment struct {
-	ID            string            `json:"id"                   gorm:"primaryKey"`
-	SigningKeyDID string            `json:"signingKeyDID"        gorm:"column:signing_key_did"`
-	SigningKey    *SigningKey       `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
-	StartTime     time.Time         `json:"startTime"            gorm:"index:latest_segments"`
-	RepoDID       string            `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
-	Repo          *Repo             `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
-	Title         string            `json:"title"`
-	Size          int               `json:"size"                gorm:"column:size"`
-	MediaData     *SegmentMediaData `json:"mediaData,omitempty"`
+	ID                 string               `json:"id"                   gorm:"primaryKey"`
+	SigningKeyDID      string               `json:"signingKeyDID"        gorm:"column:signing_key_did"`
+	SigningKey         *SigningKey          `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
+	StartTime          time.Time            `json:"startTime"            gorm:"index:latest_segments"`
+	RepoDID            string               `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
+	Repo               *Repo                `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
+	Title              string               `json:"title"`
+	Size               int                  `json:"size"                gorm:"column:size"`
+	MediaData          *SegmentMediaData    `json:"mediaData,omitempty"`
+	ContentWarnings    []string             `json:"contentWarnings,omitempty"`
+	ContentRights      *ContentRights       `json:"contentRights,omitempty"`
+	DistributionPolicy *DistributionPolicy  `json:"distributionPolicy,omitempty"`
 }
 
 func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
@@ -77,14 +94,45 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	}
 	duration := s.MediaData.Duration
 	sizei64 := int64(s.Size)
+	
+	// Convert model metadata to streamplace metadata
+	var contentRights *streamplace.MetadataContentRights
+	if s.ContentRights != nil {
+		contentRights = &streamplace.MetadataContentRights{
+			CopyrightNotice: s.ContentRights.CopyrightNotice,
+			CopyrightYear:   s.ContentRights.CopyrightYear,
+			Creator:         s.ContentRights.Creator,
+			CreditLine:      s.ContentRights.CreditLine,
+			License:         s.ContentRights.License,
+		}
+	}
+	
+	var contentWarnings *streamplace.MetadataContentWarnings
+	if len(s.ContentWarnings) > 0 {
+		contentWarnings = &streamplace.MetadataContentWarnings{
+			Warnings: s.ContentWarnings,
+		}
+	}
+	
+	var distributionPolicy *streamplace.MetadataDistributionPolicy
+	if s.DistributionPolicy != nil && s.DistributionPolicy.ExpiresAt != nil {
+		expiryStr := s.DistributionPolicy.ExpiresAt.Format(time.RFC3339)
+		distributionPolicy = &streamplace.MetadataDistributionPolicy{
+			DeleteAfter: &expiryStr,
+		}
+	}
+	
 	return &streamplace.Segment{
-		LexiconTypeID: "place.stream.segment",
-		Creator:       s.RepoDID,
-		Id:            s.ID,
-		SigningKey:    s.SigningKeyDID,
-		StartTime:     string(aqt),
-		Duration:      &duration,
-		Size:          &sizei64,
+		LexiconTypeID:      "place.stream.segment",
+		Creator:            s.RepoDID,
+		Id:                 s.ID,
+		SigningKey:         s.SigningKeyDID,
+		StartTime:          string(aqt),
+		Duration:           &duration,
+		Size:               &sizei64,
+		ContentRights:      contentRights,
+		ContentWarnings:    contentWarnings,
+		DistributionPolicy: distributionPolicy,
 		Video: []*streamplace.Segment_Video{
 			{
 				Codec:  "h264",

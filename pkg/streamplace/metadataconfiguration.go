@@ -13,33 +13,8 @@ func init() {
 } //
 // RECORDTYPE: MetadataConfiguration
 type MetadataConfiguration struct {
-	LexiconTypeID string                               `json:"$type,const=place.stream.metadata.configuration" cborgen:"$type,const=place.stream.metadata.configuration"`
-	ContentRights *MetadataConfiguration_ContentRights `json:"contentRights,omitempty" cborgen:"contentRights,omitempty"`
-	// contentWarnings: Content warnings for this stream.
-	ContentWarnings    []string                                  `json:"contentWarnings,omitempty" cborgen:"contentWarnings,omitempty"`
-	DistributionPolicy *MetadataConfiguration_DistributionPolicy `json:"distributionPolicy,omitempty" cborgen:"distributionPolicy,omitempty"`
-}
-
-// MetadataConfiguration_ContentRights is a "contentRights" in the place.stream.metadata.configuration schema.
-//
-// Content rights and attribution information.
-type MetadataConfiguration_ContentRights struct {
-	// copyrightNotice: Copyright notice for the work.
-	CopyrightNotice *string `json:"copyrightNotice,omitempty" cborgen:"copyrightNotice,omitempty"`
-	// copyrightYear: Year of creation or publication.
-	CopyrightYear *int64 `json:"copyrightYear,omitempty" cborgen:"copyrightYear,omitempty"`
-	// creator: Name of the creator of the work.
-	Creator *string `json:"creator,omitempty" cborgen:"creator,omitempty"`
-	// creditLine: Credit line for the work.
-	CreditLine *string `json:"creditLine,omitempty" cborgen:"creditLine,omitempty"`
-	// license: License URL or identifier.
-	License *string `json:"license,omitempty" cborgen:"license,omitempty"`
-}
-
-// MetadataConfiguration_DistributionPolicy is a "distributionPolicy" in the place.stream.metadata.configuration schema.
-//
-// Distribution and rebroadcast policy.
-type MetadataConfiguration_DistributionPolicy struct {
-	// deleteAfter: When this stream should be deleted. If not specified, the stream will be kept indefinitely.
-	DeleteAfter *string `json:"deleteAfter,omitempty" cborgen:"deleteAfter,omitempty"`
+	LexiconTypeID      string                      `json:"$type,const=place.stream.metadata.configuration" cborgen:"$type,const=place.stream.metadata.configuration"`
+	ContentRights      *MetadataContentRights      `json:"contentRights,omitempty" cborgen:"contentRights,omitempty"`
+	ContentWarnings    *MetadataContentWarnings    `json:"contentWarnings,omitempty" cborgen:"contentWarnings,omitempty"`
+	DistributionPolicy *MetadataDistributionPolicy `json:"distributionPolicy,omitempty" cborgen:"distributionPolicy,omitempty"`
 }

@@ -30,7 +30,7 @@ func Sign(ctx context.Context) error {
 		return err
 	}
 
-	log.Debug(ctx, "Sign command: starting", 
+	log.Debug(ctx, "Sign command: starting",
 		"streamer", *streamerName,
 		"startTime", *startTime,
 		"hasManifest", *manifestJSON != "")
@@ -63,14 +63,14 @@ func Sign(ctx context.Context) error {
 	var manifest *c2pa.ManifestDefinition
 	if *manifestJSON != "" {
 		log.Debug(ctx, "Sign command: parsing provided manifest JSON", "jsonLength", len(*manifestJSON))
-		
+
 		// Parse the provided manifest directly as C2PA manifest
 		if err := json.Unmarshal([]byte(*manifestJSON), &manifest); err != nil {
 			log.Error(ctx, "Sign command: failed to parse manifest JSON", "error", err)
 			return fmt.Errorf("failed to parse manifest JSON: %w", err)
 		}
-		
-		log.Debug(ctx, "Sign command: successfully parsed manifest", 
+
+		log.Debug(ctx, "Sign command: successfully parsed manifest",
 			"title", manifest.Title,
 			"assertionsCount", len(manifest.Assertions))
 	} else {
@@ -83,7 +83,7 @@ func Sign(ctx context.Context) error {
 		StreamerName: *streamerName,
 		TAURL:        *taURL,
 		AQPub:        pub,
-		Manifest:     manifest,  // Pass manifest to local signer
+		Manifest:     manifest, // Pass manifest to local signer
 	}
 
 	inputBs, err := io.ReadAll(os.Stdin)
