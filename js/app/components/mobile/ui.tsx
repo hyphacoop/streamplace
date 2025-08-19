@@ -6,6 +6,7 @@ import {
   useAvatars,
   useCameraToggle,
   useLivestreamInfo,
+  useLivestreamStore,
   usePlayerDimensions,
   usePlayerStore,
   useSegmentDimensions,
@@ -14,8 +15,6 @@ import {
 } from "@streamplace/components";
 import ContentRights from "components/content-rights";
 import ContentWarnings from "components/content-warnings";
-import { useContentRights } from "hooks/useContentRights";
-import { useContentWarnings } from "hooks/useContentWarnings";
 import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, TouchableWithoutFeedback } from "react-native";
@@ -49,10 +48,11 @@ export function MobileUi() {
   const { isPlayerRatioGreater } = useSegmentDimensions();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
+  const segment = useLivestreamStore((x) => x.segment);
 
-  // Get content warnings and rights for the streamer
-  const { warnings: contentWarnings } = useContentWarnings(profile?.did);
-  const { contentRights } = useContentRights(profile?.did);
+  // Get content warnings and rights directly from the latest segment
+  const contentWarnings = (segment?.contentWarnings?.warnings as string[]) || [];
+  const contentRights = segment?.contentRights;
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
@@ -176,7 +176,7 @@ export function MobileUi() {
                 ]}
               >
                 <ContentWarnings warnings={contentWarnings} compact={true} />
-                <ContentRights contentRights={contentRights} compact={true} />
+                {contentRights && <ContentRights contentRights={contentRights} compact={true} />}
               </View>
             )}
 
