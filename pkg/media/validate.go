@@ -96,7 +96,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		Title:              meta.Title,
 		Size:               len(buf),
 		MediaData:          mediaData,
-		ContentWarnings:    meta.ContentWarnings,
+		ContentWarnings:    model.ContentWarningsSlice(meta.ContentWarnings),
 		ContentRights:      meta.ContentRights,
 		DistributionPolicy: meta.DistributionPolicy,
 	}

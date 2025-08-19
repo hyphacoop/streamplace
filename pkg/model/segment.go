@@ -61,9 +61,78 @@ type ContentRights struct {
 	License         *string `json:"license,omitempty"`
 }
 
+// Scan scan value into ContentRights, implements sql.Scanner interface
+func (c *ContentRights) Scan(value any) error {
+	if value == nil {
+		*c = ContentRights{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal ContentRights value:", value))
+	}
+
+	result := ContentRights{}
+	err := json.Unmarshal(bytes, &result)
+	*c = ContentRights(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (c ContentRights) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
 // DistributionPolicy represents distribution policy information
 type DistributionPolicy struct {
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+}
+
+// Scan scan value into DistributionPolicy, implements sql.Scanner interface
+func (d *DistributionPolicy) Scan(value any) error {
+	if value == nil {
+		*d = DistributionPolicy{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal DistributionPolicy value:", value))
+	}
+
+	result := DistributionPolicy{}
+	err := json.Unmarshal(bytes, &result)
+	*d = DistributionPolicy(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (d DistributionPolicy) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+// ContentWarningsSlice is a custom type for storing content warnings as JSON in the database
+type ContentWarningsSlice []string
+
+// Scan scan value into ContentWarningsSlice, implements sql.Scanner interface
+func (c *ContentWarningsSlice) Scan(value any) error {
+	if value == nil {
+		*c = ContentWarningsSlice{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal ContentWarningsSlice value:", value))
+	}
+
+	result := ContentWarningsSlice{}
+	err := json.Unmarshal(bytes, &result)
+	*c = ContentWarningsSlice(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (c ContentWarningsSlice) Value() (driver.Value, error) {
+	return json.Marshal(c)
 }
 
 type Segment struct {
@@ -76,7 +145,7 @@ type Segment struct {
 	Title              string               `json:"title"`
 	Size               int                  `json:"size"                gorm:"column:size"`
 	MediaData          *SegmentMediaData    `json:"mediaData,omitempty"`
-	ContentWarnings    []string             `json:"contentWarnings,omitempty"`
+	ContentWarnings    ContentWarningsSlice `json:"contentWarnings,omitempty"`
 	ContentRights      *ContentRights       `json:"contentRights,omitempty"`
 	DistributionPolicy *DistributionPolicy  `json:"distributionPolicy,omitempty"`
 }
@@ -110,7 +179,7 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	var contentWarnings *streamplace.MetadataContentWarnings
 	if len(s.ContentWarnings) > 0 {
 		contentWarnings = &streamplace.MetadataContentWarnings{
-			Warnings: s.ContentWarnings,
+			Warnings: []string(s.ContentWarnings),
 		}
 	}
 	
