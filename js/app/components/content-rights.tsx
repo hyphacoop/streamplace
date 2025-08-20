@@ -25,6 +25,23 @@ const LICENSE_LABELS: Record<string, string> = {
   proprietary: "Proprietary License",
 };
 
+// Map canonical license URLs to human-readable labels
+const LICENSE_URL_LABELS: Record<string, string> = {
+  "http://creativecommons.org/publicdomain/zero/1.0/":
+    "CC0 - Public Domain 1.0",
+  "http://creativecommons.org/licenses/by/4.0/": "CC BY - Attribution 4.0",
+  "http://creativecommons.org/licenses/by-sa/4.0/":
+    "CC BY-SA - Attribution ShareAlike 4.0",
+  "http://creativecommons.org/licenses/by-nc/4.0/":
+    "CC BY-NC - Attribution NonCommercial 4.0",
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/":
+    "CC BY-NC-SA - Attribution NonCommercial ShareAlike 4.0",
+  "http://creativecommons.org/licenses/by-nd/4.0/":
+    "CC BY-ND - Attribution NoDerivatives 4.0",
+  "http://creativecommons.org/licenses/by-nc-nd/4.0/":
+    "CC BY-NC-ND - Attribution NonCommercial NoDerivatives 4.0",
+};
+
 export default function ContentRights({
   contentRights,
   compact = false,
@@ -56,11 +73,23 @@ export default function ContentRights({
 
   // Handle license
   if (contentRights.license) {
-    // Handle both formats: "cc0_1__0" and "place.stream.metadata.configuration#cc0_1__0"
-    const cleanLicense = contentRights.license.includes("#")
-      ? contentRights.license.split("#")[1]
-      : contentRights.license;
-    const licenseLabel = LICENSE_LABELS[cleanLicense] || cleanLicense;
+    // Handle multiple formats:
+    // - "cc0_1__0"
+    // - "place.stream.metadata.configuration#cc0_1__0"
+    // - "http://creativecommons.org/publicdomain/zero/1.0/"
+    let licenseLabel = contentRights.license;
+
+    // First check if it's a canonical URL
+    if (LICENSE_URL_LABELS[contentRights.license]) {
+      licenseLabel = LICENSE_URL_LABELS[contentRights.license];
+    } else {
+      // Extract clean license key from lexicon format
+      const cleanLicense = contentRights.license.includes("#")
+        ? contentRights.license.split("#")[1]
+        : contentRights.license;
+      licenseLabel = LICENSE_LABELS[cleanLicense] || cleanLicense;
+    }
+
     rightsParts.push(`License: ${licenseLabel}`);
   }
 

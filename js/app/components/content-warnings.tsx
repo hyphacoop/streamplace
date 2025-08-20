@@ -57,10 +57,16 @@ export default function ContentWarnings({
             Content Warning:{" "}
             {warnings
               .map((warning) => {
-                // Handle both formats: "flashingLights" and "place.stream.metadata.configuration#flashingLights"
-                const cleanWarning = warning.includes("#")
-                  ? warning.split("#")[1]
-                  : warning;
+                // Handle multiple formats:
+                // - "flashingLights"
+                // - "place.stream.metadata.configuration#flashingLights"
+                // - "cwarn:flashingLights"
+                let cleanWarning = warning;
+                if (warning.includes("#")) {
+                  cleanWarning = warning.split("#")[1];
+                } else if (warning.startsWith("cwarn:")) {
+                  cleanWarning = warning.substring(6); // Remove "cwarn:" prefix
+                }
                 return WARNING_LABELS[cleanWarning] || cleanWarning;
               })
               .join(", ")}
