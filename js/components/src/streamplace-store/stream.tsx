@@ -6,7 +6,11 @@ import { LivestreamViewHydrated } from "streamplace/src/useful-types";
 import { useUrl } from "./streamplace-store";
 import { usePDSAgent } from "./xrpc";
 
+import PackageJson from "../../package.json";
+
 import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
+import { getBrowserName } from "../lib/browser";
 
 const useUploadThumbnail = () => {
   const abortRef = useRef<AbortController | null>(null);
@@ -216,10 +220,27 @@ export function useCreateStreamRecord() {
       }
     }
 
+    // get version? only works on andoid/ios
+    //
+    let platform: string = Platform.OS;
+    let platVersion: string = Platform.Version.toString();
+    if (
+      platform === "web" &&
+      typeof window !== "undefined" &&
+      window.navigator
+    ) {
+      platVersion = getBrowserName(window.navigator.userAgent);
+    }
+
     const record: PlaceStreamLivestream.Record = {
       title: title,
       url: url,
       createdAt: new Date().toISOString(),
+      // would match up with e.g. https://stream.place/<iame.li's did>
+      canonicalUrl: `${url}/${agent.did}`,
+      // user agent style string
+      // e.g. `@streamplace/components/0.1.0 (ios, 32.0)`
+      agent: `@streamplace/components/${PackageJson.version} (${Platform.OS}, ${Platform.Version})`,
       post: newPost,
       thumb: thumbnail,
     };

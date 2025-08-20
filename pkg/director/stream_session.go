@@ -304,7 +304,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		EmbedExternal: &bsky.EmbedExternal{
 			External: &bsky.EmbedExternal_External{
 				Title:       lsr.Title,
-				Uri:         fmt.Sprintf("https://%s/%s", ss.cli.PublicHost, repo.Handle),
+				Uri:         *lsr.CanonicalUrl,
 				Description: fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.PublicHost),
 				Thumb:       thumb,
 			},
