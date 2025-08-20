@@ -189,10 +189,10 @@ export function useCreateStreamRecord() {
 
     let newPost: undefined | { uri: string; cid: string } = undefined;
 
-    if (submitPost) {
-      const did = agent.did;
-      const profile = await agent.getProfile({ actor: did });
+    const did = agent.did;
+    const profile = await agent.getProfile({ actor: did });
 
+    if (submitPost) {
       if (!profile) {
         throw new Error("No profile found for the user DID");
       }
@@ -236,11 +236,11 @@ export function useCreateStreamRecord() {
       title: title,
       url: url,
       createdAt: new Date().toISOString(),
-      // would match up with e.g. https://stream.place/<iame.li's did>
-      canonicalUrl: `${url}/${agent.did}`,
+      // would match up with e.g. https://stream.place/iame.li
+      canonicalUrl: `${url}/${profile.data.handle}`,
       // user agent style string
       // e.g. `@streamplace/components/0.1.0 (ios, 32.0)`
-      agent: `@streamplace/components/${PackageJson.version} (${Platform.OS}, ${Platform.Version})`,
+      agent: `@streamplace/components/${PackageJson.version} (${platform}, ${platVersion})`,
       post: newPost,
       thumb: thumbnail,
     };
