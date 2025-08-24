@@ -34,24 +34,36 @@ import useWebRTC, { useWebRTCIngest } from "./use-webrtc";
 import { mediaDevices, WebRTCMediaStream } from "./webrtc-primitives.native";
 
 // Add NativeIngestPlayer to the switch below!
-export default function VideoNative() {
+export default function VideoNative(props?: {
+  objectFit?: "contain" | "cover";
+  pictureInPictureEnabled?: boolean;
+}) {
   const protocol = usePlayerStore((x) => x.protocol);
   const ingest = usePlayerStore((x) => x.ingestConnectionState) != null;
 
   return (
     <View>
       {ingest ? (
-        <NativeIngestPlayer />
+        <NativeIngestPlayer objectFit={props?.objectFit} />
       ) : protocol === PlayerProtocol.WEBRTC ? (
-        <NativeWHEP />
+        <NativeWHEP
+          objectFit={props?.objectFit}
+          pictureInPictureEnabled={props?.pictureInPictureEnabled}
+        />
       ) : (
-        <NativeVideo />
+        <NativeVideo
+          objectFit={props?.objectFit}
+          pictureInPictureEnabled={props?.pictureInPictureEnabled}
+        />
       )}
     </View>
   );
 }
 
-export function NativeVideo() {
+export function NativeVideo(props?: {
+  objectFit?: "contain" | "cover" | "fill" | "none" | "scale-down";
+  pictureInPictureEnabled?: boolean;
+}) {
   const videoRef = useRef<VideoView | null>(null);
   const protocol = usePlayerStore((x) => x.protocol);
 
@@ -159,14 +171,17 @@ export function NativeVideo() {
         onFullscreenExit={() => {
           setFullscreen(false);
         }}
-        allowsPictureInPicture
+        allowsPictureInPicture={props?.pictureInPictureEnabled !== false}
         onLayout={handleLayout}
       />
     </>
   );
 }
 
-export function NativeWHEP() {
+export function NativeWHEP(props?: {
+  objectFit?: "contain" | "cover";
+  pictureInPictureEnabled?: boolean;
+}) {
   const selectedRendition = usePlayerStore((x) => x.selectedRendition);
   const src = usePlayerStore((x) => x.src);
   const { url } = srcToUrl(
@@ -246,10 +261,10 @@ export function NativeWHEP() {
     <>
       <RTCView
         mirror={false}
-        objectFit={"contain"}
+        objectFit={props?.objectFit || "contain"}
         streamURL={mediaStream.toURL()}
         onLayout={handleLayout}
-        pictureInPictureEnabled={true}
+        pictureInPictureEnabled={props?.pictureInPictureEnabled !== false}
         autoStartPictureInPicture={true}
         pictureInPicturePreferredSize={{
           width: 160,
@@ -265,7 +280,9 @@ export function NativeWHEP() {
   );
 }
 
-export function NativeIngestPlayer() {
+export function NativeIngestPlayer(props?: {
+  objectFit?: "contain" | "cover";
+}) {
   const ingestStarting = useIngestPlayerStore((x) => x.ingestStarting);
   const ingestMediaSource = useIngestPlayerStore((x) => x.ingestMediaSource);
   const ingestAutoStart = useIngestPlayerStore((x) => x.ingestAutoStart);
@@ -406,7 +423,7 @@ export function NativeIngestPlayer() {
   return (
     <RTCViewIngest
       mirror={ingestCamera !== "environment"}
-      objectFit={"contain"}
+      objectFit={props?.objectFit || "contain"}
       streamURL={localMediaStream.toURL()}
       zOrder={0}
       style={{

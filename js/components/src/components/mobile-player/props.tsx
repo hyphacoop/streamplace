@@ -9,4 +9,6 @@ export type PlayerProps = {
   ingest?: boolean;
   embedded?: boolean;
   reportingURL?: string;
+  objectFit?: "contain" | "cover";
+  pictureInPictureEnabled?: boolean;
 };

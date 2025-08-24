@@ -14,7 +14,12 @@ import Video from "./video.native";
 // Standard 16:9 video aspect ratio
 const VIDEO_ASPECT_RATIO = 16 / 9;
 
-export function Fullscreen(props: { src: string; children?: React.ReactNode }) {
+export function Fullscreen(props: {
+  src: string;
+  children?: React.ReactNode;
+  objectFit?: "contain" | "cover";
+  pictureInPictureEnabled?: boolean;
+}) {
   const ref = useRef<VideoView>(null);
   const insets = useSafeAreaInsets();
   const [dimensions, setDimensions] = useState(Dimensions.get("window"));
@@ -145,7 +150,10 @@ export function Fullscreen(props: { src: string; children?: React.ReactNode }) {
             },
           ]}
         >
-          <Video />
+          <Video
+            objectFit={props.objectFit}
+            pictureInPictureEnabled={props.pictureInPictureEnabled}
+          />
           {props.children}
         </View>
       </View>
@@ -156,7 +164,10 @@ export function Fullscreen(props: { src: string; children?: React.ReactNode }) {
   return (
     <>
       <VideoRetry>
-        <Video />
+        <Video
+          objectFit={props.objectFit}
+          pictureInPictureEnabled={props.pictureInPictureEnabled}
+        />
       </VideoRetry>
       {props.children}
     </>

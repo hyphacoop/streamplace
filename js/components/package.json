@@ -11,17 +11,11 @@
       "default": "./dist/index.js"
     }
   },
-  "scripts": {
-    "build": "tsc",
-    "prepare": "pnpm run build",
-    "start": "tsc --watch --preserveWatchOutput"
-  },
   "keywords": [
     "streamplace"
   ],
   "author": "Streamplace",
   "license": "MIT",
-  "packageManager": "pnpm@10.11.0",
   "devDependencies": {
     "tsup": "^8.5.0"
   },
@@ -34,23 +28,27 @@
     "@rn-primitives/portal": "^1.3.0",
     "@rn-primitives/slider": "^1.2.0",
     "class-variance-authority": "^0.6.1",
-    "expo-keep-awake": "~14.1.4",
-    "expo-video": "~2.2.1",
+    "expo-keep-awake": "^14.0.0",
+    "expo-video": "^2.0.0",
     "hls.js": "^1.5.17",
     "lucide-react-native": "^0.514.0",
-    "react-native": "0.79.3",
+    "react-native": "^0.79.0",
     "react-native-edge-to-edge": "^1.6.2",
-    "react-native-gesture-handler": "~2.26.0",
-    "react-native-reanimated": "~3.18.0",
-    "react-native-safe-area-context": "5.4.1",
-    "react-native-svg": "15.12.0",
+    "react-native-gesture-handler": "^2.20.0",
+    "react-native-reanimated": "^3.0.0",
+    "react-native-safe-area-context": "^5.0.0",
+    "react-native-svg": "^15.0.0",
     "react-native-webrtc": "git+https://github.com/streamplace/react-native-webrtc.git#6b8472a771ac47f89217d327058a8a4124a6ae56",
     "react-use-websocket": "^4.13.0",
-    "streamplace": "workspace:*",
     "viem": "^2.21.44",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "streamplace": "0.7.2"
   },
   "peerDependencies": {
     "react": "*"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc --watch --preserveWatchOutput"
   }
 }
