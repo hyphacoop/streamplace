@@ -131,6 +131,7 @@ export function useCreateStreamRecord() {
     title: string,
     customThumbnail?: Blob,
     submitPost: boolean = true,
+    customUrl: string | null = null,
   ) => {
     if (!agent) {
       throw new Error("No PDS agent found");
@@ -140,9 +141,11 @@ export function useCreateStreamRecord() {
       throw new Error("No user DID found, assuming not logged in");
     }
 
-    let thumbnail: BlobRef | undefined = undefined;
+    // Use customUrl if provided, otherwise fall back to the store URL
+    const finalUrl = customUrl || url;
+    const u = new URL(finalUrl);
 
-    const u = new URL(url);
+    let thumbnail: BlobRef | undefined = undefined;
 
     if (customThumbnail) {
       try {
@@ -234,10 +237,10 @@ export function useCreateStreamRecord() {
 
     const record: PlaceStreamLivestream.Record = {
       title: title,
-      url: url,
+      url: finalUrl,
       createdAt: new Date().toISOString(),
       // would match up with e.g. https://stream.place/iame.li
-      canonicalUrl: `${url}/${profile.data.handle}`,
+      canonicalUrl: `${finalUrl}/${profile.data.handle}`,
       // user agent style string
       // e.g. `@streamplace/components/0.1.0 (ios, 32.0)`
       agent: `@streamplace/components/${PackageJson.version} (${platform}, ${platVersion})`,
@@ -254,7 +257,7 @@ export function useCreateStreamRecord() {
   };
 }
 
-export function useUpdateStreamRecord() {
+export function useUpdateStreamRecord(customUrl: string | null = null) {
   let agent = usePDSAgent();
   let url = useUrl();
   const uploadThumbnail = useUploadThumbnail();
@@ -276,6 +279,9 @@ export function useUpdateStreamRecord() {
       throw new Error("No latest record");
     }
 
+    // Use customUrl if provided, otherwise fall back to the store URL
+    const finalUrl = customUrl || url;
+
     let rkey = livestream.uri.split("/").pop();
     let oldRecordValue: PlaceStreamLivestream.Record = livestream.record;
 
@@ -296,7 +302,7 @@ export function useUpdateStreamRecord() {
 
     const record: PlaceStreamLivestream.Record = {
       title: title,
-      url: url,
+      url: finalUrl,
       createdAt: new Date().toISOString(),
       post: oldRecordValue.post,
       thumb: thumbnail,
