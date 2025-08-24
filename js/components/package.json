@@ -49,6 +49,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "tsc",
     "start": "tsc --watch --preserveWatchOutput"
   }
 }
