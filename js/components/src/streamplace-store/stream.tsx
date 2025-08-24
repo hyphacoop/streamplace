@@ -127,12 +127,23 @@ export function useCreateStreamRecord() {
   let url = useUrl();
   const uploadThumbnail = useUploadThumbnail();
 
-  return async (
-    title: string,
-    customThumbnail?: Blob,
-    submitPost: boolean = true,
-    customUrl: string | null = null,
-  ) => {
+  return async ({
+    title,
+    customThumbnail,
+    submitPost,
+    customUrl,
+  }: {
+    title: string;
+    customThumbnail?: Blob;
+    submitPost?: boolean;
+    customUrl?: string | null;
+  }) => {
+    if (!submitPost) {
+      submitPost = true;
+    }
+    if (!customUrl) {
+      customUrl = null;
+    }
     if (!agent) {
       throw new Error("No PDS agent found");
     }

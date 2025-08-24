@@ -21,7 +21,10 @@ export function useLivestreamInfo(url?: string) {
       if (title !== "") {
         setRecordSubmitted(true);
         // Create the livestream record with title and custom url if available
-        await createStreamRecord(title, undefined, undefined, url);
+        await createStreamRecord({
+          title,
+          customUrl: url || null,
+        });
       }
     } catch (error) {
       console.error("Error creating livestream:", error);
