@@ -202,11 +202,11 @@ function LivestreamPanel() {
       }
 
       if (mode === "create") {
-        await createStreamRecord(
-          title.trim(),
-          thumbnailToUse as Blob | undefined,
-          true,
-        );
+        await createStreamRecord({
+          title: title.trim(),
+          customThumbnail: thumbnailToUse as Blob | undefined,
+          submitPost: true,
+        });
       } else {
         await updateStreamRecord(
           title.trim(),
