@@ -42,14 +42,13 @@
     "react-use-websocket": "^4.13.0",
     "viem": "^2.21.44",
     "zustand": "^5.0.5",
-    "streamplace": "0.7.2"
+    "streamplace": "workspace:*"
   },
   "peerDependencies": {
     "react": "*"
   },
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "tsc",
     "start": "tsc --watch --preserveWatchOutput"
   }
 }
