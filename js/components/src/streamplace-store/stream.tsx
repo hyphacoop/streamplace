@@ -234,10 +234,11 @@ export function useCreateStreamRecord() {
       }
     }
 
-    // get version? only works on andoid/ios
-    //
     let platform: string = Platform.OS;
-    let platVersion: string = Platform.Version.toString();
+    let platVersion: string = Platform.Version
+      ? Platform.Version.toString()
+      : "";
+    // no Platform.Version on web, so use browser name instead
     if (
       platform === "web" &&
       typeof window !== "undefined" &&
