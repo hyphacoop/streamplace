@@ -1,6 +1,7 @@
-import { Ellipsis, Reply, ShieldEllipsis } from "lucide-react-native";
+import { Ellipsis, Reply } from "lucide-react-native";
 import { ComponentProps, memo, useEffect, useRef, useState } from "react";
-import { FlatList, Platform, Pressable } from "react-native";
+import { Platform, Pressable } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Swipeable, {
   SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -44,7 +45,7 @@ function LeftAction(prog: SharedValue<number>, drag: SharedValue<number>) {
 
   return (
     <Reanimated.View style={[styleAnimation]}>
-      <ShieldEllipsis color="white" />
+      <Ellipsis color="white" />
     </Reanimated.View>
   );
 }
