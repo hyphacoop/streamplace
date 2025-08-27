@@ -12,3 +12,8 @@ export type PlayerProps = {
   objectFit?: "contain" | "cover";
   pictureInPictureEnabled?: boolean;
 };
+
+export type VideoNativeProps = {
+  objectFit?: "contain" | "cover";
+  pictureInPictureEnabled?: boolean;
+};
