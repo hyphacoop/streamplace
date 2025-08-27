@@ -250,8 +250,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(expo@53.0.11(@babel/core@7.26.0)(@expo/metro-runtime@5.0.4(react-native@0.79.3(@babel/core@7.26.0)(@types/react@18.3.12)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10)))(bufferutil@4.0.8)(react-native-webview@13.15.0(react-native@0.79.3(@babel/core@7.26.0)(@types/react@18.3.12)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0))(react-native@0.79.3(@babel/core@7.26.0)(@types/react@18.3.12)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0)(utf-8-validate@5.0.10))(react-native-gesture-handler@2.26.0(react-native@0.79.3(@babel/core@7.26.0)(@types/react@18.3.12)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0))(react-native-reanimated@3.18.0(@babel/core@7.26.0)(react-native@0.79.3(@babel/core@7.26.0)(@types/react@18.3.12)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0))(react-native@0.79.3(@babel/core@7.26.0)(@types/react@18.3.12)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))(react@19.0.0)
       rtcaudiodevice:
-        specifier: git+https://github.com/streamplace/RTCAudioDevice.git#7b4659fe845545d366623cbc813936987144b76f
-        version: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/7b4659fe845545d366623cbc813936987144b76f
+        specifier: git+https://github.com/streamplace/RTCAudioDevice.git#918e08a0f6f0818fb495a0db0b696b44d11d1336
+        version: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/918e08a0f6f0818fb495a0db0b696b44d11d1336
       stream-http:
         specifier: ^3.2.0
         version: 3.2.0
@@ -469,8 +469,8 @@ importers:
         specifier: git+https://github.com/streamplace/react-native-webrtc.git#6b8472a771ac47f89217d327058a8a4124a6ae56
         version: https://codeload.github.com/streamplace/react-native-webrtc/tar.gz/6b8472a771ac47f89217d327058a8a4124a6ae56(react-native@0.79.3(@babel/core@7.26.0)(bufferutil@4.0.8)(react@19.0.0)(utf-8-validate@5.0.10))
       rtcaudiodevice:
-        specifier: git+https://github.com/streamplace/RTCAudioDevice.git#7b4659fe845545d366623cbc813936987144b76f
-        version: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/7b4659fe845545d366623cbc813936987144b76f
+        specifier: git+https://github.com/streamplace/RTCAudioDevice.git#918e08a0f6f0818fb495a0db0b696b44d11d1336
+        version: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/918e08a0f6f0818fb495a0db0b696b44d11d1336
     devDependencies:
       typescript:
         specifier: ~5.3.3
@@ -10613,8 +10613,8 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  rtcaudiodevice@https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/7b4659fe845545d366623cbc813936987144b76f:
-    resolution: {tarball: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/7b4659fe845545d366623cbc813936987144b76f}
+  rtcaudiodevice@https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/918e08a0f6f0818fb495a0db0b696b44d11d1336:
+    resolution: {tarball: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/918e08a0f6f0818fb495a0db0b696b44d11d1336}
     version: 0.0.1
 
   run-async@2.4.1:
@@ -26375,7 +26375,7 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.40.1
       fsevents: 2.3.3
 
-  rtcaudiodevice@https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/7b4659fe845545d366623cbc813936987144b76f: {}
+  rtcaudiodevice@https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/918e08a0f6f0818fb495a0db0b696b44d11d1336: {}
 
   run-async@2.4.1: {}
 
