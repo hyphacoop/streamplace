@@ -64,14 +64,12 @@ import { useAppDispatch, useAppSelector } from "store/hooks";
 import { H3, Text, useTheme, View } from "tamagui";
 import AboutScreen from "./screens/about";
 import AppReturnScreen from "./screens/app-return";
-import AVSyncScreen from "./screens/av-sync";
 import PopoutChat from "./screens/chat-popout";
 import DownloadScreen from "./screens/download";
 import EmbedScreen from "./screens/embed";
 import InfoWidgetEmbed from "./screens/info-widget-embed";
 import LiveDashboard from "./screens/live-dashboard";
 import MultiScreen from "./screens/multi";
-import StreamScreen from "./screens/stream";
 import SupportScreen from "./screens/support";
 
 // probabl should move this
@@ -514,15 +512,6 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
-          name="AVSync"
-          component={AVSyncScreen}
-          options={{
-            drawerLabel: () => null,
-            drawerItemStyle: { display: "none" },
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
           name="Login"
           component={Login}
           options={{
@@ -565,15 +554,6 @@ export function StreamplaceDrawer() {
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
             headerShown: false,
-          }}
-        />
-        <Drawer.Screen
-          name="LegacyStream"
-          component={StreamScreen}
-          options={{
-            headerTitle: "Stream",
-            drawerItemStyle: { display: "none" },
-            title: "Streamplace Stream",
           }}
         />
         <Drawer.Screen
