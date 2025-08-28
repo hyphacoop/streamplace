@@ -83,6 +83,9 @@ export function ChatBox({
   const authors = useMemo(() => {
     if (!chat) return null;
     return chat.reduce((acc, msg) => {
+      // our fake system user "did"
+      if (msg.author.did === "did:sys:system") return acc;
+      if (acc.has(msg.author.handle)) return acc;
       acc.set(msg.author.handle, msg.chatProfile);
       return acc;
     }, new Map<string, ChatMessageViewHydrated["chatProfile"]>());
