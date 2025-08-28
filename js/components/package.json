@@ -49,6 +49,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "tsc --watch --preserveWatchOutput"
+    "start": "tsc --watch --preserveWatchOutput",
+    "prepare": "tsc"
   }
 }
