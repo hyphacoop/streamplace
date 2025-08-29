@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 	notificationpkg "stream.place/streamplace/pkg/notifications"
 )
 
@@ -32,6 +33,7 @@ type StatefulDB struct {
 	Type  DBType
 	locks *NamedLocks
 	noter notificationpkg.FirebaseNotifier
+	model model.Model
 	// pokeQueue is used to wake up the queue processor when a new task is enqueued
 	pokeQueue chan struct{}
 }
@@ -48,7 +50,7 @@ var StatefulDBModels = []any{
 var NoPostgresDatabaseCode = "3D000"
 
 // Stateful database for storing private streamplace state
-func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier) (*StatefulDB, error) {
+func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier, model model.Model) (*StatefulDB, error) {
 	dbURL := cli.DBURL
 	log.Log(context.Background(), "starting stateful database", "dbURL", redactDBURL(dbURL))
 	var dial gorm.Dialector
@@ -100,6 +102,7 @@ func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier) (*StatefulD
 		CLI:       cli,
 		Type:      dbType,
 		locks:     NewNamedLocks(),
+		model:     model,
 		pokeQueue: make(chan struct{}, 1),
 	}, nil
 }

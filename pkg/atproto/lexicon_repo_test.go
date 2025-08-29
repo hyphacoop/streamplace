@@ -22,7 +22,7 @@ func TestLexiconRepo(t *testing.T) {
 	cli.DataDir = t.TempDir()
 	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
-	state, err := statedb.MakeDB(&cli, nil)
+	state, err := statedb.MakeDB(&cli, nil, mod)
 	require.NoError(t, err)
 
 	// creating a new repo

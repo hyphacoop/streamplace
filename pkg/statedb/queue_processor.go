@@ -77,13 +77,25 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 	}
 	userDID := lsv.Author.Did
 
-	if state.noter != nil {
-		log.Warn(ctx, "Livestream detected! Blasting followers!", "title", rec.Title, "url", rec.Url, "createdAt", rec.CreatedAt, "repo", userDID)
-		notifications, err := state.GetFollowersNotificationTokens(userDID)
-		if err != nil {
-			return err
-		}
+	log.Warn(ctx, "Livestream detected! Blasting followers!", "title", rec.Title, "url", rec.Url, "createdAt", rec.CreatedAt, "repo", userDID)
+	followers, err := state.model.GetUserFollowers(ctx, userDID)
+	if err != nil {
+		return err
+	}
 
+	followersDIDs := make([]string, 0, len(followers))
+	for _, follower := range followers {
+		followersDIDs = append(followersDIDs, follower.UserDID)
+	}
+
+	log.Log(ctx, "found followers", "count", len(followersDIDs))
+
+	notifications, err := state.GetManyNotificationTokens(followersDIDs)
+	if err != nil {
+		return err
+	}
+
+	if state.noter != nil {
 		nb := &notificationpkg.NotificationBlast{
 			Title: fmt.Sprintf("🔴 @%s is LIVE!", lsv.Author.Handle),
 			Body:  rec.Title,
@@ -98,7 +110,7 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 			log.Log(ctx, "sent notifications", "user", userDID, "count", len(notifications), "content", nb)
 		}
 	} else {
-		log.Log(ctx, "no notifier configured, skipping notifications", "user", userDID)
+		log.Log(ctx, "no notifier configured, skipping notifications", "user", userDID, "count", len(notifications))
 	}
 
 	for _, webhook := range state.CLI.DiscordWebhooks {

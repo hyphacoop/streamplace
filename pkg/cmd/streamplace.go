@@ -321,7 +321,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
-	state, err := statedb.MakeDB(&cli, noter)
+	state, err := statedb.MakeDB(&cli, noter, mod)
 	if err != nil {
 		return err
 	}
