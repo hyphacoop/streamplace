@@ -309,12 +309,19 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
+	var noter notifications.FirebaseNotifier
+	if cli.FirebaseServiceAccount != "" {
+		noter, err = notifications.MakeFirebaseNotifier(ctx, cli.FirebaseServiceAccount)
+		if err != nil {
+			return err
+		}
+	}
 	out := carstore.SQLiteStore{}
 	err = out.Open(":memory:")
 	if err != nil {
 		return err
 	}
-	state, err := statedb.MakeDB(&cli)
+	state, err := statedb.MakeDB(&cli, noter)
 	if err != nil {
 		return err
 	}
@@ -323,13 +330,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 	defer handle.Close()
-	var noter notifications.FirebaseNotifier
-	if cli.FirebaseServiceAccount != "" {
-		noter, err = notifications.MakeFirebaseNotifier(ctx, cli.FirebaseServiceAccount)
-		if err != nil {
-			return err
-		}
-	}
 
 	jwk, err := state.EnsureJWK(ctx, "jwk")
 	if err != nil {
@@ -392,6 +392,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	group.Go(func() error {
 		return handleSignals(ctx)
+	})
+
+	group.Go(func() error {
+		return state.ProcessQueue(ctx)
 	})
 
 	if cli.TracingEndpoint != "" {

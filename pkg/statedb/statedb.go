@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
+	notificationpkg "stream.place/streamplace/pkg/notifications"
 )
 
 type DBType string
@@ -30,6 +31,7 @@ type StatefulDB struct {
 	CLI   *config.CLI
 	Type  DBType
 	locks *NamedLocks
+	noter notificationpkg.FirebaseNotifier
 }
 
 // list tables here so we can migrate them
@@ -38,12 +40,13 @@ var StatefulDBModels = []any{
 	Notification{},
 	Config{},
 	XrpcStreamEvent{},
+	AppTask{},
 }
 
 var NoPostgresDatabaseCode = "3D000"
 
 // Stateful database for storing private streamplace state
-func MakeDB(cli *config.CLI) (*StatefulDB, error) {
+func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier) (*StatefulDB, error) {
 	dbURL := cli.DBURL
 	log.Log(context.Background(), "starting stateful database", "dbURL", redactDBURL(dbURL))
 	var dial gorm.Dialector
