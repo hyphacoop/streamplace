@@ -20,7 +20,7 @@ import (
 	"stream.place/streamplace/pkg/streamplace"
 )
 
-func TestFirehose(t *testing.T) {
+func TestChatMessage(t *testing.T) {
 	dev := devenv.WithDevEnv(t)
 	t.Logf("dev: %+v", dev)
 	cli := config.CLI{
