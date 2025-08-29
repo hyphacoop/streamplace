@@ -10,15 +10,11 @@ import (
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/util"
-	"github.com/bluesky-social/indigo/xrpc"
 	"github.com/cenkalti/backoff"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/devenv"
-	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/statedb"
 	"stream.place/streamplace/pkg/streamplace"
@@ -49,26 +45,6 @@ func TestFirehose(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	xrpcc := &xrpc.Client{
-		Host:   dev.PDSURL,
-		Client: &aqhttp.Client,
-	}
-
-	uu, err := uuid.NewRandom()
-	require.NoError(t, err)
-
-	handle := fmt.Sprintf("sp-%s.test", uu.String()[:8])
-	email := fmt.Sprintf("%s@example.com", handle)
-	password := "test"
-
-	out, err := comatproto.ServerCreateAccount(ctx, xrpcc, &comatproto.ServerCreateAccount_Input{
-		Handle:   handle,
-		Email:    &email,
-		Password: &password,
-	})
-	require.NoError(t, err)
-	log.Log(ctx, "created account", "did", out.Did, "handle", out.Handle)
-
 	done := make(chan struct{})
 
 	go func() {
@@ -77,40 +53,25 @@ func TestFirehose(t *testing.T) {
 		close(done)
 	}()
 
-	session, err := comatproto.ServerCreateSession(ctx, xrpcc, &comatproto.ServerCreateSession_Input{
-		Identifier: out.Handle,
-		Password:   password,
-	})
-	require.NoError(t, err)
-
-	xrpcc = &xrpc.Client{
-		Host:   dev.PDSURL,
-		Client: &aqhttp.Client,
-		Auth: &xrpc.AuthInfo{
-			Did:        out.Did,
-			AccessJwt:  session.AccessJwt,
-			RefreshJwt: session.RefreshJwt,
-			Handle:     out.Handle,
-		},
-	}
+	user := dev.CreateAccount(t)
 
 	msg := &streamplace.ChatMessage{
 		LexiconTypeID: "place.stream.chat.message",
 		Text:          "Hello, world!",
 		CreatedAt:     time.Now().Format(util.ISO8601),
-		Streamer:      out.Did,
+		Streamer:      user.DID,
 	}
 
-	_, err = comatproto.RepoCreateRecord(ctx, xrpcc, &comatproto.RepoCreateRecord_Input{
+	_, err = comatproto.RepoCreateRecord(ctx, user.XRPC, &comatproto.RepoCreateRecord_Input{
 		Collection: "place.stream.chat.message",
-		Repo:       out.Did,
+		Repo:       user.DID,
 		Record:     &lexutil.LexiconTypeDecoder{Val: msg},
 	})
 	require.NoError(t, err)
 
 	messages := []*streamplace.ChatDefs_MessageView{}
 	err = untilNoErrors(t, func() error {
-		messages, err = mod.MostRecentChatMessages(out.Did)
+		messages, err = mod.MostRecentChatMessages(user.DID)
 		if err != nil {
 			return err
 		}

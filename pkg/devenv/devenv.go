@@ -2,11 +2,20 @@ package devenv
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	"github.com/bluesky-social/indigo/xrpc"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/aqhttp"
+	"stream.place/streamplace/pkg/log"
 )
 
 type DevEnv struct {
@@ -61,4 +70,60 @@ func WithDevEnv(t *testing.T) *DevEnv {
 	})
 
 	return &env
+}
+
+type DevEnvAccount struct {
+	Handle   string
+	Email    string
+	Password string
+	DID      string
+	XRPC     *xrpc.Client
+}
+
+func (d *DevEnv) CreateAccount(t *testing.T) *DevEnvAccount {
+
+	xrpcc := &xrpc.Client{
+		Host:   d.PDSURL,
+		Client: &aqhttp.Client,
+	}
+
+	uu, err := uuid.NewRandom()
+	require.NoError(t, err)
+
+	handle := fmt.Sprintf("sp-%s.test", uu.String()[:8])
+	email := fmt.Sprintf("%s@example.com", handle)
+	password := "test"
+
+	out, err := comatproto.ServerCreateAccount(context.Background(), xrpcc, &comatproto.ServerCreateAccount_Input{
+		Handle:   handle,
+		Email:    &email,
+		Password: &password,
+	})
+	require.NoError(t, err)
+	log.Log(context.Background(), "created account", "did", out.Did, "handle", out.Handle)
+
+	session, err := comatproto.ServerCreateSession(context.Background(), xrpcc, &comatproto.ServerCreateSession_Input{
+		Identifier: out.Handle,
+		Password:   password,
+	})
+	require.NoError(t, err)
+
+	xrpcc = &xrpc.Client{
+		Host:   d.PDSURL,
+		Client: &aqhttp.Client,
+		Auth: &xrpc.AuthInfo{
+			Did:        out.Did,
+			AccessJwt:  session.AccessJwt,
+			RefreshJwt: session.RefreshJwt,
+			Handle:     out.Handle,
+		},
+	}
+
+	return &DevEnvAccount{
+		Handle:   out.Handle,
+		Email:    email,
+		Password: password,
+		DID:      out.Did,
+		XRPC:     xrpcc,
+	}
 }
