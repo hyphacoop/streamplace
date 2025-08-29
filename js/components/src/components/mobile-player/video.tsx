@@ -154,6 +154,7 @@ const VideoElement = forwardRef<
     playerEvent(url, now.toISOString(), evType, {});
   };
   const [firstAttempt, setFirstAttempt] = useState(true);
+  const setAutoplayFailed = usePlayerStore((x) => x.setAutoplayFailed);
 
   const localVideoRef = props.videoRef ?? useRef<HTMLVideoElement | null>(null);
 
@@ -206,11 +207,20 @@ const VideoElement = forwardRef<
               })
               .catch((err) => {
                 console.error("Muted play also failed", err);
+                setAutoplayFailed(true);
               });
           }
+        } else {
+          // For other errors (not NotAllowedError), also show play button
+          setAutoplayFailed(true);
         }
       });
     }
+  };
+
+  const handlePlaying = (e) => {
+    setAutoplayFailed(false);
+    event("playing")(e);
   };
 
   useEffect(() => {
@@ -275,7 +285,7 @@ const VideoElement = forwardRef<
       onLoadStart={event("loadstart")}
       onPause={event("pause")}
       onPlay={event("play")}
-      onPlaying={event("playing")}
+      onPlaying={handlePlaying}
       onRateChange={event("ratechange")}
       onSeeked={event("seeked")}
       onSeeking={event("seeking")}

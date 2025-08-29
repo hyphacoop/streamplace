@@ -302,6 +302,7 @@ export function MobileUi() {
           </Pressable>
         </View>
       )}
+      <PlayerUI.AutoplayButton />
     </>
   );
 }
