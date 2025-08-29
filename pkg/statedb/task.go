@@ -86,6 +86,15 @@ func (state *StatefulDB) EnqueueTask(ctx context.Context, taskType string, paylo
 		return nil, fmt.Errorf("failed to enqueue task: %w", err)
 	}
 
+	go func() {
+		select {
+		case state.pokeQueue <- struct{}{}:
+			// wake up the queue processor
+		default:
+			// queue is already awake, do nothing
+		}
+	}()
+
 	return task, nil
 }
 

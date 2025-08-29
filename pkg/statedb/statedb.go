@@ -32,6 +32,8 @@ type StatefulDB struct {
 	Type  DBType
 	locks *NamedLocks
 	noter notificationpkg.FirebaseNotifier
+	// pokeQueue is used to wake up the queue processor when a new task is enqueued
+	pokeQueue chan struct{}
 }
 
 // list tables here so we can migrate them
@@ -94,10 +96,11 @@ func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier) (*StatefulD
 		}
 	}
 	return &StatefulDB{
-		DB:    db,
-		CLI:   cli,
-		Type:  dbType,
-		locks: NewNamedLocks(),
+		DB:        db,
+		CLI:       cli,
+		Type:      dbType,
+		locks:     NewNamedLocks(),
+		pokeQueue: make(chan struct{}, 1),
 	}, nil
 }
 

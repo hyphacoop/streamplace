@@ -11,7 +11,6 @@ import (
 	"github.com/bluesky-social/indigo/atproto/data"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"stream.place/streamplace/pkg/aqtime"
-	"stream.place/streamplace/pkg/integrations/discord"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/statedb"
@@ -134,17 +133,14 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		go atsync.Bus.Publish(rec.Streamer, scm)
 
 		if !isUpdate && !isFirstSync {
-			for _, webhook := range atsync.CLI.DiscordWebhooks {
-				if webhook.DID == rec.Streamer && webhook.Type == "chat" {
-					go func() {
-						err := discord.SendChat(ctx, webhook, repo, scm)
-						if err != nil {
-							log.Error(ctx, "failed to send livestream to discord", "err", err)
-						} else {
-							log.Log(ctx, "sent livestream to discord", "user", userDID, "webhook", webhook.URL)
-						}
-					}()
-				}
+
+			task := &statedb.ChatTask{
+				MessageView: scm,
+			}
+
+			_, err = atsync.StatefulDB.EnqueueTask(ctx, statedb.TaskChat, task, statedb.WithTaskKey(fmt.Sprintf("chat-message::%s", aturi.String())))
+			if err != nil {
+				log.Error(ctx, "failed to enqueue notification task", "err", err)
 			}
 		}
 
