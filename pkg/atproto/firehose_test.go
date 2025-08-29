@@ -3,6 +3,7 @@ package atproto
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
+	"stream.place/streamplace/pkg/devenv"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/statedb"
@@ -23,12 +25,15 @@ import (
 )
 
 func TestFirehose(t *testing.T) {
+	dev := devenv.WithDevEnv(t)
+	t.Logf("dev: %+v", dev)
 	cli := config.CLI{
 		PublicHost: "example.com",
 		DBURL:      ":memory:",
-		RelayHost:  "ws://localhost:37751",
-		PLCURL:     "http://localhost:45635",
+		RelayHost:  strings.ReplaceAll(dev.PDSURL, "http://", "ws://"),
+		PLCURL:     dev.PLCURL,
 	}
+	t.Logf("cli: %+v", cli)
 	b := bus.NewBus()
 	cli.DataDir = t.TempDir()
 	mod, err := model.MakeDB(":memory:")
@@ -45,7 +50,7 @@ func TestFirehose(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	xrpcc := &xrpc.Client{
-		Host:   "http://localhost:37751",
+		Host:   dev.PDSURL,
 		Client: &aqhttp.Client,
 	}
 
@@ -79,7 +84,7 @@ func TestFirehose(t *testing.T) {
 	require.NoError(t, err)
 
 	xrpcc = &xrpc.Client{
-		Host:   "http://localhost:37751",
+		Host:   dev.PDSURL,
 		Client: &aqhttp.Client,
 		Auth: &xrpc.AuthInfo{
 			Did:        out.Did,
