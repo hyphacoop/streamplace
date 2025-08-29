@@ -87,10 +87,12 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			return fmt.Errorf("failed to sync bluesky repo: %w", err)
 		}
 
-		_, err = atsync.SyncBlueskyRepoCached(ctx, rec.Streamer, atsync.Model)
-		if err != nil {
-			log.Error(ctx, "failed to sync bluesky repo", "err", err)
-		}
+		go func() {
+			_, err = atsync.SyncBlueskyRepoCached(ctx, rec.Streamer, atsync.Model)
+			if err != nil {
+				log.Error(ctx, "failed to sync bluesky repo", "err", err)
+			}
+		}()
 
 		log.Debug(ctx, "streamplace.ChatMessage detected", "message", rec.Text, "repo", repo.Handle)
 		block, err := atsync.Model.GetUserBlock(ctx, rec.Streamer, userDID)
