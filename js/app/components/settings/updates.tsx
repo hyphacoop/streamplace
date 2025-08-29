@@ -14,9 +14,9 @@ export function Updates() {
     >
       <View>
         <Text
+          size="2xl"
           style={[
             {
-              fontSize: 24,
               fontWeight: "bold",
               textAlign: "center",
               color: "#fff",

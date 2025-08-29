@@ -2,8 +2,8 @@ import { useNavigation } from "@react-navigation/native";
 import {
   Button,
   Input,
+  Localized,
   Text,
-  useToast,
   View,
   zero,
 } from "@streamplace/components";
@@ -28,7 +28,6 @@ export function Settings() {
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
-  const t = useToast();
 
   // are we logged in?
   const loggedIn = useAppSelector(
@@ -93,10 +92,14 @@ export function Settings() {
                 ]}
               >
                 <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                  <Text size="xl">Use Custom Node</Text>
-                  <Text size="lg" color="muted">
-                    Default: {defaultUrl}
-                  </Text>
+                  <Localized id="use-custom-node">
+                    <Text size="xl">Use Custom Node</Text>
+                  </Localized>
+                  <Localized id="default-url" vars={{ url: defaultUrl }}>
+                    <Text size="lg" color="muted">
+                      Default: {defaultUrl}
+                    </Text>
+                  </Localized>
                 </View>
                 <Switch
                   value={overrideEnabled}
@@ -115,27 +118,34 @@ export function Settings() {
                 ]}
               >
                 <View style={{ flex: 1 }}>
-                  <Input
-                    value={newUrl}
-                    containerStyle={[
-                      { flex: 1, flexGrow: 1, width: "100%" },
-                      zero.flex.grow[1],
-                    ]}
-                    variant="default"
-                    numberOfLines={1}
-                    multiline={false}
-                    placeholder={url || "Enter custom node URL"}
-                    placeholderTextColor="#999"
-                    onChangeText={setNewUrl}
-                    onSubmitEditing={onSubmitUrl}
-                    textContentType="URL"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="url"
-                  />
+                  <Localized
+                    id="enter-custom-node-url"
+                    attrs={{ placeholder: true }}
+                  >
+                    <Input
+                      value={newUrl}
+                      containerStyle={[
+                        { flex: 1, flexGrow: 1, width: "100%" },
+                        zero.flex.grow[1],
+                      ]}
+                      variant="default"
+                      numberOfLines={1}
+                      multiline={false}
+                      placeholder={url || undefined}
+                      placeholderTextColor="#999"
+                      onChangeText={setNewUrl}
+                      onSubmitEditing={onSubmitUrl}
+                      textContentType="URL"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                    />
+                  </Localized>
                 </View>
                 <Button size="md" variant="secondary" onPress={onSubmitUrl}>
-                  <Text size="lg">Save</Text>
+                  <Localized id="save-button">
+                    <Text size="lg">Save</Text>
+                  </Localized>
                 </Button>
               </View>
             </View>
@@ -164,7 +174,9 @@ export function Settings() {
                     },
                   ]}
                 >
-                  <Text>Manage Keys</Text>
+                  <Localized id="manage-keys">
+                    <Text>Manage Keys</Text>
+                  </Localized>
                   <Text style={[{ fontSize: 16 }]}>→</Text>
                 </View>
               </AQLink>
@@ -207,13 +219,17 @@ const DebugRecording = () => {
         ]}
       >
         <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-          <Text size="xl">
-            Allow {u.host} to record your livestream for debugging and improving
-            the service
-          </Text>
-          <Text size="lg" color="muted">
-            Optional
-          </Text>
+          <Localized id="debug-recording-title" vars={{ host: u.host }}>
+            <Text size="xl">
+              Allow {u.host} to record your livestream for debugging and
+              improving the service
+            </Text>
+          </Localized>
+          <Localized id="debug-recording-description">
+            <Text size="lg" color="muted">
+              Optional
+            </Text>
+          </Localized>
         </View>
         <Switch
           value={debugRecordingOn}

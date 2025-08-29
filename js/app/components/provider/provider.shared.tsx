@@ -6,6 +6,7 @@ import {
 import * as Sentry from "@sentry/react-native";
 import {
   ThemeProvider,
+  DirectI18nProvider,
   StreamplaceProvider as ZustandStreamplaceProvider,
 } from "@streamplace/components";
 import { useFonts } from "expo-font";
@@ -87,17 +88,23 @@ function ProviderInner({
   return (
     <SafeAreaProvider>
       <ThemeProvider forcedTheme="dark">
-        <NavigationContainer theme={SPDarkTheme} linking={linking}>
-          <ReduxProvider store={store}>
-            <StreamplaceProvider>
-              <BlueskyProvider>
-                <NewStreamplaceProvider>
-                  <FontProvider>{children}</FontProvider>
-                </NewStreamplaceProvider>
-              </BlueskyProvider>
-            </StreamplaceProvider>
-          </ReduxProvider>
-        </NavigationContainer>
+      <DirectI18nProvider
+        enableDynamicLoading={true}
+        preloadAll={true}
+        debug={process.env.NODE_ENV === "development"}
+      >
+          <NavigationContainer theme={SPDarkTheme} linking={linking}>
+            <ReduxProvider store={store}>
+              <StreamplaceProvider>
+                <BlueskyProvider>
+                  <NewStreamplaceProvider>
+                    <FontProvider>{children}</FontProvider>
+                  </NewStreamplaceProvider>
+                </BlueskyProvider>
+              </StreamplaceProvider>
+            </ReduxProvider>
+          </NavigationContainer>
+      </DirectI18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

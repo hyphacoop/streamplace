@@ -17,7 +17,9 @@
     "prepare": "which pod && pnpm run prepare-ios || echo 'not a mac, not installing pods'",
     "prepare-ios": "cd ios && pod install && pnpm run find-node",
     "find-node": "node -p '`NODE_BINARY=${process.argv[0]}`' > ios/.xcode.env.local",
-    "code-signing-dev": "mkdir -p code-signing-dev/keys code-signing-dev/certs && expo-updates codesigning:generate --key-output-directory code-signing-dev/keys --certificate-output-directory code-signing-dev/certs --certificate-validity-duration-years 10 --certificate-common-name 'Streamplace'"
+    "code-signing-dev": "mkdir -p code-signing-dev/keys code-signing-dev/certs && expo-updates codesigning:generate --key-output-directory code-signing-dev/keys --certificate-output-directory code-signing-dev/certs --certificate-validity-duration-years 10 --certificate-common-name 'Streamplace'",
+    "i18n:compile": "cd ../components && pnpm run i18n:compile",
+    "i18n:watch": "cd ../components && pnpm run i18n:watch"
   },
   "jest": {
     "preset": "jest-expo"
@@ -32,6 +34,9 @@
     "@atproto/oauth-client-browser": "^0.3.31",
     "@bacons/text-decoder": "^0.0.0",
     "@emoji-mart/react": "^1.1.1",
+    "@fluent/bundle": "^0.19.1",
+    "@fluent/langneg": "^0.7.0",
+    "@fluent/react": "^0.15.2",
     "@react-native-firebase/app": "^22.2.1",
     "@react-native-firebase/messaging": "^22.2.1",
     "@react-navigation/bottom-tabs": "^6.6.1",

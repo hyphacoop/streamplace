@@ -24,6 +24,10 @@ export * as zero from "./ui";
 
 export * from "./hooks";
 
+// Internationalization system exports
+export * from "./i18n";
+export * as I18n from "./i18n";
+
 // Theme system exports
 export * from "./lib/theme";
 

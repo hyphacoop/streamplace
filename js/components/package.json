@@ -24,6 +24,9 @@
     "@atproto/api": "^0.16.7",
     "@atproto/crypto": "^0.4.4",
     "@emoji-mart/react": "^1.1.1",
+    "@fluent/bundle": "^0.19.1",
+    "@fluent/langneg": "^0.7.0",
+    "@fluent/react": "^0.15.2",
     "@gorhom/bottom-sheet": "^5.1.6",
     "@rn-primitives/dropdown-menu": "^1.2.0",
     "@rn-primitives/portal": "^1.3.0",
@@ -54,6 +57,8 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc --watch --preserveWatchOutput",
-    "prepare": "tsc"
+    "prepare": "tsc",
+    "i18n:compile": "node scripts/compile-translations.js",
+    "i18n:watch": "nodemon scripts/compile-translations.js --watch src/i18n/locales/data/**/*.ftl"
   }
 }
