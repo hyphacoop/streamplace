@@ -194,6 +194,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if *version {
 		return nil
 	}
+
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		return statedb.Migrate(&cli)
+	}
+
 	spmetrics.Version.WithLabelValues(build.Version).Inc()
 	if cli.LivepeerHelp {
 		lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
