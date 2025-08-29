@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bluesky-social/indigo/carstore"
 	"github.com/livepeer/go-livepeer/cmd/livepeer/starter"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
@@ -35,6 +36,7 @@ import (
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
+	"stream.place/streamplace/pkg/statedb"
 
 	"github.com/ThalesGroup/crypto11"
 	_ "github.com/go-gst/go-glib/glib"
@@ -192,6 +194,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if *version {
 		return nil
 	}
+
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		return statedb.Migrate(&cli)
+	}
+
 	spmetrics.Version.WithLabelValues(build.Version).Inc()
 	if cli.LivepeerHelp {
 		lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
@@ -302,15 +309,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		signer = hwsigner
 	}
 	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
-	mod, err := model.MakeDB(cli.DBPath)
+
+	mod, err := model.MakeDB(cli.IndexDBPath)
 	if err != nil {
 		return err
 	}
-	handle, err := atproto.MakeLexiconRepo(ctx, &cli, mod)
-	if err != nil {
-		return err
-	}
-	defer handle.Close()
 	var noter notifications.FirebaseNotifier
 	if cli.FirebaseServiceAccount != "" {
 		noter, err = notifications.MakeFirebaseNotifier(ctx, cli.FirebaseServiceAccount)
@@ -318,16 +321,28 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 	}
+	out := carstore.SQLiteStore{}
+	err = out.Open(":memory:")
+	if err != nil {
+		return err
+	}
+	state, err := statedb.MakeDB(&cli, noter, mod)
+	if err != nil {
+		return err
+	}
+	handle, err := atproto.MakeLexiconRepo(ctx, &cli, mod, state)
+	if err != nil {
+		return err
+	}
+	defer handle.Close()
 
-	jwkPath := cli.DataFilePath([]string{"jwk.json"})
-	jwk, err := atproto.EnsureJWK(ctx, jwkPath)
+	jwk, err := state.EnsureJWK(ctx, "jwk")
 	if err != nil {
 		return err
 	}
 	cli.JWK = jwk
 
-	accessJWKPath := cli.DataFilePath([]string{"access-jwk.json"})
-	accessJWK, err := atproto.EnsureJWK(ctx, accessJWKPath)
+	accessJWK, err := state.EnsureJWK(ctx, "access-jwk")
 	if err != nil {
 		return err
 	}
@@ -335,10 +350,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	b := bus.NewBus()
 	atsync := &atproto.ATProtoSynchronizer{
-		CLI:   &cli,
-		Model: mod,
-		Noter: noter,
-		Bus:   b,
+		CLI:        &cli,
+		Model:      mod,
+		StatefulDB: state,
+		Noter:      noter,
+		Bus:        b,
 	}
 	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod, b, atsync)
 	if err != nil {
@@ -361,16 +377,17 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	op := oatproxy.New(&oatproxy.Config{
 		Host:               cli.PublicHost,
-		CreateOAuthSession: mod.CreateOAuthSession,
-		UpdateOAuthSession: mod.UpdateOAuthSession,
-		GetOAuthSession:    mod.LoadOAuthSession,
+		CreateOAuthSession: state.CreateOAuthSession,
+		UpdateOAuthSession: state.UpdateOAuthSession,
+		GetOAuthSession:    state.LoadOAuthSession,
+		Lock:               state.GetNamedLock,
 		Scope:              "atproto transition:generic",
 		UpstreamJWK:        cli.JWK,
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op)
-	a, err := api.MakeStreamplaceAPI(&cli, mod, eip712signer, noter, mm, ms, b, atsync, d, op)
+	d := director.NewDirector(mm, mod, &cli, b, op, state)
+	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err
 	}
@@ -380,6 +397,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	group.Go(func() error {
 		return handleSignals(ctx)
+	})
+
+	group.Go(func() error {
+		return state.ProcessQueue(ctx)
 	})
 
 	if cli.TracingEndpoint != "" {

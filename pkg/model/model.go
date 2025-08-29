@@ -12,7 +12,6 @@ import (
 	"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/lmittmann/tint"
 	slogGorm "github.com/orandin/slog-gorm"
-	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
@@ -26,9 +25,6 @@ type DBModel struct {
 }
 
 type Model interface {
-	CreateNotification(token, repoDID string) error
-	ListNotifications() ([]Notification, error)
-
 	CreatePlayerEvent(event PlayerEventAPI) error
 	ListPlayerEvents(playerID string) ([]PlayerEvent, error)
 	PlayerReport(playerID string) (map[string]any, error)
@@ -63,7 +59,6 @@ type Model interface {
 	GetUserFollowers(ctx context.Context, userDID string) ([]Follow, error)
 	GetUserFollowingUser(ctx context.Context, userDID, subjectDID string) (*Follow, error)
 	DeleteFollow(ctx context.Context, userDID, rev string) error
-	GetFollowersNotificationTokens(userDID string) ([]string, error)
 
 	CreateFeedPost(ctx context.Context, post *FeedPost) error
 	ListFeedPosts() ([]FeedPost, error)
@@ -93,20 +88,9 @@ type Model interface {
 	CreateChatProfile(ctx context.Context, profile *ChatProfile) error
 	GetChatProfile(ctx context.Context, repoDID string) (*ChatProfile, error)
 
-	CreateOAuthSession(id string, session *oatproxy.OAuthSession) error
-	LoadOAuthSession(id string) (*oatproxy.OAuthSession, error)
-	UpdateOAuthSession(id string, session *oatproxy.OAuthSession) error
-	ListOAuthSessions() ([]oatproxy.OAuthSession, error)
-	GetSessionByDID(did string) (*oatproxy.OAuthSession, error)
-
 	UpdateServerSettings(ctx context.Context, settings *ServerSettings) error
 	GetServerSettings(ctx context.Context, server string, repoDID string) (*ServerSettings, error)
 	DeleteServerSettings(ctx context.Context, server string, repoDID string) error
-
-	CreateCommitEvent(commit *comatproto.SyncSubscribeRepos_Commit, signedData string) error
-	GetCommitEventsSince(repoDID string, t time.Time) ([]*XrpcStreamEvent, error)
-	GetCommitEventsSinceSeq(repoDID string, seq int64) ([]*XrpcStreamEvent, error)
-	GetMostRecentCommitEvent(repoDID string) (*XrpcStreamEvent, error)
 
 	CreateLabeler(did string) (*Labeler, error)
 	GetLabeler(did string) (*Labeler, error)
@@ -159,7 +143,6 @@ func MakeDB(dbURL string) (Model, error) {
 	}
 	sqlDB.SetMaxOpenConns(1)
 	for _, model := range []any{
-		Notification{},
 		PlayerEvent{},
 		Segment{},
 		Thumbnail{},
@@ -173,9 +156,8 @@ func MakeDB(dbURL string) (Model, error) {
 		ChatMessage{},
 		ChatProfile{},
 		Gate{},
-		oatproxy.OAuthSession{},
 		ServerSettings{},
-		XrpcStreamEvent{},
+
 		Labeler{},
 		Label{},
 	} {

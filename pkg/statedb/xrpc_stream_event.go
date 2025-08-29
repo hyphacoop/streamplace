@@ -1,4 +1,4 @@
-package model
+package statedb
 
 import (
 	"bytes"
@@ -13,10 +13,10 @@ import (
 )
 
 type XrpcStreamEvent struct {
-	CID        string    `json:"cid" gorm:"primaryKey"`
+	CID        string    `json:"cid" gorm:"column:cid;primaryKey"`
 	RepoDID    string    `json:"repoDID" gorm:"index:idx_repo_timestamp,priority:1;index:idx_repo_seq,priority:1;column:repo_did"`
 	Timestamp  time.Time `json:"timestamp" gorm:"index:idx_repo_timestamp,priority:2;column:timestamp"`
-	Data       []byte    `json:"data"`
+	Data       []byte    `json:"data" gorm:"column:data"`
 	SignedData string    `json:"signedData" gorm:"column:signed_data"`
 	Seq        int64     `json:"seq" gorm:"index:idx_repo_seq,priority:2;column:seq"`
 }
@@ -30,8 +30,8 @@ func (ev *XrpcStreamEvent) ToCommitEvent() (*comatproto.SyncSubscribeRepos_Commi
 	return commit, nil
 }
 
-func (m *DBModel) CreateCommitEvent(commit *comatproto.SyncSubscribeRepos_Commit, signedData string) error {
-	prev, err := m.GetMostRecentCommitEvent(commit.Repo)
+func (state *StatefulDB) CreateCommitEvent(commit *comatproto.SyncSubscribeRepos_Commit, signedData string) error {
+	prev, err := state.GetMostRecentCommitEvent(commit.Repo)
 	if err != nil {
 		return err
 	}
@@ -68,12 +68,12 @@ func (m *DBModel) CreateCommitEvent(commit *comatproto.SyncSubscribeRepos_Commit
 		Seq:        commit.Seq,
 		SignedData: signedData,
 	}
-	return m.DB.Create(event).Error
+	return state.DB.Create(event).Error
 }
 
-func (m *DBModel) GetCommitEventsSince(repoDID string, t time.Time) ([]*XrpcStreamEvent, error) {
+func (state *StatefulDB) GetCommitEventsSince(repoDID string, t time.Time) ([]*XrpcStreamEvent, error) {
 	var events []*XrpcStreamEvent
-	query := m.DB.Where("repo_did = ?", repoDID)
+	query := state.DB.Where("repo_did = ?", repoDID)
 	query = query.Where("timestamp > ?", t.UTC())
 	err := query.Order("timestamp ASC").Find(&events).Error
 	if err != nil {
@@ -82,9 +82,9 @@ func (m *DBModel) GetCommitEventsSince(repoDID string, t time.Time) ([]*XrpcStre
 	return events, nil
 }
 
-func (m *DBModel) GetCommitEventsSinceSeq(repoDID string, seq int64) ([]*XrpcStreamEvent, error) {
+func (state *StatefulDB) GetCommitEventsSinceSeq(repoDID string, seq int64) ([]*XrpcStreamEvent, error) {
 	var events []*XrpcStreamEvent
-	query := m.DB.Where("repo_did = ?", repoDID)
+	query := state.DB.Where("repo_did = ?", repoDID)
 	query = query.Where("seq > ?", seq)
 	err := query.Order("timestamp ASC").Find(&events).Error
 	if err != nil {
@@ -93,9 +93,9 @@ func (m *DBModel) GetCommitEventsSinceSeq(repoDID string, seq int64) ([]*XrpcStr
 	return events, nil
 }
 
-func (m *DBModel) GetMostRecentCommitEvent(repoDID string) (*XrpcStreamEvent, error) {
+func (state *StatefulDB) GetMostRecentCommitEvent(repoDID string) (*XrpcStreamEvent, error) {
 	var event XrpcStreamEvent
-	err := m.DB.Where("repo_did = ?", repoDID).
+	err := state.DB.Where("repo_did = ?", repoDID).
 		Order("timestamp DESC").
 		Limit(1).
 		First(&event).Error

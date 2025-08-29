@@ -51,7 +51,8 @@ type CLI struct {
 	AdminAccount           string
 	Build                  *BuildFlags
 	DataDir                string
-	DBPath                 string
+	DBURL                  string
+	IndexDBPath            string
 	EthAccountAddr         string
 	EthKeystorePath        string
 	EthPassword            string
@@ -124,7 +125,9 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	cli.DataDirFlag(fs, &cli.TLSCertPath, "tls-cert", filepath.Join("tls", "tls.crt"), "Path to TLS certificate")
 	cli.DataDirFlag(fs, &cli.TLSKeyPath, "tls-key", filepath.Join("tls", "tls.key"), "Path to TLS key")
 	fs.StringVar(&cli.SigningKeyPath, "signing-key", "", "Path to signing key for pushing OTA updates to the app")
-	cli.DataDirFlag(fs, &cli.DBPath, "db-path", "db.sqlite", "path to sqlite database file")
+	fs.StringVar(&cli.DBURL, "db-url", "sqlite://$SP_DATA_DIR/state.sqlite", "URL of the database to use for storing private streamplace state")
+	cli.dataDirFlags = append(cli.dataDirFlags, &cli.DBURL)
+	cli.DataDirFlag(fs, &cli.IndexDBPath, "index-db-path", "db.sqlite", "path to sqlite database file for maintaining atproto index")
 	fs.StringVar(&cli.AdminAccount, "admin-account", "", "ethereum account that administrates this streamplace node")
 	fs.StringVar(&cli.FirebaseServiceAccount, "firebase-service-account", "", "JSON string of a firebase service account key")
 	fs.StringVar(&cli.GitLabURL, "gitlab-url", "https://git.stream.place/api/v4/projects/1", "gitlab url for generating download links")
