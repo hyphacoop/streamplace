@@ -45,6 +45,7 @@ var StatefulDBModels = []any{
 	Config{},
 	XrpcStreamEvent{},
 	AppTask{},
+	Repo{},
 }
 
 var NoPostgresDatabaseCode = "3D000"

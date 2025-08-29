@@ -72,6 +72,10 @@ func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle s
 		if err != nil {
 			return nil, fmt.Errorf("failed to create empty DID record for %s: %w", ident.DID.String(), err)
 		}
+		err = atsync.StatefulDB.AddRepo(ident.DID.String())
+		if err != nil {
+			return nil, fmt.Errorf("failed to add repo to stateful DB for %s: %w", ident.DID.String(), err)
+		}
 	}
 
 	log.Log(ctx, "resolved bluesky identity", "did", ident.DID, "handle", ident.Handle, "pds", ident.PDSEndpoint())
@@ -150,6 +154,10 @@ func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle s
 	err = mod.UpdateRepo(&newRepo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update DID record for %s: %w", sc.Did, err)
+	}
+	err = atsync.StatefulDB.AddRepo(ident.DID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to add repo to stateful DB for %s: %w", ident.DID.String(), err)
 	}
 
 	return &newRepo, nil
