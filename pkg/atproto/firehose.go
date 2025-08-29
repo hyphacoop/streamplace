@@ -10,6 +10,7 @@ import (
 	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/events"
 	"github.com/bluesky-social/indigo/events/schedulers/parallel"
@@ -33,13 +34,14 @@ import (
 )
 
 type ATProtoSynchronizer struct {
-	CLI        *config.CLI
-	Model      model.Model
-	StatefulDB *statedb.StatefulDB
-	LastSeen   time.Time
-	LastEvent  time.Time
-	Noter      notificationpkg.FirebaseNotifier
-	Bus        *bus.Bus
+	CLI          *config.CLI
+	Model        model.Model
+	StatefulDB   *statedb.StatefulDB
+	LastSeen     time.Time
+	LastEvent    time.Time
+	Noter        notificationpkg.FirebaseNotifier
+	Bus          *bus.Bus
+	PLCDirectory identity.Directory
 }
 
 func (atsync *ATProtoSynchronizer) StartFirehose(ctx context.Context) error {

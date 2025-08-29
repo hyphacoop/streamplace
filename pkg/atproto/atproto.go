@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
+	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	_ "github.com/bluesky-social/indigo/api/bsky"
@@ -11,6 +13,7 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/repo"
 	"github.com/bluesky-social/indigo/xrpc"
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/ipfs/go-cid"
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqhttp"
@@ -40,7 +43,7 @@ type mstNode struct {
 }
 
 func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*model.Repo, error) {
-	ident, err := ResolveIdent(ctx, handle)
+	ident, err := atsync.resolveIdent(ctx, handle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve Bluesky handle %s: %w", handle, err)
 	}
@@ -155,16 +158,35 @@ func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle s
 	return &newRepo, nil
 }
 
-var ResolveIdent = resolveIdent
-
-func resolveIdent(ctx context.Context, arg string) (*identity.Identity, error) {
+func (atsync *ATProtoSynchronizer) resolveIdent(ctx context.Context, arg string) (*identity.Identity, error) {
+	if atsync.PLCDirectory == nil {
+		atsync.PLCDirectory = CustomDirectory(atsync.CLI.PLCURL)
+	}
 	id, err := syntax.ParseAtIdentifier(arg)
 	if err != nil {
 		return nil, err
 	}
 
-	dir := identity.DefaultDirectory()
-	return dir.Lookup(ctx, *id)
+	return atsync.PLCDirectory.Lookup(ctx, *id)
+}
+
+func CustomDirectory(plcURL string) identity.Directory {
+	base := identity.BaseDirectory{
+		PLCURL:     plcURL,
+		HTTPClient: aqhttp.Client,
+		Resolver: net.Resolver{
+			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+				d := net.Dialer{Timeout: time.Second * 3}
+				return d.DialContext(ctx, network, address)
+			},
+		},
+		TryAuthoritativeDNS: true,
+		// primary Bluesky PDS instance only supports HTTP resolution method
+		SkipDNSDomainSuffixes: []string{".bsky.social"},
+		UserAgent:             "indigo-identity/" + versioninfo.Short(),
+	}
+	cached := identity.NewCacheDirectory(&base, 250_000, time.Hour*24, time.Minute*2, time.Minute*5)
+	return &cached
 }
 
 func DIDDoc(host string) map[string]any {

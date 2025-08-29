@@ -113,6 +113,7 @@ type CLI struct {
 	Labelers               []string
 	AtprotoDID             string
 	LivepeerHelp           bool
+	PLCURL                 string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -176,6 +177,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
+	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)

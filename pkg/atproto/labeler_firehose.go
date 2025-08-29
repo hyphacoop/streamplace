@@ -54,7 +54,7 @@ func (atsync *ATProtoSynchronizer) StartLabelerFirehose(ctx context.Context, did
 func (atsync *ATProtoSynchronizer) StartLabelerFirehoseRetry(ctx context.Context, did string) error {
 	ctx = log.WithLogValues(ctx, "func", "StartLabelerFirehose")
 
-	ident, err := ResolveIdent(ctx, did)
+	ident, err := atsync.resolveIdent(ctx, did)
 	if err != nil {
 		return fmt.Errorf("failed to resolve DID %s: %w", did, err)
 	}
