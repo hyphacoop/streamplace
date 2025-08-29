@@ -112,7 +112,7 @@ func openDB(dial gorm.Dialector) (*gorm.DB, error) {
 		slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
 			TimeFormat: time.RFC3339,
 		})),
-		slogGorm.WithTraceAll(),
+		// slogGorm.WithTraceAll(),
 	)
 
 	return gorm.Open(dial, &gorm.Config{
