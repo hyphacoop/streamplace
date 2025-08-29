@@ -54,6 +54,7 @@ func TestFirehose(t *testing.T) {
 	}()
 
 	user := dev.CreateAccount(t)
+	user2 := dev.CreateAccount(t)
 
 	msg := &streamplace.ChatMessage{
 		LexiconTypeID: "place.stream.chat.message",
@@ -69,19 +70,34 @@ func TestFirehose(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	msg2 := &streamplace.ChatMessage{
+		LexiconTypeID: "place.stream.chat.message",
+		Text:          "Hello, world 2!",
+		CreatedAt:     time.Now().Format(util.ISO8601),
+		Streamer:      user.DID,
+	}
+
+	_, err = comatproto.RepoCreateRecord(ctx, user2.XRPC, &comatproto.RepoCreateRecord_Input{
+		Collection: "place.stream.chat.message",
+		Repo:       user2.DID,
+		Record:     &lexutil.LexiconTypeDecoder{Val: msg2},
+	})
+	require.NoError(t, err)
+
 	messages := []*streamplace.ChatDefs_MessageView{}
 	err = untilNoErrors(t, func() error {
 		messages, err = mod.MostRecentChatMessages(user.DID)
 		if err != nil {
 			return err
 		}
-		if len(messages) != 1 {
+		if len(messages) != 2 {
 			return fmt.Errorf("expected 1 message, got %d", len(messages))
 		}
 		return nil
 	})
 	require.NoError(t, err)
-	require.Equal(t, msg.Text, messages[0].Record.Val.(*streamplace.ChatMessage).Text)
+	require.Equal(t, msg.Text, messages[1].Record.Val.(*streamplace.ChatMessage).Text)
+	require.Equal(t, msg2.Text, messages[0].Record.Val.(*streamplace.ChatMessage).Text)
 
 	cancel()
 	<-done

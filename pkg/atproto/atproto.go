@@ -13,7 +13,6 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/repo"
 	"github.com/bluesky-social/indigo/xrpc"
-	"github.com/carlmjohnson/versioninfo"
 	"github.com/ipfs/go-cid"
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqhttp"
@@ -183,7 +182,6 @@ func CustomDirectory(plcURL string) identity.Directory {
 		TryAuthoritativeDNS: true,
 		// primary Bluesky PDS instance only supports HTTP resolution method
 		SkipDNSDomainSuffixes: []string{".bsky.social"},
-		UserAgent:             "indigo-identity/" + versioninfo.Short(),
 	}
 	cached := identity.NewCacheDirectory(&base, 250_000, time.Hour*24, time.Minute*2, time.Minute*5)
 	return &cached
