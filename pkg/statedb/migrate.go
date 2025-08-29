@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 )
 
 func Migrate(cli *config.CLI) error {
@@ -56,6 +57,24 @@ func Migrate(cli *config.CLI) error {
 	for _, notification := range notifications {
 		log.Log(context.Background(), "migrating notification", "notification", notification)
 		err := newDB.DB.Save(&notification).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	var repos []model.Repo
+	if err := oldDB.Find(&repos).Error; err != nil {
+		time.Sleep(1 * time.Second)
+		return err
+	}
+
+	for _, repo := range repos {
+		newRepo := Repo{
+			DID:       repo.DID,
+			IndexedAt: time.Now().UTC(),
+		}
+		log.Log(context.Background(), "migrating repo", "repo", repo)
+		err := newDB.DB.Save(&newRepo).Error
 		if err != nil {
 			return err
 		}
