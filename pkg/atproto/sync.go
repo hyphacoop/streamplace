@@ -119,10 +119,12 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		err = atsync.Model.CreateChatMessage(ctx, mcm)
 		if err != nil {
 			log.Error(ctx, "failed to create chat message", "err", err)
+			return nil
 		}
 		mcm, err = atsync.Model.GetChatMessage(aturi.String())
 		if err != nil {
 			log.Error(ctx, "failed to get just-saved chat message", "err", err)
+			return nil
 		}
 		if mcm == nil {
 			log.Error(ctx, "failed to retrieve just-saved chat message", "err", err)
@@ -131,6 +133,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		scm, err := mcm.ToStreamplaceMessageView()
 		if err != nil {
 			log.Error(ctx, "failed to convert chat message to streamplace message view", "err", err)
+			return nil
 		}
 		go atsync.Bus.Publish(rec.Streamer, scm)
 

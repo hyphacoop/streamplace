@@ -14,8 +14,8 @@ import (
 )
 
 type ChatMessage struct {
-	URI             string       `json:"uri"                    gorm:"primaryKey;column:uri"`
-	CID             string       `json:"cid"                    gorm:"column:cid"`
+	CID             string       `json:"cid"                    gorm:"primaryKey;column:cid"`
+	URI             string       `json:"uri"                    gorm:"column:uri"`
 	CreatedAt       time.Time    `json:"createdAt"              gorm:"column:created_at;index:idx_recent_messages,priority:2"`
 	ChatMessage     *[]byte      `json:"chatMessage"            gorm:"column:chat_message"`
 	RepoDID         string       `json:"repoDID"                gorm:"column:repo_did"`
@@ -26,6 +26,7 @@ type ChatMessage struct {
 	StreamerRepo    *Repo        `json:"streamerRepo,omitempty" gorm:"foreignKey:DID;references:StreamerRepoDID"`
 	ReplyToCID      *string      `json:"replyToCID,omitempty"   gorm:"column:reply_to_cid"`
 	ReplyTo         *ChatMessage `json:"replyTo,omitempty"      gorm:"foreignKey:ReplyToCID;references:CID"`
+	DeletedAt       *time.Time   `json:"deletedAt,omitempty"    gorm:"column:deleted_at"`
 }
 
 // hashString creates a hash from a string, used for deterministic color selection
@@ -83,6 +84,17 @@ func (m *DBModel) CreateChatMessage(ctx context.Context, message *ChatMessage) e
 	return m.DB.Create(message).Error
 }
 
+func (m *DBModel) DeleteChatMessage(ctx context.Context, uri string, deletedAt *time.Time) error {
+	tx := m.DB.Model(&ChatMessage{}).Where("uri = ?", uri).Update("deleted_at", deletedAt)
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return fmt.Errorf("no chat message found for uri: %s", uri)
+	}
+	return nil
+}
+
 func (m *DBModel) GetChatMessage(uri string) (*ChatMessage, error) {
 	var message ChatMessage
 	err := m.DB.
@@ -92,6 +104,7 @@ func (m *DBModel) GetChatMessage(uri string) (*ChatMessage, error) {
 		Preload("ReplyTo.Repo").
 		Preload("ReplyTo.ChatProfile").
 		Where("uri = ?", uri).
+		Where("deleted_at IS NULL").
 		First(&message).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -121,6 +134,8 @@ func (m *DBModel) MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDef
 		// Exclude labeled messages
 		Joins("LEFT JOIN labels ON labels.uri = chat_messages.uri").
 		Where("labels.uri IS NULL"). // Only include messages where no label exists
+		// Exclude deleted messages
+		Where("chat_messages.deleted_at IS NULL").
 		Limit(100).
 		Order("chat_messages.created_at DESC").
 		Find(&dbmessages).Error
