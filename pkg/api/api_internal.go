@@ -410,13 +410,13 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		}
 	})
 
-	router.GET("/chat/:cid", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		cid := p.ByName("cid")
-		if cid == "" {
-			errors.WriteHTTPBadRequest(w, "cid required", nil)
+	router.GET("/chat/:uri", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		uri := p.ByName("uri")
+		if uri == "" {
+			errors.WriteHTTPBadRequest(w, "uri required", nil)
 			return
 		}
-		msg, err := a.Model.GetChatMessage(cid)
+		msg, err := a.Model.GetChatMessage(uri)
 		if err != nil {
 			errors.WriteHTTPInternalServerError(w, "unable to get chat posts", err)
 			return

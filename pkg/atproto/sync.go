@@ -120,7 +120,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		if err != nil {
 			log.Error(ctx, "failed to create chat message", "err", err)
 		}
-		mcm, err = atsync.Model.GetChatMessage(cid)
+		mcm, err = atsync.Model.GetChatMessage(aturi.String())
 		if err != nil {
 			log.Error(ctx, "failed to get just-saved chat message", "err", err)
 		}
@@ -251,7 +251,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			if rec.Reply == nil || rec.Reply.Root == nil {
 				return nil
 			}
-			livestream, err := atsync.Model.GetLivestreamByPostCID(rec.Reply.Root.Cid)
+			livestream, err := atsync.Model.GetLivestreamByPostURI(rec.Reply.Root.Uri)
 			if err != nil {
 				return fmt.Errorf("failed to get livestream: %w", err)
 			}
@@ -285,7 +285,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 				RepoDID:          userDID,
 				Type:             "reply",
 				Repo:             repo,
-				ReplyRootCID:     &livestream.PostCID,
+				ReplyRootURI:     &livestream.PostURI,
 				ReplyRootRepoDID: &livestream.RepoDID,
 				URI:              aturi.String(),
 				IndexedAt:        &now,

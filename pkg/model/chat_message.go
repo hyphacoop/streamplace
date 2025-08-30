@@ -14,8 +14,8 @@ import (
 )
 
 type ChatMessage struct {
-	CID             string       `json:"cid"                    gorm:"primaryKey;column:cid"`
-	URI             string       `json:"uri"                    gorm:"column:uri"`
+	URI             string       `json:"uri"                    gorm:"primaryKey;column:uri"`
+	CID             string       `json:"cid"                    gorm:"column:cid"`
 	CreatedAt       time.Time    `json:"createdAt"              gorm:"column:created_at;index:idx_recent_messages,priority:2"`
 	ChatMessage     *[]byte      `json:"chatMessage"            gorm:"column:chat_message"`
 	RepoDID         string       `json:"repoDID"                gorm:"column:repo_did"`
@@ -83,7 +83,7 @@ func (m *DBModel) CreateChatMessage(ctx context.Context, message *ChatMessage) e
 	return m.DB.Create(message).Error
 }
 
-func (m *DBModel) GetChatMessage(cid string) (*ChatMessage, error) {
+func (m *DBModel) GetChatMessage(uri string) (*ChatMessage, error) {
 	var message ChatMessage
 	err := m.DB.
 		Preload("Repo").
@@ -91,7 +91,7 @@ func (m *DBModel) GetChatMessage(cid string) (*ChatMessage, error) {
 		Preload("ReplyTo").
 		Preload("ReplyTo.Repo").
 		Preload("ReplyTo.ChatProfile").
-		Where("cid = ?", cid).
+		Where("uri = ?", uri).
 		First(&message).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

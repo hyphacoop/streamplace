@@ -172,8 +172,8 @@ func (atsync *ATProtoSynchronizer) StartLabelerFirehoseRetry(ctx context.Context
 					}
 					targetDID = did.String()
 					// if it's a chat message, attempt to send it to the streamers' websocket
-					if aturi.Collection() == "place.stream.chat.message" && l.CID != nil {
-						msg, err := atsync.Model.GetChatMessage(*l.CID)
+					if aturi.Collection() == "place.stream.chat.message" {
+						msg, err := atsync.Model.GetChatMessage(l.URI)
 						if err != nil {
 							log.Error(ctx, "failed to get chat message for label", "err", err)
 							continue

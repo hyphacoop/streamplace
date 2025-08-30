@@ -28,7 +28,7 @@ func Migrate(cli *config.CLI) error {
 		return err
 	}
 
-	oldDB, err := gorm.Open(sqlite.Open(cli.IndexDBPath), &gorm.Config{
+	oldDB, err := gorm.Open(sqlite.Open(cli.DataFilePath([]string{"db.sqlite"})), &gorm.Config{
 		Logger: gormLogger,
 	})
 	if err != nil {

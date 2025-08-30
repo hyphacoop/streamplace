@@ -49,7 +49,7 @@ func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle s
 
 	ctx = log.WithLogValues(ctx, "did", ident.DID.String(), "handle", ident.Handle.String())
 
-	handleLock := getHandleLock(ident.DID.String())
+	handleLock := handleLocks.GetLock(ident.DID.String())
 	handleLock.Lock()
 	defer handleLock.Unlock()
 
@@ -81,7 +81,7 @@ func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle s
 	}
 
 	log.Log(ctx, "resolved bluesky identity", "did", ident.DID, "handle", ident.Handle, "pds", ident.PDSEndpoint())
-	pdsLock := getPDSLock(ident.PDSEndpoint())
+	pdsLock := pdsLocks.GetLock(ident.PDSEndpoint())
 	xrpcc := xrpc.Client{
 		Host:   ident.PDSEndpoint(),
 		Client: &aqhttp.Client,
