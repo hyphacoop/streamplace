@@ -644,8 +644,6 @@ deb-pkg:
 		-a $(SP_ARCH_NAME) \
 		-p bin/streamplace-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
 		--deb-systemd=util/systemd/streamplace.service \
-		--deb-systemd-auto-start \
-		--deb-systemd-enable \
 		--deb-systemd-restart-after-upgrade \
 		--after-install=util/systemd/after-install.sh \
 		--description="Live video for the AT Protocol. Solving video for everybody forever." \
@@ -654,8 +652,6 @@ deb-pkg:
 		-n streamplace-default-http \
 		-a $(SP_ARCH_NAME) \
 		-d streamplace \
-		--deb-systemd-auto-start \
-		--deb-systemd-enable \
 		--deb-systemd-restart-after-upgrade \
 		-p bin/streamplace-default-http-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
 		--description="Installing this package will install Streamplace as the default HTTP server on ports 80 and 443." \
