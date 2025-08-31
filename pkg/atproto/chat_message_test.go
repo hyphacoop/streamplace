@@ -71,7 +71,7 @@ func TestChatMessage(t *testing.T) {
 	msg := &streamplace.ChatMessage{
 		LexiconTypeID: "place.stream.chat.message",
 		Text:          "Hello, world!",
-		CreatedAt:     time.Now().Format(util.ISO8601),
+		CreatedAt:     time.Now().Add(-time.Second).Format(util.ISO8601),
 		Streamer:      user.DID,
 	}
 
@@ -81,9 +81,6 @@ func TestChatMessage(t *testing.T) {
 		Record:     &lexutil.LexiconTypeDecoder{Val: msg},
 	})
 	require.NoError(t, err)
-
-	// force different timestamp lol
-	time.Sleep(100 * time.Millisecond)
 
 	msg2 := &streamplace.ChatMessage{
 		LexiconTypeID: "place.stream.chat.message",
@@ -114,7 +111,16 @@ func TestChatMessage(t *testing.T) {
 		return nil
 	})
 	// Reverse the messages slice to match expected order (most recent first)
-	slices.Reverse(messages)
+	slices.SortFunc(messages, func(a, b *streamplace.ChatDefs_MessageView) int {
+		aTime := a.Record.Val.(*streamplace.ChatMessage).CreatedAt
+		bTime := b.Record.Val.(*streamplace.ChatMessage).CreatedAt
+		if aTime < bTime {
+			return -1
+		} else if aTime > bTime {
+			return 1
+		}
+		return 0
+	})
 	require.Equal(t, msg.Text, messages[0].Record.Val.(*streamplace.ChatMessage).Text)
 	require.Equal(t, msg2.Text, messages[1].Record.Val.(*streamplace.ChatMessage).Text)
 	busMessage1 := busMessages[0].(*streamplace.ChatDefs_MessageView)
