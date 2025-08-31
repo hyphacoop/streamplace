@@ -28,6 +28,7 @@ export function Settings() {
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const { t, i18n } = useTranslation();
 
   // are we logged in?
   const loggedIn = useAppSelector(

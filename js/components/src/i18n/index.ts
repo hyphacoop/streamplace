@@ -1,47 +1,33 @@
-// Clean i18n exports - only what's actually being used
+// Simple i18n infrastructure exports for Streamplace components
+// Re-exports i18next tools for app-level customization
 
-// Main provider and types
+// Core i18next exports
+export { default as i18n } from "i18next";
 export {
-  DirectI18nProvider,
-  clearTranslations,
-  registerTranslation,
-  registerTranslations,
-  useDirectI18n,
-} from "./direct-provider";
+  I18nextProvider,
+  Trans,
+  Translation,
+  initReactI18next,
+  useTranslation,
+  withTranslation,
+} from "react-i18next";
 
-// Metro-compatible dynamic loading exports
-export {
-  clearCache,
-  dynamicActivate,
-  getAvailableLocales,
-  getCacheStats,
-  isLocaleAvailable,
-  loadAllLocales,
-  loadLocale,
-  loadLocales,
-  preloadLocales,
-} from "./loaders/metro-loader";
+// i18next plugins for common use cases
+export { default as LanguageDetector } from "i18next-browser-languagedetector";
+export { default as Backend } from "i18next-http-backend";
+export { default as resourcesToBackend } from "i18next-resources-to-backend";
 
+// Fluent support
+export { default as Fluent } from "i18next-fluent";
+
+// Basic provider components for consistent setup
+export { I18nProvider, LanguageSelector } from "./provider";
+
+// TypeScript types
 export type {
-  LanguageInfo as DirectLanguageInfo,
-  SupportedLocale as DirectSupportedLocale,
-  TranslationSource,
-} from "./direct-provider";
-
-export {
-  DEFAULT_LOCALE as DIRECT_DEFAULT_LOCALE,
-  LANGUAGE_INFO as DIRECT_LANGUAGE_INFO,
-  SUPPORTED_LOCALES as DIRECT_SUPPORTED_LOCALES,
-} from "./direct-provider";
-
-// Language selector components
-export {
-  DirectLanguageIndicator,
-  DirectLanguageSelector,
-} from "./direct-language-selector";
-
-// Re-export Fluent components for convenience
-export { Localized, useLocalization, withLocalization } from "@fluent/react";
-
-// Re-export Fluent core for advanced usage if needed
-export { FluentBundle, FluentResource } from "@fluent/bundle";
+  i18n as I18nInstance,
+  InitOptions,
+  Resource,
+  ResourceLanguage,
+  TFunction,
+} from "i18next";

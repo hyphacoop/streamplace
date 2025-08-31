@@ -1,0 +1,61 @@
+# Settings Page Translations - Chinese Traditional (Taiwan)
+
+## App Version
+app-version = Streamplace v{ $version }
+
+## Custom Node Settings
+use-custom-node = 使用自訂節點
+default-url = 預設：{ $url }
+enter-custom-node-url = 輸入自訂節點網址
+save-button = 儲存
+
+## Language Settings
+language-selection = 語言
+language-selection-description = 選擇您偏好的語言
+
+## Debug Recording
+debug-recording-title = 允許 { $host } 錄製您的直播串流以進行除錯和服務改善
+debug-recording-description = 可選項目
+
+## Key Management
+manage-keys = 管理金鑰
+
+## General UI
+settings-title = 設定
+loading = 載入中...
+error = 錯誤
+cancel = 取消
+confirm = 確認
+
+## Demo and Testing
+welcome-user = 歡迎，{ $username }！
+notification-count = { $count ->
+    [0] 無通知
+    [1] 一則通知
+   *[other] { $count } 則通知
+}
+search-placeholder = 搜尋...
+message-input = 請輸入您的訊息...
+
+## Status Messages
+success = 成功
+warning = 警告
+info = 資訊
+close = 關閉
+open = 開啟
+delete = 刪除
+edit = 編輯
+create = 建立
+update = 更新
+refresh = 重新整理
+
+## Actions
+save = 儲存
+cancel-button = 取消
+ok = 確定
+yes = 是
+no = 否
+continue = 繼續
+back = 返回
+next = 下一步
+finish = 完成

@@ -18,8 +18,10 @@
     "prepare-ios": "cd ios && pod install && pnpm run find-node",
     "find-node": "node -p '`NODE_BINARY=${process.argv[0]}`' > ios/.xcode.env.local",
     "code-signing-dev": "mkdir -p code-signing-dev/keys code-signing-dev/certs && expo-updates codesigning:generate --key-output-directory code-signing-dev/keys --certificate-output-directory code-signing-dev/certs --certificate-validity-duration-years 10 --certificate-common-name 'Streamplace'",
-    "i18n:compile": "cd ../components && pnpm run i18n:compile",
-    "i18n:watch": "cd ../components && pnpm run i18n:watch"
+    "i18n:compile": "node scripts/compile-translations.js",
+    "i18n:copy": "mkdir -p public/locales && cp -r src/i18n/locales/data/* public/locales/",
+    "i18n:build": "npm run i18n:compile && npm run i18n:copy",
+    "i18n:watch": "nodemon --exec \"npm run i18n:build\" --watch src/i18n/locales/data/**/*.ftl"
   },
   "jest": {
     "preset": "jest-expo"
@@ -75,6 +77,12 @@
     "expo-video": "~2.2.1",
     "expo-web-browser": "^14.1.6",
     "hls.js": "^1.5.17",
+    "i18next": "^25.4.2",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-fluent": "^2.0.0",
+    "i18next-http-backend": "^3.0.2",
+    "i18next-resources-to-backend": "^1.2.1",
+    "intl-pluralrules": "^2.0.1",
     "jose": "^5.9.6",
     "lucide-react-native": "^0.514.0",
     "multiformats": "^13.3.1",
@@ -82,9 +90,11 @@
     "quietjs-bundle": "^0.1.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-i18next": "^15.7.3",
     "react-native": "0.79.3",
     "react-native-edge-to-edge": "^1.6.2",
     "react-native-gesture-handler": "~2.26.0",
+    "react-native-localize": "^3.5.2",
     "react-native-markdown-display": "^7.0.2",
     "react-native-quick-crypto": "^0.7.14",
     "react-native-reanimated": "~3.18.0",

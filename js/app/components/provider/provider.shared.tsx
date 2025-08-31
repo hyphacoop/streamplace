@@ -15,6 +15,7 @@ import { selectOAuthSession } from "features/bluesky/blueskySlice";
 import StreamplaceProvider from "features/streamplace/streamplaceProvider";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import React from "react";
+import { I18nextProvider } from "react-i18next";
 import { Provider as ReduxProvider } from "react-redux";
 import { useAppSelector } from "store/hooks";
 import { store } from "store/store";
@@ -23,6 +24,7 @@ export default Sentry.wrap(ProviderInner);
 
 import * as Application from "expo-application";
 import Constants from "expo-constants";
+import i18n from "../../src/i18n";
 import * as Updates from "expo-updates";
 import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -88,11 +90,7 @@ function ProviderInner({
   return (
     <SafeAreaProvider>
       <ThemeProvider forcedTheme="dark">
-      <DirectI18nProvider
-        enableDynamicLoading={true}
-        preloadAll={true}
-        debug={process.env.NODE_ENV === "development"}
-      >
+        <I18nextProvider i18n={i18n}>
           <NavigationContainer theme={SPDarkTheme} linking={linking}>
             <ReduxProvider store={store}>
               <StreamplaceProvider>
@@ -104,7 +102,7 @@ function ProviderInner({
               </StreamplaceProvider>
             </ReduxProvider>
           </NavigationContainer>
-      </DirectI18nProvider>
+        </I18nextProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

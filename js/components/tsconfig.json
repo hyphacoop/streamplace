@@ -5,7 +5,10 @@
     "outDir": "./dist",
     "jsx": "react-jsx",
     "module": "commonjs",
-    "skipLibCheck": true
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
   "include": ["./src"]
 }
