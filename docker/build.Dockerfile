@@ -104,6 +104,8 @@ RUN curl --fail -L https://github.com/aptly-dev/aptly/releases/download/v${APTLY
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=false
 ENV STREAMPLACE_TEST_POSTGRES_COMMAND="sudo -u postgres /usr/lib/postgresql/14/bin/postgres -D /etc/postgresql/14/main/"
 ENV STREAMPLACE_TEST_POSTGRES_URL="postgresql://postgres:postgres@localhost:5432/streamplace"
+# allow all postgres connections
+RUN bash -c 'echo -en "local   all             postgres                                peer\nhost    all             all             0.0.0.0/0            trust\n" > /etc/postgresql/14/main/pg_hba.conf'
 
 FROM builder-no-darwin AS builder
 
