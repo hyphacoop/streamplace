@@ -1,6 +1,7 @@
 import { Text } from "@streamplace/components";
 import * as ExpoUpdates from "expo-updates";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Platform, TouchableOpacity, View } from "react-native";
 import pkg from "../../package.json";
 
@@ -8,6 +9,8 @@ export function Updates() {
   const version = pkg.version;
   const updateInfo = ExpoUpdates.useUpdates();
   const { currentlyRunning, isUpdateAvailable, isUpdatePending } = updateInfo;
+
+  const { t } = useTranslation();
 
   console.log(`updateInfo: ${JSON.stringify(updateInfo)}`);
 
@@ -20,15 +23,16 @@ export function Updates() {
   }, [isUpdateAvailable, checked]);
 
   // If true, we show the button to download and run the update
-  const showDownloadButton = isUpdateAvailable;
   const buttonText = isUpdateAvailable
-    ? "Download new update"
-    : "Check for updates";
+    ? t("download-new-update")
+    : t("check-for-updates");
 
   // Show whether or not we are running embedded code or an update
-  let runTypeMessage = currentlyRunning.isEmbeddedLaunch ? "Bundled" : "OTA";
+  let runTypeMessage = currentlyRunning.isEmbeddedLaunch
+    ? t("bundled-runtype")
+    : t("ota-runtype");
   if (currentlyRunning.isEmergencyLaunch) {
-    runTypeMessage = "Recovery";
+    runTypeMessage = t("recovery-runtype");
   }
 
   return (
@@ -87,6 +91,12 @@ export function Updates() {
                 );
               }
             } catch (e) {
+              toast.show("Update failed!", {
+                viewportName: "modal",
+                message: t("modal-update-failed", {
+                  store: Platform.OS === "ios" ? "App Store" : "Play Store",
+                }),
+              });
               // Removed toast functionality - replaced with console.log
               console.log(
                 `Update failed! You may need to update the app through the ${Platform.OS === "ios" ? "App" : "Play"} Store.`,
@@ -114,10 +124,8 @@ export function Updates() {
               ExpoUpdates.reloadAsync();
             }}
           >
-            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
-              Reload app for new version
-            </Text>
-          </TouchableOpacity>
+            <Text>{t("button-reload-app-on-update")}</Text>
+          </Button>
         )}
       </View>
     </View>

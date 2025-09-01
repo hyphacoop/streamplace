@@ -4,7 +4,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import Fluent from "i18next-fluent";
 import Backend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
-import * as RNLocalize from "react-native-localize";
+//import * as RNLocalize from "react-native-localize";
 import manifest from "./manifest.json";
 
 // Types
@@ -18,8 +18,13 @@ export type LanguageInfo = {
 
 // Get device locale and map to supported locale
 function getDeviceLocale(): SupportedLocale {
-  const deviceLocale = RNLocalize.getLocales()?.[0]?.languageTag || "en";
-  const cleanLocale = deviceLocale.replace("_", "-").replace(/@.*/, "");
+  //const deviceLocale = RNLocalize.getLocales()?.[0]?.languageTag || "en";
+  //const cleanLocale = deviceLocale.replace("_", "-").replace(/@.*/, "");
+
+  // until we can get a native release out, use browser locale or default to en
+  const cleanLocale = (navigator?.language || "en")
+    .replace("_", "-")
+    .replace(/@.*/, "");
 
   // Check exact match first
   if (manifest.supportedLocales.includes(cleanLocale as SupportedLocale)) {
@@ -44,34 +49,53 @@ i18n
   .init({
     // Language settings
     lng: getDeviceLocale(),
-    // Language code mapping strategy:
-    // Browsers/devices often detect base language codes (e.g., "zh", "pt", "es")
-    // but our app only supports specific regional variants (e.g., "zh-TW", "pt-BR").
-    // This fallback mapping prevents "language code not found" warnings by
-    // automatically routing base codes to their appropriate regional variants.
     fallbackLng: {
-      // Map base language codes to specific variants
-      zh: ["zh-TW"],
-      pt: ["pt-BR"],
-      es: ["es-ES"],
-      en: ["en-US"],
-      fr: ["fr-FR"],
-      // Default fallback for any other language
+      // Default fallback
       default: manifest.fallbackChain,
     },
-    supportedLngs: manifest.supportedLocales,
-
-    // Language code normalization options:
-    // - cleanCode: normalizes language codes (removes script/region if not needed)
-    // - nonExplicitSupportedLngs: prevents warnings when fallback mapping handles
-    //   base language codes that aren't explicitly in supportedLngs
-    cleanCode: true,
-    nonExplicitSupportedLngs: true,
+    supportedLngs: [
+      ...manifest.supportedLocales,
+      // Add base language codes to prevent warnings
+      "zh",
+      "pt",
+      "es",
+      "en",
+      "fr",
+    ],
 
     // Backend configuration
     backend: {
       loadPath: "/locales/{{lng}}/messages.json",
       crossDomain: true,
+      request: (options: any, url: string, payload: any, callback: any) => {
+        // Map base language codes to specific variants for file loading
+        const languageMap: Record<string, string> = {
+          zh: "zh-TW",
+          pt: "pt-BR",
+          es: "es-ES",
+          en: "en-US",
+          fr: "fr-FR",
+        };
+
+        // Extract language from URL and map it
+        const urlMatch = url.match(/\/locales\/([^\/]+)\//);
+        if (urlMatch) {
+          const lng = urlMatch[1];
+          const mappedLng = languageMap[lng] || lng;
+          url = url.replace(`/locales/${lng}/`, `/locales/${mappedLng}/`);
+        }
+
+        // Use standard fetch
+        fetch(url)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => callback(null, { status: 200, data }))
+          .catch((error) => callback(error, { status: 500, data: null }));
+      },
     },
 
     // Language detection

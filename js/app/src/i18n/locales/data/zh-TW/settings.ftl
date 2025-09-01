@@ -1,7 +1,18 @@
 # Settings Page Translations - Chinese Traditional (Taiwan)
 
 ## App Version
-app-version = Streamplace v{ $version }
+app-version = 思播地 v{ $version }
+
+download-new-update = 下載新更新
+check-for-updates = 檢查更新
+
+bundled-runtype = 捆綁版
+ota-runtype = 空中下載 (OTA)
+recovery-runtype = 復原模式
+
+modal-latest-version = 您正在使用最新版本。
+modal-update-failed = 更新檢查失敗。您可能需要透過 { $store } 更新應用程式。
+button-reload-app-on-update = 套用更新 (將重新載入應用程式)
 
 ## Custom Node Settings
 use-custom-node = 使用自訂節點
@@ -16,6 +27,7 @@ language-selection-description = 選擇您偏好的語言
 ## Debug Recording
 debug-recording-title = 允許 { $host } 錄製您的直播串流以進行除錯和服務改善
 debug-recording-description = 可選項目
+input-search-languages = 搜尋語言...
 
 ## Key Management
 manage-keys = 管理金鑰

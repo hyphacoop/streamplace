@@ -2,6 +2,16 @@
 
 ## App Version
 app-version = Streamplace v{ $version }
+download-new-update = Download New Update
+check-for-updates = Check for Updates
+
+bundled-runtype = Bundled
+ota-runtype = Over-the-Air (OTA)
+recovery-runtype = Recovery Mode
+
+modal-latest-version = You are using the latest version.
+modal-update-failed = Update check failed. You may need to update the app through the { $store }.
+button-reload-app-on-update = Apply Update (will reload app)
 
 ## Custom Node Settings
 use-custom-node = Use Custom Node
@@ -12,6 +22,7 @@ save-button = SAVE
 ## Language Settings
 language-selection = Language
 language-selection-description = Choose your preferred language
+input-search-languages = Search languages...
 
 ## Debug Recording
 debug-recording-title = Allow { $host } to record your livestream for debugging and improving the service

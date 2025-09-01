@@ -16,6 +16,7 @@ language-selection-description = Elige tu idioma preferido
 ## Debug Recording
 debug-recording-title = Permitir que { $host } grabe tu retransmisión en directo para depuración y mejora del servicio
 debug-recording-description = Opcional
+input-search-languages = Buscar idiomas...
 
 ## Key Management
 manage-keys = Gestionar Claves

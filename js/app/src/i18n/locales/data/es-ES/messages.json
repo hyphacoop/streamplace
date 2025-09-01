@@ -8,6 +8,7 @@
   "language-selection-description": "Elige tu idioma preferido",
   "debug-recording-title": "Permitir que { $host } grabe tu retransmisión en directo para depuración y mejora del servicio",
   "debug-recording-description": "Opcional",
+  "input-search-languages": "Buscar idiomas...",
   "manage-keys": "Gestionar Claves",
   "settings-title": "Configuración",
   "loading": "Cargando...",

@@ -2,6 +2,16 @@
 
 ## Versão do Aplicativo
 app-version = Streamplace v{ $version }
+download-new-update = Baixar Nova Atualização
+check-for-updates = Verificar Atualizações
+
+bundled-runtype = Empacotado
+ota-runtype = Over-the-Air (OTA)
+recovery-runtype = Modo de Recuperação
+
+modal-latest-version = Você está usando a versão mais recente.
+modal-update-failed = A verificação de atualizações falhou. Você pode precisar atualizar o aplicativo através do { $store }.
+button-reload-app-on-update = Aplicar Atualização (o aplicativo será recarregado)
 
 ## Configurações de Nó Personalizado
 use-custom-node = Usar Nó Personalizado
@@ -16,6 +26,7 @@ language-selection-description = Escolha seu idioma preferido
 ## Gravação de Depuração
 debug-recording-title = Permitir que { $host } grave sua transmissão ao vivo para depuração e melhoria do serviço
 debug-recording-description = Opcional
+input-search-languages = Pesquisar idiomas...
 
 ## Gerenciamento de Chaves
 manage-keys = Gerenciar Chaves

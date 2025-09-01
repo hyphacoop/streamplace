@@ -2,6 +2,16 @@
 
 ## App Version
 app-version = Streamplace v{ $version }
+download-new-update = Télécharger la nouvelle mise à jour
+check-for-updates = Vérifier les mises à jour
+
+bundled-runtype = Inclus
+ota-runtype = Over-the-Air (OTA)
+recovery-runtype = Mode de récupération
+
+modal-latest-version = Vous utilisez la dernière version.
+modal-update-failed = La vérification des mises à jour a échoué. Vous devrez peut-être mettre à jour l'application via { $store }.
+button-reload-app-on-update = Appliquer la mise à jour (l'application va se recharger)
 
 ## Custom Node Settings
 use-custom-node = Utiliser un nœud personnalisé
@@ -16,6 +26,7 @@ language-selection-description = Choisissez votre langue préférée
 ## Debug Recording
 debug-recording-title = Autoriser { $host } à enregistrer votre diffusion en direct pour le débogage et l'amélioration du service
 debug-recording-description = Optionnel
+input-search-languages = Rechercher des langues...
 
 ## Key Management
 manage-keys = Gérer les clés
