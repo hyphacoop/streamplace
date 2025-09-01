@@ -276,7 +276,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		return fmt.Errorf("could not convert livestream to streamplace livestream: %w", err)
 	}
 
-	post, err := ss.mod.GetFeedPost(ls.PostCID)
+	post, err := ss.mod.GetFeedPost(ls.PostURI)
 	if err != nil {
 		return fmt.Errorf("could not get feed post: %w", err)
 	}
