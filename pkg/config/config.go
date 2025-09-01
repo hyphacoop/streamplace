@@ -52,7 +52,6 @@ type CLI struct {
 	Build                  *BuildFlags
 	DataDir                string
 	DBURL                  string
-	IndexDBPath            string
 	EthAccountAddr         string
 	EthKeystorePath        string
 	EthPassword            string
@@ -113,6 +112,7 @@ type CLI struct {
 	Labelers               []string
 	AtprotoDID             string
 	LivepeerHelp           bool
+	PLCURL                 string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -127,7 +127,6 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.SigningKeyPath, "signing-key", "", "Path to signing key for pushing OTA updates to the app")
 	fs.StringVar(&cli.DBURL, "db-url", "sqlite://$SP_DATA_DIR/state.sqlite", "URL of the database to use for storing private streamplace state")
 	cli.dataDirFlags = append(cli.dataDirFlags, &cli.DBURL)
-	cli.DataDirFlag(fs, &cli.IndexDBPath, "index-db-path", "db.sqlite", "path to sqlite database file for maintaining atproto index")
 	fs.StringVar(&cli.AdminAccount, "admin-account", "", "ethereum account that administrates this streamplace node")
 	fs.StringVar(&cli.FirebaseServiceAccount, "firebase-service-account", "", "JSON string of a firebase service account key")
 	fs.StringVar(&cli.GitLabURL, "gitlab-url", "https://git.stream.place/api/v4/projects/1", "gitlab url for generating download links")
@@ -176,6 +175,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
+	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)

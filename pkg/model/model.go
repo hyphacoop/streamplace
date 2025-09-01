@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
@@ -68,7 +67,7 @@ type Model interface {
 
 	CreateLivestream(ctx context.Context, ls *Livestream) error
 	GetLatestLivestreamForRepo(repoDID string) (*Livestream, error)
-	GetLivestreamByPostCID(postCID string) (*Livestream, error)
+	GetLivestreamByPostURI(postURI string) (*Livestream, error)
 	GetLatestLivestreams(limit int, before *time.Time) ([]Livestream, error)
 
 	CreateBlock(ctx context.Context, block *Block) error
@@ -78,7 +77,8 @@ type Model interface {
 
 	CreateChatMessage(ctx context.Context, message *ChatMessage) error
 	MostRecentChatMessages(repoDID string) ([]*streamplace.ChatDefs_MessageView, error)
-	GetChatMessage(cid string) (*ChatMessage, error)
+	GetChatMessage(uri string) (*ChatMessage, error)
+	DeleteChatMessage(ctx context.Context, uri string, deletedAt *time.Time) error
 
 	CreateGate(ctx context.Context, gate *Gate) error
 	DeleteGate(ctx context.Context, rkey string) error
@@ -100,22 +100,24 @@ type Model interface {
 	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
 }
 
+var DBRevision = 2
+
 func MakeDB(dbURL string) (Model, error) {
-	log.Log(context.Background(), "starting database", "dbURL", dbURL)
 	sqliteSuffix := dbURL
 	if dbURL != ":memory:" {
-		if !strings.HasPrefix(dbURL, "sqlite://") {
-			dbURL = fmt.Sprintf("sqlite://%s", dbURL)
+		// Ensure dbURL exists as a directory on the filesystem
+		if err := os.MkdirAll(dbURL, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("error creating database directory: %w", err)
 		}
-		sqliteSuffix := dbURL[len("sqlite://"):]
+		dbPath := filepath.Join(dbURL, fmt.Sprintf("index_%d.sqlite", DBRevision))
+		sqliteSuffix = dbPath
 		// if this isn't ":memory:", ensure that directory exists (eg, if db
 		// file is being initialized)
-		if !strings.Contains(sqliteSuffix, ":?") {
-			if err := os.MkdirAll(filepath.Dir(sqliteSuffix), os.ModePerm); err != nil {
-				return nil, fmt.Errorf("error creating database path: %w", err)
-			}
+		if err := os.MkdirAll(filepath.Dir(sqliteSuffix), os.ModePerm); err != nil {
+			return nil, fmt.Errorf("error creating database path: %w", err)
 		}
 	}
+	log.Log(context.Background(), "starting database", "dbURL", sqliteSuffix)
 	dial := sqlite.Open(sqliteSuffix)
 
 	gormLogger := slogGorm.New(

@@ -32,7 +32,6 @@ import (
 	"stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/replication/boring"
-	"stream.place/streamplace/pkg/resync"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -216,9 +215,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	aqhttp.UserAgent = fmt.Sprintf("streamplace/%s", build.Version)
-	if len(os.Args) > 1 && os.Args[1] == "resync" {
-		return resync.Resync(ctx, &cli)
-	}
 
 	err = os.MkdirAll(cli.DataDir, os.ModePerm)
 	if err != nil {
@@ -310,7 +306,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 
-	mod, err := model.MakeDB(cli.IndexDBPath)
+	mod, err := model.MakeDB(cli.DataFilePath([]string{"index"}))
 	if err != nil {
 		return err
 	}
@@ -321,6 +317,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 	}
+
 	out := carstore.SQLiteStore{}
 	err = out.Open(":memory:")
 	if err != nil {
@@ -356,6 +353,11 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		Noter:      noter,
 		Bus:        b,
 	}
+	err = atsync.Migrate(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to migrate: %w", err)
+	}
+
 	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod, b, atsync)
 	if err != nil {
 		return err
