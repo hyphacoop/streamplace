@@ -20,7 +20,7 @@ func (state *StatefulDB) GetNamedLock(name string) (func(), error) {
 func (state *StatefulDB) getNamedLockPostgres(name string) (func(), error) {
 	// Convert string to sha256 hash and use decimal value for advisory lock
 	h := sha256.Sum256([]byte(name))
-	nameInt := binary.BigEndian.Uint64(h[:32])
+	nameInt := int64(binary.BigEndian.Uint64(h[:8]))
 
 	err := state.DB.Exec("SELECT pg_advisory_lock($1)", nameInt).Error
 	if err != nil {
