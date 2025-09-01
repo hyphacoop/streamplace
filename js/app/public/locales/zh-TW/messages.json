@@ -1,5 +1,5 @@
 {
-  "app-version": "思播地 v{ $version }",
+  "app-version": "直播地 v{ $version }",
   "download-new-update": "下載新更新",
   "check-for-updates": "檢查更新",
   "bundled-runtype": "捆綁版",

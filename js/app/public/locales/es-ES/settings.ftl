@@ -2,6 +2,17 @@
 
 ## App Version
 app-version = Streamplace v{ $version }
+download-new-update = Descargar Nueva Actualización
+check-for-updates = Buscar Actualizaciones
+
+bundled-runtype = Empaquetado
+ota-runtype = Over-the-Air (OTA)
+recovery-runtype = Modo de Recuperación
+
+modal-latest-version = Estás usando la última versión.
+modal-update-failed = La búsqueda de actualizaciones falló. Es posible que necesites actualizar
+    la aplicación a través de { $store }.
+button-reload-app-on-update = Aplicar Actualización (recargará la aplicación)
 
 ## Custom Node Settings
 use-custom-node = Usar Nodo Personalizado

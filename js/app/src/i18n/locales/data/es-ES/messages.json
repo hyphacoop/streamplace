@@ -1,5 +1,13 @@
 {
   "app-version": "Streamplace v{ $version }",
+  "download-new-update": "Descargar Nueva Actualización",
+  "check-for-updates": "Buscar Actualizaciones",
+  "bundled-runtype": "Empaquetado",
+  "ota-runtype": "Over-the-Air (OTA)",
+  "recovery-runtype": "Modo de Recuperación",
+  "modal-latest-version": "Estás usando la última versión.",
+  "modal-update-failed": "La búsqueda de actualizaciones falló. Es posible que necesites actualizar",
+  "button-reload-app-on-update": "Aplicar Actualización (recargará la aplicación)",
   "use-custom-node": "Usar Nodo Personalizado",
   "default-url": "Predeterminado: { $url }",
   "enter-custom-node-url": "Introduce la URL del nodo personalizado",
