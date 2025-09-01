@@ -8,15 +8,13 @@ import (
 )
 
 func (state *StatefulDB) GetNamedLock(name string) (func(), error) {
-	// temp while we debug postgres
-	return state.getNamedLockSQLite(name)
-	// switch state.Type {
-	// case DBTypeSQLite:
-	// 	return state.getNamedLockSQLite(name)
-	// case DBTypePostgres:
-	// 	return state.getNamedLockPostgres(name)
-	// }
-	// panic("unsupported database type")
+	switch state.Type {
+	case DBTypeSQLite:
+		return state.getNamedLockSQLite(name)
+	case DBTypePostgres:
+		return state.getNamedLockPostgres(name)
+	}
+	panic("unsupported database type")
 }
 
 func (state *StatefulDB) getNamedLockPostgres(name string) (func(), error) {
