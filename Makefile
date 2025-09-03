@@ -127,21 +127,14 @@ go-lexicons:
 js-lexicons:
 	node_modules/.bin/lex gen-api ./js/streamplace/src/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
 		&& rm -rf ./js/streamplace/src/lexicons/types/com ./js/streamplace/src/lexicons/types/app \
-		&& echo 'import { ComAtprotoSyncListRepos, AppBskyActorGetProfile, AppBskyFeedGetFeedSkeleton, ComAtprotoIdentityResolveHandle, ComAtprotoModerationCreateReport, ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoDescribeRepo, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords, ComAtprotoRepoPutRecord, ComAtprotoRepoUploadBlob, ComAtprotoServerDescribeServer, ComAtprotoSyncGetRecord, ComAtprotoSyncListReposComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/streamplace/src/lexicons/index.ts \
-		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons/types -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyActorDefs\ from\ '.\/defs'/import \{ AppBskyActorDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoAdminDefs\ from\ .*$$/import \{ ComAtprotoAdminDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoRepoStrongRef\ from\ .*$$/import \{ ComAtprotoRepoStrongRef } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoModerationDefs\ from\ .*$$/import \{ ComAtprotoModerationDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/.*types\/\(app\).*//g" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/.*types\/\(com\).*//g" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/^..port.*app\/bsky.*//g" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/^..port.*com\/atproto.*//g" $$(find ./js/streamplace/src/lexicons -type f) \
 		&& sed -i.bak "s/from \'\(.*\)\.js\'/from \'\1\'/g" $$(find ./js/streamplace/src/lexicons -type f) \
+ 		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+ 		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& for x in $$(find ./js/streamplace/src/lexicons -type f -name '*.ts'); do \
+			echo 'import { AppBskyRichtextFacet, AppBskyGraphBlock, ComAtprotoRepoStrongRef, AppBskyActorDefs, ComAtprotoSyncListRepos, AppBskyActorGetProfile, AppBskyFeedGetFeedSkeleton, ComAtprotoIdentityResolveHandle, ComAtprotoModerationCreateReport, ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoDescribeRepo, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords, ComAtprotoRepoPutRecord, ComAtprotoRepoUploadBlob, ComAtprotoServerDescribeServer, ComAtprotoSyncGetRecord, ComAtprotoSyncListReposComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> $$x; \
+		done \
 		&& npx prettier --write $$(find ./js/streamplace/src/lexicons -type f -name '*.ts') \
 		&& find . | grep bak$$ | xargs rm
 
