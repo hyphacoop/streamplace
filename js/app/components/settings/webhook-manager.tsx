@@ -320,7 +320,7 @@ function WebhookForm({
         {/* Name */}
         <View style={[mb[4]]}>
           <Text
-            style={[text.gray[700], mb[2], { fontSize: 14, fontWeight: "500" }]}
+            style={[text.gray[300], mb[2], { fontSize: 14, fontWeight: "500" }]}
           >
             Name (optional)
           </Text>
@@ -329,14 +329,14 @@ function WebhookForm({
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, name: text }))
             }
-            placeholder="My Discord Webhook"
+            placeholder="Captain Hook"
           />
         </View>
 
         {/* URL */}
         <View style={[mb[4]]}>
           <Text
-            style={[text.gray[700], mb[2], { fontSize: 14, fontWeight: "500" }]}
+            style={[text.gray[300], mb[2], { fontSize: 14, fontWeight: "500" }]}
           >
             Webhook URL *
           </Text>
@@ -358,7 +358,7 @@ function WebhookForm({
         {/* Description */}
         <View style={[mb[4]]}>
           <Text
-            style={[text.gray[700], mb[2], { fontSize: 14, fontWeight: "500" }]}
+            style={[text.gray[300], mb[2], { fontSize: 14, fontWeight: "500" }]}
           >
             Description (optional)
           </Text>
@@ -367,7 +367,7 @@ function WebhookForm({
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, description: text }))
             }
-            placeholder="Discord notifications for my stream"
+            placeholder="A Streamplace webhook"
             multiline
           />
         </View>
@@ -375,7 +375,7 @@ function WebhookForm({
         {/* Events */}
         <View style={[mb[4]]}>
           <Text
-            style={[text.gray[700], mb[2], { fontSize: 14, fontWeight: "500" }]}
+            style={[text.gray[300], mb[2], { fontSize: 14, fontWeight: "500" }]}
           >
             Events *
           </Text>
@@ -401,7 +401,7 @@ function WebhookForm({
                   <Text style={[text.white, { fontSize: 12 }]}>✓</Text>
                 )}
               </View>
-              <Text style={[text.gray[700], { fontSize: 14 }]}>
+              <Text style={[text.gray[300], { fontSize: 14 }]}>
                 {option.label}
               </Text>
             </Pressable>
@@ -418,7 +418,7 @@ function WebhookForm({
           <View style={[flex.values[1]]}>
             <Text
               style={[
-                text.gray[700],
+                text.gray[300],
                 mb[2],
                 { fontSize: 14, fontWeight: "500" },
               ]}
@@ -436,7 +436,7 @@ function WebhookForm({
           <View style={[flex.values[1]]}>
             <Text
               style={[
-                text.gray[700],
+                text.gray[300],
                 mb[2],
                 { fontSize: 14, fontWeight: "500" },
               ]}
@@ -462,7 +462,7 @@ function WebhookForm({
             mb[6],
           ]}
         >
-          <Text style={[text.gray[700], { fontSize: 14, fontWeight: "500" }]}>
+          <Text style={[text.gray[300], { fontSize: 14, fontWeight: "500" }]}>
             Active
           </Text>
           <Switch
@@ -475,34 +475,12 @@ function WebhookForm({
       </View>
 
       <DialogFooter>
-        <Pressable
-          style={[
-            bg.gray[200],
-            p[3],
-            r[1],
-            layout.flex.center,
-            { minWidth: 80 },
-          ]}
-          onPress={onClose}
-          disabled={isLoading}
-        >
+        <Button variant="secondary" onPress={onClose} disabled={isLoading}>
           <Text>Cancel</Text>
-        </Pressable>
-        <Pressable
-          style={[
-            bg.blue[500],
-            p[3],
-            r[1],
-            layout.flex.center,
-            { opacity: isLoading ? 0.6 : 1, minWidth: 80 },
-          ]}
-          onPress={handleSubmit}
-          disabled={isLoading}
-        >
-          <Text style={[text.white, { fontSize: 14, fontWeight: "500" }]}>
-            {isLoading ? "Saving..." : webhook ? "Update" : "Create"}
-          </Text>
-        </Pressable>
+        </Button>
+        <Button onPress={handleSubmit} disabled={isLoading}>
+          <Text>{isLoading ? "Saving..." : webhook ? "Update" : "Create"}</Text>
+        </Button>
       </DialogFooter>
     </Dialog>
   );
@@ -520,6 +498,10 @@ export default function WebhookManager() {
   const [editingWebhook, setEditingWebhook] = useState<Webhook | undefined>();
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isVisible: boolean;
+    webhook: Webhook | null;
+  }>({ isVisible: false, webhook: null });
 
   const loadWebhooks = async () => {
     if (!agent) return;
@@ -608,38 +590,35 @@ export default function WebhookManager() {
   };
 
   const deleteWebhook = async (id: string) => {
-    if (!agent) return;
+    const webhook = webhooks?.find((w) => w.id === id);
+    if (!webhook) return;
 
-    Alert.alert(
-      "Delete Webhook",
-      "Are you sure you want to delete this webhook? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setDeletingWebhooks((prev) => new Set(prev).add(id));
-              await agent.place.stream.server.deleteWebhook({ id });
-              await loadWebhooks();
-            } catch (error: any) {
-              console.error("Failed to delete webhook:", error);
-              Alert.alert(
-                "Error",
-                error.message || "Failed to delete webhook. Please try again.",
-              );
-            } finally {
-              setDeletingWebhooks((prev) => {
-                const newSet = new Set(prev);
-                newSet.delete(id);
-                return newSet;
-              });
-            }
-          },
-        },
-      ],
-    );
+    setDeleteDialog({ isVisible: true, webhook });
+  };
+
+  const confirmDelete = async () => {
+    if (!agent || !deleteDialog.webhook) return;
+
+    const id = deleteDialog.webhook.id;
+
+    try {
+      setDeletingWebhooks((prev) => new Set(prev).add(id));
+      await agent.place.stream.server.deleteWebhook({ id });
+      await loadWebhooks();
+      setDeleteDialog({ isVisible: false, webhook: null });
+    } catch (error: any) {
+      console.error("Failed to delete webhook:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Failed to delete webhook. Please try again.",
+      );
+    } finally {
+      setDeletingWebhooks((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
   };
 
   const handleEdit = (webhook: Webhook) => {
@@ -756,6 +735,66 @@ export default function WebhookManager() {
           onSubmit={handleSubmit}
           isLoading={formLoading}
         />
+
+        <Dialog
+          open={deleteDialog.isVisible}
+          onOpenChange={(open) =>
+            !open && setDeleteDialog({ isVisible: false, webhook: null })
+          }
+          title="Delete Webhook"
+          dismissible={false}
+        >
+          <View style={[w.percent[100], mb[8], mt[2]]}>
+            <Text style={[{ fontSize: 24 }]}>
+              Are you sure you want to delete "
+              {deleteDialog.webhook?.name || "Untitled Webhook"}"?
+            </Text>
+            <Text
+              style={[
+                text.gray[400],
+                mt[4],
+                { fontSize: 18, fontWeight: "700" },
+              ]}
+            >
+              This action cannot be undone.
+            </Text>
+            <Text style={[text.gray[400], { fontSize: 18, fontWeight: "700" }]}>
+              The webhook will no longer receive events.
+            </Text>
+          </View>
+
+          <View style={[layout.flex.row, layout.flex.justify.end, gap.all[3]]}>
+            <Button
+              variant="secondary"
+              onPress={() =>
+                setDeleteDialog({ isVisible: false, webhook: null })
+              }
+              disabled={
+                deleteDialog.webhook
+                  ? deletingWebhooks.has(deleteDialog.webhook.id)
+                  : false
+              }
+            >
+              <Text>Cancel</Text>
+            </Button>
+            <Button
+              variant="destructive"
+              onPress={confirmDelete}
+              disabled={
+                deleteDialog.webhook
+                  ? deletingWebhooks.has(deleteDialog.webhook.id)
+                  : false
+              }
+            >
+              <Text style={[text.white, { fontSize: 14, fontWeight: "500" }]}>
+                {deleteDialog.webhook &&
+                deletingWebhooks.has(deleteDialog.webhook.id)
+                  ? "Deleting..."
+                  : "Delete"}
+              </Text>
+            </Button>
+          </View>
+        </Dialog>
       </View>
     </ThemeProvider>
   );
