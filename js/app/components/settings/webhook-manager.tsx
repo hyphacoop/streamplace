@@ -9,7 +9,7 @@ import {
 } from "@streamplace/components";
 import { ThemeProvider } from "@streamplace/components/src/lib/theme/theme";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
-import { Edit3, Plus, RefreshCw, Trash2 } from "@tamagui/lucide-icons";
+import { Edit3, Plus, RefreshCw, Trash2, X } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
 import { useEffect, useState } from "react";
@@ -51,6 +51,7 @@ interface Webhook {
   active: boolean;
   prefix?: string;
   suffix?: string;
+  rewrite?: Array<{ from: string; to: string }>;
   description?: string;
   createdAt: string;
   updatedAt?: string;
@@ -65,12 +66,22 @@ interface WebhookFormData {
   active: boolean;
   prefix: string;
   suffix: string;
+  rewrite: Array<{ from: string; to: string }>;
   description: string;
 }
 
 const EVENT_OPTIONS = [
   { value: "livestream", label: "Livestream Started" },
   { value: "chat", label: "Chat Messages" },
+];
+
+const PLACEHOLDER_OPTIONS = [
+  { key: "{username}", description: "The user's display name" },
+  { key: "{stream_title}", description: "The stream title" },
+  { key: "{viewer_count}", description: "Current viewer count" },
+  { key: "{game}", description: "Current game/category" },
+  { key: "{timestamp}", description: "Current timestamp" },
+  { key: "{url}", description: "Stream URL" },
 ];
 
 function WebhookRow({
@@ -245,6 +256,7 @@ function WebhookForm({
     active: webhook?.active ?? true,
     prefix: webhook?.prefix || "",
     suffix: webhook?.suffix || "",
+    rewrite: webhook?.rewrite || [{ from: "", to: "" }],
     description: webhook?.description || "",
   });
 
@@ -260,6 +272,7 @@ function WebhookForm({
         active: webhook.active ?? true,
         prefix: webhook.prefix || "",
         suffix: webhook.suffix || "",
+        rewrite: webhook.rewrite || [{ from: "", to: "" }],
         description: webhook.description || "",
       });
     } else {
@@ -271,6 +284,7 @@ function WebhookForm({
         active: true,
         prefix: "",
         suffix: "",
+        rewrite: [{ from: "", to: "" }],
         description: "",
       });
     }
@@ -305,6 +319,33 @@ function WebhookForm({
       events: prev.events.includes(eventValue)
         ? prev.events.filter((e) => e !== eventValue)
         : [...prev.events, eventValue],
+    }));
+  };
+
+  const addReplacement = () => {
+    setFormData((prev) => ({
+      ...prev,
+      rewrite: [...prev.rewrite, { from: "", to: "" }],
+    }));
+  };
+
+  const removeReplacement = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      rewrite: prev.rewrite.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateReplacement = (
+    index: number,
+    field: "from" | "to",
+    value: string,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      rewrite: prev.rewrite.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item,
+      ),
     }));
   };
 
@@ -418,7 +459,7 @@ function WebhookForm({
           <View style={[flex.values[1]]}>
             <Text
               style={[
-                text.gray[300],
+                text.gray[400],
                 mb[2],
                 { fontSize: 14, fontWeight: "500" },
               ]}
@@ -436,7 +477,7 @@ function WebhookForm({
           <View style={[flex.values[1]]}>
             <Text
               style={[
-                text.gray[300],
+                text.gray[400],
                 mb[2],
                 { fontSize: 14, fontWeight: "500" },
               ]}
@@ -451,6 +492,68 @@ function WebhookForm({
               placeholder=" is now live!"
             />
           </View>
+        </View>
+
+        {/* Replacements */}
+        <View style={[mb[4]]}>
+          <View
+            style={[
+              layout.flex.row,
+              layout.flex.alignCenter,
+              layout.flex.spaceBetween,
+              mb[2],
+            ]}
+          >
+            <Text style={[text.gray[300], { fontSize: 14, fontWeight: "500" }]}>
+              Text Replacements
+            </Text>
+            <Button size="pill" onPress={addReplacement}>
+              <Text style={[text.white, { fontSize: 12 }]}>+ Add</Text>
+            </Button>
+          </View>
+          <Text style={[text.gray[300], mb[3], { fontSize: 12 }]}>
+            Replace text in messages. Example: "#gaming" →
+            "&lt;@1384516462017777734&gt;"
+          </Text>
+
+          {formData.rewrite.map((replacement, index) => (
+            <View
+              key={index}
+              style={[
+                layout.flex.row,
+                gap.all[2],
+                mb[2],
+                layout.flex.alignCenter,
+              ]}
+            >
+              <View style={[flex.values[1]]}>
+                <Input
+                  value={replacement.from}
+                  onChangeText={(text) =>
+                    updateReplacement(index, "from", text)
+                  }
+                  placeholder="input text"
+                />
+              </View>
+              <Text style={[text.gray[400], px[1]]}>→</Text>
+              <View style={[flex.values[2]]}>
+                <Input
+                  value={replacement.to}
+                  onChangeText={(text) => updateReplacement(index, "to", text)}
+                  placeholder="output text"
+                />
+              </View>
+              {formData.rewrite.length > 1 && (
+                <Button
+                  style={[m[0], p[0]]}
+                  variant="destructive"
+                  onPress={() => removeReplacement(index)}
+                >
+                  <X size={20} mt={2} />
+                </Button>
+              )}
+            </View>
+          ))}
         </View>
 
         {/* Active toggle */}
@@ -537,6 +640,12 @@ export default function WebhookManager() {
 
     try {
       setFormLoading(true);
+
+      // Filter out empty rewrite rules
+      const rewriteRules = data.rewrite.filter(
+        (r) => r.from.trim() && r.to.trim(),
+      );
+
       await agent.place.stream.server.createWebhook({
         name: data.name || undefined,
         url: data.url,
@@ -544,6 +653,7 @@ export default function WebhookManager() {
         active: data.active,
         prefix: data.prefix || undefined,
         suffix: data.suffix || undefined,
+        rewrite: rewriteRules.length > 0 ? rewriteRules : undefined,
         description: data.description || undefined,
       });
       setShowForm(false);
@@ -565,6 +675,12 @@ export default function WebhookManager() {
 
     try {
       setFormLoading(true);
+
+      // Filter out empty rewrite rules
+      const rewriteRules = data.rewrite.filter(
+        (r) => r.from.trim() && r.to.trim(),
+      );
+
       await agent.place.stream.server.updateWebhook({
         id: editingWebhook.id,
         name: data.name || undefined,
@@ -573,6 +689,7 @@ export default function WebhookManager() {
         active: data.active,
         prefix: data.prefix || undefined,
         suffix: data.suffix || undefined,
+        rewrite: rewriteRules.length > 0 ? rewriteRules : undefined,
         description: data.description || undefined,
       });
       setShowForm(false);
