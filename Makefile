@@ -126,7 +126,8 @@ go-lexicons:
 .PHONY: js-lexicons
 js-lexicons:
 	node_modules/.bin/lex gen-api ./js/streamplace/src/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
-		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/streamplace/src/lexicons/index.ts \
+		&& rm -rf ./js/streamplace/src/lexicons/types/com ./js/streamplace/src/lexicons/types/app \
+		&& echo 'import { ComAtprotoSyncListRepos, AppBskyActorGetProfile, AppBskyFeedGetFeedSkeleton, ComAtprotoIdentityResolveHandle, ComAtprotoModerationCreateReport, ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoDescribeRepo, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords, ComAtprotoRepoPutRecord, ComAtprotoRepoUploadBlob, ComAtprotoServerDescribeServer, ComAtprotoSyncGetRecord, ComAtprotoSyncListReposComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/streamplace/src/lexicons/index.ts \
 		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
 		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
 		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
@@ -138,8 +139,12 @@ js-lexicons:
 		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoAdminDefs\ from\ .*$$/import \{ ComAtprotoAdminDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
 		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoRepoStrongRef\ from\ .*$$/import \{ ComAtprotoRepoStrongRef } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
 		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoModerationDefs\ from\ .*$$/import \{ ComAtprotoModerationDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/.*types\/\(app\).*//g" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/.*types\/\(com\).*//g" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/from \'\(.*\)\.js\'/from \'\1\'/g" $$(find ./js/streamplace/src/lexicons -type f) \
 		&& npx prettier --write $$(find ./js/streamplace/src/lexicons -type f -name '*.ts') \
 		&& find . | grep bak$$ | xargs rm
+
 
 .PHONY: md-lexicons
 md-lexicons:
