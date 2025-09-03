@@ -31,6 +31,12 @@ export interface StreamplaceState {
   oauthSession: SessionManager | null;
   handle: string | null;
   chatProfile: PlaceStreamChatProfile.Record | null;
+
+  // Volume state
+  volume: number;
+  muted: boolean;
+  setVolume: (volume: number) => void;
+  setMuted: (muted: boolean) => void;
 }
 
 export type StreamplaceStore = StoreApi<StreamplaceState>;
@@ -40,6 +46,46 @@ export const makeStreamplaceStore = ({
 }: {
   url: string;
 }): StoreApi<StreamplaceState> => {
+  // get local storage if exists
+  const getStorage = () => {
+    if (typeof window !== "undefined" && window.localStorage) {
+      return window.localStorage;
+    }
+    return null;
+  };
+
+  const storage = getStorage();
+  const VOLUME_STORAGE_KEY = "globalVolume";
+  const MUTED_STORAGE_KEY = "globalMuted";
+
+  // Load initial volume state from storage
+  let initialVolume = 1.0;
+  let initialMuted = false;
+
+  if (storage) {
+    try {
+      const storedVolume = storage.getItem(VOLUME_STORAGE_KEY);
+      const storedMuted = storage.getItem(MUTED_STORAGE_KEY);
+
+      if (storedVolume) {
+        const parsedVolume = parseFloat(storedVolume);
+        if (
+          Number.isFinite(parsedVolume) &&
+          parsedVolume >= 0 &&
+          parsedVolume <= 1
+        ) {
+          initialVolume = parsedVolume;
+        }
+      }
+
+      if (storedMuted) {
+        initialMuted = storedMuted === "true";
+      }
+    } catch (e) {
+      console.warn("Failed to load volume settings from storage:", e);
+    }
+  }
+
   return createStore<StreamplaceState>()((set) => ({
     url,
     liveUsers: null,
@@ -59,6 +105,34 @@ export const makeStreamplaceStore = ({
     oauthSession: null,
     handle: null,
     chatProfile: null,
+
+    // Volume state
+    volume: initialVolume,
+    muted: initialMuted,
+
+    setVolume: (volume: number) => {
+      // Ensure the value is finite and within bounds
+      if (!Number.isFinite(volume)) {
+        console.warn("Invalid volume value:", volume, "- using 1.0");
+        volume = 1.0;
+      }
+      const clampedVolume = Math.max(0, Math.min(1, volume));
+
+      set({ volume: clampedVolume });
+
+      // Auto-unmute if volume > 0
+      if (clampedVolume > 0) {
+        set({ muted: false });
+        storage?.setItem(MUTED_STORAGE_KEY, "false");
+      }
+
+      storage?.setItem(VOLUME_STORAGE_KEY, clampedVolume.toString());
+    },
+
+    setMuted: (muted: boolean) => {
+      set({ muted });
+      storage?.setItem(MUTED_STORAGE_KEY, muted.toString());
+    },
   }));
 };
 
@@ -87,3 +161,17 @@ export const useSetHandle = (): ((handle: string) => void) => {
   const store = getStreamplaceStoreFromContext();
   return (handle: string) => store.setState({ handle });
 };
+
+// Volume convenience hooks
+export const useVolume = () => useStreamplaceStore((x) => x.volume);
+export const useMuted = () => useStreamplaceStore((x) => x.muted);
+export const useSetVolume = () => useStreamplaceStore((x) => x.setVolume);
+export const useSetMuted = () => useStreamplaceStore((x) => x.setMuted);
+
+// Composite hook for effective volume (0 if muted) - used by video components
+export const useEffectiveVolume = () =>
+  useStreamplaceStore((state) => {
+    const effectiveVolume = state.muted ? 0 : state.volume;
+    // Ensure we always return a finite number for HTMLMediaElement.volume
+    return Number.isFinite(effectiveVolume) ? effectiveVolume : 1.0;
+  });

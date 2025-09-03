@@ -69,18 +69,6 @@ export interface PlayerState {
   /** Function to set the ingestStarted timestamp */
   setIngestStarted: (timestamp: number | null) => void;
 
-  /** Player muted state */
-  muted: boolean;
-
-  /** Function to set the muted state */
-  setMuted: (isMuted: boolean) => void;
-
-  /** Player volume level (0.0 to 1.0) */
-  volume: number;
-
-  /** Function to set the volume level */
-  setVolume: (volume: number) => void;
-
   /** Player fullscreen state */
   fullscreen: boolean;
 
