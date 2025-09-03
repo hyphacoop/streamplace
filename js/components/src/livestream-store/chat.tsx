@@ -76,6 +76,7 @@ export const useCreateChatMessage = () => {
     await rt.detectFacets(pdsAgent);
 
     const record: PlaceStreamChatMessage.Record = {
+      $type: "place.stream.chat.message",
       text: msg.text,
       createdAt: new Date().toISOString(),
       streamer: streamerProfile.did,
@@ -295,6 +296,7 @@ export const reduceChatIncremental = (
             processedMessage = {
               ...message,
               replyTo: {
+                $type: "place.stream.chat.defs#messageView",
                 cid: parentMsg.cid,
                 uri: parentMsg.uri,
                 author: parentMsg.author,

@@ -223,9 +223,7 @@ const ChatLine = memo(
           }
           renderLeftActions={Platform.OS === "android" ? undefined : LeftAction}
           overshootFriction={9}
-          ref={(ref) => {
-            swipeableRef.current = ref;
-          }}
+          ref={swipeableRef}
           onSwipeableOpen={(r) => {
             if (r === (Platform.OS === "android" ? "right" : "left")) {
               setReply(item);

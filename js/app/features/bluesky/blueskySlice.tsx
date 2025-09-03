@@ -642,6 +642,7 @@ export const blueskySlice = createAppSlice({
         }
 
         const record: PlaceStreamKey.Record = {
+          $type: "place.stream.key",
           signingKey: keypair.did(),
           createdAt: new Date().toISOString(),
           createdBy: "Streamplace on " + platform,
@@ -949,6 +950,7 @@ export const blueskySlice = createAppSlice({
         }
 
         const record: PlaceStreamLivestream.Record = {
+          $type: "place.stream.livestream",
           title: title,
           url: streamplace.url,
           createdAt: new Date().toISOString(),
@@ -1042,6 +1044,7 @@ export const blueskySlice = createAppSlice({
         console.log("Updating rkey", rkey);
 
         const record: PlaceStreamLivestream.Record = {
+          $type: "place.stream.livestream",
           title: title,
           url: streamplace.url,
           createdAt: new Date().toISOString(),
@@ -1172,6 +1175,7 @@ export const blueskySlice = createAppSlice({
         }
 
         const chatProfile: PlaceStreamChatProfile.Record = {
+          $type: "place.stream.chat.profile",
           color: {
             red: red,
             green: green,
@@ -1333,7 +1337,7 @@ export const blueskySlice = createAppSlice({
         }
 
         if (PlaceStreamServerSettings.isRecord(res.data.value)) {
-          return res.data.value;
+          return res.data.value as PlaceStreamServerSettings.Record;
         } else {
           console.log("not a record", res.data.value);
         }
@@ -1385,6 +1389,7 @@ export const blueskySlice = createAppSlice({
         }
         const u = new URL(streamplace.url);
         const serverSettings: PlaceStreamServerSettings.Record = {
+          $type: "place.stream.server.settings",
           debugRecording: debugRecording,
         };
 

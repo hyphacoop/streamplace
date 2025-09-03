@@ -75,6 +75,7 @@ export const useStreamKey = (): {
       }
 
       const record: PlaceStreamKey.Record = {
+        $type: "place.stream.key",
         signingKey: keypair.did(),
         createdAt: new Date().toISOString(),
         createdBy: "Streamplace on " + platform,
