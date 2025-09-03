@@ -9,7 +9,7 @@ import (
 
 	"github.com/bluesky-social/indigo/api/bsky"
 	"gorm.io/gorm"
-	"stream.place/streamplace/pkg/integrations/discord"
+	"stream.place/streamplace/pkg/integrations/webhook"
 	"stream.place/streamplace/pkg/log"
 	notificationpkg "stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/streamplace"
@@ -113,16 +113,30 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 		log.Log(ctx, "no notifier configured, skipping notifications", "user", userDID, "count", len(notifications))
 	}
 
-	for _, webhook := range state.CLI.DiscordWebhooks {
-		if webhook.DID == userDID && webhook.Type == "livestream" {
-			go func() {
-				err := discord.SendLivestream(ctx, webhook, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
+	// Send to webhooks using webhook manager
+	webhooks, err := state.GetActiveWebhooksForUser(userDID, "livestream")
+	if err != nil {
+		log.Error(ctx, "failed to get livestream webhooks", "err", err)
+	} else {
+		webhookManager := webhook.NewManager()
+		for _, w := range webhooks {
+			webhookData := webhook.WebhookToWebhookData(w.ID, w.URL, w.Events, w.Active, w.Prefix, w.Suffix, w.Rewrite, w.Name)
+			go func(wd webhook.WebhookData, wid uint) {
+				err := webhookManager.SendLivestreamWebhook(ctx, wd, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
 				if err != nil {
-					log.Error(ctx, "failed to send livestream to discord", "err", err)
+					log.Error(ctx, "failed to send livestream to webhook", "err", err, "webhook_id", wid)
+					err := state.IncrementWebhookError(wid)
+					if err != nil {
+						log.Error(ctx, "failed to increment webhook error count", "err", err, "webhook_id", wid)
+					}
 				} else {
-					log.Log(ctx, "sent livestream to discord", "user", userDID, "webhook", webhook.URL)
+					log.Log(ctx, "sent livestream to webhook", "webhook_id", wid)
+					err := state.ResetWebhookError(wid)
+					if err != nil {
+						log.Error(ctx, "failed to reset webhook error count", "err", err, "webhook_id", wid)
+					}
 				}
-			}()
+			}(webhookData, w.ID)
 		}
 	}
 	return nil
@@ -138,18 +152,31 @@ func (state *StatefulDB) processChatMessageTask(ctx context.Context, task *AppTa
 	if !ok {
 		return fmt.Errorf("invalid chat message record")
 	}
-	userDID := scm.Author.Did
 
-	for _, webhook := range state.CLI.DiscordWebhooks {
-		if webhook.DID == rec.Streamer && webhook.Type == "chat" {
-			go func() {
-				err := discord.SendChat(ctx, webhook, scm.Author.Did, scm)
+	// Send to webhooks using webhook manager
+	webhooks, err := state.GetActiveWebhooksForUser(rec.Streamer, "chat")
+	if err != nil {
+		log.Error(ctx, "failed to get chat webhooks", "err", err)
+	} else {
+		webhookManager := webhook.NewManager()
+		for _, w := range webhooks {
+			webhookData := webhook.WebhookToWebhookData(w.ID, w.URL, w.Events, w.Active, w.Prefix, w.Suffix, w.Rewrite, w.Name)
+			go func(wd webhook.WebhookData, wid uint) {
+				err := webhookManager.SendChatWebhook(ctx, wd, scm.Author.Did, scm)
 				if err != nil {
-					log.Error(ctx, "failed to send livestream to discord", "err", err)
+					log.Error(ctx, "failed to send chat to webhook", "err", err, "webhook_id", wid)
+					err = state.IncrementWebhookError(wid)
+					if err != nil {
+						log.Error(ctx, "failed to increment webhook error count", "err", err, "webhook_id", wid)
+					}
 				} else {
-					log.Log(ctx, "sent livestream to discord", "user", userDID, "webhook", webhook.URL)
+					log.Log(ctx, "sent chat to webhook", "webhook_id", wid)
+					err = state.ResetWebhookError(wid)
+					if err != nil {
+						log.Error(ctx, "failed to reset webhook error count", "err", err, "webhook_id", wid)
+					}
 				}
-			}()
+			}(webhookData, w.ID)
 		}
 	}
 	return nil

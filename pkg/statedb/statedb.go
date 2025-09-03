@@ -50,6 +50,7 @@ var StatefulDBModels = []any{
 	XrpcStreamEvent{},
 	AppTask{},
 	Repo{},
+	Webhook{},
 }
 
 var NoPostgresDatabaseCode = "3D000"

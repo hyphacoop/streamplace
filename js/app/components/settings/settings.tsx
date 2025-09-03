@@ -15,6 +15,7 @@ import { Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Button, H3, H5, Input, Text, View, XStack } from "tamagui";
 import { Updates } from "./updates";
+import WebhookManager from "./webhook-manager";
 
 export function Settings() {
   const dispatch = useAppDispatch();
@@ -144,6 +145,7 @@ export function Settings() {
                 <ArrowRight size="$1" />
               </View>
             </AQLink>
+            <WebhookManager />
           </>
         )}
       </View>

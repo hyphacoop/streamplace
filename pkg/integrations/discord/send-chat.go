@@ -23,7 +23,7 @@ func SendChat(ctx context.Context, w *discordtypes.Webhook, did string, scm *str
 		return fmt.Errorf("failed to cast chat message to streamplace chat message")
 	}
 
-	avatarURL, err := getAvatarURL(ctx, did)
+	avatarURL, err := GetAvatarURL(ctx, did)
 	if err != nil {
 		log.Warn(ctx, "failed to get avatar URL", "err", err)
 	}
