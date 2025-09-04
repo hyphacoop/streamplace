@@ -248,6 +248,7 @@ export function useCreateStreamRecord() {
     }
 
     const record: PlaceStreamLivestream.Record = {
+      $type: "place.stream.livestream",
       title: title,
       url: finalUrl,
       createdAt: new Date().toISOString(),
@@ -313,6 +314,7 @@ export function useUpdateStreamRecord(customUrl: string | null = null) {
     }
 
     const record: PlaceStreamLivestream.Record = {
+      $type: "place.stream.livestream",
       title: title,
       url: finalUrl,
       createdAt: new Date().toISOString(),
