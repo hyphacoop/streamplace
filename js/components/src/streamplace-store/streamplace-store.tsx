@@ -1,6 +1,10 @@
 import { SessionManager } from "@atproto/api/dist/session-manager";
 import { useContext } from "react";
-import { PlaceStreamChatProfile, PlaceStreamLivestream } from "streamplace";
+import {
+  PlaceStreamChatProfile,
+  PlaceStreamLivestream,
+  PlaceStreamMetadataConfiguration,
+} from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
 import { StreamplaceContext } from "../streamplace-provider/context";
 
@@ -15,6 +19,13 @@ import { StreamplaceContext } from "../streamplace-provider/context";
 // For the Streamplace app itself, all three are the same. For apps that aren't
 // doing OAuth through the Streamplace node, we need to expose an interface that
 // allows them to use atcute or whatever for 1.
+
+export interface ContentMetadataResult {
+  record: PlaceStreamMetadataConfiguration.Record;
+  uri: string;
+  cid: string;
+  rkey?: string;
+}
 
 export interface StreamplaceState {
   url: string;
@@ -31,6 +42,10 @@ export interface StreamplaceState {
   oauthSession: SessionManager | null;
   handle: string | null;
   chatProfile: PlaceStreamChatProfile.Record | null;
+
+  // Content metadata state
+  contentMetadata: ContentMetadataResult | null;
+  setContentMetadata: (metadata: ContentMetadataResult | null) => void;
 }
 
 export type StreamplaceStore = StoreApi<StreamplaceState>;
@@ -59,6 +74,10 @@ export const makeStreamplaceStore = ({
     oauthSession: null,
     handle: null,
     chatProfile: null,
+
+    // Content metadata
+    contentMetadata: null,
+    setContentMetadata: (metadata) => set({ contentMetadata: metadata }),
   }));
 };
 
@@ -87,3 +106,15 @@ export const useSetHandle = (): ((handle: string) => void) => {
   const store = getStreamplaceStoreFromContext();
   return (handle: string) => store.setState({ handle });
 };
+
+// Content metadata hooks
+export const useContentMetadata = () =>
+  useStreamplaceStore((x) => x.contentMetadata);
+
+export const useSetContentMetadata = () => {
+  const store = getStreamplaceStoreFromContext();
+  return (metadata: ContentMetadataResult | null) =>
+    store.setState({ contentMetadata: metadata });
+};
+
+export { useCreateStreamRecord, useUpdateStreamRecord } from "./stream";
