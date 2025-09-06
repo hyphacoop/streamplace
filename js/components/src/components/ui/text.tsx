@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import React, { forwardRef } from "react";
-import { StyleSheet } from "react-native";
-import { colors, borderRadius as radius, spacing } from "../../lib/theme/atoms";
+import { useTheme } from "../../lib/theme/theme";
+import * as zero from "../../ui";
 import { TextPrimitive, TextPrimitiveProps } from "./primitives/text";
 
 // Text variants using class-variance-authority pattern
@@ -103,8 +103,7 @@ export const Text = forwardRef<any, TextProps>(
     },
     ref,
   ) => {
-    // Create dynamic styles based on atoms
-    const styles = React.useMemo(() => createStyles(), []);
+    const { zero: zt } = useTheme();
 
     // Override props based on convenience props
     const finalColor = customColor ? customColor : muted ? "muted" : color;
@@ -134,8 +133,31 @@ export const Text = forwardRef<any, TextProps>(
           ? "justify"
           : "left";
 
-    // Get variant-specific styles
-    const variantStyle = styles[`${variant}Style` as keyof typeof styles] || {};
+    // Get variant-specific styles using theme.zero
+    const variantStyle = React.useMemo(() => {
+      switch (variant) {
+        case "h1":
+          return zero.m[6];
+        case "h2":
+        case "h3":
+          return zero.m[4];
+        case "h4":
+        case "h5":
+        case "h6":
+        case "subtitle1":
+          return zero.m[2];
+        case "subtitle2":
+        case "caption":
+        case "overline":
+          return zero.m[1];
+        case "body1":
+          return zero.m[4];
+        case "body2":
+          return zero.m[2];
+        default:
+          return {};
+      }
+    }, [variant, zt]);
 
     const styleArr = (
       Array.isArray(style) ? style : [style || undefined]
@@ -209,13 +231,24 @@ export const Label = forwardRef<any, Omit<TextProps, "variant">>(
 Label.displayName = "Label";
 
 export const Code = forwardRef<any, TextProps>(({ style, ...props }, ref) => {
-  const styles = React.useMemo(() => createStyles(), []);
+  const { zero: zt } = useTheme();
+
+  const codeStyle = React.useMemo(
+    () => [
+      zt.bg.muted,
+      zero.p[1],
+      { borderRadius: zero.borderRadius.sm },
+      zt.text.code,
+    ],
+    [zt],
+  );
+
   // if style is not an array, convert it to an array
   const styleArr = (Array.isArray(style) ? style : [style || undefined]).filter(
     (s) => s !== undefined,
   );
 
-  return <Text ref={ref} style={[styles.codeStyle, ...styleArr]} {...props} />;
+  return <Text ref={ref} style={[...codeStyle, ...styleArr]} {...props} />;
 });
 
 Code.displayName = "Code";
@@ -263,65 +296,6 @@ export const Span = forwardRef<
 ));
 
 Span.displayName = "Span";
-
-// Create atom-based styles
-function createStyles() {
-  return StyleSheet.create({
-    // Variant-specific styles
-    h1Style: {
-      marginBottom: spacing[4],
-    },
-    h2Style: {
-      marginBottom: spacing[3],
-    },
-    h3Style: {
-      marginBottom: spacing[3],
-    },
-    h4Style: {
-      marginBottom: spacing[2],
-    },
-    h5Style: {
-      marginBottom: spacing[2],
-    },
-    h6Style: {
-      marginBottom: spacing[2],
-    },
-    subtitle1Style: {
-      marginBottom: spacing[2],
-    },
-    subtitle2Style: {
-      marginBottom: spacing[1],
-    },
-    body1Style: {
-      marginBottom: spacing[3],
-    },
-    body2Style: {
-      marginBottom: spacing[2],
-    },
-    captionStyle: {
-      marginBottom: spacing[1],
-    },
-    overlineStyle: {
-      marginBottom: spacing[1],
-      textTransform: "uppercase",
-      letterSpacing: 1,
-    },
-    labelStyle: {
-      marginBottom: spacing[1],
-    },
-    buttonStyle: {
-      textAlign: "center",
-    },
-    codeStyle: {
-      fontFamily: "monospace",
-      backgroundColor: colors["muted"],
-      paddingHorizontal: spacing[1],
-      paddingVertical: 2,
-      borderRadius: radius.sm,
-      fontSize: 14,
-    },
-  });
-}
 
 // Export text variants for external use
 export { textVariants };

@@ -19,6 +19,27 @@ import {
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+// Import pairify function for generating theme tokens
+function pairify<T extends Record<string, any>>(
+  obj: T,
+  styleKeyPrefix: string,
+): Record<keyof T, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      // For nested objects (like color scales), create another level
+      result[key] = {};
+      for (const [nestedKey, nestedValue] of Object.entries(value)) {
+        result[key][nestedKey] = { [styleKeyPrefix]: nestedValue };
+      }
+    } else {
+      // For simple values, create the style object directly
+      result[key] = { [styleKeyPrefix]: value };
+    }
+  }
+  return result as Record<keyof T, any>;
+}
+
 // Theme interfaces
 export interface Theme {
   colors: {
@@ -80,30 +101,37 @@ export interface Theme {
   animations: typeof animations;
 }
 
-// Utility styles interface
-export interface ThemeStyles {
+// Theme-aware zero interface (like atoms but with theme colors)
+export interface ThemeZero {
+  // Colors using pairify
+  bg: Record<string, any>;
+  text: Record<string, any>;
+  border: Record<string, any>;
+
+  // Static design tokens (same as atoms)
   shadow: {
     sm: typeof shadows.sm;
     md: typeof shadows.md;
     lg: typeof shadows.lg;
     xl: typeof shadows.xl;
   };
+
+  // Common button styles
   button: {
     primary: object;
     secondary: object;
     outline: object;
     ghost: object;
   };
-  text: {
-    primary: object;
-    muted: object;
-    disabled: object;
-  };
+
+  // Input styles
   input: {
     base: object;
     focused: object;
     error: object;
   };
+
+  // Card styles
   card: {
     base: object;
   };
@@ -160,14 +188,25 @@ const createThemeColors = (
   };
 };
 
-// Create theme styles based on colors
-const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
+// Create theme-aware zero tokens using pairify
+const createThemeZero = (themeColors: Theme["colors"]): ThemeZero => ({
+  // Theme-aware colors using pairify
+  bg: pairify(themeColors, "backgroundColor"),
+  text: pairify(themeColors, "color"),
+  border: {
+    ...pairify(themeColors, "borderColor"),
+    default: { borderColor: themeColors.border },
+  },
+
+  // Static design tokens
   shadow: {
     sm: shadows.sm,
     md: shadows.md,
     lg: shadows.lg,
     xl: shadows.xl,
   },
+
+  // Common button styles
   button: {
     primary: {
       backgroundColor: themeColors.primary,
@@ -188,17 +227,8 @@ const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
       borderWidth: 0,
     },
   },
-  text: {
-    primary: {
-      color: themeColors.text,
-    },
-    muted: {
-      color: themeColors.textMuted,
-    },
-    disabled: {
-      color: themeColors.textDisabled,
-    },
-  },
+
+  // Input styles
   input: {
     base: {
       backgroundColor: themeColors.background,
@@ -218,6 +248,8 @@ const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
       borderWidth: 2,
     },
   },
+
+  // Card styles
   card: {
     base: {
       backgroundColor: themeColors.card,
@@ -249,7 +281,7 @@ const createThemeIcons = (themeColors: Theme["colors"]): ThemeIcons => ({
 // Theme context interface
 interface ThemeContextType {
   theme: Theme;
-  styles: ThemeStyles;
+  zero: ThemeZero;
   icons: ThemeIcons;
   isDark: boolean;
   currentTheme: "light" | "dark" | "system";
@@ -386,9 +418,9 @@ export function ThemeProvider({
     };
   }, [isDark, lightTheme, darkTheme, colorTheme]);
 
-  // Create utility styles
-  const styles = useMemo<ThemeStyles>(() => {
-    return createThemeStyles(theme.colors);
+  // Create theme-aware zero tokens
+  const zero = useMemo<ThemeZero>(() => {
+    return createThemeZero(theme.colors);
   }, [theme.colors]);
 
   // Create icon utilities
@@ -416,7 +448,7 @@ export function ThemeProvider({
   const value = useMemo<ThemeContextType>(
     () => ({
       theme,
-      styles,
+      zero,
       icons,
       isDark,
       currentTheme: forcedTheme || currentTheme,
@@ -426,7 +458,7 @@ export function ThemeProvider({
     }),
     [
       theme,
-      styles,
+      zero,
       icons,
       isDark,
       forcedTheme,
@@ -472,13 +504,13 @@ export function usePlatformTypography() {
 
 // Utility function to create theme-aware styles
 export function createThemedStyles<T extends Record<string, any>>(
-  styleCreator: (theme: Theme, styles: ThemeStyles, icons: ThemeIcons) => T,
+  styleCreator: (theme: Theme, zero: ThemeZero, icons: ThemeIcons) => T,
 ) {
   return function useThemedStyles() {
-    const { theme, styles, icons } = useTheme();
+    const { theme, zero, icons } = useTheme();
     return useMemo(
-      () => styleCreator(theme, styles, icons),
-      [theme, styles, icons],
+      () => styleCreator(theme, zero, icons),
+      [theme, zero, icons],
     );
   };
 }
@@ -505,4 +537,4 @@ export const darkTheme: Theme = {
 };
 
 // Export individual theme utilities for convenience
-export { createThemeColors, createThemeIcons, createThemeStyles };
+export { createThemeColors, createThemeIcons, createThemeZero };

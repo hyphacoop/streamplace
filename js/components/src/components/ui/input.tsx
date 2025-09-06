@@ -1,7 +1,8 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import React, { forwardRef } from "react";
-import { Platform, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { TouchableWithoutFeedback } from "react-native";
 import { useTheme } from "../../lib/theme/theme";
+import * as zero from "../../ui";
 import { InputPrimitive, InputPrimitiveProps } from "./primitives/input";
 
 const inputVariants = cva("", {
@@ -54,26 +55,66 @@ export const Input = forwardRef<any, InputProps>(
     },
     ref,
   ) => {
-    const { theme } = useTheme();
+    const { zero: zt, theme } = useTheme();
     const [isFocused, setIsFocused] = React.useState(false);
     const inputRef = React.useRef<any>(null);
 
-    // Create dynamic styles based on theme
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
-
-    // Get variant and size styles
+    // Get variant and size styles using theme.zero
     const containerStyles = React.useMemo(() => {
-      const variantStyle = styles[`${variant}Container` as keyof typeof styles];
-      const sizeStyle = styles[`${size}Container` as keyof typeof styles];
-      const focusStyle = isFocused ? styles.focusedContainer : null;
-      return [variantStyle, sizeStyle, focusStyle];
-    }, [variant, size, styles, isFocused]);
+      const variantStyle = (() => {
+        switch (variant) {
+          case "filled":
+            return [zt.bg.muted];
+          case "underlined":
+            return [
+              zt.bg.transparent,
+              zt.border.bottom.default,
+              { borderRadius: 0, paddingHorizontal: 0 },
+            ];
+          default:
+            return [zt.bg.background, zt.border.default];
+        }
+      })();
+
+      const sizeStyle = (() => {
+        switch (size) {
+          case "sm":
+            return [
+              zero.px[3],
+              zero.py[2],
+              { borderRadius: zero.borderRadius.md },
+            ];
+          case "lg":
+            return [
+              zero.px[4],
+              zero.py[3],
+              { borderRadius: zero.borderRadius.md },
+            ];
+          default:
+            return [
+              zero.px[3],
+              zero.py[2],
+              { borderRadius: zero.borderRadius.md },
+            ];
+        }
+      })();
+
+      const focusStyle = isFocused ? zt.border.primary : null;
+      return [variantStyle, sizeStyle, focusStyle].filter(Boolean);
+    }, [variant, size, zt, isFocused]);
 
     const textStyles = React.useMemo(() => {
-      const variantTextStyle = styles[`${variant}Input` as keyof typeof styles];
-      const sizeTextStyle = styles[`${size}Input` as keyof typeof styles];
-      return [variantTextStyle, sizeTextStyle];
-    }, [variant, size, styles]);
+      const baseTextStyle = [zt.text.foreground, zt.bg.transparent];
+
+      switch (size) {
+        case "sm":
+          return [...baseTextStyle, zt.text.sm];
+        case "lg":
+          return [...baseTextStyle, zt.text.lg];
+        default:
+          return [...baseTextStyle, zt.text.md];
+      }
+    }, [size, zt]);
 
     const handleFocus = React.useCallback(
       (event: any) => {
@@ -144,12 +185,7 @@ export const Input = forwardRef<any, InputProps>(
                 error={!!error}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                style={[
-                  textStyles,
-                  styles.inputInContainer,
-                  inputStyle,
-                  { outline: "none" },
-                ]}
+                style={[textStyles, inputStyle, { outline: "none" }]}
                 placeholderTextColor={
                   disabled ? theme.colors.textDisabled : theme.colors.textMuted
                 }
@@ -222,129 +258,6 @@ export const Input = forwardRef<any, InputProps>(
 );
 
 Input.displayName = "Input";
-
-// Create theme-aware styles
-function createStyles(theme: any) {
-  return StyleSheet.create({
-    // Variant styles for containers
-    defaultContainer: {
-      backgroundColor: theme.colors.background,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadius.md,
-    },
-
-    filledContainer: {
-      backgroundColor: theme.colors.muted,
-      borderWidth: 0,
-      borderRadius: theme.borderRadius.md,
-    },
-
-    underlinedContainer: {
-      backgroundColor: "transparent",
-      borderWidth: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      borderRadius: 0,
-      paddingHorizontal: 0,
-    },
-
-    // Variant styles for inputs
-    defaultInput: {
-      color: theme.colors.text,
-      backgroundColor: "transparent",
-    },
-
-    filledInput: {
-      color: theme.colors.text,
-      backgroundColor: "transparent",
-    },
-
-    underlinedInput: {
-      color: theme.colors.text,
-      backgroundColor: "transparent",
-    },
-
-    // Size styles for containers
-    smContainer: {
-      paddingHorizontal: theme.spacing[3],
-      paddingVertical: theme.spacing[2],
-      minHeight: theme.touchTargets.minimum - 8,
-    },
-
-    mdContainer: {
-      paddingHorizontal: theme.spacing[3],
-      paddingVertical: theme.spacing[3],
-      minHeight: theme.touchTargets.minimum,
-    },
-
-    lgContainer: {
-      paddingHorizontal: theme.spacing[4],
-      paddingVertical: theme.spacing[4],
-      minHeight: theme.touchTargets.comfortable,
-    },
-
-    // Size styles for inputs
-    smInput: {
-      fontSize: 14,
-      lineHeight: 18,
-      ...Platform.select({
-        ios: {
-          paddingVertical: 0,
-        },
-        android: {
-          paddingVertical: 0,
-          textAlignVertical: "center",
-        },
-      }),
-    },
-
-    mdInput: {
-      fontSize: 16,
-      lineHeight: 20,
-      ...Platform.select({
-        ios: {
-          paddingVertical: 0,
-        },
-        android: {
-          paddingVertical: 0,
-          textAlignVertical: "center",
-        },
-      }),
-    },
-
-    lgInput: {
-      fontSize: 18,
-      lineHeight: 22,
-      ...Platform.select({
-        ios: {
-          paddingVertical: 0,
-        },
-        android: {
-          paddingVertical: 0,
-          textAlignVertical: "center",
-        },
-      }),
-    },
-
-    // Special style for inputs inside containers
-    inputInContainer: {
-      flex: 1,
-      paddingHorizontal: 0,
-      paddingVertical: 0,
-      borderWidth: 0,
-      backgroundColor: "transparent",
-      minHeight: "auto",
-      borderRadius: 0,
-    },
-
-    // Focus styles
-    focusedContainer: {
-      borderColor: theme.colors.primary,
-      borderWidth: 1,
-    },
-  });
-}
 
 // Export input variants for external use
 export { inputVariants };

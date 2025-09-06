@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { Text } from "@streamplace/components";
+import { Button, Text, Textarea, zero } from "@streamplace/components";
 import AQLink from "components/aqlink";
 import Container from "components/container";
 import {
@@ -11,7 +11,7 @@ import {
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
-import { Switch, TextInput, TouchableOpacity, View } from "react-native";
+import { Switch, View } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Updates } from "./updates";
 import WebhookManager from "./webhook-manager";
@@ -88,12 +88,8 @@ export function Settings() {
               ]}
             >
               <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                <Text
-                  style={[{ fontSize: 28, fontWeight: "bold", color: "#fff" }]}
-                >
-                  Use Custom Node
-                </Text>
-                <Text style={[{ fontSize: 20, color: "#999" }]}>
+                <Text size="xl">Use Custom Node</Text>
+                <Text size="lg" color="muted">
                   Default: {url}
                 </Text>
               </View>
@@ -117,21 +113,10 @@ export function Settings() {
               },
             ]}
           >
-            <TextInput
+            <Textarea
               value={newUrl}
-              style={[
-                { flex: 1 },
-                {
-                  height: 40,
-                  borderWidth: 1,
-                  borderColor: "#333",
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  backgroundColor: "#1a1a1a",
-                  color: "#fff",
-                  fontSize: 16,
-                },
-              ]}
+              style={[{ flex: 1 }]}
+              numberOfLines={1}
               placeholder={url || "Enter custom node URL"}
               placeholderTextColor="#999"
               onChangeText={setNewUrl}
@@ -141,21 +126,14 @@ export function Settings() {
               autoCorrect={false}
               keyboardType="url"
             />
-            <TouchableOpacity
-              style={[
-                {
-                  height: 40,
-                  paddingHorizontal: 16,
-                  backgroundColor: "#007AFF",
-                  borderRadius: 8,
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-              ]}
+            <Button
+              size="md"
+              variant="secondary"
+              style={[zero.py[0]]}
               onPress={onSubmitUrl}
             >
-              <Text style={[{ color: "#fff", fontWeight: "600" }]}>SAVE</Text>
-            </TouchableOpacity>
+              <Text size="lg">Save</Text>
+            </Button>
           </View>
         </View>
 

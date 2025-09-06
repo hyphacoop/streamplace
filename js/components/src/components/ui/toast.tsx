@@ -11,9 +11,9 @@ import {
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../../lib/theme/theme";
 
 import { useCallback } from "react";
+import { useTheme } from "../../ui";
 
 type ToastController = {
   show: (

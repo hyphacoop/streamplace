@@ -1,8 +1,9 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react-native";
 import React, { forwardRef } from "react";
-import { Platform, StyleSheet, Text } from "react-native";
+import { Platform, Text } from "react-native";
 import { useTheme } from "../../lib/theme/theme";
+import * as zero from "../../ui";
 import { createThemedIcon } from "./icons";
 import { ModalPrimitive, ModalPrimitiveProps } from "./primitives/modal";
 
@@ -67,10 +68,70 @@ export const Dialog = forwardRef<any, DialogProps>(
     },
     ref,
   ) => {
-    const { theme } = useTheme();
+    const { zero: zt, theme } = useTheme();
 
-    // Create dynamic styles based on theme
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    // Content styles using theme.zero
+    const contentStyles = React.useMemo(() => {
+      const baseStyle = [
+        zt.bg.card,
+        zero.r.lg,
+        zero.shadows.lg,
+        { maxHeight: "90%", maxWidth: "90%" },
+      ];
+
+      const variantStyle = (() => {
+        switch (variant) {
+          case "sheet":
+            return [
+              { borderRadius: zero.borderRadius.xl },
+              {
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+                marginTop: "auto",
+                marginBottom: 0,
+                maxHeight: "80%",
+                width: "100%",
+                maxWidth: "100%",
+              },
+            ];
+          case "fullscreen":
+            return [
+              {
+                width: "100%",
+                height: "100%",
+                maxWidth: "100%",
+                maxHeight: "100%",
+                borderRadius: 0,
+                margin: 0,
+              },
+            ];
+          default:
+            return [];
+        }
+      })();
+
+      const sizeStyle = (() => {
+        switch (size) {
+          case "sm":
+            return { minWidth: 300, minHeight: 200 };
+          case "lg":
+            return { minWidth: 500, minHeight: 400 };
+          case "xl":
+            return { minWidth: 600, minHeight: 500 };
+          case "full":
+            return {
+              width: "95%",
+              height: "95%",
+              maxWidth: "95%",
+              maxHeight: "95%",
+            };
+          default:
+            return { minWidth: 400, minHeight: 300 };
+        }
+      })();
+
+      return [baseStyle, variantStyle, sizeStyle].flat();
+    }, [variant, size, zero]);
 
     const handleClose = React.useCallback(() => {
       if (onClose) {
@@ -112,27 +173,38 @@ export const Dialog = forwardRef<any, DialogProps>(
         <ModalPrimitive.Overlay
           dismissible={dismissible}
           onDismiss={handleClose}
-          style={styles.overlay}
+          style={zt.bg.overlay}
         >
           <ModalPrimitive.Content
             position={position || "left"}
             size={size || "md"}
-            style={[
-              styles.content,
-              styles[`${variant}Content` as keyof typeof styles],
-              styles[`${size}Content` as keyof typeof styles],
-            ]}
+            style={contentStyles}
           >
             {(title || showCloseButton) && (
               <ModalPrimitive.Header
                 withBorder={variant !== "sheet"}
-                style={styles.header}
+                style={[
+                  zero.p[4],
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  },
+                ]}
               >
                 <DialogTitle>{title}</DialogTitle>
                 {showCloseButton && (
                   <ModalPrimitive.Close
                     onClose={handleClose}
-                    style={styles.closeButton}
+                    style={[
+                      zero.p[2],
+                      {
+                        width: 44,
+                        height: 44,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                    ]}
                   >
                     <DialogCloseIcon />
                   </ModalPrimitive.Close>
@@ -142,7 +214,7 @@ export const Dialog = forwardRef<any, DialogProps>(
 
             <ModalPrimitive.Body
               scrollable={variant !== "fullscreen"}
-              style={styles.body}
+              style={[zero.p[6], { paddingTop: 0, flex: 1 }]}
             >
               {description && (
                 <DialogDescription>{description}</DialogDescription>
@@ -166,13 +238,16 @@ export interface DialogTitleProps {
 
 export const DialogTitle = forwardRef<any, DialogTitleProps>(
   ({ children, style, ...props }, ref) => {
-    const { theme } = useTheme();
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { zero: zt } = useTheme();
 
     if (!children) return null;
 
     return (
-      <Text ref={ref} style={[styles.title, style]} {...props}>
+      <Text
+        ref={ref}
+        style={[zt.text.xl, { fontWeight: "600", flex: 1 }, style]}
+        {...props}
+      >
         {children}
       </Text>
     );
@@ -189,13 +264,12 @@ export interface DialogDescriptionProps {
 
 export const DialogDescription = forwardRef<any, DialogDescriptionProps>(
   ({ children, style, ...props }, ref) => {
-    const { theme } = useTheme();
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { zero: zt } = useTheme();
 
     if (!children) return null;
 
     return (
-      <Text ref={ref} style={[styles.description, style]} {...props}>
+      <Text ref={ref} style={[zt.text.muted, zero.mb[4], style]} {...props}>
         {children}
       </Text>
     );
@@ -230,8 +304,7 @@ export const DialogFooter = forwardRef<any, DialogFooterProps>(
     },
     ref,
   ) => {
-    const { theme } = useTheme();
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const { zero: zt } = useTheme();
 
     if (!children) return null;
 
@@ -241,7 +314,7 @@ export const DialogFooter = forwardRef<any, DialogFooterProps>(
         withBorder={withBorder}
         direction={direction}
         justify={justify}
-        style={[styles.footer, style]}
+        style={[zero.p[6], { gap: 8 }, style]}
         {...props}
       >
         {children}
@@ -256,121 +329,6 @@ DialogFooter.displayName = "DialogFooter";
 const DialogCloseIcon = () => {
   return <ThemedX size="md" variant="default" />;
 };
-
-// Create theme-aware styles
-function createStyles(theme: any) {
-  return StyleSheet.create({
-    overlay: {
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
-    },
-
-    content: {
-      backgroundColor: theme.colors.card,
-      borderRadius: theme.borderRadius.lg,
-      ...theme.shadows.lg,
-      maxHeight: "90%",
-      maxWidth: "90%",
-    },
-
-    // Variant styles
-    defaultContent: {
-      // Default styles already applied in content
-    },
-
-    sheetContent: {
-      borderTopLeftRadius: theme.borderRadius.xl,
-      borderTopRightRadius: theme.borderRadius.xl,
-      borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0,
-      marginTop: "auto",
-      marginBottom: 0,
-      maxHeight: "80%",
-      width: "100%",
-      maxWidth: "100%",
-    },
-
-    fullscreenContent: {
-      width: "100%",
-      height: "100%",
-      maxWidth: "100%",
-      maxHeight: "100%",
-      borderRadius: 0,
-      margin: 0,
-    },
-
-    // Size styles
-    smContent: {
-      minWidth: 300,
-      minHeight: 200,
-    },
-
-    mdContent: {
-      minWidth: 400,
-      minHeight: 300,
-    },
-
-    lgContent: {
-      minWidth: 500,
-      minHeight: 400,
-    },
-
-    xlContent: {
-      minWidth: 600,
-      minHeight: 500,
-    },
-
-    fullContent: {
-      width: "95%",
-      height: "95%",
-      maxWidth: "95%",
-      maxHeight: "95%",
-    },
-
-    header: {
-      paddingHorizontal: theme.spacing[6],
-      paddingVertical: theme.spacing[4],
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-
-    body: {
-      paddingHorizontal: theme.spacing[6],
-      paddingBottom: theme.spacing[6],
-      flex: 1,
-    },
-
-    footer: {
-      paddingHorizontal: theme.spacing[6],
-      paddingVertical: theme.spacing[4],
-      gap: theme.spacing[2],
-    },
-
-    title: {
-      fontSize: 20,
-      fontWeight: "600",
-      color: theme.colors.text,
-      flex: 1,
-      lineHeight: 24,
-    },
-
-    description: {
-      fontSize: 16,
-      color: theme.colors.textMuted,
-      lineHeight: 22,
-      marginBottom: theme.spacing[4],
-    },
-
-    closeButton: {
-      width: theme.touchTargets.minimum,
-      height: theme.touchTargets.minimum,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: theme.borderRadius.sm,
-      marginLeft: theme.spacing[2],
-    },
-  });
-}
 
 // Export dialog variants for external use
 export { dialogVariants };
