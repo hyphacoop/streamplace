@@ -1,11 +1,11 @@
 import { storage } from "@streamplace/components";
 import { BlueskyState } from "features/bluesky/blueskyTypes";
+import { Platform } from "react-native";
 import { PlaceStreamLivestream, PlaceStreamSegment } from "streamplace";
-import { isWeb } from "tamagui";
 import { createAppSlice } from "../../hooks/createSlice";
 
 let DEFAULT_URL = process.env.EXPO_PUBLIC_STREAMPLACE_URL as string;
-if (isWeb && process.env.EXPO_PUBLIC_WEB_TRY_LOCAL === "true") {
+if (Platform.OS === "web" && process.env.EXPO_PUBLIC_WEB_TRY_LOCAL === "true") {
   try {
     DEFAULT_URL = `${window.location.protocol}//${window.location.host}`;
   } catch (err) {

@@ -1,5 +1,6 @@
+import { Text, zero } from "@streamplace/components";
 import { useEffect, useState } from "react";
-import { Text, View } from "tamagui";
+import { View } from "react-native";
 
 export default function Timer({ start }: { start: string | Date }) {
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -26,16 +27,21 @@ export default function Timer({ start }: { start: string | Date }) {
 
   return (
     <View
-      justifyContent="center"
-      flexDirection="row"
-      alignItems="center"
-      paddingHorizontal="$2"
-      paddingVertical="$1"
+      style={[
+        { justifyContent: "center", alignItems: "center" },
+        { flexDirection: "row" },
+        zero.px[2],
+        zero.py[1],
+      ]}
     >
       <Text
-        fontFamily="$mono"
-        textShadowOffset={{ width: -1, height: 1 }}
-        textShadowRadius={3}
+        style={[
+          { fontFamily: "monospace" },
+          {
+            textShadowOffset: { width: -1, height: 1 },
+            textShadowRadius: 3,
+          },
+        ]}
       >
         {formatTime(elapsedTime)}
       </Text>

@@ -1,4 +1,3 @@
-import { X } from "@tamagui/lucide-icons";
 import {
   createChatProfileRecord,
   getChatProfileRecordFromPDS,
@@ -6,7 +5,14 @@ import {
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import { Keyboard } from "react-native";
+import {
+  Keyboard,
+  Modal,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import ColorPicker, {
   HueSlider,
   Panel1,
@@ -15,7 +21,6 @@ import ColorPicker, {
 } from "reanimated-color-picker";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { PlaceStreamChatProfile } from "streamplace";
-import { Button, H3, isWeb, Sheet, useTheme, View } from "tamagui";
 
 /**
  * Parses an RGB color string and returns an object with red, green, and blue values
@@ -53,14 +58,14 @@ export default function NameColorPicker({
 }: {
   children?: React.ReactNode;
   text?: (color: string) => React.ReactNode;
-  buttonProps?: React.ComponentProps<typeof Button>;
+  buttonProps?: any;
 }) {
-  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const dispatch = useAppDispatch();
   const chatProfile = useAppSelector(selectChatProfile);
-  const [color, setColor] = useState(theme.accentColor?.val ?? "#bd6e86");
+  const [color, setColor] = useState("#bd6e86");
   const profile = useAppSelector(selectUserProfile);
+  const isWeb = Platform.OS === "web";
 
   useEffect(() => {
     if (profile?.did && !chatProfile?.profile) {
@@ -73,86 +78,126 @@ export default function NameColorPicker({
   }, [profile?.did, chatProfile?.profile?.color]);
 
   return (
-    <View alignItems="center" flexDirection="row">
-      <Button
-        {...buttonProps}
-        color={color}
+    <View style={[{ alignItems: "center" }, { flexDirection: "row" }]}>
+      <TouchableOpacity
+        style={[
+          {
+            backgroundColor: "#007AFF",
+            borderRadius: 8,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            alignItems: "center",
+          },
+          buttonProps?.style,
+        ]}
         onPress={() => {
           if (!isWeb) {
             Keyboard.dismiss();
           }
           setOpen(true);
         }}
+        {...buttonProps}
       >
-        {text ? text(color) : "Change Name Color"}
-      </Button>
-      <Sheet
-        // forceRemoveScrollEnabled={open}
-        open={open}
-        modal={true}
-        onOpenChange={(open) => {
-          setOpen(open);
-          if (!open) {
-            dispatch(getChatProfileRecordFromPDS());
-          }
+        <Text style={[{ color, fontWeight: "600" }]}>
+          {text ? text(color) : "Change Name Color"}
+        </Text>
+      </TouchableOpacity>
+
+      <Modal
+        visible={open}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {
+          setOpen(false);
+          dispatch(getChatProfileRecordFromPDS());
         }}
-        dismissOnSnapToBottom
-        disableDrag={true}
-        zIndex={100_000}
-        animation="medium"
       >
-        <Sheet.Overlay
-          animation="lazy"
-          backgroundColor="$shadow6"
-          enterStyle={{ opacity: 0 }}
-          exitStyle={{ opacity: 0 }}
-        />
-        <Sheet.Frame>
+        <View
+          style={[
+            {
+              flex: 1,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
+        >
           <View
-            f={1}
-            alignItems="stretch"
-            justifyContent="center"
-            padding="$4"
-            paddingBottom="300"
-            gap="$5"
-            maxWidth={600}
-            marginHorizontal="auto"
+            style={[
+              {
+                backgroundColor: "#1a1a1a",
+                borderRadius: 16,
+                padding: 16,
+                paddingBottom: 300,
+                gap: 20,
+                maxWidth: 600,
+                width: "90%",
+                alignItems: "stretch",
+                justifyContent: "center",
+              },
+            ]}
           >
-            <Button
-              position="absolute"
-              top="$0"
-              right="$0"
+            <TouchableOpacity
+              style={[
+                {
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  marginRight: -15,
+                  marginTop: 5,
+                  backgroundColor: "transparent",
+                  padding: 8,
+                  zIndex: 1,
+                },
+              ]}
               onPress={(e) => {
                 e.stopPropagation();
                 setOpen(false);
               }}
-              marginRight={-15}
-              marginTop={5}
-              backgroundColor="transparent"
             >
-              <X />
-            </Button>
-            <H3 textAlign="center" color={color}>
+              <Text style={[{ fontSize: 24, color: "#fff" }]}>×</Text>
+            </TouchableOpacity>
+
+            <Text
+              style={[
+                {
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  color,
+                },
+              ]}
+            >
               @{profile?.handle}
-            </H3>
+            </Text>
+
             <ColorPicker value={color} onCompleteJS={(x) => setColor(x.rgb)}>
               <Preview />
               <Panel1 />
               <HueSlider />
               <Swatches style={{ margin: 10 }} />
             </ColorPicker>
-            <Button
-              backgroundColor="$accentColor"
+
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: "#bd6e86",
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                },
+              ]}
               onPress={() => {
                 setOpen(false);
                 dispatch(createChatProfileRecord(parseRgbString(color)));
               }}
             >
-              Save
-            </Button>
+              <Text style={[{ color: "#fff", fontWeight: "600" }]}>Save</Text>
+            </TouchableOpacity>
           </View>
-        </Sheet.Frame>
-      </Sheet>
+        </View>
+      </Modal>
     </View>
   );
 }

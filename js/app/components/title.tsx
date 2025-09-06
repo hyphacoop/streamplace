@@ -1,27 +1,14 @@
-import { Text, TextProps } from "tamagui";
+import { Text } from "@streamplace/components";
+import { TextStyle } from "react-native";
 
-export default function Title({
-  children,
-  ...props
-}: TextProps & { children: React.ReactNode }) {
+interface TitleProps {
+  children: React.ReactNode;
+  style?: TextStyle;
+}
+
+export default function Title({ children, style, ...props }: TitleProps) {
   return (
-    <Text
-      $sm={{
-        fontSize: "$6",
-      }}
-      $md={{
-        fontSize: "$7",
-      }}
-      $lg={{
-        fontSize: "$8",
-      }}
-      $gtLg={{
-        fontSize: "$9",
-      }}
-      fontSize="$9"
-      fontWeight="bold"
-      {...props}
-    >
+    <Text size="3xl" style={[style as any]} {...props}>
       {children}
     </Text>
   );

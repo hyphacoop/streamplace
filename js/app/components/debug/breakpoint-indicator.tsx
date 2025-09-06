@@ -1,38 +1,28 @@
-import { Text, useMedia, View } from "tamagui";
+import { Text, zero } from "@streamplace/components";
+import { View, useWindowDimensions } from "react-native";
 
 export default function BreakpointIndicator() {
-  const media = useMedia();
-  const breakpoints: (keyof typeof media)[] = [
-    "xs",
-    "sm",
-    "md",
-    "lg",
-    "xl",
-    "xxl",
-    "gtXl",
-  ];
+  const { width } = useWindowDimensions();
 
-  // Find the first matching breakpoint
-  let current = "default";
-  for (const key of breakpoints) {
-    if (media[key]) {
-      current = key;
-      break;
-    }
-  }
+  // Simple breakpoint detection based on width
+  let current = "xs";
+  if (width >= 1536) current = "xxl";
+  else if (width >= 1280) current = "xl";
+  else if (width >= 1024) current = "lg";
+  else if (width >= 768) current = "md";
+  else if (width >= 640) current = "sm";
 
   return (
     <View
-      borderRadius={999}
-      backgroundColor="$blue10Dark"
-      height="$2"
-      width="$2"
-      alignItems="center"
-      justifyContent="center"
+      style={[
+        zero.r.full,
+        zero.bg.blue[600],
+        zero.h[32],
+        zero.w[32],
+        { justifyContent: "center", alignItems: "center" },
+      ]}
     >
-      <Text fontSize="$5" color="$color">
-        {current}
-      </Text>
+      <Text style={[{ fontSize: 14 }, { color: "white" }]}>{current}</Text>
     </View>
   );
 }

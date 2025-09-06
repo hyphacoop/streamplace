@@ -1,6 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { CircleHelp } from "@tamagui/lucide-icons";
-import { useToastController } from "@tamagui/toast";
+import { zero } from "@streamplace/components";
 import Loading from "components/loading/loading";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
@@ -12,18 +11,19 @@ import {
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Linking, Pressable } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
 import {
-  Button,
-  Form,
-  Input,
-  Spinner,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
   Text,
+  TextInput,
   View,
-  XStack,
-  YStack,
-} from "tamagui";
+} from "react-native";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 
 export default function Login() {
   const dispatch = useAppDispatch();
@@ -32,7 +32,6 @@ export default function Login() {
   const loginState = useAppSelector(selectLogin);
   const [handle, setHandle] = useState("");
   const isReady = useAppSelector(selectIsReady);
-  const toast = useToastController();
   const navigation = useNavigation();
 
   const submit = () => {
@@ -51,15 +50,19 @@ export default function Login() {
 
   useEffect(() => {
     if (loginState?.error) {
-      toast.show("Login error", {
-        message: loginState.error,
-      });
+      Alert.alert("Login error", loginState.error);
     }
   }, [loginState?.error]);
 
   if (!isReady) {
     return (
-      <View f={1} jc="center" ai="stretch" gap="$3">
+      <View
+        style={[
+          zero.flex.values[1],
+          { justifyContent: "center", alignItems: "stretch" },
+          zero.gap.all[3],
+        ]}
+      >
         <Loading />
       </View>
     );
@@ -72,27 +75,52 @@ export default function Login() {
   if (userProfile) {
     navigation.setOptions({ title: `Account` });
     return (
-      <View f={1} jc="center" ai="stretch" gap="$3">
-        <Text textAlign="center" fontSize="$8">
-          Hey, <Text color={rgb || "#bd6e86"}>@{userProfile.handle}</Text>.
+      <View
+        style={[
+          zero.flex.values[1],
+          { justifyContent: "center", alignItems: "stretch" },
+          zero.gap.all[3],
+        ]}
+      >
+        <Text style={[{ textAlign: "center", fontSize: 32 }]}>
+          Hey,{" "}
+          <Text style={{ color: rgb || "#bd6e86" }}>@{userProfile.handle}</Text>
+          .
         </Text>
-        <View flexDirection="row" gap="$2" justifyContent="center">
-          <Button
+        <View
+          style={[
+            { flexDirection: "row" },
+            zero.gap.all[2],
+            { justifyContent: "center" },
+          ]}
+        >
+          <Pressable
             onPress={() => dispatch(logout())}
-            maxWidth={300}
-            textAlign="center"
-            marginHorizontal="auto"
-            flexBasis={250}
+            style={[
+              {
+                maxWidth: 300,
+                backgroundColor: "#007AFF",
+                padding: 12,
+                borderRadius: 8,
+                marginHorizontal: "auto",
+                flexBasis: 250,
+                alignItems: "center",
+              },
+            ]}
           >
-            Log out
-          </Button>
+            <Text style={[{ color: "white", textAlign: "center" }]}>
+              Log out
+            </Text>
+          </Pressable>
         </View>
         <NameColorPicker
           buttonProps={{
-            textAlign: "center",
-            flexBasis: 250,
-            maxWidth: 300,
-            marginHorizontal: "auto",
+            style: {
+              textAlign: "center",
+              flexBasis: 250,
+              maxWidth: 300,
+              marginHorizontal: "auto",
+            },
           }}
         />
       </View>
@@ -100,30 +128,41 @@ export default function Login() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Form flex={1} onSubmit={submit}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View
-          f={1}
-          jc="center"
-          ai="center"
-          padding="$4"
-          width="100%"
-          marginHorizontal="auto"
+          style={[
+            zero.flex.values[1],
+            { justifyContent: "center", alignItems: "center" },
+            zero.p[4],
+            { width: "100%" },
+            { marginHorizontal: "auto" },
+          ]}
         >
-          <YStack
-            px="$6"
-            py="$6"
-            br="$4"
-            backgroundColor="$color2"
-            width="100%"
-            maxWidth={600}
-            gap="$2"
+          <View
+            style={[
+              zero.px[6],
+              zero.py[6],
+              zero.r.lg,
+              { backgroundColor: "#1a1a1a" },
+              { width: "100%" },
+              { maxWidth: 600 },
+              zero.gap.all[2],
+            ]}
           >
-            <Text fontSize="$9" fontWeight="200">
+            <Text style={[{ fontSize: 36, fontWeight: "200", color: "white" }]}>
               Log in
             </Text>
-            <View flexWrap="wrap" flexDirection="row" gap="$1.5">
-              <Text color="$color11">
+            <View
+              style={[
+                { flexWrap: "wrap", flexDirection: "row" },
+                zero.gap.all[1],
+              ]}
+            >
+              <Text style={[{ color: "#aaa" }]}>
                 Sign in using your handle on the AT Protocol
               </Text>
               <Pressable
@@ -134,17 +173,17 @@ export default function Login() {
                   Linking.openURL(u.toString());
                 }}
               >
-                <CircleHelp size={18} color="lightskyblue" />
+                <Text style={[{ color: "lightskyblue", fontSize: 18 }]}>
+                  ℹ
+                </Text>
               </Pressable>
-              <Text color="$color11">(e.g. your Bluesky handle)</Text>
-            </View>
-            <YStack gap="$2" py="$4">
-              <Text htmlFor="pdsUrl" color="$color11">
-                Handle
+              <Text style={[{ color: "#aaa" }]}>
+                (e.g. your Bluesky handle)
               </Text>
-              <Input
-                id="pdsUrl"
-                placeholder="example.bsky.social"
+            </View>
+            <View style={[zero.gap.all[2], zero.py[4]]}>
+              <Text style={[{ color: "#aaa" }]}>Handle</Text>
+              <TextInput
                 value={handle}
                 onChangeText={(text) =>
                   setHandle(
@@ -155,39 +194,65 @@ export default function Login() {
                       .trim(),
                   )
                 }
-                backgroundColor="$color2"
+                style={[
+                  {
+                    backgroundColor: "#1a1a1a",
+                    borderWidth: 1,
+                    borderColor: "#333",
+                    borderRadius: 8,
+                    padding: 12,
+                    color: "white",
+                  },
+                ]}
                 onSubmitEditing={onEnterPress}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
+                placeholderTextColor="#666"
               />
-            </YStack>
-            <XStack justifyContent="flex-end" gap="$4">
-              {!loginState.loading && (
-                <Button
-                  onPress={() => onSignup()}
-                  variant="outlined"
-                  hoverStyle={{ backgroundColor: "$color4" }}
-                  borderWidth={0}
-                >
-                  Sign Up on Bluesky
-                </Button>
-              )}
-              <Form.Trigger asChild>
-                <Button
-                  px="$6"
-                  // @ts-expect-error Not in the type definition but required for web.
-                  type="submit"
-                  backgroundColor="$accentColor"
-                  disabled={loginState.loading}
-                >
-                  <Text>{loginState.loading ? <Spinner /> : `Log in`}</Text>
-                </Button>
-              </Form.Trigger>
-            </XStack>
-          </YStack>
+            </View>
+            <View
+              style={[
+                { flexDirection: "row", justifyContent: "space-between" },
+              ]}
+            >
+              <Pressable
+                onPress={() => navigation.navigate("Signup")}
+                style={[
+                  {
+                    backgroundColor: "#333",
+                    padding: 12,
+                    borderRadius: 8,
+                  },
+                ]}
+              >
+                <Text style={[{ color: "white" }]}>Sign Up on Bluesky</Text>
+              </Pressable>
+              <Pressable
+                onPress={submit}
+                disabled={loginState.loading}
+                style={[
+                  zero.px[6],
+                  {
+                    backgroundColor: "#007AFF",
+                    padding: 12,
+                    borderRadius: 8,
+                    opacity: loginState.loading ? 0.6 : 1,
+                  },
+                ]}
+              >
+                <Text style={[{ color: "white" }]}>
+                  {loginState.loading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    "Log in"
+                  )}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </Form>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

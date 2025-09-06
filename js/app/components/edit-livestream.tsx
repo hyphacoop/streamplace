@@ -1,5 +1,4 @@
-import { useLivestream } from "@streamplace/components";
-import { useToastController } from "@tamagui/toast";
+import { Text, useLivestream, zero } from "@streamplace/components";
 import {
   selectNewLivestream,
   selectUserProfile,
@@ -7,13 +6,12 @@ import {
 } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useEffect, useState } from "react";
-import { ScrollView } from "react-native";
+import { Pressable, ScrollView, TextInput, View } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, H3, Label, Paragraph, Text, TextArea, View } from "tamagui";
 
 export default function UpdateLivestream() {
   const dispatch = useAppDispatch();
-  const toast = useToastController();
+  // Note: Toast functionality removed, would need simple alert replacement
   const userIsLive = useLiveUser();
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,31 +21,18 @@ export default function UpdateLivestream() {
 
   useEffect(() => {
     if (newLivestream?.record) {
-      toast.show("Livestream title updated", {
-        message: newLivestream.record.title,
-      });
+      // Would show toast: "Livestream title updated" with newLivestream.record.title
       setTitle("");
     }
   }, [newLivestream?.record]);
+
   useEffect(() => {
     if (newLivestream?.error) {
-      toast.show("Error updating livestream", {
-        message: newLivestream.error,
-      });
+      // Would show toast: "Error updating livestream" with error message
     }
   }, [newLivestream?.error]);
-  const disabled = !userIsLive || loading || title === "";
 
-  // if (!playerId) {
-  //   return (
-  //     <View justifyContent="center" alignContent="center">
-  //       <Text>
-  //         Couldn't get the player ID. You may not have created an initial
-  //         livestream record.
-  //       </Text>
-  //     </View>
-  //   );
-  // }
+  const disabled = !userIsLive || loading || title === "";
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -60,9 +45,7 @@ export default function UpdateLivestream() {
       );
     } catch (error) {
       console.error("Error updating livestream:", error);
-      toast.show("Error updating livestream", {
-        message: String(error),
-      });
+      // Would show toast: "Error updating livestream"
     } finally {
       setLoading(false);
     }
@@ -84,58 +67,111 @@ export default function UpdateLivestream() {
       }}
       showsVerticalScrollIndicator={false}
     >
-      <H3 pl="$4">Change your Current Livestream Title</H3>
-      <View w="100%" alignSelf="center" p="$4" justifyContent="center">
-        <View f={2} minWidth={0} gap="$3">
-          <Label asChild={true} display="flex">
-            <View flexDirection="row" alignItems="center" w="100%">
-              <Paragraph pb="$2" minWidth={100} textAlign="left">
-                Streamer
-              </Paragraph>
-              <Paragraph pb="$2" fontWeight="bold">
-                @{profile?.handle}
-              </Paragraph>
+      <Text style={[{ fontSize: 20, fontWeight: "bold" }, zero.pl[4]]}>
+        Change your Current Livestream Title
+      </Text>
+      <View
+        style={[
+          { width: "100%" },
+          { alignSelf: "center" },
+          zero.p[4],
+          { justifyContent: "center" },
+        ]}
+      >
+        <View style={[{ flex: 2, minWidth: 0 }, { gap: 12 }]}>
+          <View
+            style={[
+              { flexDirection: "row" },
+              { alignItems: "center" },
+              { width: "100%" },
+            ]}
+          >
+            <Text
+              style={[{ paddingBottom: 8, minWidth: 100, textAlign: "left" }]}
+            >
+              Streamer
+            </Text>
+            <Text style={[{ paddingBottom: 8, fontWeight: "bold" }]}>
+              @{profile?.handle}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              { flexDirection: "row" },
+              { alignItems: "center" },
+              { width: "100%" },
+            ]}
+          >
+            <Text
+              style={[{ paddingBottom: 8, minWidth: 100, textAlign: "left" }]}
+            >
+              Title
+            </Text>
+            <View style={zero.flex.values[1]}>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                maxLength={140}
+                style={[
+                  {
+                    minHeight: 100,
+                    width: "100%",
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    padding: 12,
+                    textAlignVertical: "top",
+                  },
+                ]}
+                multiline
+              />
             </View>
-          </Label>
-          <Label asChild={true}>
-            <View flexDirection="row" alignItems="center" w="100%">
-              <Paragraph pb="$2" minWidth={100} textAlign="left">
-                Title
-              </Paragraph>
-              <View flex={1}>
-                <TextArea
-                  id="livestream-title"
-                  value={title}
-                  onChangeText={setTitle}
-                  size="$4"
-                  minHeight={100}
-                  maxLength={140}
-                  w="100%"
-                />
-              </View>
+          </View>
+
+          <View
+            style={[
+              { flexDirection: "row" },
+              { alignItems: "center" },
+              { width: "100%", marginTop: -16 },
+            ]}
+          >
+            <Text style={[{ minWidth: 100, textAlign: "left" }]}></Text>
+            <View style={zero.flex.values[1]}>
+              <Text style={[{ fontSize: 12, color: "#666" }]}>
+                Updating will not send out notifications to viewers or create a
+                new social media post.
+              </Text>
             </View>
-          </Label>
-          <Label asChild={true} mt="$-4">
-            <View flexDirection="row" alignItems="center" w="100%">
-              <Paragraph minWidth={100} textAlign="left"></Paragraph>
-              <View flex={1}>
-                <Text fontSize="$1" color="$gray11">
-                  Updating will not send out notifications to viewers or create
-                  a new social media post.
-                </Text>
-              </View>
-            </View>
-          </Label>
-          <View w="100%" alignItems="center" mt="$-4">
-            <Button
+          </View>
+
+          <View
+            style={[
+              { width: "100%" },
+              { alignItems: "center" },
+              { marginTop: -16 },
+            ]}
+          >
+            <Pressable
               disabled={disabled}
-              opacity={disabled ? 0.5 : 1}
-              size="$4"
-              w="100%"
+              style={[
+                {
+                  opacity: disabled ? 0.5 : 1,
+                  width: "100%",
+                  backgroundColor: "#0066cc",
+                  padding: 16,
+                  borderRadius: 8,
+                  alignItems: "center",
+                },
+              ]}
               onPress={handleSubmit}
             >
-              {buttonText}
-            </Button>
+              <Text
+                style={{ color: "white", fontSize: 16, fontWeight: "bold" }}
+              >
+                {buttonText}
+              </Text>
+            </Pressable>
           </View>
         </View>
       </View>

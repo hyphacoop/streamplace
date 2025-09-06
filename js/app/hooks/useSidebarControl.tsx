@@ -1,11 +1,11 @@
 import { useEffect } from "react";
+import { useWindowDimensions } from "react-native";
 import {
   SharedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useDispatch, useSelector } from "react-redux";
-import { useWindowDimensions } from "tamagui";
 
 import {
   selectIsSidebarCollapsed,

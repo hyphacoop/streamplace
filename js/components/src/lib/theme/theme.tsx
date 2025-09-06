@@ -129,47 +129,36 @@ export interface ThemeIcons {
 }
 
 // Create theme colors based on dark mode
-const createThemeColors = (isDark: boolean): Theme["colors"] => ({
-  background: isDark ? colors.gray[950] : colors.white,
-  foreground: isDark ? colors.gray[50] : colors.gray[950],
+const createThemeColors = (
+  isDark: boolean,
+  lightTheme?: ColorPalette | Theme["colors"],
+  darkTheme?: ColorPalette | Theme["colors"],
+  colorTheme?: Partial<Theme["colors"]>,
+): Theme["colors"] => {
+  let baseColors: Theme["colors"];
 
-  card: isDark ? colors.gray[900] : colors.white,
-  cardForeground: isDark ? colors.gray[50] : colors.gray[950],
+  if (isDark && darkTheme) {
+    // Use dark theme
+    baseColors = isColorPalette(darkTheme)
+      ? generateThemeColorsFromPalette(darkTheme, true)
+      : darkTheme;
+  } else if (!isDark && lightTheme) {
+    // Use light theme
+    baseColors = isColorPalette(lightTheme)
+      ? generateThemeColorsFromPalette(lightTheme, false)
+      : lightTheme;
+  } else {
+    // Fall back to default gray theme
+    const defaultPalette = colors.neutral;
+    baseColors = generateThemeColorsFromPalette(defaultPalette, isDark);
+  }
 
-  popover: isDark ? colors.gray[900] : colors.white,
-  popoverForeground: isDark ? colors.gray[50] : colors.gray[950],
-
-  primary: Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
-  primaryForeground: colors.white,
-
-  secondary: isDark ? colors.gray[800] : colors.gray[100],
-  secondaryForeground: isDark ? colors.gray[50] : colors.gray[900],
-
-  muted: isDark ? colors.gray[800] : colors.gray[100],
-  mutedForeground: isDark ? colors.gray[400] : colors.gray[500],
-
-  accent: isDark ? colors.gray[800] : colors.gray[100],
-  accentForeground: isDark ? colors.gray[50] : colors.gray[900],
-
-  destructive:
-    Platform.OS === "ios" ? colors.ios.systemRed : colors.destructive[500],
-  destructiveForeground: colors.white,
-
-  success: Platform.OS === "ios" ? colors.ios.systemGreen : colors.success[500],
-  successForeground: colors.white,
-
-  warning:
-    Platform.OS === "ios" ? colors.ios.systemOrange : colors.warning[500],
-  warningForeground: colors.white,
-
-  border: isDark ? colors.gray[500] + "30" : colors.gray[200] + "30",
-  input: isDark ? colors.gray[800] : colors.gray[200],
-  ring: Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
-
-  text: isDark ? colors.gray[50] : colors.gray[950],
-  textMuted: isDark ? colors.gray[400] : colors.gray[500],
-  textDisabled: isDark ? colors.gray[600] : colors.gray[400],
-});
+  // Merge with custom color overrides if provided
+  return {
+    ...baseColors,
+    ...colorTheme,
+  };
+};
 
 // Create theme styles based on colors
 const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
@@ -272,11 +261,86 @@ interface ThemeContextType {
 // Create the theme context
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
+// Color palette type
+type ColorPalette = {
+  50: string;
+  100: string;
+  200: string;
+  300: string;
+  400: string;
+  500: string;
+  600: string;
+  700: string;
+  800: string;
+  900: string;
+  950: string;
+};
+
+// Helper function to check if input is a ColorPalette or Theme["colors"]
+function isColorPalette(
+  input: ColorPalette | Theme["colors"],
+): input is ColorPalette {
+  return "50" in input && "100" in input && "950" in input;
+}
+
+// Helper function to generate Theme["colors"] from ColorPalette
+function generateThemeColorsFromPalette(
+  palette: ColorPalette,
+  isDark: boolean,
+): Theme["colors"] {
+  return {
+    background: isDark ? palette[950] : colors.white,
+    foreground: isDark ? palette[50] : palette[950],
+
+    card: isDark ? palette[900] : colors.white,
+    cardForeground: isDark ? palette[50] : palette[950],
+
+    popover: isDark ? palette[900] : colors.white,
+    popoverForeground: isDark ? palette[50] : palette[950],
+
+    primary:
+      Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
+    primaryForeground: colors.white,
+
+    secondary: isDark ? palette[800] : palette[100],
+    secondaryForeground: isDark ? palette[50] : palette[900],
+
+    muted: isDark ? palette[800] : palette[100],
+    mutedForeground: isDark ? palette[400] : palette[500],
+
+    accent: isDark ? palette[800] : palette[100],
+    accentForeground: isDark ? palette[50] : palette[900],
+
+    destructive:
+      Platform.OS === "ios" ? colors.ios.systemRed : colors.destructive[500],
+    destructiveForeground: colors.white,
+
+    success:
+      Platform.OS === "ios" ? colors.ios.systemGreen : colors.success[500],
+    successForeground: colors.white,
+
+    warning:
+      Platform.OS === "ios" ? colors.ios.systemOrange : colors.warning[500],
+    warningForeground: colors.white,
+
+    border: isDark ? palette[500] + "30" : palette[200] + "30",
+    input: isDark ? palette[800] : palette[200],
+    ring: Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
+
+    text: isDark ? palette[50] : palette[950],
+    textMuted: isDark ? palette[400] : palette[500],
+    textDisabled: isDark ? palette[600] : palette[400],
+  };
+}
+
 // Theme provider props
 interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: "light" | "dark" | "system";
   forcedTheme?: "light" | "dark";
+  colorTheme?: Partial<Theme["colors"]>;
+  lightTheme?: ColorPalette | Theme["colors"];
+  darkTheme?: ColorPalette | Theme["colors"];
 }
 
 // Theme provider component
@@ -284,6 +348,9 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   forcedTheme,
+  colorTheme,
+  lightTheme,
+  darkTheme,
 }: ThemeProviderProps) {
   const systemColorScheme = useColorScheme();
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark" | "system">(
@@ -302,7 +369,12 @@ export function ThemeProvider({
 
   // Create theme based on dark mode
   const theme = useMemo<Theme>(() => {
-    const themeColors = createThemeColors(isDark);
+    const themeColors = createThemeColors(
+      isDark,
+      lightTheme,
+      darkTheme,
+      colorTheme,
+    );
     return {
       colors: themeColors,
       spacing,
@@ -312,7 +384,7 @@ export function ThemeProvider({
       touchTargets,
       animations,
     };
-  }, [isDark]);
+  }, [isDark, lightTheme, darkTheme, colorTheme]);
 
   // Create utility styles
   const styles = useMemo<ThemeStyles>(() => {

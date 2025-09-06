@@ -199,12 +199,12 @@ const getVariantStyles = () => {
     };
   } else if (typographicPlatform === "android") {
     return {
-      h1: platformTypography.headline1,
-      h2: platformTypography.headline2,
-      h3: platformTypography.headline3,
-      h4: platformTypography.headline4,
-      h5: platformTypography.headline5,
-      h6: platformTypography.headline6,
+      h1: platformTypography.headline4, // 34px instead of 96px
+      h2: platformTypography.headline5, // 24px instead of 60px
+      h3: platformTypography.headline6, // 20px instead of 48px
+      h4: platformTypography.subtitle1, // 16px instead of 34px
+      h5: platformTypography.subtitle2, // 14px instead of 24px
+      h6: platformTypography.subtitle2, // 14px - consistent with h5
       subtitle1: platformTypography.subtitle1,
       subtitle2: platformTypography.subtitle2,
       body1: platformTypography.body1,

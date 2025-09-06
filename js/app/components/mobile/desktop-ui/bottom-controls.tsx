@@ -1,5 +1,18 @@
-import { PlayerUI, View, usePlayerStore, zero } from "@streamplace/components";
-import { Fullscreen, Minimize, PictureInPicture2 } from "lucide-react-native";
+import {
+  Button,
+  PlayerUI,
+  View,
+  usePlayerStore,
+  useTheme,
+  zero,
+} from "@streamplace/components";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Fullscreen,
+  Minimize,
+  PictureInPicture2,
+} from "lucide-react-native";
 import { Platform, Pressable } from "react-native";
 import { VolumeSlider } from "./volume-slider";
 
@@ -11,6 +24,8 @@ interface BottomControlBarProps {
   pipActive: boolean;
   onHandlePip: () => void;
   dropdownPortalContainer?: any;
+  showChat: boolean;
+  setShowChat: (show: boolean) => void;
 }
 
 export function BottomControlBar({
@@ -19,7 +34,10 @@ export function BottomControlBar({
   pipActive,
   onHandlePip,
   dropdownPortalContainer,
+  showChat,
+  setShowChat,
 }: BottomControlBarProps) {
+  let { theme } = useTheme();
   const fullscreen = usePlayerStore((state) => state.fullscreen);
   const setFullscreen = usePlayerStore((state) => state.setFullscreen);
 
@@ -43,6 +61,11 @@ export function BottomControlBar({
             </View>
           </Pressable>
         )}
+        {ingest === null && (
+          <PlayerUI.ContextMenu
+            dropdownPortalContainer={dropdownPortalContainer}
+          />
+        )}
         {Platform.OS === "web" && (
           <Pressable
             onPress={() => {
@@ -50,13 +73,28 @@ export function BottomControlBar({
             }}
             style={[p[2], r[1]]}
           >
-            {fullscreen ? <Minimize /> : <Fullscreen />}
+            {fullscreen ? (
+              <Minimize color={theme.colors.text} />
+            ) : (
+              <Fullscreen color={theme.colors.text} />
+            )}
           </Pressable>
         )}
-        {ingest === null && (
-          <PlayerUI.ContextMenu
-            dropdownPortalContainer={dropdownPortalContainer}
-          />
+        {/* if not web, then add the collapse chat controls here */}
+        {Platform.OS !== "web" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => {
+              setShowChat(!showChat);
+            }}
+          >
+            {showChat ? (
+              <ChevronRight color="white" size={16} />
+            ) : (
+              <ChevronLeft color="white" size={16} />
+            )}
+          </Button>
         )}
       </View>
     </View>

@@ -3,11 +3,7 @@ import {
   LinkingOptions,
   NavigationContainer,
 } from "@react-navigation/native";
-import {
-  ThemeProvider,
-  StreamplaceProvider as ZustandStreamplaceProvider,
-} from "@streamplace/components";
-import { ToastProvider, ToastViewport } from "@tamagui/toast";
+import { StreamplaceProvider as ZustandStreamplaceProvider } from "@streamplace/components";
 import { useFonts } from "expo-font";
 import BlueskyProvider from "features/bluesky/blueskyProvider";
 import { selectOAuthSession } from "features/bluesky/blueskySlice";
@@ -17,9 +13,7 @@ import React from "react";
 import { Provider as ReduxProvider } from "react-redux";
 import { useAppSelector } from "store/hooks";
 import { store } from "store/store";
-import { PortalProvider, TamaguiProvider } from "tamagui";
-import config from "tamagui.config";
-import { CurrentToast } from "./CurrentToast";
+
 export default function Provider({
   children,
   linking,
@@ -28,41 +22,17 @@ export default function Provider({
   linking: LinkingOptions<ReactNavigation.RootParamList>;
 }) {
   return (
-    <TamaguiProvider config={config} defaultTheme={"dark"}>
-      <ThemeProvider forcedTheme="dark">
-        <NavigationContainer theme={DarkTheme} linking={linking}>
-          <ReduxProvider store={store}>
-            <StreamplaceProvider>
-              <BlueskyProvider>
-                <NewStreamplaceProvider>
-                  <PortalProvider>
-                    <ToastProvider
-                      swipeDirection="vertical"
-                      duration={6000}
-                      native={
-                        [
-                          /* uncomment the next line to do native toasts on mobile. NOTE: it'll require you making a dev build and won't work with Expo Go */
-                          // 'mobile'
-                        ]
-                      }
-                    >
-                      <FontProvider>{children}</FontProvider>
-                      <CurrentToast />
-                      <ToastViewport
-                        name="default"
-                        top="$8"
-                        left={0}
-                        right={0}
-                      />
-                    </ToastProvider>
-                  </PortalProvider>
-                </NewStreamplaceProvider>
-              </BlueskyProvider>
-            </StreamplaceProvider>
-          </ReduxProvider>
-        </NavigationContainer>
-      </ThemeProvider>
-    </TamaguiProvider>
+    <NavigationContainer theme={DarkTheme} linking={linking}>
+      <ReduxProvider store={store}>
+        <StreamplaceProvider>
+          <BlueskyProvider>
+            <NewStreamplaceProvider>
+              <FontProvider>{children}</FontProvider>
+            </NewStreamplaceProvider>
+          </BlueskyProvider>
+        </StreamplaceProvider>
+      </ReduxProvider>
+    </NavigationContainer>
   );
 }
 
@@ -86,6 +56,8 @@ export const FontProvider = ({ children }: { children: React.ReactNode }) => {
     "FiraCode-Medium": require("../../assets/fonts/FiraCode-Medium.ttf"),
     "FiraCode-Bold": require("../../assets/fonts/FiraCode-Bold.ttf"),
     "FiraSans-Medium": require("../../assets/fonts/FiraSans-Medium.ttf"),
+    "AtkinsonHyperlegible-Regular": require("../../assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf"),
+    "AtkinsonHyperlegible-Bold": require("../../assets/fonts/AtkinsonHyperlegibleNext-Bold.ttf"),
   });
 
   if (!fontLoaded && !fontError) {

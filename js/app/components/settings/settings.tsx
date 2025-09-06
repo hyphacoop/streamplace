@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { ArrowRight } from "@tamagui/lucide-icons";
+import { Text } from "@streamplace/components";
 import AQLink from "components/aqlink";
 import Container from "components/container";
 import {
@@ -11,9 +11,8 @@ import {
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
-import { ScrollView, Switch } from "react-native";
+import { Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Button, H3, H5, Input, Text, View, XStack } from "tamagui";
 import { Updates } from "./updates";
 import WebhookManager from "./webhook-manager";
 
@@ -67,91 +66,134 @@ export function Settings() {
             <Updates />
           </View>
 
-          <View alignItems="stretch" justifyContent="flex-start" gap="$4">
-            <XStack
-              // f={1}
-              alignItems="stretch"
-              justifyContent="flex-start"
-              width="100%"
-              flexDirection="column"
+        <View
+          style={[
+            { alignItems: "stretch" },
+            { justifyContent: "flex-start" },
+            { gap: 16 },
+          ]}
+        >
+          <View
+            style={[
+              { alignItems: "stretch" },
+              { justifyContent: "flex-start" },
+              { width: "100%", flexDirection: "column" },
+            ]}
+          >
+            <View
+              style={[
+                { flexDirection: "row" },
+                { alignItems: "flex-start" },
+                { justifyContent: "flex-start" },
+              ]}
             >
-              <View
-                flexDirection="row"
-                alignItems="flex-start"
-                justifyContent="flex-start"
-                // flex={1}
-              >
-                <View flex={1} pr="$3">
-                  <H3 fontSize="$7">Use Custom Node</H3>
-                  <Text fontSize="$5" color="$gray10">
-                    Default: {url}
-                  </Text>
-                </View>
-                <Switch
-                  value={overrideEnabled}
-                  onValueChange={handleToggleOverride}
-                />
+              <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
+                <Text
+                  style={[{ fontSize: 28, fontWeight: "bold", color: "#fff" }]}
+                >
+                  Use Custom Node
+                </Text>
+                <Text style={[{ fontSize: 20, color: "#999" }]}>
+                  Default: {url}
+                </Text>
               </View>
-            </XStack>
-
-            {/* Custom URL Input Row */}
-            <XStack
-              alignItems="center" // Changed to center
-              gap="$2"
-              style={{
-                opacity: overrideEnabled ? 1 : 0,
-                height: overrideEnabled ? "auto" : 0, // Collapse when hidden
-                overflow: "hidden", // Hide overflow when collapsed
-                transition: "opacity 0.2s ease-in-out, height 0.2s ease-in-out",
-              }}
-            >
-              <Input
-                value={newUrl}
-                flex={1}
-                size="$4"
-                placeholder={url || "Enter custom node URL"}
-                onChangeText={setNewUrl}
-                onSubmitEditing={onSubmitUrl}
-                textContentType="URL"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
+              <Switch
+                value={overrideEnabled}
+                onValueChange={handleToggleOverride}
               />
-              <Button size="$4" onPress={onSubmitUrl}>
-                <Text>SAVE</Text>
-              </Button>
-            </XStack>
+            </View>
           </View>
 
-          {loggedIn && (
-            <>
-              <DebugRecording />
-              <AQLink
-                to={{
-                  screen: "KeyManagement",
-                }}
-              >
-                <View
-                  flexDirection="row"
-                  gap="$2"
-                  alignItems="center"
-                  justifyContent="center"
-                  borderWidth={1}
-                  borderColor="$color.gray3Dark"
-                  padding="$2"
-                  borderRadius="$4"
-                  backgroundColor="$color.gray1Dark"
-                >
-                  <H5>Manage Keys</H5>
-                  <ArrowRight size="$1" />
-                </View>
-              </AQLink>
-              <WebhookManager />
-            </>
-          )}
+          {/* Custom URL Input Row */}
+          <View
+            style={[
+              { alignItems: "center" },
+              {
+                gap: 8,
+                opacity: overrideEnabled ? 1 : 0,
+                height: overrideEnabled ? "auto" : 0,
+                overflow: "hidden",
+                flexDirection: "row",
+              },
+            ]}
+          >
+            <TextInput
+              value={newUrl}
+              style={[
+                { flex: 1 },
+                {
+                  height: 40,
+                  borderWidth: 1,
+                  borderColor: "#333",
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: "#1a1a1a",
+                  color: "#fff",
+                  fontSize: 16,
+                },
+              ]}
+              placeholder={url || "Enter custom node URL"}
+              placeholderTextColor="#999"
+              onChangeText={setNewUrl}
+              onSubmitEditing={onSubmitUrl}
+              textContentType="URL"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+            <TouchableOpacity
+              style={[
+                {
+                  height: 40,
+                  paddingHorizontal: 16,
+                  backgroundColor: "#007AFF",
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                },
+              ]}
+              onPress={onSubmitUrl}
+            >
+              <Text style={[{ color: "#fff", fontWeight: "600" }]}>SAVE</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </Container>
-    </ScrollView>
+
+        {loggedIn && (
+          <>
+            <DebugRecording />
+            <AQLink
+              to={{
+                screen: "KeyManagement",
+              }}
+            >
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                    gap: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: "#333",
+                    padding: 8,
+                    borderRadius: 16,
+                    backgroundColor: "#1a1a1a",
+                  },
+                ]}
+              >
+                <Text
+                  style={[{ fontSize: 18, fontWeight: "600", color: "#fff" }]}
+                >
+                  Manage Keys
+                </Text>
+                <Text style={[{ fontSize: 16 }]}>→</Text>
+              </View>
+            </AQLink>
+          </>
+        )}
+      </View>
+    </Container>
   );
 }
 
@@ -170,16 +212,26 @@ const DebugRecording = () => {
 
   const u = new URL(url);
   return (
-    <View alignItems="center" justifyContent="center" gap="$4">
-      <XStack alignItems="center" justifyContent="space-between" width="100%">
-        <View flex={1} pr="$3">
-          <H3 fontSize="$8">
+    <View
+      style={[
+        { alignItems: "center" },
+        { justifyContent: "center" },
+        { gap: 16 },
+      ]}
+    >
+      <View
+        style={[
+          { alignItems: "center" },
+          { justifyContent: "space-between" },
+          { width: "100%", flexDirection: "row" },
+        ]}
+      >
+        <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
+          <Text style={[{ fontSize: 32, fontWeight: "bold", color: "#fff" }]}>
             Allow {u.host} to record your livestream for debugging and improving
             the service
-          </H3>
-          <Text fontSize="$5" color="$gray10">
-            Optional
           </Text>
+          <Text style={[{ fontSize: 20, color: "#999" }]}>Optional</Text>
         </View>
         <Switch
           value={debugRecordingOn}
@@ -200,8 +252,8 @@ const DebugRecording = () => {
               );
             }
           }}
-        ></Switch>
-      </XStack>
+        />
+      </View>
     </View>
   );
 };

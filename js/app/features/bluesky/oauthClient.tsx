@@ -5,7 +5,6 @@ import {
 } from "@streamplace/atproto-oauth-client-react-native";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import { isWeb } from "tamagui";
 
 export type StreamplaceOAuthClient = Omit<
   ReactNativeOAuthClient,
@@ -61,9 +60,10 @@ export default async function createOAuthClient(
       authorization_signed_response_alg: "ES256",
     };
   } else {
-    const redirectURI = isWeb
-      ? `${streamplaceUrl}/login`
-      : `${streamplaceUrl}/api/app-return`;
+    const redirectURI =
+      Platform.OS === "web"
+        ? `${streamplaceUrl}/login`
+        : `${streamplaceUrl}/api/app-return`;
     const res = await fetch(
       `${streamplaceUrl}/oauth/downstream/client-metadata.json?redirect_uri=${encodeURIComponent(redirectURI)}`,
     );

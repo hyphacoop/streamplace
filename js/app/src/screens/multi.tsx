@@ -4,13 +4,15 @@ import {
   Player,
   PlayerProps,
   PlayerProvider,
+  Text,
+  ThemeProvider,
   usePlayerStore,
   zero,
 } from "@streamplace/components";
 import { DesktopUi } from "components/mobile/desktop-ui";
 import { FullscreenProvider } from "contexts/FullscreenContext";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
 const { layout, flex } = zero;
 
@@ -68,7 +70,7 @@ export default function MultiScreen({ route }) {
   }
 
   return (
-    <>
+    <ThemeProvider>
       <KeepAwake />
       <FullscreenProvider>
         <View style={[flex.values[1]]}>
@@ -94,6 +96,6 @@ export default function MultiScreen({ route }) {
           ))}
         </View>
       </FullscreenProvider>
-    </>
+    </ThemeProvider>
   );
 }

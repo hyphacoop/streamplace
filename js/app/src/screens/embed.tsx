@@ -10,9 +10,11 @@ import {
   setSidebarUnhidden,
 } from "features/base/sidebarSlice";
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import { useAppDispatch } from "store/hooks";
-import { isWeb } from "tamagui";
 import { queryToProps } from "./util";
+
+const isWeb = Platform.OS === "web";
 
 export default function EmbedScreen({ route }) {
   const { user, protocol, url } = route.params;

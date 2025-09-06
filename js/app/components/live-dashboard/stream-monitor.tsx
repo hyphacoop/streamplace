@@ -1,16 +1,17 @@
 import {
   Player,
   PlayerUI,
+  Text,
   useLivestream,
   useLivestreamStore,
   usePlayerStore,
   zero,
 } from "@streamplace/components";
-import { Eye, EyeOff, Signal, Wifi, WifiOff } from "@tamagui/lucide-icons";
 import { DesktopUi } from "components/mobile/desktop-ui";
 import { OfflineCounter } from "components/mobile/offline-counter";
+import { Eye, EyeOff, Signal, Wifi, WifiOff } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 import { useLiveUser } from "../../hooks/useLiveUser";
 import { useSegmentTiming } from "../../hooks/useSegmentTiming";
 import StreamScreen from "./live-selector";

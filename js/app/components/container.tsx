@@ -1,4 +1,5 @@
-import { View } from "tamagui";
+import { zero } from "@streamplace/components";
+import { View, ViewStyle, useWindowDimensions } from "react-native";
 
 const maxContainerWidths = {
   xxs: 440,
@@ -11,31 +12,44 @@ const maxContainerWidths = {
   threeXl: 1660,
 };
 
-export default function Container({ children, ...props }) {
-  return (
-    <View f={1} justifyContent="flex-start" alignItems="center">
-      <View
-        width="100vw"
-        px="$4"
-        mx="auto"
-        $gtXxs={{ maxWidth: maxContainerWidths.sm, px: "$4" }}
-        $gtXs={{
-          maxWidth: maxContainerWidths.lg,
-          px: "$4",
-        }}
-        $gtLg={{
-          maxWidth: maxContainerWidths.xl,
+interface ContainerProps {
+  children: React.ReactNode;
+  style?: ViewStyle;
+}
 
-          px: "$4",
-        }}
-        $gtXl={{
-          maxWidth: maxContainerWidths.twoXl,
-          px: "$4",
-        }}
-        $gtXxl={{
-          maxWidth: maxContainerWidths.threeXl,
-          px: "$4",
-        }}
+function getMaxWidth(width: number): number {
+  if (width >= 1660) return maxContainerWidths.threeXl;
+  if (width >= 1260) return maxContainerWidths.twoXl;
+  if (width >= 800) return maxContainerWidths.xl;
+  if (width >= 740) return maxContainerWidths.lg;
+  if (width >= 660) return maxContainerWidths.md;
+  return maxContainerWidths.sm;
+}
+
+export default function Container({
+  children,
+  style,
+  ...props
+}: ContainerProps) {
+  const { width } = useWindowDimensions();
+  const maxWidth = getMaxWidth(width);
+
+  return (
+    <View
+      style={[
+        zero.flex.values[1],
+        { justifyContent: "center" },
+        { alignItems: "center" },
+      ]}
+    >
+      <View
+        style={[
+          zero.w.percent[100],
+          zero.px[8],
+          { marginHorizontal: "auto" },
+          { maxWidth },
+          style,
+        ]}
         {...props}
       >
         {children}

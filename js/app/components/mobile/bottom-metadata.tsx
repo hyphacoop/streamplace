@@ -9,8 +9,7 @@ import {
   useLivestreamStore,
   zero,
 } from "@streamplace/components";
-import { ChevronLeft } from "@tamagui/lucide-icons";
-import { ChevronRight } from "lucide-react-native";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { Image, View } from "react-native";
 const { gap, px, py, colors } = zero;
 

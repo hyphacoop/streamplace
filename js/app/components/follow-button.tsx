@@ -1,6 +1,6 @@
-import { Check, Plus } from "@tamagui/lucide-icons";
+import { Text, zero } from "@streamplace/components";
 import React, { useEffect, useState } from "react";
-import { Button, Text, View } from "tamagui";
+import { Pressable, View } from "react-native";
 import { followUser, unfollowUser } from "../features/bluesky/blueskySlice";
 import { selectStreamplace } from "../features/streamplace/streamplaceSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -111,37 +111,64 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     }
   };
 
+  const buttonStyle = [
+    zero.bg.transparent,
+    zero.px[3],
+    zero.py[2],
+    zero.r.md,
+    zero.borders.width.thin,
+    zero.borders.color.gray[300],
+  ];
+
   return (
-    <View flexDirection="row" alignItems="center" gap={8}>
+    <View
+      style={[
+        { flexDirection: "row" },
+        { alignItems: "center" },
+        zero.gap.all[2],
+      ]}
+    >
       {isFollowing === null ? (
         // Skeleton loader to prevent layout shift
-        <Button backgroundColor="transparent" disabled>
-          &nbsp;
-        </Button>
+        <Pressable style={[...buttonStyle, { opacity: 0.5 }]} disabled>
+          <Text>&nbsp;</Text>
+        </Pressable>
       ) : isFollowing ? (
-        <Button
-          backgroundColor="transparent"
+        <Pressable
+          style={buttonStyle}
           onPress={handleUnfollow}
-          aria-label="Following"
-          icon={Check}
+          accessibilityLabel="Following"
         >
-          Following
-        </Button>
+          <View
+            style={[
+              { flexDirection: "row" },
+              { alignItems: "center" },
+              zero.gap.all[1],
+            ]}
+          >
+            <Text>✓</Text>
+            <Text>Following</Text>
+          </View>
+        </Pressable>
       ) : (
-        <Button
-          backgroundColor="transparent"
+        <Pressable
+          style={buttonStyle}
           onPress={handleFollow}
-          aria-label="Follow"
-          icon={Plus}
+          accessibilityLabel="Follow"
         >
-          Follow
-        </Button>
+          <View
+            style={[
+              { flexDirection: "row" },
+              { alignItems: "center" },
+              zero.gap.all[1],
+            ]}
+          >
+            <Text>+</Text>
+            <Text>Follow</Text>
+          </View>
+        </Pressable>
       )}
-      {error && (
-        <Text color="#c00" marginLeft={8}>
-          {error}
-        </Text>
-      )}
+      {error && <Text style={[{ color: "#c00" }, zero.ml[2]]}>{error}</Text>}
     </View>
   );
 };

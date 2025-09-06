@@ -1,13 +1,19 @@
-import { Spinner as TamaguiSpinner, View } from "tamagui";
+import { zero } from "@streamplace/components";
+import { ActivityIndicator, View } from "react-native";
 
 export default function () {
   return (
-    <View f={1} alignItems="center" justifyContent="center">
+    <View
+      style={[
+        zero.flex.values[1],
+        { justifyContent: "center", alignItems: "center" },
+      ]}
+    >
       <Spinner />
     </View>
   );
 }
 
 export function Spinner() {
-  return <TamaguiSpinner color="$accentColor" size="large" />;
+  return <ActivityIndicator size="large" color={zero.colors.primary[500]} />;
 }

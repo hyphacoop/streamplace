@@ -1,6 +1,6 @@
-import { Camera, Image as ImageIcon, X } from "@tamagui/lucide-icons";
+import { Text } from "@streamplace/components";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Image, Text, View, isWeb } from "tamagui";
+import { Image, Platform, TouchableOpacity, View } from "react-native";
 import { ThumbnailSelectorProps } from "./shared";
 
 export default function ThumbnailSelector({
@@ -11,17 +11,22 @@ export default function ThumbnailSelector({
     thumbnailUrl || null,
   );
 
+  const isWeb = Platform.OS === "web";
+
   useEffect(() => {
     if (thumbnailUrl) {
       setSelectedImage(thumbnailUrl);
     }
   }, [thumbnailUrl]);
 
-  const revokeObjectURL = useCallback((imageUrl: string | null) => {
-    if (isWeb && imageUrl && imageUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(imageUrl);
-    }
-  }, []);
+  const revokeObjectURL = useCallback(
+    (imageUrl: string | null) => {
+      if (isWeb && imageUrl && imageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    },
+    [isWeb],
+  );
 
   useEffect(() => {
     return () => {
@@ -117,7 +122,7 @@ export default function ThumbnailSelector({
     if (isWeb) {
       await startWebCamera();
     }
-  }, [startWebCamera]);
+  }, [startWebCamera, isWeb]);
 
   const handleFileInputChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,11 +148,15 @@ export default function ThumbnailSelector({
     <View>
       {showWebCamera && isWeb ? (
         <View
-          position="relative"
-          height={300}
-          width="100%"
-          backgroundColor="$backgroundHover"
-          borderRadius="$2"
+          style={[
+            {
+              position: "relative",
+              height: 300,
+              width: "100%",
+              backgroundColor: "#333",
+              borderRadius: 8,
+            },
+          ]}
         >
           {/* Web camera video element */}
           <video
@@ -165,22 +174,48 @@ export default function ThumbnailSelector({
 
           {/* Camera controls */}
           <View
-            position="absolute"
-            bottom={10}
-            width="100%"
-            flexDirection="row"
-            justifyContent="center"
-            gap="$2"
+            style={[
+              {
+                position: "absolute",
+                bottom: 10,
+                width: "100%",
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 8,
+              },
+            ]}
           >
-            <Button
-              icon={<Camera size={16} />}
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                },
+              ]}
               onPress={captureWebFrame}
-              backgroundColor="transparent"
             >
-              Capture
-            </Button>
-            <Button
-              icon={<X size={16} />}
+              <Text style={[{ fontSize: 16 }]}>📷</Text>
+              <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+                Capture
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                {
+                  backgroundColor: "rgba(0, 0, 0, 0.7)",
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                },
+              ]}
               onPress={() => {
                 // Stop the camera stream
                 if (videoRef.current && videoRef.current.srcObject) {
@@ -191,52 +226,105 @@ export default function ThumbnailSelector({
                 setShowWebCamera(false);
                 setWebCameraStream(null);
               }}
-              backgroundColor="transparent"
             >
-              Cancel
-            </Button>
+              <Text style={[{ fontSize: 16 }]}>×</Text>
+              <Text style={[{ color: "#fff", fontWeight: "600" }]}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       ) : selectedImage ? (
-        <View position="relative">
+        <View style={[{ position: "relative" }]}>
           <Image
             source={{ uri: selectedImage }}
-            width="100%"
-            height={150}
-            objectFit="cover"
-            borderRadius="$2"
+            style={[
+              {
+                width: "100%",
+                height: 150,
+                borderRadius: 8,
+              },
+            ]}
+            resizeMode="cover"
           />
-          <Button
-            position="absolute"
-            top={5}
-            right={5}
-            size="$2"
-            circular
-            icon={<X size={16} />}
+          <TouchableOpacity
+            style={[
+              {
+                position: "absolute",
+                top: 5,
+                right: 5,
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                alignItems: "center",
+                justifyContent: "center",
+              },
+            ]}
             onPress={clearThumbnail}
-          />
+          >
+            <Text style={[{ fontSize: 16, color: "#fff" }]}>×</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <View
-          height={150}
-          width="100%"
-          backgroundColor="$backgroundHover"
-          borderRadius="$2"
-          justifyContent="center"
-          alignItems="center"
+          style={[
+            {
+              height: 150,
+              width: "100%",
+              backgroundColor: "#333",
+              borderRadius: 8,
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
         >
-          <Text color="$color">No thumbnail selected</Text>
+          <Text style={[{ color: "#fff" }]}>No thumbnail selected</Text>
         </View>
       )}
 
       {!showWebCamera && (
-        <View flexDirection="row" gap="$2" mt="$2">
-          <Button flex={1} icon={<ImageIcon size={16} />} onPress={pickImage}>
-            Choose Image
-          </Button>
-          <Button flex={1} icon={<Camera size={16} />} onPress={takePhoto}>
-            Take Photo
-          </Button>
+        <View style={[{ flexDirection: "row", gap: 8, marginTop: 8 }]}>
+          <TouchableOpacity
+            style={[
+              { flex: 1 },
+              {
+                backgroundColor: "#007AFF",
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              },
+            ]}
+            onPress={pickImage}
+          >
+            <Text style={[{ fontSize: 16 }]}>🖼️</Text>
+            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+              Choose Image
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { flex: 1 },
+              {
+                backgroundColor: "#007AFF",
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              },
+            ]}
+            onPress={takePhoto}
+          >
+            <Text style={[{ fontSize: 16 }]}>📷</Text>
+            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+              Take Photo
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 

@@ -1,15 +1,36 @@
-import { Anchor, Paragraph, H4 as TamaguiH4, View } from "tamagui";
+import { Text } from "@streamplace/components";
+import { Linking, Pressable, View } from "react-native";
 
-const H4 = (props: any) => <TamaguiH4 fontWeight="100" {...props} />;
+const H4 = (props: any) => (
+  <Text
+    style={[{ fontSize: 18, fontWeight: "100", marginBottom: 10 }, props.style]}
+    {...props}
+  />
+);
 const P = (props: any) => (
-  <Paragraph fontSize={13} marginBottom={20} {...props} />
+  <Text style={[{ fontSize: 13, marginBottom: 20 }, props.style]} {...props} />
+);
+
+const Anchor = ({
+  href,
+  children,
+  ...props
+}: {
+  href: string;
+  children: React.ReactNode;
+}) => (
+  <Pressable onPress={() => Linking.openURL(href)} {...props}>
+    <Text style={{ color: "#0066cc", textDecorationLine: "underline" }}>
+      {children}
+    </Text>
+  </Pressable>
 );
 
 export default function AboutScreen() {
   return (
-    <View maxWidth={500} marginHorizontal="auto">
+    <View style={[{ maxWidth: 500, marginHorizontal: "auto" }]}>
       <H4>What is Streamplace?</H4>
-      <P fontSize={13} marginBottom={20}>
+      <P style={{ fontSize: 13, marginBottom: 20 }}>
         Streamplace is the video layer for decentralized social networks. We're
         building open-source infrastructure to bring high-quality video
         experiences to the AT Protocol ecosystem, while preserving user
