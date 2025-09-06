@@ -64,7 +64,6 @@ export const FontProvider = ({ children }: { children: React.ReactNode }) => {
     // Atkinson Hyperlegible Mono fonts
     "AtkinsonHyperlegibleMono-Regular": require("../../assets/fonts/AtkinsonHyperlegibleMono-Regular.ttf"),
     "AtkinsonHyperlegibleMono-Medium": require("../../assets/fonts/AtkinsonHyperlegibleMono-Medium.ttf"),
-    "AtkinsonHyperlegibleMono-MediumItalic": require("../../assets/fonts/AtkinsonHyperlegibleMono-MediumItalic.ttf"),
     "AtkinsonHyperlegibleMono-SemiBold": require("../../assets/fonts/AtkinsonHyperlegibleMono-SemiBold.ttf"),
     "AtkinsonHyperlegibleMono-Bold": require("../../assets/fonts/AtkinsonHyperlegibleMono-Bold.ttf"),
   });

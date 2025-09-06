@@ -702,7 +702,6 @@ export const fontFamilies = {
   // Monospace fonts
   monoRegular: "AtkinsonHyperlegibleMono-Regular",
   monoMedium: "AtkinsonHyperlegibleMono-Medium",
-  monoMediumItalic: "AtkinsonHyperlegibleMono-MediumItalic",
   monoSemiBold: "AtkinsonHyperlegibleMono-SemiBold",
   monoBold: "AtkinsonHyperlegibleMono-Bold",
 } as const;
