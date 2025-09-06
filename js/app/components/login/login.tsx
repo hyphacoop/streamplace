@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import { zero } from "@streamplace/components";
+import { Button, Text, useTheme, zero } from "@streamplace/components";
 import Loading from "components/loading/loading";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
 import {
@@ -10,6 +10,7 @@ import {
   selectLogin,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
+import { Info, LogOut, UserRoundPen } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,13 +20,13 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   View,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 
 export default function Login() {
+  const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const chatProfile = useAppSelector(selectChatProfile);
   const userProfile = useAppSelector(selectUserProfile);
@@ -82,9 +83,11 @@ export default function Login() {
           zero.gap.all[3],
         ]}
       >
-        <Text style={[{ textAlign: "center", fontSize: 32 }]}>
+        <Text size="3xl" style={[{ textAlign: "center" }, zero.pb[4]]}>
           Hey,{" "}
-          <Text style={{ color: rgb || "#bd6e86" }}>@{userProfile.handle}</Text>
+          <Text size="3xl" style={{ color: rgb || "#bd6e86" }}>
+            @{userProfile.handle}
+          </Text>
           .
         </Text>
         <View
@@ -94,24 +97,46 @@ export default function Login() {
             { justifyContent: "center" },
           ]}
         >
-          <Pressable
+          <Button
             onPress={() => dispatch(logout())}
+            variant="secondary"
+            leftIcon={<LogOut color={theme.colors.text} />}
             style={[
               {
                 maxWidth: 300,
-                backgroundColor: "#007AFF",
-                padding: 12,
-                borderRadius: 8,
-                marginHorizontal: "auto",
+                flexBasis: 250,
+                alignItems: "center",
+              },
+            ]}
+          >
+            <Text style={[{ color: theme.colors.text, textAlign: "center" }]}>
+              Log out
+            </Text>
+          </Button>
+        </View>
+        <View
+          style={[
+            { flexDirection: "row" },
+            zero.gap.all[2],
+            { justifyContent: "center" },
+          ]}
+        >
+          <Button
+            onPress={() => dispatch(logout())}
+            variant="secondary"
+            leftIcon={<UserRoundPen color="white" />}
+            style={[
+              {
+                maxWidth: 300,
                 flexBasis: 250,
                 alignItems: "center",
               },
             ]}
           >
             <Text style={[{ color: "white", textAlign: "center" }]}>
-              Log out
+              Edit profile (Bluesky)
             </Text>
-          </Pressable>
+          </Button>
         </View>
         <NameColorPicker
           buttonProps={{
@@ -144,13 +169,13 @@ export default function Login() {
         >
           <View
             style={[
-              zero.px[6],
-              zero.py[6],
+              zero.px[8],
+              zero.py[8],
               zero.r.lg,
-              { backgroundColor: "#1a1a1a" },
+              { backgroundColor: theme.colors.card },
               { width: "100%" },
               { maxWidth: 600 },
-              zero.gap.all[2],
+              zero.gap.all[4],
             ]}
           >
             <Text style={[{ fontSize: 36, fontWeight: "200", color: "white" }]}>
@@ -162,7 +187,7 @@ export default function Login() {
                 zero.gap.all[1],
               ]}
             >
-              <Text style={[{ color: "#aaa" }]}>
+              <Text style={[{ color: theme.colors.textMuted }]}>
                 Sign in using your handle on the AT Protocol
               </Text>
               <Pressable
@@ -173,15 +198,17 @@ export default function Login() {
                   Linking.openURL(u.toString());
                 }}
               >
-                <Text style={[{ color: "lightskyblue", fontSize: 18 }]}>
-                  ℹ
-                </Text>
+                <Info
+                  size={16}
+                  style={{ paddingTop: 4 }}
+                  color={theme.colors.ring}
+                />
               </Pressable>
-              <Text style={[{ color: "#aaa" }]}>
+              <Text style={[{ color: theme.colors.textMuted }]}>
                 (e.g. your Bluesky handle)
               </Text>
             </View>
-            <View style={[zero.gap.all[2], zero.py[4]]}>
+            <View style={[zero.pb[2]]}>
               <Text style={[{ color: "#aaa" }]}>Handle</Text>
               <TextInput
                 value={handle}

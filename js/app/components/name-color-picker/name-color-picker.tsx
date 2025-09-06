@@ -1,9 +1,11 @@
+import { Button } from "@streamplace/components";
 import {
   createChatProfileRecord,
   getChatProfileRecordFromPDS,
   selectChatProfile,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
+import { SwatchBook } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -79,17 +81,10 @@ export default function NameColorPicker({
 
   return (
     <View style={[{ alignItems: "center" }, { flexDirection: "row" }]}>
-      <TouchableOpacity
-        style={[
-          {
-            backgroundColor: "#007AFF",
-            borderRadius: 8,
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            alignItems: "center",
-          },
-          buttonProps?.style,
-        ]}
+      <Button
+        variant="secondary"
+        leftIcon={<SwatchBook color={color} />}
+        style={[buttonProps?.style]}
         onPress={() => {
           if (!isWeb) {
             Keyboard.dismiss();
@@ -101,7 +96,7 @@ export default function NameColorPicker({
         <Text style={[{ color, fontWeight: "600" }]}>
           {text ? text(color) : "Change Name Color"}
         </Text>
-      </TouchableOpacity>
+      </Button>
 
       <Modal
         visible={open}

@@ -208,7 +208,7 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
         },
       ]}
     >
-      {sidebar?.isActive && (
+      {sidebar?.isActive ? (
         <Pressable style={{ padding: 5 }} onPress={handlePress}>
           {sidebar.isCollapsed ? (
             <PanelLeftOpen size={24} color={theme.colors.accentForeground} />
@@ -216,14 +216,15 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
             <PanelLeftClose size={24} color={theme.colors.accentForeground} />
           )}
         </Pressable>
+      ) : (
+        <Pressable style={{ padding: 5 }} onPress={handleGoBackPress}>
+          {canGoBack ? (
+            <ArrowLeft size={24} color={theme.colors.accentForeground} />
+          ) : (
+            <Menu size={24} color={theme.colors.accentForeground} />
+          )}
+        </Pressable>
       )}
-      <Pressable style={{ padding: 5 }} onPress={handleGoBackPress}>
-        {canGoBack ? (
-          <ArrowLeft size={24} color={theme.colors.accentForeground} />
-        ) : (
-          <Menu size={24} color={theme.colors.accentForeground} />
-        )}
-      </Pressable>
     </View>
   );
 };
