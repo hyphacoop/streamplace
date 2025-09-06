@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import React, { forwardRef } from "react";
 import { useTheme } from "../../lib/theme/theme";
+import { fontFamilies } from "../../lib/theme/tokens";
 import * as zero from "../../ui";
 import { TextPrimitive, TextPrimitiveProps } from "./primitives/text";
 
@@ -137,23 +138,23 @@ export const Text = forwardRef<any, TextProps>(
     const variantStyle = React.useMemo(() => {
       switch (variant) {
         case "h1":
-          return zero.m[6];
+          return zero.my[6];
         case "h2":
         case "h3":
-          return zero.m[4];
+          return zero.my[4];
         case "h4":
         case "h5":
         case "h6":
         case "subtitle1":
-          return zero.m[2];
+          return zero.my[2];
         case "subtitle2":
         case "caption":
         case "overline":
-          return zero.m[1];
+          return zero.my[1];
         case "body1":
-          return zero.m[4];
+          return zero.my[4];
         case "body2":
-          return zero.m[2];
+          return zero.my[2];
         default:
           return {};
       }
@@ -235,10 +236,10 @@ export const Code = forwardRef<any, TextProps>(({ style, ...props }, ref) => {
 
   const codeStyle = React.useMemo(
     () => [
-      zt.bg.muted,
-      zero.p[1],
-      { borderRadius: zero.borderRadius.sm },
-      zt.text.code,
+      {
+        borderRadius: zero.borderRadius.sm,
+        fontFamily: fontFamilies.monoRegular,
+      },
     ],
     [zt],
   );

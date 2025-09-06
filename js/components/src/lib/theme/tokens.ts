@@ -443,67 +443,67 @@ export const typography = {
       fontSize: 34,
       lineHeight: 41,
       fontWeight: "700" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Bold",
     },
     title1: {
       fontSize: 28,
       lineHeight: 34,
       fontWeight: "700" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Bold",
     },
     title2: {
       fontSize: 22,
       lineHeight: 28,
       fontWeight: "700" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Bold",
     },
     title3: {
       fontSize: 20,
       lineHeight: 25,
       fontWeight: "600" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-SemiBold",
     },
     headline: {
       fontSize: 17,
       lineHeight: 22,
       fontWeight: "600" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-SemiBold",
     },
     body: {
       fontSize: 17,
       lineHeight: 22,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     callout: {
       fontSize: 16,
       lineHeight: 21,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     subhead: {
       fontSize: 15,
       lineHeight: 20,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     footnote: {
       fontSize: 13,
       lineHeight: 18,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     caption1: {
       fontSize: 12,
       lineHeight: 16,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     caption2: {
       fontSize: 11,
       lineHeight: 13,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
   },
 
@@ -513,79 +513,79 @@ export const typography = {
       fontSize: 96,
       lineHeight: 112,
       fontWeight: "300" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-ExtraLight",
     },
     headline2: {
       fontSize: 60,
       lineHeight: 72,
       fontWeight: "300" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Light",
     },
     headline3: {
       fontSize: 48,
       lineHeight: 56,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     headline4: {
       fontSize: 34,
       lineHeight: 42,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     headline5: {
       fontSize: 24,
       lineHeight: 32,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     headline6: {
       fontSize: 20,
       lineHeight: 28,
       fontWeight: "500" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Medium",
     },
     subtitle1: {
       fontSize: 16,
       lineHeight: 24,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     subtitle2: {
       fontSize: 14,
       lineHeight: 22,
       fontWeight: "500" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Medium",
     },
     body1: {
       fontSize: 16,
       lineHeight: 24,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     body2: {
       fontSize: 14,
       lineHeight: 20,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     button: {
       fontSize: 14,
       lineHeight: 16,
       fontWeight: "500" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Medium",
     },
     caption: {
       fontSize: 12,
       lineHeight: 16,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     overline: {
       fontSize: 10,
       lineHeight: 16,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
   },
 
@@ -595,51 +595,116 @@ export const typography = {
       fontSize: 12,
       lineHeight: 16,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     sm: {
       fontSize: 14,
       lineHeight: 20,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     base: {
       fontSize: 16,
       lineHeight: 24,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     lg: {
       fontSize: 18,
       lineHeight: 28,
       fontWeight: "400" as const,
-      fontFamily: "AtkinsonHyperlegible-Regular",
+      fontFamily: "AtkinsonHyperlegibleNext-Regular",
     },
     xl: {
       fontSize: 20,
       lineHeight: 28,
       fontWeight: "500" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Medium",
     },
     "2xl": {
       fontSize: 24,
       lineHeight: 32,
       fontWeight: "600" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-SemiBold",
     },
     "3xl": {
       fontSize: 30,
       lineHeight: 36,
       fontWeight: "700" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-Bold",
     },
     "4xl": {
       fontSize: 36,
       lineHeight: 40,
       fontWeight: "700" as const,
-      fontFamily: "AtkinsonHyperlegible-Bold",
+      fontFamily: "AtkinsonHyperlegibleNext-ExtraBold",
     },
   },
+
+  // Monospace typography for code and technical content
+  mono: {
+    xs: {
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: "400" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-Regular",
+    },
+    sm: {
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "400" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-Regular",
+    },
+    base: {
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: "400" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-Regular",
+    },
+    lg: {
+      fontSize: 16,
+      lineHeight: 24,
+      fontWeight: "400" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-Regular",
+    },
+    xl: {
+      fontSize: 18,
+      lineHeight: 28,
+      fontWeight: "500" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-Medium",
+    },
+    "2xl": {
+      fontSize: 20,
+      lineHeight: 32,
+      fontWeight: "600" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-SemiBold",
+    },
+    "3xl": {
+      fontSize: 24,
+      lineHeight: 36,
+      fontWeight: "700" as const,
+      fontFamily: "AtkinsonHyperlegibleMono-Bold",
+    },
+  },
+} as const;
+
+// Font families available in the app
+export const fontFamilies = {
+  // Sans serif fonts
+  regular: "AtkinsonHyperlegibleNext-Regular",
+  light: "AtkinsonHyperlegibleNext-Light",
+  extraLight: "AtkinsonHyperlegibleNext-ExtraLight",
+  medium: "AtkinsonHyperlegibleNext-Medium",
+  semiBold: "AtkinsonHyperlegibleNext-SemiBold",
+  bold: "AtkinsonHyperlegibleNext-Bold",
+  extraBold: "AtkinsonHyperlegibleNext-ExtraBold",
+
+  // Monospace fonts
+  monoRegular: "AtkinsonHyperlegibleMono-Regular",
+  monoMedium: "AtkinsonHyperlegibleMono-Medium",
+  monoMediumItalic: "AtkinsonHyperlegibleMono-MediumItalic",
+  monoSemiBold: "AtkinsonHyperlegibleMono-SemiBold",
+  monoBold: "AtkinsonHyperlegibleMono-Bold",
 } as const;
 
 export const shadows = {
@@ -708,6 +773,7 @@ export type Colors = typeof colors;
 export type Spacing = typeof spacing;
 export type BorderRadius = typeof borderRadius;
 export type Typography = typeof typography;
+export type FontFamilies = typeof fontFamilies;
 export type Shadows = typeof shadows;
 export type TouchTargets = typeof touchTargets;
 export type Animations = typeof animations;

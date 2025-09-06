@@ -52,12 +52,21 @@ export const NewStreamplaceProvider = ({
 
 export const FontProvider = ({ children }: { children: React.ReactNode }) => {
   const [fontLoaded, fontError] = useFonts({
-    "FiraCode-Light": require("../../assets/fonts/FiraCode-Light.ttf"),
-    "FiraCode-Medium": require("../../assets/fonts/FiraCode-Medium.ttf"),
-    "FiraCode-Bold": require("../../assets/fonts/FiraCode-Bold.ttf"),
-    "FiraSans-Medium": require("../../assets/fonts/FiraSans-Medium.ttf"),
-    "AtkinsonHyperlegible-Regular": require("../../assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf"),
-    "AtkinsonHyperlegible-Bold": require("../../assets/fonts/AtkinsonHyperlegibleNext-Bold.ttf"),
+    // Atkinson Hyperlegible Next (Sans Serif) fonts
+    "AtkinsonHyperlegibleNext-Regular": require("../../assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf"),
+    "AtkinsonHyperlegibleNext-Light": require("../../assets/fonts/AtkinsonHyperlegibleNext-Light.ttf"),
+    "AtkinsonHyperlegibleNext-ExtraLight": require("../../assets/fonts/AtkinsonHyperlegibleNext-ExtraLight.ttf"),
+    "AtkinsonHyperlegibleNext-Medium": require("../../assets/fonts/AtkinsonHyperlegibleNext-Medium.ttf"),
+    "AtkinsonHyperlegibleNext-SemiBold": require("../../assets/fonts/AtkinsonHyperlegibleNext-SemiBold.ttf"),
+    "AtkinsonHyperlegibleNext-Bold": require("../../assets/fonts/AtkinsonHyperlegibleNext-Bold.ttf"),
+    "AtkinsonHyperlegibleNext-ExtraBold": require("../../assets/fonts/AtkinsonHyperlegibleNext-ExtraBold.ttf"),
+
+    // Atkinson Hyperlegible Mono fonts
+    "AtkinsonHyperlegibleMono-Regular": require("../../assets/fonts/AtkinsonHyperlegibleMono-Regular.ttf"),
+    "AtkinsonHyperlegibleMono-Medium": require("../../assets/fonts/AtkinsonHyperlegibleMono-Medium.ttf"),
+    "AtkinsonHyperlegibleMono-MediumItalic": require("../../assets/fonts/AtkinsonHyperlegibleMono-MediumItalic.ttf"),
+    "AtkinsonHyperlegibleMono-SemiBold": require("../../assets/fonts/AtkinsonHyperlegibleMono-SemiBold.ttf"),
+    "AtkinsonHyperlegibleMono-Bold": require("../../assets/fonts/AtkinsonHyperlegibleMono-Bold.ttf"),
   });
 
   if (!fontLoaded && !fontError) {
