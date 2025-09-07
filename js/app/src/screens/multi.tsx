@@ -17,7 +17,7 @@ import { View } from "react-native";
 const { layout, flex } = zero;
 
 function IdViewer({ reqid }) {
-  const id = usePlayerStore((p) => p.id);
+  const id = usePlayerStore((p) => p.id, reqid);
   return (
     <View style={[layout.flex.center, layout.flex.row]}>
       <Text>
