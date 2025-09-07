@@ -154,7 +154,7 @@ export function useCreateStreamRecord() {
 
     // Use customUrl if provided, otherwise fall back to the store URL
     const finalUrl = customUrl || url;
-    const u = new URL(finalUrl);
+    const u = new URL(url);
 
     let thumbnail: BlobRef | undefined = undefined;
 

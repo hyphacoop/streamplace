@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import React, { useCallback, useMemo, useState } from "react";
 import { StoreApi } from "zustand";
 import { PlayerContext } from "./context";
@@ -9,6 +8,19 @@ interface PlayerProviderProps {
   children: React.ReactNode;
   initialPlayers?: string[];
   defaultId?: string;
+}
+
+function randomUUID(): string {
+  let dt = new Date().getTime();
+  var uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+    /[xy]/g,
+    function (c) {
+      var r = (dt + Math.random() * 16) % 16 | 0;
+      dt = Math.floor(dt / 16);
+      return (c == "x" ? r : (r & 0x3) | 0x8).toString(16);
+    },
+  );
+  return uuid;
 }
 
 export const PlayerProvider: React.FC<PlayerProviderProps> = ({

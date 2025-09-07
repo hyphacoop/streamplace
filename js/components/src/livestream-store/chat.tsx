@@ -199,12 +199,9 @@ export const reduceChatIncremental = (
   let hasChanges = false;
   const removedKeys = new Set<string>();
 
-  console.log("newMessages", newMessages);
-
   for (const msg of newMessages) {
     if (msg.deleted) {
       hasChanges = true;
-      console.log("deleted", msg.uri);
       removedKeys.add(msg.uri);
     }
   }

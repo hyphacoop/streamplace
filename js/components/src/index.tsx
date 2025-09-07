@@ -1,4 +1,6 @@
 // barrel file :)
+import "./crypto-polyfill";
+
 export * from "./livestream-provider";
 export * from "./livestream-store";
 export * from "./player-store";
