@@ -69,7 +69,7 @@ export default function MultiScreen({ route }) {
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider forcedTheme="dark">
       <KeepAwake />
       <FullscreenProvider>
         <View style={[flex.values[1]]}>

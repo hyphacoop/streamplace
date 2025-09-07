@@ -7,7 +7,7 @@ const { layout, p, flex } = zero;
 export default function InfoWidgetEmbed() {
   const isLive = useLiveUser();
   return (
-    <ThemeProvider>
+    <ThemeProvider forcedTheme="dark">
       <View
         style={[
           flex.values[1],

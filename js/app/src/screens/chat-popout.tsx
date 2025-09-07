@@ -19,7 +19,7 @@ export default function PopoutChat({ route }) {
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider forcedTheme="dark">
       <LivestreamProvider src={user}>
         <PlayerProvider>
           <PopoutChatInner user={user} />
