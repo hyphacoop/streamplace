@@ -144,7 +144,7 @@ export default function Login() {
               </Text>
               <Input
                 id="pdsUrl"
-                placeholder="alice.bsky.team"
+                placeholder="example.bsky.social"
                 value={handle}
                 onChangeText={(text) =>
                   setHandle(
