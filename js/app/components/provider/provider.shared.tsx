@@ -63,11 +63,9 @@ export const NewStreamplaceProvider = ({
 }) => {
   const { url } = useStreamplaceNode();
   const oauthSession = useAppSelector(selectOAuthSession);
+  console.log("session in redux:", oauthSession);
   return (
-    <ZustandStreamplaceProvider
-      url={url}
-      oauthSession={oauthSession || undefined}
-    >
+    <ZustandStreamplaceProvider url={url} oauthSession={oauthSession}>
       {children}
     </ZustandStreamplaceProvider>
   );

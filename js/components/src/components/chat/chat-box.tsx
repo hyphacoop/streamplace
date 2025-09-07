@@ -74,6 +74,14 @@ export function ChatBox({
 
   let agent = usePDSAgent();
 
+  // if no agent, then show a spinner
+
+  if (!agent?.did) {
+    <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[1]]}>
+      <Loader size={16} />
+    </View>;
+  }
+
   if (!agent?.did) {
     <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
       <Text>Log in to chat.</Text>

@@ -34,7 +34,7 @@ import createOAuthClient from "./oauthClient";
 const initialState: BlueskyState = {
   status: "start",
   oauthState: null,
-  oauthSession: null,
+  oauthSession: undefined,
   pdsAgent: null,
   anonPDSAgent: null,
   profiles: {},
@@ -209,8 +209,10 @@ export const blueskySlice = createAppSlice({
               anonPDSAgent: anonPDSAgent as any,
             } as any;
           }
+          console.log("setting session to", session);
           return {
             ...state,
+            oauthSession: session,
             status: "loggedOut",
             client: client,
             anonPDSAgent: anonPDSAgent,
@@ -224,7 +226,6 @@ export const blueskySlice = createAppSlice({
         },
       },
     ),
-
     oauthError: create.reducer(
       (
         state,
@@ -311,7 +312,7 @@ export const blueskySlice = createAppSlice({
         fulfilled: (state, action) => {
           return {
             ...state,
-            oauthSession: null,
+            oauthSession: undefined,
             pdsAgent: null,
             status: "loggedOut",
           };
