@@ -10,7 +10,7 @@ import {
 } from "@streamplace/components";
 import { useKeyboard } from "hooks/useKeyboard";
 import { useEffect } from "react";
-import { Keyboard, Pressable, TouchableWithoutFeedback } from "react-native";
+import { Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -111,11 +111,9 @@ function ChatPanel() {
         { width: "100%", maxWidth: "100%" },
       ]}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={[flex.values[1]]}>
-          <Chat canModerate={canModerate} />
-        </View>
-      </TouchableWithoutFeedback>
+      <View style={[flex.values[1]]}>
+        <Chat canModerate={canModerate} />
+      </View>
       <View style={[layout.flex.column, gap.all[2], px[4]]}>
         {handle ? (
           <ChatBox
