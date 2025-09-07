@@ -4,6 +4,7 @@ import { useStreamplaceStore } from ".";
 
 export function usePDSAgent(): StreamplaceAgent | null {
   const oauthSession = useStreamplaceStore((state) => state.oauthSession);
+  //const nodeUrl = useStreamplaceStore((state) => state.url);
 
   // oauthsession is
   // - undefined when loading
@@ -12,7 +13,10 @@ export function usePDSAgent(): StreamplaceAgent | null {
   return useMemo(() => {
     if (!oauthSession) {
       if (oauthSession === undefined) return null;
-      return new StreamplaceAgent("");
+      // TODO: change once we allow unauthed requests + profile indexing
+      // it's bluesky's AppView b/c otherwise we'd have goosewithpipe.jpg
+      // showing up everywhere
+      return new StreamplaceAgent("https://public.api.bsky.app"); // nodeUrl);
     }
 
     return new StreamplaceAgent(oauthSession);
