@@ -1,6 +1,7 @@
 package statedb
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/datatypes"
@@ -74,8 +75,14 @@ func (state *StatefulDB) DeleteWebhook(id uint, userDID string) error {
 // GetActiveWebhooksForUser retrieves active webhooks for a user filtered by event type
 func (state *StatefulDB) GetActiveWebhooksForUser(userDID string, eventType string) ([]Webhook, error) {
 	var webhooks []Webhook
-	err := state.DB.Where("user_did = ? AND active = ? AND JSON_EXTRACT(events, '$') LIKE ?",
-		userDID, true, "%\""+eventType+"\"%").Find(&webhooks).Error
+	var err error
+	if state.Type == DBTypePostgres {
+		err = state.DB.Where("user_did = ? AND active = ? AND events @> ?",
+			userDID, true, fmt.Sprintf(`["%s"]`, eventType)).Find(&webhooks).Error
+	} else {
+		err = state.DB.Where("user_did = ? AND active = ? AND JSON_EXTRACT(events, '$') LIKE ?",
+			userDID, true, fmt.Sprintf(`["%s"]`, eventType)).Find(&webhooks).Error
+	}
 	return webhooks, err
 }
 

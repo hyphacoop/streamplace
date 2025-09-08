@@ -623,7 +623,7 @@ export default function WebhookManager() {
         for (const webhook of response.data.webhooks) {
           webhook.events = (webhook.events as string[]).filter((event) =>
             ["livestream", "chat", "follow", "mention"].includes(event),
-          ) as "livestream" | "chat" | "follow" | "mention"[];
+          ) as ("livestream" | "chat" | "follow" | "mention")[];
         }
       }
       setWebhooks((response.data.webhooks as any) || []);
@@ -649,7 +649,7 @@ export default function WebhookManager() {
       await agent.place.stream.server.createWebhook({
         name: data.name || undefined,
         url: data.url,
-        events: data.events as "livestream" | "chat" | "follow" | "mention"[],
+        events: data.events as ("livestream" | "chat" | "follow" | "mention")[],
         active: data.active,
         prefix: data.prefix || undefined,
         suffix: data.suffix || undefined,
@@ -685,7 +685,7 @@ export default function WebhookManager() {
         id: editingWebhook.id,
         name: data.name || undefined,
         url: data.url,
-        events: data.events as "livestream" | "chat" | "follow" | "mention"[],
+        events: data.events as ("livestream" | "chat" | "follow" | "mention")[],
         active: data.active,
         prefix: data.prefix || undefined,
         suffix: data.suffix || undefined,
