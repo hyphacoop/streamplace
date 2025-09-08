@@ -3,7 +3,10 @@ import {
   LinkingOptions,
   NavigationContainer,
 } from "@react-navigation/native";
-import { StreamplaceProvider as ZustandStreamplaceProvider } from "@streamplace/components";
+import {
+  ThemeProvider,
+  StreamplaceProvider as ZustandStreamplaceProvider,
+} from "@streamplace/components";
 import { useFonts } from "expo-font";
 import BlueskyProvider from "features/bluesky/blueskyProvider";
 import { selectOAuthSession } from "features/bluesky/blueskySlice";
@@ -22,17 +25,19 @@ export default function Provider({
   linking: LinkingOptions<ReactNavigation.RootParamList>;
 }) {
   return (
-    <NavigationContainer theme={DarkTheme} linking={linking}>
-      <ReduxProvider store={store}>
-        <StreamplaceProvider>
-          <BlueskyProvider>
-            <NewStreamplaceProvider>
-              <FontProvider>{children}</FontProvider>
-            </NewStreamplaceProvider>
-          </BlueskyProvider>
-        </StreamplaceProvider>
-      </ReduxProvider>
-    </NavigationContainer>
+    <ThemeProvider forcedTheme="dark">
+      <NavigationContainer theme={DarkTheme} linking={linking}>
+        <ReduxProvider store={store}>
+          <StreamplaceProvider>
+            <BlueskyProvider>
+              <NewStreamplaceProvider>
+                <FontProvider>{children}</FontProvider>
+              </NewStreamplaceProvider>
+            </BlueskyProvider>
+          </StreamplaceProvider>
+        </ReduxProvider>
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }
 
