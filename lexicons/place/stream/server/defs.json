@@ -81,6 +81,7 @@
         "from": {
           "type": "string",
           "maxLength": 100,
+          "minLength": 1,
           "description": "Text to search for and replace."
         },
         "to": {
