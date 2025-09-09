@@ -120,9 +120,13 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 	} else {
 		webhookManager := webhook.NewManager()
 		for _, w := range webhooks {
-			webhookData := webhook.WebhookToWebhookData(w.ID, w.URL, w.Events, w.Active, w.Prefix, w.Suffix, w.Rewrite, w.Name)
-			go func(wd webhook.WebhookData, wid uint) {
-				err := webhookManager.SendLivestreamWebhook(ctx, wd, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
+			lexiconWebhook, err := w.ToLexicon()
+			if err != nil {
+				log.Error(ctx, "failed to convert webhook to lexicon", "err", err, "webhook_id", w.ID)
+				continue
+			}
+			go func(webhook *streamplace.ServerDefs_Webhook, wid string) {
+				err := webhookManager.SendLivestreamWebhook(ctx, webhook, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
 				if err != nil {
 					log.Error(ctx, "failed to send livestream to webhook", "err", err, "webhook_id", wid)
 					err := state.IncrementWebhookError(wid)
@@ -136,7 +140,7 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 						log.Error(ctx, "failed to reset webhook error count", "err", err, "webhook_id", wid)
 					}
 				}
-			}(webhookData, w.ID)
+			}(lexiconWebhook, w.ID)
 		}
 	}
 	return nil
@@ -160,9 +164,13 @@ func (state *StatefulDB) processChatMessageTask(ctx context.Context, task *AppTa
 	} else {
 		webhookManager := webhook.NewManager()
 		for _, w := range webhooks {
-			webhookData := webhook.WebhookToWebhookData(w.ID, w.URL, w.Events, w.Active, w.Prefix, w.Suffix, w.Rewrite, w.Name)
-			go func(wd webhook.WebhookData, wid uint) {
-				err := webhookManager.SendChatWebhook(ctx, wd, scm.Author.Did, scm)
+			lexiconWebhook, err := w.ToLexicon()
+			if err != nil {
+				log.Error(ctx, "failed to convert webhook to lexicon", "err", err, "webhook_id", w.ID)
+				continue
+			}
+			go func(webhook *streamplace.ServerDefs_Webhook, wid string) {
+				err := webhookManager.SendChatWebhook(ctx, webhook, scm.Author.Did, scm)
 				if err != nil {
 					log.Error(ctx, "failed to send chat to webhook", "err", err, "webhook_id", wid)
 					err = state.IncrementWebhookError(wid)
@@ -176,7 +184,7 @@ func (state *StatefulDB) processChatMessageTask(ctx context.Context, task *AppTa
 						log.Error(ctx, "failed to reset webhook error count", "err", err, "webhook_id", wid)
 					}
 				}
-			}(webhookData, w.ID)
+			}(lexiconWebhook, w.ID)
 		}
 	}
 	return nil
