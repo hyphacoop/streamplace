@@ -10,16 +10,9 @@ import (
 	"stream.place/streamplace/pkg/streamplace"
 )
 
-// Manager handles webhook sending
-type Manager struct{}
-
-func NewManager() *Manager {
-	return &Manager{}
-}
-
 // SendChatWebhook sends chat message to a specific webhook
-func (m *Manager) SendChatWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhook, authorDID string, scm *streamplace.ChatDefs_MessageView) error {
-	discordWebhook, err := m.webhookToDiscordWebhook(webhook)
+func SendChatWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhook, authorDID string, scm *streamplace.ChatDefs_MessageView) error {
+	discordWebhook, err := webhookToDiscordWebhook(webhook)
 	if err != nil {
 		return fmt.Errorf("failed to convert webhook: %w", err)
 	}
@@ -28,8 +21,8 @@ func (m *Manager) SendChatWebhook(ctx context.Context, webhook *streamplace.Serv
 }
 
 // SendLivestreamWebhook sends livestream notification to a specific webhook
-func (m *Manager) SendLivestreamWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhook, pdsURL string, lsv *streamplace.Livestream_LivestreamView, postView *bsky.FeedDefs_PostView, spcp *streamplace.ChatProfile) error {
-	discordWebhook, err := m.webhookToDiscordWebhook(webhook)
+func SendLivestreamWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhook, pdsURL string, lsv *streamplace.Livestream_LivestreamView, postView *bsky.FeedDefs_PostView, spcp *streamplace.ChatProfile) error {
+	discordWebhook, err := webhookToDiscordWebhook(webhook)
 	if err != nil {
 		return fmt.Errorf("failed to convert webhook: %w", err)
 	}
@@ -38,7 +31,7 @@ func (m *Manager) SendLivestreamWebhook(ctx context.Context, webhook *streamplac
 }
 
 // webhookToDiscordWebhook converts streamplace.ServerDefs_Webhook to discordtypes.Webhook
-func (m *Manager) webhookToDiscordWebhook(webhook *streamplace.ServerDefs_Webhook) (*discordtypes.Webhook, error) {
+func webhookToDiscordWebhook(webhook *streamplace.ServerDefs_Webhook) (*discordtypes.Webhook, error) {
 	var rewriteRules []*discordtypes.WebhookRewrite
 	for _, rule := range webhook.Rewrite {
 		rewriteRules = append(rewriteRules, &discordtypes.WebhookRewrite{

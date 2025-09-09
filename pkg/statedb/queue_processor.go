@@ -118,15 +118,14 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 	if err != nil {
 		log.Error(ctx, "failed to get livestream webhooks", "err", err)
 	} else {
-		webhookManager := webhook.NewManager()
 		for _, w := range webhooks {
 			lexiconWebhook, err := w.ToLexicon()
 			if err != nil {
 				log.Error(ctx, "failed to convert webhook to lexicon", "err", err, "webhook_id", w.ID)
 				continue
 			}
-			go func(webhook *streamplace.ServerDefs_Webhook, wid string) {
-				err := webhookManager.SendLivestreamWebhook(ctx, webhook, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
+			go func(lexiconWebhook *streamplace.ServerDefs_Webhook, wid string) {
+				err := webhook.SendLivestreamWebhook(ctx, lexiconWebhook, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
 				if err != nil {
 					log.Error(ctx, "failed to send livestream to webhook", "err", err, "webhook_id", wid)
 					err := state.IncrementWebhookError(wid)
@@ -162,15 +161,14 @@ func (state *StatefulDB) processChatMessageTask(ctx context.Context, task *AppTa
 	if err != nil {
 		log.Error(ctx, "failed to get chat webhooks", "err", err)
 	} else {
-		webhookManager := webhook.NewManager()
 		for _, w := range webhooks {
 			lexiconWebhook, err := w.ToLexicon()
 			if err != nil {
 				log.Error(ctx, "failed to convert webhook to lexicon", "err", err, "webhook_id", w.ID)
 				continue
 			}
-			go func(webhook *streamplace.ServerDefs_Webhook, wid string) {
-				err := webhookManager.SendChatWebhook(ctx, webhook, scm.Author.Did, scm)
+			go func(lexiconWebhook *streamplace.ServerDefs_Webhook, wid string) {
+				err := webhook.SendChatWebhook(ctx, lexiconWebhook, scm.Author.Did, scm)
 				if err != nil {
 					log.Error(ctx, "failed to send chat to webhook", "err", err, "webhook_id", wid)
 					err = state.IncrementWebhookError(wid)
