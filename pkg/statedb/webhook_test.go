@@ -45,7 +45,7 @@ func TestWebhook(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Equal(t, "https://newexample.com", updatedWebhook.URL)
-			require.Equal(t, []byte(`["test"]`), updatedWebhook.Events)
+			require.JSONEq(t, `["test"]`, string(updatedWebhook.Events))
 		})
 
 		t.Run("should not allow cross-user access", func(t *testing.T) {
@@ -85,6 +85,7 @@ func TestWebhook(t *testing.T) {
 			require.NoError(t, err)
 			_, err = state.GetWebhook(webhook.ID, webhook.UserDID)
 			require.Error(t, err)
+			require.Contains(t, err.Error(), "webhook not found")
 		})
 
 		t.Run("list webhooks with pagination and filters", func(t *testing.T) {

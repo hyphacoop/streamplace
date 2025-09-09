@@ -190,7 +190,7 @@ func (s *Server) handlePlaceStreamServerUpdateWebhook(ctx context.Context, input
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid events format")
 		}
-		updates["events"] = eventsJSON
+		updates["events"] = json.RawMessage(eventsJSON)
 	}
 	if input.Active != nil {
 		updates["active"] = *input.Active
@@ -206,7 +206,7 @@ func (s *Server) handlePlaceStreamServerUpdateWebhook(ctx context.Context, input
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusBadRequest, "Invalid rewrite rules format")
 		}
-		updates["rewrite"] = rewriteJSON
+		updates["rewrite"] = json.RawMessage(rewriteJSON)
 	}
 	if input.Name != nil {
 		updates["name"] = *input.Name

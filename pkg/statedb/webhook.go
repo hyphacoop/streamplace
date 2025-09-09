@@ -2,10 +2,12 @@ package statedb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
-	"gorm.io/datatypes"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/streamplace"
 )
 
@@ -15,17 +17,17 @@ type Webhook struct {
 	UserDID string `gorm:"column:user_did;not null;index"`
 	URL     string `gorm:"column:url;not null"`
 
-	Events        datatypes.JSON `gorm:"column:events;type:jsonb"`
-	Active        bool           `gorm:"column:active;default:true"`
-	Prefix        string         `gorm:"column:prefix"`
-	Suffix        string         `gorm:"column:suffix"`
-	Rewrite       datatypes.JSON `gorm:"column:rewrite;type:jsonb"`
-	Name          string         `gorm:"column:name"`
-	Description   string         `gorm:"column:description"`
-	CreatedAt     time.Time      `gorm:"column:created_at"`
-	UpdatedAt     time.Time      `gorm:"column:updated_at"`
-	LastTriggered *time.Time     `gorm:"column:last_triggered"`
-	ErrorCount    int            `gorm:"column:error_count;default:0"`
+	Events        json.RawMessage `gorm:"column:events;type:json"`
+	Active        bool            `gorm:"column:active;default:true"`
+	Prefix        string          `gorm:"column:prefix"`
+	Suffix        string          `gorm:"column:suffix"`
+	Rewrite       json.RawMessage `gorm:"column:rewrite;type:json"`
+	Name          string          `gorm:"column:name"`
+	Description   string          `gorm:"column:description"`
+	CreatedAt     time.Time       `gorm:"column:created_at"`
+	UpdatedAt     time.Time       `gorm:"column:updated_at"`
+	LastTriggered *time.Time      `gorm:"column:last_triggered"`
+	ErrorCount    int             `gorm:"column:error_count;default:0"`
 }
 
 func (w *Webhook) TableName() string {
@@ -34,21 +36,52 @@ func (w *Webhook) TableName() string {
 
 // CreateWebhook creates a new webhook for a user
 func (state *StatefulDB) CreateWebhook(webhook *Webhook) error {
-	return state.DB.Create(webhook).Error
+	if webhook.URL == "" {
+		return fmt.Errorf("webhook URL cannot be empty")
+	}
+
+	// Generate ID if not provided
+	if webhook.ID == "" {
+		uu, err := uuid.NewV7()
+		if err != nil {
+			return fmt.Errorf("failed to generate webhook ID: %w", err)
+		}
+		webhook.ID = uu.String()
+	}
+
+	// Set timestamps if not already set
+	if webhook.CreatedAt.IsZero() {
+		webhook.CreatedAt = time.Now()
+	}
+	if webhook.UpdatedAt.IsZero() {
+		webhook.UpdatedAt = time.Now()
+	}
+
+	// Log webhook data for debugging datatype mismatch
+	fmt.Printf("DEBUG: Creating webhook - ID: %s, UserDID: %s, URL: %s, Events: %q, Active: %v, Rewrite: %q, EventsLen: %d, RewriteLen: %d\n",
+		webhook.ID, webhook.UserDID, webhook.URL, string(webhook.Events), webhook.Active, string(webhook.Rewrite), len(webhook.Events), len(webhook.Rewrite))
+
+	// Create webhook with detailed error reporting
+	result := state.DB.Create(webhook)
+	if result.Error != nil {
+		return fmt.Errorf("database create failed - Error: %v, ErrorType: %T, RowsAffected: %d",
+			result.Error, result.Error, result.RowsAffected)
+	}
+
+	return nil
 }
 
 // GetWebhook retrieves a webhook by ID and user DID
 func (state *StatefulDB) GetWebhook(id string, userDID string) (*Webhook, error) {
 	var webhook Webhook
 	err := state.DB.Where("id = ? AND user_did = ?", id, userDID).First(&webhook).Error
-	// if record doesn't exist, return nil, nil
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("webhook not found")
 		}
 		return nil, err
 	}
-	return &webhook, err
+	return &webhook, nil
 }
 
 // ListWebhooks retrieves webhooks for a user with optional filters
@@ -70,16 +103,26 @@ func (state *StatefulDB) ListWebhooks(userDID string, limit int, offset int, fil
 // UpdateWebhook updates an existing webhook
 func (state *StatefulDB) UpdateWebhook(id string, userDID string, updates map[string]interface{}) (*Webhook, error) {
 	updates["updated_at"] = time.Now()
-	err := state.DB.Model(&Webhook{}).Where("id = ? AND user_did = ?", id, userDID).Updates(updates).Error
-	if err != nil {
-		return nil, err
+	result := state.DB.Model(&Webhook{}).Where("id = ? AND user_did = ?", id, userDID).Updates(updates)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, fmt.Errorf("webhook not found or access denied")
 	}
 	return state.GetWebhook(id, userDID)
 }
 
 // DeleteWebhook deletes a webhook by ID and user DID
 func (state *StatefulDB) DeleteWebhook(id string, userDID string) error {
-	return state.DB.Where("id = ? AND user_did = ?", id, userDID).Delete(&Webhook{}).Error
+	result := state.DB.Where("id = ? AND user_did = ?", id, userDID).Delete(&Webhook{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("webhook not found or access denied")
+	}
+	return nil
 }
 
 // GetActiveWebhooksForUser retrieves active webhooks for a user filtered by event type
@@ -90,8 +133,9 @@ func (state *StatefulDB) GetActiveWebhooksForUser(userDID string, eventType stri
 		err = state.DB.Where("user_did = ? AND active = ? AND events @> ?",
 			userDID, true, fmt.Sprintf(`["%s"]`, eventType)).Find(&webhooks).Error
 	} else {
-		err = state.DB.Where("user_did = ? AND active = ? AND JSON_EXTRACT(events, '$') LIKE ?",
-			userDID, true, fmt.Sprintf(`["%s"]`, eventType)).Find(&webhooks).Error
+		// SQLite: Use JSON_EXTRACT with JSON_EACH to check if array contains the event
+		err = state.DB.Where("user_did = ? AND active = ? AND EXISTS (SELECT 1 FROM json_each(events) WHERE value = ?)",
+			userDID, true, eventType).Find(&webhooks).Error
 	}
 	return webhooks, err
 }
@@ -175,12 +219,26 @@ func (w *Webhook) ToLexicon() (*streamplace.ServerDefs_Webhook, error) {
 
 // FromLexiconInput converts a streamplace.ServerCreateWebhook_Input to a database Webhook
 func WebhookFromLexiconInput(input *streamplace.ServerCreateWebhook_Input, userDID, id string) (*Webhook, error) {
-	eventsJSON, err := json.Marshal(input.Events)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal events: %w", err)
+	// Debug log the raw input
+	fmt.Printf("DEBUG: WebhookFromLexiconInput input.Events: %+v (type: %T)\n", input.Events, input.Events)
+	for i, event := range input.Events {
+		fmt.Printf("DEBUG: Event[%d]: %q (type: %T)\n", i, event, event)
 	}
 
-	var rewriteJSON datatypes.JSON
+	var eventsJSON json.RawMessage
+	if len(input.Events) > 0 {
+		jsonBytes, err := json.Marshal(input.Events)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal events: %w", err)
+		}
+		fmt.Printf("DEBUG: Marshaled events JSON: %q\n", string(jsonBytes))
+		eventsJSON = json.RawMessage(jsonBytes)
+	} else {
+		// Default to empty array if no events provided
+		eventsJSON = json.RawMessage(`[]`)
+	}
+
+	var rewriteJSON json.RawMessage
 	if len(input.Rewrite) > 0 {
 		dbRules := make([]map[string]string, len(input.Rewrite))
 		for i, rule := range input.Rewrite {
@@ -189,10 +247,11 @@ func WebhookFromLexiconInput(input *streamplace.ServerCreateWebhook_Input, userD
 				"to":   rule.To,
 			}
 		}
-		rewriteJSON, err = json.Marshal(dbRules)
+		jsonBytes, err := json.Marshal(dbRules)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal rewrite rules: %w", err)
 		}
+		rewriteJSON = json.RawMessage(jsonBytes)
 	}
 
 	webhook := &Webhook{
@@ -200,10 +259,15 @@ func WebhookFromLexiconInput(input *streamplace.ServerCreateWebhook_Input, userD
 		UserDID:   userDID,
 		URL:       input.Url,
 		Events:    eventsJSON,
-		Active:    input.Active != nil && *input.Active,
+		Active:    true, // Default to true as per database schema
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Rewrite:   rewriteJSON,
+	}
+
+	// Only override Active if explicitly provided
+	if input.Active != nil {
+		webhook.Active = *input.Active
 	}
 
 	if input.Prefix != nil {
