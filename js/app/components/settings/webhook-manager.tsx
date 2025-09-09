@@ -471,7 +471,7 @@ function WebhookForm({
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, prefix: text }))
               }
-              placeholder="🔴 "
+              placeholder="Ahoy!"
             />
           </View>
           <View style={[flex.values[1]]}>
@@ -556,6 +556,29 @@ function WebhookForm({
           ))}
         </View>
 
+        {/* Example message text */}
+        <View style={[mb[4]]}>
+          <Text
+            style={[text.gray[300], mb[2], { fontSize: 14, fontWeight: "500" }]}
+          >
+            Example
+          </Text>
+          <View
+            style={[
+              bg.neutral[800],
+              p[3],
+              r.md,
+              borders.width.thin,
+              borders.color.gray[200],
+            ]}
+          >
+            <Text style={[text.gray[400], { fontSize: 14 }]}>
+              {formData.prefix}
+              <Text style={[text.blue[400]]}>{"{username}"}</Text>
+              {formData.suffix}
+            </Text>
+          </View>
+        </View>
         {/* Active toggle */}
         <View
           style={[
@@ -757,7 +780,6 @@ export default function WebhookManager() {
   };
 
   useEffect(() => {
-    navigation.setOptions({ title: "Webhook Manager" });
     if (!agent) return;
     loadWebhooks();
   }, [agent]);
