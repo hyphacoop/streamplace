@@ -23,7 +23,7 @@ func Migrate(cli *config.CLI) error {
 		// slogGorm.WithTraceAll(),
 	)
 
-	newDB, err := MakeDB(cli, nil, nil)
+	newDB, err := MakeDB(context.Background(), cli, nil, nil)
 	if err != nil {
 		return err
 	}

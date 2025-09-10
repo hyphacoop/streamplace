@@ -1,16 +1,19 @@
 package statedb
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/driver/postgres"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
@@ -86,6 +89,8 @@ func makePostgresURL(t *testing.T) string {
 	return u.String()
 }
 
+var lockRuns = 50000
+
 func TestPostgresLocks(t *testing.T) {
 	if postgresURL == "" {
 		t.Skip("no postgres url, skipping postgres tests")
@@ -97,40 +102,28 @@ func TestPostgresLocks(t *testing.T) {
 	}
 	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
-	state, err := MakeDB(&cli, nil, mod)
+	state, err := MakeDB(context.Background(), &cli, nil, mod)
 	require.NoError(t, err)
 
-	unlock, err := state.GetNamedLock("test")
-	t.Log("got lock")
-	require.NoError(t, err)
-	require.NotNil(t, unlock)
+	var g errgroup.Group
+	var count atomic.Uint64
 
-	shouldBeLocked := true
-
-	done := make(chan struct{})
-
-	go func() {
-		unlock2, err := state.GetNamedLock("test")
-		t.Log("got lock 2")
-		require.Equal(t, shouldBeLocked, false)
+	doLock := func() error {
+		unlock, err := state.GetNamedLock("test")
 		require.NoError(t, err)
-		require.NotNil(t, unlock2)
-		unlock2()
-		close(done)
-	}()
-
-	time.Sleep(1 * time.Second)
-
-	t.Log("unlocking")
-	shouldBeLocked = false
-	unlock()
-	t.Log("unlocked")
-
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		require.Fail(t, "lock not released")
+		defer unlock()
+		count.Add(1)
+		return nil
 	}
+
+	for i := 0; i < lockRuns; i++ {
+		g.Go(doLock)
+	}
+
+	err = g.Wait()
+	require.NoError(t, err)
+	require.Equal(t, int(count.Load()), int(uint64(lockRuns)))
+
 	sqlDB, err := state.DB.DB()
 	require.NoError(t, err)
 
