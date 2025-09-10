@@ -209,7 +209,6 @@ export const blueskySlice = createAppSlice({
               anonPDSAgent: anonPDSAgent as any,
             } as any;
           }
-          console.log("setting session to", session);
           return {
             ...state,
             oauthSession: session,
