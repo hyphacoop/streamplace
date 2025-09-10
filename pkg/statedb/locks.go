@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"sync"
 
+	"github.com/cenkalti/backoff"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/log"
 )
@@ -21,31 +23,25 @@ func (state *StatefulDB) GetNamedLock(name string) (func(), error) {
 	panic("unsupported database type")
 }
 
+var ErrNoLock = fmt.Errorf("pg_try_advisory_lock returned false")
+
 func (state *StatefulDB) getNamedLockPostgres(name string) (func(), error) {
 	// we also use a local lock here - whoever is locking wants exclusive access even within the node
 	lock := state.locks.GetLock(name)
 	lock.Lock()
-	state.pgLockConnMu.Lock()
-	defer state.pgLockConnMu.Unlock()
 	// Convert string to sha256 hash and use decimal value for advisory lock
 	h := sha256.Sum256([]byte(name))
 	nameInt := int64(binary.BigEndian.Uint64(h[:8]))
 
 	log.Debug(context.Background(), fmt.Sprintf("starting SELECT pg_advisory_lock(%d)", nameInt))
-	err := state.pgLockConn.Exec("SELECT pg_advisory_lock($1)", nameInt).Error
+	err := state.pgLockBackoff(nameInt)
 	if err != nil {
 		lock.Unlock()
 		return nil, err
 	}
 	return func() {
-		state.pgLockConnMu.Lock()
-		defer state.pgLockConnMu.Unlock()
 		log.Debug(context.Background(), fmt.Sprintf("starting SELECT pg_advisory_unlock(%d)", nameInt))
-		var unlocked bool
-		err := state.pgLockConn.Raw("SELECT pg_advisory_unlock($1)", nameInt).Scan(&unlocked).Error
-		if err == nil && !unlocked {
-			err = fmt.Errorf("pg_advisory_unlock returned false")
-		}
+		err := state.pgUnlock(nameInt)
 		if err != nil {
 			// unfortunate, but the risk is that we're holding on to the lock forever,
 			// so it's responsible to crash in this case
@@ -53,6 +49,48 @@ func (state *StatefulDB) getNamedLockPostgres(name string) (func(), error) {
 		}
 		lock.Unlock()
 	}, nil
+}
+
+func (state *StatefulDB) pgLockBackoff(key int64) error {
+	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+	defer ticker.Stop()
+	var err error
+	for i := 0; i < 10; i++ {
+		err = state.pgLock(key)
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, ErrNoLock) {
+			return err
+		}
+		if i < 9 {
+			<-ticker.C
+		}
+	}
+	return fmt.Errorf("failed to lock after 10 attempts: %w", err)
+}
+
+func (state *StatefulDB) pgLock(key int64) error {
+	state.pgLockConnMu.Lock()
+	defer state.pgLockConnMu.Unlock()
+	var locked bool
+	err := state.pgLockConn.Raw("SELECT pg_try_advisory_lock($1)", key).Scan(&locked).Error
+	if err == nil && !locked {
+		log.Error(context.Background(), fmt.Sprintf("pg_try_advisory_lock returned false for key %d", key))
+		err = ErrNoLock
+	}
+	return err
+}
+
+func (state *StatefulDB) pgUnlock(key int64) error {
+	state.pgLockConnMu.Lock()
+	defer state.pgLockConnMu.Unlock()
+	var unlocked bool
+	err := state.pgLockConn.Raw("SELECT pg_advisory_unlock($1)", key).Scan(&unlocked).Error
+	if err == nil && !unlocked {
+		err = fmt.Errorf("pg_advisory_unlock returned false")
+	}
+	return err
 }
 
 // startLockerConn starts a dedicated connection to the database for locking
