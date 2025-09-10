@@ -99,6 +99,9 @@ func TestWebhook(t *testing.T) {
 					Events:  []byte(`["test"]`),
 					Active:  i%2 == 0,
 				}
+				// set again just in case?
+				webhook.Active = i%2 == 0
+				t.Logf("webhook should be %v", webhook.Active)
 				err := state.CreateWebhook(webhook)
 				require.NoError(t, err)
 

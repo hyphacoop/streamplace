@@ -55,7 +55,7 @@ func (state *StatefulDB) CreateWebhook(webhook *Webhook) error {
 	if webhook.UpdatedAt.IsZero() {
 		webhook.UpdatedAt = time.Now()
 	}
-	result := state.DB.Select("*").Create(webhook)
+	result := state.DB.Create(webhook)
 	if result.Error != nil {
 		return fmt.Errorf("database create failed - Error: %v, ErrorType: %T, RowsAffected: %d",
 			result.Error, result.Error, result.RowsAffected)
@@ -252,15 +252,15 @@ func WebhookFromLexiconInput(input *streamplace.ServerCreateWebhook_Input, userD
 		UserDID:   userDID,
 		URL:       input.Url,
 		Events:    eventsJSON,
-		Active:    *input.Active, // Default to true as per database schema
+		Active:    true, // Default to true as per database schema
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Rewrite:   rewriteJSON,
 	}
 
-	// if active is nil, default to true
-	if input.Active == nil {
-		webhook.Active = true
+	// if active is provided, use that value
+	if input.Active != nil {
+		webhook.Active = *input.Active
 	}
 
 	if input.Prefix != nil {
