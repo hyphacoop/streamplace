@@ -632,9 +632,6 @@ export default function WebhookManager() {
   const loadWebhooks = async () => {
     if (!agent) return;
 
-    // wait like 500ms to show loading state
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     try {
       setLoading(true);
       const response = await agent.place.stream.server.listWebhooks({
@@ -783,6 +780,10 @@ export default function WebhookManager() {
     if (!agent) return;
     loadWebhooks();
   }, [agent]);
+
+  if (!agent) {
+    return <Loading />;
+  }
 
   return (
     <ThemeProvider>
