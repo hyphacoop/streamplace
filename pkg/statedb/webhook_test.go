@@ -101,6 +101,11 @@ func TestWebhook(t *testing.T) {
 				}
 				err := state.CreateWebhook(webhook)
 				require.NoError(t, err)
+
+				// Debug: verify what was actually saved
+				savedWebhook, err := state.GetWebhook(webhook.ID, webhook.UserDID)
+				require.NoError(t, err)
+				t.Logf("Webhook %d: expected active=%v, saved active=%v", i, webhook.Active, savedWebhook.Active)
 			}
 
 			// with paging

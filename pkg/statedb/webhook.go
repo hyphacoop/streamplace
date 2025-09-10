@@ -49,19 +49,12 @@ func (state *StatefulDB) CreateWebhook(webhook *Webhook) error {
 		webhook.ID = uu.String()
 	}
 
-	// Set timestamps if not already set
 	if webhook.CreatedAt.IsZero() {
 		webhook.CreatedAt = time.Now()
 	}
 	if webhook.UpdatedAt.IsZero() {
 		webhook.UpdatedAt = time.Now()
 	}
-
-	// Log webhook data for debugging datatype mismatch
-	fmt.Printf("DEBUG: Creating webhook - ID: %s, UserDID: %s, URL: %s, Events: %q, Active: %v, Rewrite: %q, EventsLen: %d, RewriteLen: %d\n",
-		webhook.ID, webhook.UserDID, webhook.URL, string(webhook.Events), webhook.Active, string(webhook.Rewrite), len(webhook.Events), len(webhook.Rewrite))
-
-	// Create webhook with detailed error reporting
 	result := state.DB.Create(webhook)
 	if result.Error != nil {
 		return fmt.Errorf("database create failed - Error: %v, ErrorType: %T, RowsAffected: %d",
@@ -259,15 +252,15 @@ func WebhookFromLexiconInput(input *streamplace.ServerCreateWebhook_Input, userD
 		UserDID:   userDID,
 		URL:       input.Url,
 		Events:    eventsJSON,
-		Active:    true, // Default to true as per database schema
+		Active:    *input.Active, // Default to true as per database schema
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Rewrite:   rewriteJSON,
 	}
 
-	// Only override Active if explicitly provided
-	if input.Active != nil {
-		webhook.Active = *input.Active
+	// if active is nil, default to true
+	if input.Active == nil {
+		webhook.Active = true
 	}
 
 	if input.Prefix != nil {
