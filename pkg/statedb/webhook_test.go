@@ -114,7 +114,7 @@ func TestWebhook(t *testing.T) {
 			require.Len(t, webhooks, 2)
 
 			// with filter
-			activeWebhooks, err := state.ListWebhooks("did:web:example.com", 10, 0, map[string]any{"active": true})
+			activeWebhooks, err := state.ListWebhooks("did:web:example.com", 5, 0, map[string]any{"active": true})
 			require.NoError(t, err)
 			require.Len(t, activeWebhooks, 2)
 		})

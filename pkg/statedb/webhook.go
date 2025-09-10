@@ -55,7 +55,7 @@ func (state *StatefulDB) CreateWebhook(webhook *Webhook) error {
 	if webhook.UpdatedAt.IsZero() {
 		webhook.UpdatedAt = time.Now()
 	}
-	result := state.DB.Create(webhook)
+	result := state.DB.Select("*").Create(webhook)
 	if result.Error != nil {
 		return fmt.Errorf("database create failed - Error: %v, ErrorType: %T, RowsAffected: %d",
 			result.Error, result.Error, result.RowsAffected)
