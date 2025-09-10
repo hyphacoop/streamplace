@@ -1,4 +1,3 @@
-import { useNavigation } from "@react-navigation/native";
 import {
   Button,
   Dialog,
@@ -73,15 +72,6 @@ interface WebhookFormData {
 const EVENT_OPTIONS = [
   { value: "livestream", label: "Livestream Started" },
   { value: "chat", label: "Chat Messages" },
-];
-
-const PLACEHOLDER_OPTIONS = [
-  { key: "{username}", description: "The user's display name" },
-  { key: "{stream_title}", description: "The stream title" },
-  { key: "{viewer_count}", description: "Current viewer count" },
-  { key: "{game}", description: "Current game/category" },
-  { key: "{timestamp}", description: "Current timestamp" },
-  { key: "{url}", description: "Stream URL" },
 ];
 
 function WebhookRow({
@@ -613,7 +603,6 @@ function WebhookForm({
 }
 
 export default function WebhookManager() {
-  const navigation = useNavigation();
   const agent = usePDSAgent();
 
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null);
