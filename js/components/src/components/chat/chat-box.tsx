@@ -27,7 +27,6 @@ import {
   py,
   w,
 } from "../../lib/theme/atoms";
-import { usePDSAgent } from "../../streamplace-store/xrpc";
 import { Textarea } from "../ui/textarea";
 import { RenderChatMessage } from "./chat-message";
 import { EmojiData, EmojiSuggestions } from "./emoji-suggestions";
@@ -69,24 +68,6 @@ export function ChatBox({
   const replyTo = useReplyToMessage();
   const setReplyToMessage = useSetReplyToMessage();
   const textAreaRef = useRef<TextInput>(null);
-
-  // are we logged in?
-
-  let agent = usePDSAgent();
-
-  // if no agent, then show a spinner
-
-  if (!agent?.did) {
-    <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[1]]}>
-      <Loader size={16} />
-    </View>;
-  }
-
-  if (!agent?.did) {
-    <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
-      <Text>Log in to chat.</Text>
-    </View>;
-  }
 
   const authors = useMemo(() => {
     if (!chat) return null;
