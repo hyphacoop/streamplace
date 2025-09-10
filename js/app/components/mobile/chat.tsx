@@ -109,7 +109,6 @@ function ChatPanel() {
   const navigation = useNavigation();
   let canModerate = profile?.handle === handle;
 
-  console.log("agent", agent);
 
   return (
     <View
