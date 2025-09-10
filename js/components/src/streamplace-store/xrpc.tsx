@@ -4,8 +4,6 @@ import { useStreamplaceStore } from ".";
 
 export function usePDSAgent(): StreamplaceAgent | null {
   const oauthSession = useStreamplaceStore((state) => state.oauthSession);
-  //const nodeUrl = useStreamplaceStore((state) => state.url);
-
   // oauthsession is
   // - undefined when loading
   // - null when logged out, and
