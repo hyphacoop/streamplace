@@ -75,6 +75,19 @@ export const useCreateChatMessage = () => {
     const rt = new RichText({ text: msg.text });
     await rt.detectFacets(pdsAgent);
 
+    // filter out any facets that aren't in the allowed list
+    rt.facets = rt.facets?.filter((facet) => {
+      return (
+        // if all features are in the allowed list
+        facet.features.every((feature) =>
+          [
+            "app.bsky.richtext.facet#link",
+            "app.bsky.richtext.facet#mention",
+          ].includes(feature.$type),
+        )
+      );
+    });
+
     const record: PlaceStreamChatMessage.Record = {
       $type: "place.stream.chat.message",
       text: msg.text,
