@@ -66,6 +66,9 @@ const segmentedObject = (
           {obj.text}
         </Text>
       );
+    } else {
+      // render as normal text if we don't recognize the facet type
+      return <Text key={`unknown-facet-${index}`}>{obj.text}</Text>;
     }
   } else {
     return <Text key={`text-${index}`}>{obj.text}</Text>;
