@@ -154,8 +154,9 @@ export function Settings() {
 const DebugRecording = () => {
   const dispatch = useAppDispatch();
   const isReady = useAppSelector(selectIsReady);
-  const serverSettings = useAppSelector(selectServerSettings) || {};
+  const serverSettings = useAppSelector(selectServerSettings);
   const { url } = useStreamplaceNode();
+  const debugRecordingOn = serverSettings?.debugRecording === true;
 
   useEffect(() => {
     if (isReady) {
@@ -177,7 +178,7 @@ const DebugRecording = () => {
           </Text>
         </View>
         <Switch
-          value={serverSettings?.debugRecording === true}
+          value={debugRecordingOn}
           onValueChange={(value) => {
             if (value === true) {
               dispatch(

@@ -1,6 +1,7 @@
-import { Ellipsis, Reply, ShieldEllipsis } from "lucide-react-native";
+import { Ellipsis, Reply } from "lucide-react-native";
 import { ComponentProps, memo, useEffect, useRef, useState } from "react";
-import { FlatList, Platform, Pressable } from "react-native";
+import { Keyboard, Platform, Pressable } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Swipeable, {
   SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -17,7 +18,7 @@ import {
   useSetReplyToMessage,
   View,
 } from "../../";
-import { bg, flex, px, py, w } from "../../lib/theme/atoms";
+import { bg, flex, px, py } from "../../lib/theme/atoms";
 import { RenderChatMessage } from "./chat-message";
 import { ModView } from "./mod-view";
 
@@ -44,7 +45,7 @@ function LeftAction(prog: SharedValue<number>, drag: SharedValue<number>) {
 
   return (
     <Reanimated.View style={[styleAnimation]}>
-      <ShieldEllipsis color="white" />
+      <Ellipsis color="white" />
     </Reanimated.View>
   );
 }
@@ -87,6 +88,8 @@ const ActionsBar = memo(
             padding: 1,
             gap: 4,
             zIndex: 10,
+            maxWidth: 120,
+            flexShrink: 0,
           },
         ]}
       >
@@ -184,13 +187,18 @@ const ChatLine = memo(
           style={[
             py[1],
             px[2],
-            { position: "relative", borderRadius: 8 },
+            {
+              position: "relative",
+              borderRadius: 8,
+              minWidth: 0,
+              maxWidth: "100%",
+            },
             isHovered && bg.gray[950],
           ]}
           onPointerEnter={handleHoverIn}
           onPointerLeave={handleHoverOut}
         >
-          <Pressable>
+          <Pressable style={[{ minWidth: 0, maxWidth: "100%" }]}>
             <RenderChatMessage item={item} />
           </Pressable>
           <ActionsBar
@@ -215,9 +223,7 @@ const ChatLine = memo(
           }
           renderLeftActions={Platform.OS === "android" ? undefined : LeftAction}
           overshootFriction={9}
-          ref={(ref) => {
-            swipeableRef.current = ref;
-          }}
+          ref={swipeableRef}
           onSwipeableOpen={(r) => {
             if (r === (Platform.OS === "android" ? "right" : "left")) {
               setReply(item);
@@ -250,18 +256,42 @@ export function Chat({
   canModerate?: boolean;
 }) {
   const chat = useChat();
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+
+  const handleScroll = (event: any) => {
+    const { contentOffset } = event.nativeEvent;
+
+    const scrolledUp = contentOffset.y > 20; // threshold
+
+    if (scrolledUp !== isScrolledUp) {
+      setIsScrolledUp(scrolledUp);
+
+      // Dismiss keyboard when scrolled up
+      if (scrolledUp && Platform.OS !== "web") {
+        Keyboard.dismiss();
+      }
+    }
+  };
 
   if (!chat)
     return (
-      <View style={[flex.shrink[1]]}>
+      <View style={[flex.shrink[1], { minWidth: 0, maxWidth: "100%" }]}>
         <Text>Loading chaat...</Text>
       </View>
     );
 
   return (
-    <View style={[flex.shrink[1]].concat(propsStyle || [])}>
+    <View
+      style={[flex.shrink[1], { minWidth: 0, maxWidth: "100%" }].concat(
+        propsStyle || [],
+      )}
+    >
       <FlatList
-        style={[flex.grow[1], flex.shrink[1], w.percent[100]]}
+        style={[
+          flex.grow[1],
+          flex.shrink[1],
+          { minWidth: 0, maxWidth: "100%" },
+        ]}
         data={chat.slice(0, shownMessages)}
         inverted={true}
         keyExtractor={keyExtractor}
@@ -272,6 +302,8 @@ export function Chat({
         maxToRenderPerBatch={10}
         initialNumToRender={10}
         updateCellsBatchingPeriod={50}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
       <ModView />
     </View>

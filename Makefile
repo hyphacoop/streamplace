@@ -18,6 +18,10 @@ endif
 ifeq ($(BUILDARCH),x86_64)
 		BUILDARCH=amd64
 endif
+MACOS_VERSION_FLAG=
+ifeq ($(BUILDOS),darwin)
+	MACOS_VERSION_FLAG=-mmacosx-version-min=$(shell sw_vers -productVersion)
+endif
 BUILDDIR?=build-$(BUILDOS)-$(BUILDARCH)
 SHARED_PKG_CONFIG_PATH=$(shell pwd)/$(BUILDDIR)/lib/pkgconfig
 
@@ -88,7 +92,7 @@ dev:
 	cp ./util/streamplace-dev.sh $(BUILDDIR)/streamplace
 	$(MAKE) dev-rust
 	PKG_CONFIG_PATH=$(SHARED_PKG_CONFIG_PATH) \
-	go build -o $(BUILDDIR)/libstreamplace ./cmd/libstreamplace/...
+	CGO_LDFLAGS="$(MACOS_VERSION_FLAG)" go build -o $(BUILDDIR)/libstreamplace ./cmd/libstreamplace/...
 
 .PHONY: golangci-lint
 golangci-lint:
@@ -128,20 +132,18 @@ go-lexicons:
 .PHONY: js-lexicons
 js-lexicons:
 	node_modules/.bin/lex gen-api ./js/streamplace/src/lexicons $$(find ./lexicons -type f -name '*.json') --yes \
-		&& echo 'import { ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> ./js/streamplace/src/lexicons/index.ts \
-		&& sed -i.bak "s/'\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/app/'@atproto\/api\/src\/client\/types\/app/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/'\.\.\/\.\.\/\.\.\/com/'@atproto\/api\/src\/client\/types\/com/" $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyFeedDefs\ from\ '.\/defs'/import \{ AppBskyFeedDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons/types -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ AppBskyActorDefs\ from\ '.\/defs'/import \{ AppBskyActorDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoAdminDefs\ from\ .*$$/import \{ ComAtprotoAdminDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoRepoStrongRef\ from\ .*$$/import \{ ComAtprotoRepoStrongRef } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
-		&& sed -i.bak "s/import\ \*\ as\ ComAtprotoModerationDefs\ from\ .*$$/import \{ ComAtprotoModerationDefs } from '@atproto\/api'/" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& rm -rf ./js/streamplace/src/lexicons/types/com ./js/streamplace/src/lexicons/types/app \
+		&& sed -i.bak "s/^..port.*app\/bsky.*//g" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/^..port.*com\/atproto.*//g" $$(find ./js/streamplace/src/lexicons -type f) \
+		&& sed -i.bak "s/\(..port .*\)\.js\(.*\)/\1\2/g" $$(find ./js/streamplace/src/lexicons -type f) \
+ 		&& sed -i.bak 's/AppBskyGraphBlock\.Main/AppBskyGraphBlock\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+ 		&& sed -i.bak 's/PlaceStreamChatProfile\.Main/PlaceStreamChatProfile\.Record/' $$(find ./js/streamplace/src/lexicons/types/place/stream -type f) \
+		&& for x in $$(find ./js/streamplace/src/lexicons -type f -name '*.ts'); do \
+			echo 'import { AppBskyRichtextFacet, AppBskyGraphBlock, ComAtprotoRepoStrongRef, AppBskyActorDefs, ComAtprotoSyncListRepos, AppBskyActorGetProfile, AppBskyFeedGetFeedSkeleton, ComAtprotoIdentityResolveHandle, ComAtprotoModerationCreateReport, ComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoDescribeRepo, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords, ComAtprotoRepoPutRecord, ComAtprotoRepoUploadBlob, ComAtprotoServerDescribeServer, ComAtprotoSyncGetRecord, ComAtprotoSyncListReposComAtprotoRepoCreateRecord, ComAtprotoRepoDeleteRecord, ComAtprotoRepoGetRecord, ComAtprotoRepoListRecords } from "@atproto/api"' >> $$x; \
+		done \
 		&& npx prettier --write $$(find ./js/streamplace/src/lexicons -type f -name '*.ts') \
 		&& find . | grep bak$$ | xargs rm
+
 
 .PHONY: md-lexicons
 md-lexicons:
@@ -282,31 +284,44 @@ ci-npm-release: install
 	echo //registry.npmjs.org/:_authToken=$$NPM_TOKEN > ~/.npmrc \
 	&& npx lerna publish from-package --yes
 
+ANDROID_KEYSTORE_PASSWORD?=streamplace
+ANDROID_KEYSTORE_ALIAS?=alias_name
+ANDROID_KEYSTORE_BASE64?=
+
+.PHONY: android-keystore
+android-keystore:
+	if [ -n "$$ANDROID_KEYSTORE_BASE64" ]; then \
+		echo "$$ANDROID_KEYSTORE_BASE64" | base64 -d > my-release-key.keystore; \
+	fi; \
+	if [ ! -f my-release-key.keystore ]; then \
+		keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000 -storepass $(ANDROID_KEYSTORE_PASSWORD) -keypass $(ANDROID_KEYSTORE_PASSWORD) -dname "CN=Streamplace, OU=Streamplace, O=Streamplace, L=Streamplace, S=Streamplace, C=US"; \
+	fi
+
 .PHONY: android
 android: app .build/bundletool.jar
 	$(MAKE) android-release
 	$(MAKE) android-debug
 
 .PHONY: android-release
-android-release: .build/bundletool.jar
+android-release: .build/bundletool.jar android-keystore
 	export NODE_ENV=production \
 	&& cd ./js/app/android \
 	&& ./gradlew :app:bundleRelease \
 	&& cd - \
 	&& mv ./js/app/android/app/build/outputs/bundle/release/app-release.aab ./bin/streamplace-$(VERSION)-android-release.aab \
 	&& cd bin \
-	&& java -jar ../.build/bundletool.jar build-apks --ks ../my-release-key.keystore --ks-key-alias alias_name --ks-pass pass:aquareum --bundle=streamplace-$(VERSION)-android-release.aab --output=streamplace-$(VERSION)-android-release.apks --mode=universal \
+	&& java -jar ../.build/bundletool.jar build-apks --ks ../my-release-key.keystore --ks-key-alias alias_name --ks-pass pass:$(ANDROID_KEYSTORE_PASSWORD) --bundle=streamplace-$(VERSION)-android-release.aab --output=streamplace-$(VERSION)-android-release.apks --mode=universal \
 	&& unzip streamplace-$(VERSION)-android-release.apks && mv universal.apk streamplace-$(VERSION)-android-release.apk && rm toc.pb
 
 .PHONY: android-debug
-android-debug: .build/bundletool.jar
+android-debug: .build/bundletool.jar android-keystore
 	export NODE_ENV=production \
 	&& cd ./js/app/android \
 	&& ./gradlew :app:bundleDebug \
 	&& cd - \
 	&& mv ./js/app/android/app/build/outputs/bundle/debug/app-debug.aab ./bin/streamplace-$(VERSION)-android-debug.aab \
 	&& cd bin \
-	&& java -jar ../.build/bundletool.jar build-apks --ks ../my-release-key.keystore --ks-key-alias alias_name --ks-pass pass:aquareum --bundle=streamplace-$(VERSION)-android-debug.aab --output=streamplace-$(VERSION)-android-debug.apks --mode=universal \
+	&& java -jar ../.build/bundletool.jar build-apks --ks ../my-release-key.keystore --ks-key-alias alias_name --ks-pass pass:$(ANDROID_KEYSTORE_PASSWORD) --bundle=streamplace-$(VERSION)-android-debug.aab --output=streamplace-$(VERSION)-android-debug.apks --mode=universal \
 	&& unzip streamplace-$(VERSION)-android-debug.apks && mv universal.apk streamplace-$(VERSION)-android-debug.apk && rm toc.pb
 
 .PHONY: ios
@@ -633,8 +648,6 @@ deb-pkg:
 		-a $(SP_ARCH_NAME) \
 		-p bin/streamplace-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
 		--deb-systemd=util/systemd/streamplace.service \
-		--deb-systemd-auto-start \
-		--deb-systemd-enable \
 		--deb-systemd-restart-after-upgrade \
 		--after-install=util/systemd/after-install.sh \
 		--description="Live video for the AT Protocol. Solving video for everybody forever." \
@@ -643,8 +656,6 @@ deb-pkg:
 		-n streamplace-default-http \
 		-a $(SP_ARCH_NAME) \
 		-d streamplace \
-		--deb-systemd-auto-start \
-		--deb-systemd-enable \
 		--deb-systemd-restart-after-upgrade \
 		-p bin/streamplace-default-http-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
 		--description="Installing this package will install Streamplace as the default HTTP server on ports 80 and 443." \

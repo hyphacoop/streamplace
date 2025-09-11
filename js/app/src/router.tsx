@@ -23,7 +23,6 @@ import {
   Home,
   LogIn,
   Menu,
-  Notebook,
   PanelLeftClose,
   PanelLeftOpen,
   Settings as SettingsIcon,
@@ -64,17 +63,14 @@ import { useAppDispatch, useAppSelector } from "store/hooks";
 import { H3, Text, useTheme, View } from "tamagui";
 import AboutScreen from "./screens/about";
 import AppReturnScreen from "./screens/app-return";
-import AVSyncScreen from "./screens/av-sync";
 import PopoutChat from "./screens/chat-popout";
 import DownloadScreen from "./screens/download";
 import EmbedScreen from "./screens/embed";
+import InfoWidgetEmbed from "./screens/info-widget-embed";
 import LiveDashboard from "./screens/live-dashboard";
 import MultiScreen from "./screens/multi";
-import StreamScreen from "./screens/stream";
 import SupportScreen from "./screens/support";
 
-// probabl should move this
-import SignUp from "components/login/signup";
 import KeyManager from "components/settings/key-manager";
 import { loadStateFromStorage } from "features/base/sidebarSlice";
 import { store } from "store/store";
@@ -114,13 +110,13 @@ type RootStackParamList = {
   GoLive: undefined;
   LiveDashboard: undefined;
   Login: undefined;
-  Signup: undefined;
   AVSync: undefined;
   AppReturn: { scheme: string };
   About: undefined;
   Download: undefined;
   PopoutChat: { user: string };
   Embed: { user: string };
+  InfoWidgetEmbed: undefined;
   LegacyStream: { user: string };
   MobileGoLive: undefined;
 };
@@ -150,13 +146,13 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       GoLive: "golive",
       LiveDashboard: "live",
       Login: "login",
-      Signup: "signup",
       AVSync: "sync-test",
       AppReturn: "app-return/:scheme",
       About: "about",
       Download: "download",
       PopoutChat: "chat-popout/:user",
       Embed: "embed/:user",
+      InfoWidgetEmbed: "info-widget",
       LegacyStream: "legacy/:user",
       MobileGoLive: "mobile-golive",
     },
@@ -511,29 +507,11 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
-          name="AVSync"
-          component={AVSyncScreen}
-          options={{
-            drawerLabel: () => null,
-            drawerItemStyle: { display: "none" },
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
           name="Login"
           component={Login}
           options={{
             drawerIcon: () => <LogIn />,
             drawerLabel: () => <Text>Login</Text>,
-          }}
-        />
-        <Drawer.Screen
-          name="Signup"
-          component={SignUp}
-          options={{
-            drawerIcon: () => <Notebook />,
-            drawerItemStyle: { display: "none" },
-            drawerLabel: () => <Text>Sign up</Text>,
           }}
         />
         <Drawer.Screen
@@ -556,12 +534,12 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
-          name="LegacyStream"
-          component={StreamScreen}
+          name="InfoWidgetEmbed"
+          component={InfoWidgetEmbed}
           options={{
-            headerTitle: "Stream",
+            drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
-            title: "Streamplace Stream",
+            headerShown: false,
           }}
         />
         <Drawer.Screen

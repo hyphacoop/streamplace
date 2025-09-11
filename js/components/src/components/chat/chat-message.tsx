@@ -7,16 +7,7 @@ import { memo, useCallback } from "react";
 import { Linking, View } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
 import { RichtextSegment, segmentize } from "../../lib/facet";
-import {
-  borders,
-  flex,
-  gap,
-  ml,
-  mr,
-  opacity,
-  pl,
-  w,
-} from "../../lib/theme/atoms";
+import { borders, flex, gap, ml, mr, opacity, pl } from "../../lib/theme/atoms";
 import { atoms, colors, layout } from "../ui";
 
 interface Facet {
@@ -75,6 +66,9 @@ const segmentedObject = (
           {obj.text}
         </Text>
       );
+    } else {
+      // render as normal text if we don't recognize the facet type
+      return <Text key={`unknown-facet-${index}`}>{obj.text}</Text>;
     }
   } else {
     return <Text key={`text-${index}`}>{obj.text}</Text>;
@@ -114,14 +108,15 @@ export const RenderChatMessage = memo(
         hour12: false,
       });
     }, []);
+    const replyTo = (item.replyTo as ChatMessageViewHydrated) || null;
     return (
       <>
-        {item.replyTo && showReply && (
+        {replyTo && showReply && (
           <View
             style={[
               gap.all[2],
               layout.flex.row,
-              w.percent[100],
+              { minWidth: 0, maxWidth: "100%" },
               borders.left.width.medium,
               borders.left.color.gray[700],
               ml[4],
@@ -129,14 +124,21 @@ export const RenderChatMessage = memo(
               opacity[80],
             ]}
           >
-            <Text numberOfLines={1} style={[flex.shrink[1], mr[4]]}>
+            <Text
+              numberOfLines={1}
+              style={[
+                flex.shrink[1],
+                mr[4],
+                { minWidth: 0, overflow: "hidden" },
+              ]}
+            >
               <Text
                 style={{
-                  color: getRgbColor((item.replyTo.chatProfile as any).color),
+                  color: getRgbColor(replyTo.chatProfile?.color),
                   fontWeight: "thin",
                 }}
               >
-                @{(item.replyTo.author as any).handle}
+                @{(replyTo.author as any).handle}
               </Text>{" "}
               <Text
                 style={{
@@ -144,12 +146,18 @@ export const RenderChatMessage = memo(
                   fontStyle: "italic",
                 }}
               >
-                {(item.replyTo.record as any).text}
+                {replyTo.record.text}
               </Text>
             </Text>
           </View>
         )}
-        <View style={[gap.all[2], layout.flex.row, w.percent[100]]}>
+        <View
+          style={[
+            gap.all[2],
+            layout.flex.row,
+            { minWidth: 0, maxWidth: "100%" },
+          ]}
+        >
           {showTime && (
             <Text
               style={{
@@ -160,7 +168,11 @@ export const RenderChatMessage = memo(
               {formatTime(item.record.createdAt)}
             </Text>
           )}
-          <Text weight="bold" color="default" style={[flex.shrink[1]]}>
+          <Text
+            weight="bold"
+            color="default"
+            style={[flex.shrink[1], { minWidth: 0, overflow: "hidden" }]}
+          >
             <Text
               style={[
                 {
