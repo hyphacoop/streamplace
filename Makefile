@@ -75,8 +75,7 @@ dev-setup-meson-configure:
 
 .PHONY: dev-setup-meson-compile
 dev-setup-meson-compile:
-	meson compile -C $(BUILDDIR) streamplace
-	meson install --no-rebuild -C $(BUILDDIR)
+	meson install -C $(BUILDDIR)
 
 .PHONY: dev-rust
 dev-rust:
