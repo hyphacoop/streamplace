@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lmittmann/tint"
@@ -36,6 +37,9 @@ type StatefulDB struct {
 	model model.Model
 	// pokeQueue is used to wake up the queue processor when a new task is enqueued
 	pokeQueue chan struct{}
+	// pgLockConn is used to hold a connection to the database for locking
+	pgLockConn   *gorm.DB
+	pgLockConnMu sync.Mutex
 }
 
 // list tables here so we can migrate them
@@ -51,9 +55,9 @@ var StatefulDBModels = []any{
 var NoPostgresDatabaseCode = "3D000"
 
 // Stateful database for storing private streamplace state
-func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier, model model.Model) (*StatefulDB, error) {
+func MakeDB(ctx context.Context, cli *config.CLI, noter notificationpkg.FirebaseNotifier, model model.Model) (*StatefulDB, error) {
 	dbURL := cli.DBURL
-	log.Log(context.Background(), "starting stateful database", "dbURL", redactDBURL(dbURL))
+	log.Log(ctx, "starting stateful database", "dbURL", redactDBURL(dbURL))
 	var dial gorm.Dialector
 	var dbType DBType
 	if dbURL == ":memory:" {
@@ -98,14 +102,21 @@ func MakeDB(cli *config.CLI, noter notificationpkg.FirebaseNotifier, model model
 			return nil, err
 		}
 	}
-	return &StatefulDB{
+	state := &StatefulDB{
 		DB:        db,
 		CLI:       cli,
 		Type:      dbType,
 		locks:     NewNamedLocks(),
 		model:     model,
 		pokeQueue: make(chan struct{}, 1),
-	}, nil
+	}
+	if state.Type == DBTypePostgres {
+		err = state.startPostgresLockerConn(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error starting postgres locker connection: %w", err)
+		}
+	}
+	return state, nil
 }
 
 func openDB(dial gorm.Dialector) (*gorm.DB, error) {
@@ -113,7 +124,7 @@ func openDB(dial gorm.Dialector) (*gorm.DB, error) {
 		slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
 			TimeFormat: time.RFC3339,
 		})),
-		// slogGorm.WithTraceAll(),
+		slogGorm.WithTraceAll(),
 	)
 
 	return gorm.Open(dial, &gorm.Config{
