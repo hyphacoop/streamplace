@@ -43,10 +43,10 @@ A webhook configuration for receiving Streamplace events.
 
 **Properties:**
 
-| Name   | Type     | Req'd | Description                     | Constraints     |
-| ------ | -------- | ----- | ------------------------------- | --------------- |
-| `from` | `string` | ✅    | Text to search for and replace. | Max Length: 100 |
-| `to`   | `string` | ✅    | Text to replace with.           | Max Length: 100 |
+| Name   | Type     | Req'd | Description                     | Constraints                       |
+| ------ | -------- | ----- | ------------------------------- | --------------------------------- |
+| `from` | `string` | ✅    | Text to search for and replace. | Min Length: 1<br/>Max Length: 100 |
+| `to`   | `string` | ✅    | Text to replace with.           | Max Length: 100                   |
 
 ---
 
@@ -139,6 +139,7 @@ A webhook configuration for receiving Streamplace events.
         "from": {
           "type": "string",
           "maxLength": 100,
+          "minLength": 1,
           "description": "Text to search for and replace."
         },
         "to": {

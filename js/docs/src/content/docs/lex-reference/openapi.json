@@ -1508,6 +1508,7 @@
           "from": {
             "type": "string",
             "description": "Text to search for and replace.",
+            "minLength": 1,
             "maxLength": 100
           },
           "to": {
