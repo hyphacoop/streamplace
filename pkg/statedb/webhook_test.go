@@ -97,7 +97,7 @@ func TestWebhook(t *testing.T) {
 					UserDID: "did:web:example.com",
 					URL:     "https://example.com/" + string(rune(i)),
 					Events:  []byte(`["test"]`),
-					Active:  true,
+					Active:  i%2 == 0,
 				}
 				t.Logf("webhook should be %v", webhook.Active)
 				err := state.CreateWebhook(webhook)
@@ -117,7 +117,7 @@ func TestWebhook(t *testing.T) {
 			// with filter
 			activeWebhooks, err := state.ListWebhooks("did:web:example.com", 5, 0, map[string]any{"active": true})
 			require.NoError(t, err)
-			require.Len(t, activeWebhooks, 5)
+			require.Len(t, activeWebhooks, 2)
 		})
 
 		t.Run("create webhook with empty URL fails", func(t *testing.T) {

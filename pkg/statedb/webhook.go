@@ -18,7 +18,7 @@ type Webhook struct {
 	URL     string `gorm:"column:url;not null"`
 
 	Events        json.RawMessage `gorm:"column:events;type:json"`
-	Active        bool            `gorm:"column:active;default:true"`
+	Active        bool            `gorm:"column:active;default:false"`
 	Prefix        string          `gorm:"column:prefix"`
 	Suffix        string          `gorm:"column:suffix"`
 	Rewrite       json.RawMessage `gorm:"column:rewrite;type:json"`

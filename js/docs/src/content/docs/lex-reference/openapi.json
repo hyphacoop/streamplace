@@ -82,7 +82,7 @@
                   "active": {
                     "type": "boolean",
                     "description": "Whether this webhook should be active upon creation.",
-                    "default": true
+                    "default": false
                   },
                   "prefix": {
                     "type": "string",

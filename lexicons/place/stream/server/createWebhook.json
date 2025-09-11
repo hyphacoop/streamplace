@@ -27,7 +27,7 @@
             },
             "active": {
               "type": "boolean",
-              "default": true,
+              "default": false,
               "description": "Whether this webhook should be active upon creation."
             },
             "prefix": {

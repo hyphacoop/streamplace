@@ -24,16 +24,16 @@ Create a new webhook for receiving Streamplace events.
 
 **Schema Type:** `object`
 
-| Name          | Type                                                                                                   | Req'd | Description                                          | Constraints     |
-| ------------- | ------------------------------------------------------------------------------------------------------ | ----- | ---------------------------------------------------- | --------------- |
-| `url`         | `string`                                                                                               | ✅    | The webhook URL where events will be sent.           | Format: `uri`   |
-| `events`      | Array of `string`                                                                                      | ✅    | The types of events this webhook should receive.     |                 |
-| `active`      | `boolean`                                                                                              | ❌    | Whether this webhook should be active upon creation. | Default: `true` |
-| `prefix`      | `string`                                                                                               | ❌    | Text to prepend to webhook messages.                 | Max Length: 100 |
-| `suffix`      | `string`                                                                                               | ❌    | Text to append to webhook messages.                  | Max Length: 100 |
-| `rewrite`     | Array of [`place.stream.server.defs#rewriteRule`](/lex-reference/place-stream-server-defs#rewriterule) | ❌    | Text replacement rules for webhook messages.         |                 |
-| `name`        | `string`                                                                                               | ❌    | A user-friendly name for this webhook.               | Max Length: 100 |
-| `description` | `string`                                                                                               | ❌    | A description of what this webhook is used for.      | Max Length: 500 |
+| Name          | Type                                                                                                   | Req'd | Description                                          | Constraints      |
+| ------------- | ------------------------------------------------------------------------------------------------------ | ----- | ---------------------------------------------------- | ---------------- |
+| `url`         | `string`                                                                                               | ✅    | The webhook URL where events will be sent.           | Format: `uri`    |
+| `events`      | Array of `string`                                                                                      | ✅    | The types of events this webhook should receive.     |                  |
+| `active`      | `boolean`                                                                                              | ❌    | Whether this webhook should be active upon creation. | Default: `false` |
+| `prefix`      | `string`                                                                                               | ❌    | Text to prepend to webhook messages.                 | Max Length: 100  |
+| `suffix`      | `string`                                                                                               | ❌    | Text to append to webhook messages.                  | Max Length: 100  |
+| `rewrite`     | Array of [`place.stream.server.defs#rewriteRule`](/lex-reference/place-stream-server-defs#rewriterule) | ❌    | Text replacement rules for webhook messages.         |                  |
+| `name`        | `string`                                                                                               | ❌    | A user-friendly name for this webhook.               | Max Length: 100  |
+| `description` | `string`                                                                                               | ❌    | A description of what this webhook is used for.      | Max Length: 500  |
 
 **Output:**
 
@@ -85,7 +85,7 @@ Create a new webhook for receiving Streamplace events.
             },
             "active": {
               "type": "boolean",
-              "default": true,
+              "default": false,
               "description": "Whether this webhook should be active upon creation."
             },
             "prefix": {
