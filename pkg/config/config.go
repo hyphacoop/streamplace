@@ -203,6 +203,18 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 
 var StreamplaceSchemePrefix = "streamplace://"
 
+func (cli *CLI) OwnPublicURL() string {
+	//  No errors because we know it's valid from AddrFlag
+	host, port, _ := net.SplitHostPort(cli.HTTPAddr)
+
+	ip := net.ParseIP(host)
+	if host == "" || ip.IsUnspecified() {
+		host = "127.0.0.1"
+	}
+	addr := net.JoinHostPort(host, port)
+	return fmt.Sprintf("http://%s", addr)
+}
+
 func (cli *CLI) OwnInternalURL() string {
 	//  No errors because we know it's valid from AddrFlag
 	host, port, _ := net.SplitHostPort(cli.HTTPInternalAddr)
