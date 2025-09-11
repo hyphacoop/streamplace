@@ -123,7 +123,8 @@ func (state *StatefulDB) GetActiveWebhooksForUser(userDID string, eventType stri
 	var webhooks []Webhook
 	var err error
 	if state.Type == DBTypePostgres {
-		err = state.DB.Where("user_did = ? AND active = ? AND events @> ?",
+		// cast to jsonb and use @> operator here
+		err = state.DB.Where("user_did = ? AND active = ? AND events::jsonb @> ?",
 			userDID, true, fmt.Sprintf(`["%s"]`, eventType)).Find(&webhooks).Error
 	} else {
 		// SQLite: Use JSON_EXTRACT with JSON_EACH to check if array contains the event
