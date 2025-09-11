@@ -30,7 +30,8 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
-	"stream.place/streamplace/pkg/replication/iroh"
+	"stream.place/streamplace/pkg/replication"
+	"stream.place/streamplace/pkg/replication/boring"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -43,7 +44,7 @@ import (
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
 
-	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
+	_ "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 // Additional jobs that can be injected by platforms
@@ -305,21 +306,9 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		log.Log(ctx, "successfully initialized hardware signer", "address", addr)
 		signer = hwsigner
 	}
-	irohEndpoint, err2 := irohStreamplace.NewEndpoint()
-	if err2.AsError() != nil {
-		return err2.AsError()
-	}
-	// TODO: something more useful
-	defaultTopic := "iroh-topic"
-	rep, err := iroh.NewIrohReplicator(ctx, irohEndpoint, defaultTopic)
-	if err != nil {
-		return err
-	}
-	addr := irohEndpoint.NodeAddr()
-	fmt.Printf("iroh running, ID: %s\nHome Relay: %s\n", addr.NodeId().String(), *addr.RelayUrl())
+	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 
 	mod, err := model.MakeDB(cli.DataFilePath([]string{"index"}))
-
 	if err != nil {
 		return err
 	}
@@ -377,13 +366,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: based on a flag, subscribe
-	// rec, err2 := irohStreamplace.NewReceiver(irohEndpoint, mm)
-	// if err2.AsError() != nil {
-	// 	return err2.AsError()
-	// }
-	// rec.Subscribe(peer, defaultTopic)
 
 	ms, err := media.MakeMediaSigner(ctx, &cli, cli.StreamerName, signer)
 	if err != nil {

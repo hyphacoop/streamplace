@@ -29,10 +29,9 @@ import (
 	"github.com/piprate/json-gold/ld"
 
 	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
-)
 
-// #cgo pkg-config: streamplacedeps
-import "C"
+	_ "stream.place/streamplace/pkg/streamplacedeps"
+)
 
 const CertFile = "cert.pem"
 const SegmentsDir = "segments"

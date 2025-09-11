@@ -21,6 +21,8 @@ if get_option('default_library') == 'shared'
       'cd "@2@/../.." && @0@ && cp "@2@/../../target/debug/libiroh_streamplace.@3@" "@1@/libiroh_streamplace.@3@"'.format(cargo_cmd, meson.current_build_dir(), meson.current_source_dir(), ext),
     ],
     build_by_default: true,
+    install: true,
+    install_dir: get_option('libdir'),
   )
 else
   cargo_cmd = '@0@ build --release --target-dir "@1@"'.format(prog_cargo.full_path(), meson.current_build_dir())
@@ -42,5 +44,7 @@ else
       'cd "@2@" && @0@ && cp "@3@/release/libiroh_streamplace.a" "@1@/libiroh_streamplace.a"'.format(cargo_cmd, meson.current_build_dir(), meson.current_source_dir(), archive_dir),
     ],
     build_by_default: true,
+    install: true,
+    install_dir: get_option('libdir'),
   )
 endif
