@@ -28,7 +28,7 @@ export interface StreamplaceState {
   liveUsersRefresh: number;
   liveUsersLoading: boolean;
   liveUsersError: string | null;
-  oauthSession: SessionManager | null;
+  oauthSession: SessionManager | null | undefined;
   handle: string | null;
   chatProfile: PlaceStreamChatProfile.Record | null;
 }
