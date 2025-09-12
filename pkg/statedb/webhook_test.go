@@ -215,6 +215,7 @@ func TestWebhook(t *testing.T) {
 				UserDID: "did:web:example.com",
 				URL:     "https://example.com",
 				Events:  []byte(`["test"]`),
+				Active: true,
 			}
 			err := state.CreateWebhook(webhook)
 			require.NoError(t, err)
