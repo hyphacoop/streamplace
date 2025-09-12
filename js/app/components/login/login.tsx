@@ -121,8 +121,14 @@ export default function Login() {
             { justifyContent: "center" },
           ]}
         >
+          {/* link to bsky.app/settings */}
           <Button
-            onPress={() => dispatch(logout())}
+            onPress={() => {
+              const u = new URL(
+                "https://bsky.app/profile/" + userProfile.handle,
+              );
+              Linking.openURL(u.toString());
+            }}
             variant="secondary"
             leftIcon={<UserRoundPen color="white" />}
             style={[
@@ -134,7 +140,7 @@ export default function Login() {
             ]}
           >
             <Text style={[{ color: "white", textAlign: "center" }]}>
-              Edit profile (Bluesky)
+              Edit profile (on Bluesky)
             </Text>
           </Button>
         </View>
@@ -170,7 +176,8 @@ export default function Login() {
           <View
             style={[
               zero.px[8],
-              zero.py[8],
+              zero.pt[10],
+              zero.pb[6],
               zero.r.lg,
               { backgroundColor: theme.colors.card },
               { width: "100%" },
@@ -240,33 +247,17 @@ export default function Login() {
             </View>
             <View
               style={[
-                { flexDirection: "row", justifyContent: "space-between" },
+                { flexDirection: "row", justifyContent: "flex-end" },
+                zero.gap.all[3],
               ]}
             >
-              <Pressable
-                onPress={() => navigation.navigate("Signup")}
-                style={[
-                  {
-                    backgroundColor: "#333",
-                    padding: 12,
-                    borderRadius: 8,
-                  },
-                ]}
-              >
+              <Button onPress={() => onSignup()} variant="ghost">
                 <Text style={[{ color: "white" }]}>Sign Up on Bluesky</Text>
-              </Pressable>
-              <Pressable
+              </Button>
+              <Button
                 onPress={submit}
                 disabled={loginState.loading}
-                style={[
-                  zero.px[6],
-                  {
-                    backgroundColor: "#007AFF",
-                    padding: 12,
-                    borderRadius: 8,
-                    opacity: loginState.loading ? 0.6 : 1,
-                  },
-                ]}
+                style={[zero.px[6]]}
               >
                 <Text style={[{ color: "white" }]}>
                   {loginState.loading ? (
@@ -275,7 +266,7 @@ export default function Login() {
                     "Log in"
                   )}
                 </Text>
-              </Pressable>
+              </Button>
             </View>
           </View>
         </View>

@@ -43,7 +43,6 @@ import {
   Home,
   LogIn,
   Menu,
-  Notebook,
   PanelLeftClose,
   PanelLeftOpen,
   Settings as SettingsIcon,
@@ -540,15 +539,6 @@ export function StreamplaceDrawer() {
           options={{
             drawerIcon: () => <LogIn color={foregroundColor} size={24} />,
             drawerLabel: () => <Text variant="h5">Login</Text>,
-          }}
-        />
-        <Drawer.Screen
-          name="Signup"
-          component={SignUp}
-          options={{
-            drawerIcon: () => <Notebook color={foregroundColor} size={24} />,
-            drawerItemStyle: { display: "none" },
-            drawerLabel: () => <Text variant="h5">Sign up</Text>,
           }}
         />
         <Drawer.Screen
