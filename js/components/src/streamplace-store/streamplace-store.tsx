@@ -2,6 +2,7 @@ import { SessionManager } from "@atproto/api/dist/session-manager";
 import { useContext } from "react";
 import { PlaceStreamChatProfile, PlaceStreamLivestream } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
+import storage from "../storage";
 import { StreamplaceContext } from "../streamplace-provider/context";
 
 // there are three categories of XRPC that we need to handle:
@@ -46,47 +47,10 @@ export const makeStreamplaceStore = ({
 }: {
   url: string;
 }): StoreApi<StreamplaceState> => {
-  // get local storage if exists
-  const getStorage = () => {
-    if (typeof window !== "undefined" && window.localStorage) {
-      return window.localStorage;
-    }
-    return null;
-  };
-
-  const storage = getStorage();
   const VOLUME_STORAGE_KEY = "globalVolume";
   const MUTED_STORAGE_KEY = "globalMuted";
 
-  // Load initial volume state from storage
-  let initialVolume = 1.0;
-  let initialMuted = false;
-
-  if (storage) {
-    try {
-      const storedVolume = storage.getItem(VOLUME_STORAGE_KEY);
-      const storedMuted = storage.getItem(MUTED_STORAGE_KEY);
-
-      if (storedVolume) {
-        const parsedVolume = parseFloat(storedVolume);
-        if (
-          Number.isFinite(parsedVolume) &&
-          parsedVolume >= 0 &&
-          parsedVolume <= 1
-        ) {
-          initialVolume = parsedVolume;
-        }
-      }
-
-      if (storedMuted) {
-        initialMuted = storedMuted === "true";
-      }
-    } catch (e) {
-      console.warn("Failed to load volume settings from storage:", e);
-    }
-  }
-
-  return createStore<StreamplaceState>()((set) => ({
+  const store = createStore<StreamplaceState>()((set) => ({
     url,
     liveUsers: null,
     setLiveUsers: (opts: {
@@ -106,9 +70,9 @@ export const makeStreamplaceStore = ({
     handle: null,
     chatProfile: null,
 
-    // Volume state
-    volume: initialVolume,
-    muted: initialMuted,
+    // Volume state - start with defaults
+    volume: 1.0,
+    muted: false,
 
     setVolume: (volume: number) => {
       // Ensure the value is finite and within bounds
@@ -123,17 +87,55 @@ export const makeStreamplaceStore = ({
       // Auto-unmute if volume > 0
       if (clampedVolume > 0) {
         set({ muted: false });
-        storage?.setItem(MUTED_STORAGE_KEY, "false");
+        storage.setItem(MUTED_STORAGE_KEY, "false").catch(console.error);
       }
 
-      storage?.setItem(VOLUME_STORAGE_KEY, clampedVolume.toString());
+      storage
+        .setItem(VOLUME_STORAGE_KEY, clampedVolume.toString())
+        .catch(console.error);
     },
 
     setMuted: (muted: boolean) => {
       set({ muted });
-      storage?.setItem(MUTED_STORAGE_KEY, muted.toString());
+      storage.setItem(MUTED_STORAGE_KEY, muted.toString()).catch(console.error);
     },
   }));
+
+  // Load initial volume state from storage asynchronously
+  (async () => {
+    try {
+      const storedVolume = await storage.getItem(VOLUME_STORAGE_KEY);
+      const storedMuted = await storage.getItem(MUTED_STORAGE_KEY);
+
+      let initialVolume = 1.0;
+      let initialMuted = false;
+
+      if (storedVolume) {
+        const parsedVolume = parseFloat(storedVolume);
+        if (
+          Number.isFinite(parsedVolume) &&
+          parsedVolume >= 0 &&
+          parsedVolume <= 1
+        ) {
+          initialVolume = parsedVolume;
+        }
+      }
+
+      if (storedMuted) {
+        initialMuted = storedMuted === "true";
+      }
+
+      // Update the store with loaded values
+      store.setState({
+        volume: initialVolume,
+        muted: initialMuted,
+      });
+    } catch (e) {
+      console.warn("Failed to load volume settings from storage:", e);
+    }
+  })();
+
+  return store;
 };
 
 export function getStreamplaceStoreFromContext(): StreamplaceStore {
