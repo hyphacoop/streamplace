@@ -43,6 +43,8 @@ import (
 	"stream.place/streamplace/pkg/api"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
+
+	_ "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 // Additional jobs that can be injected by platforms
