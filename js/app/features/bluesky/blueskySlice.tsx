@@ -9,6 +9,7 @@ import {
 import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { OAuthSession } from "@streamplace/atproto-oauth-client-react-native";
+import { storage } from "@streamplace/components";
 import { DID_KEY, hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import {
@@ -16,7 +17,6 @@ import {
   StreamplaceState,
 } from "features/streamplace/streamplaceSlice";
 import { Platform } from "react-native";
-import Storage from "storage";
 import {
   LivestreamViewHydrated,
   PlaceStreamChatProfile,
@@ -146,10 +146,10 @@ export const blueskySlice = createAppSlice({
         typeof err?.message === "string" &&
         err.message.includes("oauth session revoked")
       ) {
-        Storage.removeItem("did").catch((e) => {
+        storage.removeItem("did").catch((e) => {
           console.error("Error removing did", e);
         });
-        Storage.removeItem(STORED_KEY_KEY).catch((e) => {
+        storage.removeItem(STORED_KEY_KEY).catch((e) => {
           console.error("Error removing stored key", e);
         });
         const u = new URL(document.location.href);
@@ -170,9 +170,9 @@ export const blueskySlice = createAppSlice({
         const client = await createOAuthClient(streamplace.url);
         const anonPDSAgent = new StreamplaceAgent(streamplace.url);
         const maybeDIDs = await Promise.all([
-          Storage.getItem(DID_KEY),
-          Storage.getItem("@@atproto/oauth-client-browser(sub)"),
-          Storage.getItem("@@atproto/oauth-client-react-native:did:(sub)"),
+          storage.getItem(DID_KEY),
+          storage.getItem("@@atproto/oauth-client-browser(sub)"),
+          storage.getItem("@@atproto/oauth-client-react-native:did:(sub)"),
         ]);
         const did = maybeDIDs.find((d) => d !== null) || null;
         let session: OAuthSession | null = null;
@@ -197,7 +197,7 @@ export const blueskySlice = createAppSlice({
           const { client, session, anonPDSAgent } = action.payload;
           console.log("loadOAuthClient fulfilled", action.payload);
           if (session) {
-            Storage.setItem(DID_KEY, session.did).catch((e) => {
+            storage.setItem(DID_KEY, session.did).catch((e) => {
               console.error("Error setting did", e);
             });
             return {
@@ -294,8 +294,8 @@ export const blueskySlice = createAppSlice({
 
     logout: create.asyncThunk(
       async (_, thunkAPI) => {
-        await Storage.removeItem("did");
-        await Storage.removeItem(STORED_KEY_KEY);
+        await storage.removeItem("did");
+        await storage.removeItem(STORED_KEY_KEY);
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
@@ -425,7 +425,7 @@ export const blueskySlice = createAppSlice({
         const client = await createOAuthClient(streamplace.url);
         try {
           const ret = await client.callback(params);
-          await Storage.setItem(DID_KEY, ret.session.did);
+          await storage.setItem(DID_KEY, ret.session.did);
           return { session: ret.session as any, client };
         } catch (e) {
           let message = e.message;
@@ -653,7 +653,7 @@ export const blueskySlice = createAppSlice({
           record,
         });
         if (store) {
-          await Storage.setItem(STORED_KEY_KEY, JSON.stringify(newKey));
+          await storage.setItem(STORED_KEY_KEY, JSON.stringify(newKey));
         }
         return newKey;
       },
@@ -808,7 +808,7 @@ export const blueskySlice = createAppSlice({
 
     setPDS: create.asyncThunk(
       async (pds: string, thunkAPI) => {
-        await Storage.setItem("pdsURL", pds);
+        await storage.setItem("pdsURL", pds);
         return pds;
       },
       {
