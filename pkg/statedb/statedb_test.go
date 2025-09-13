@@ -8,7 +8,6 @@ import (
 	"stream.place/streamplace/pkg/model"
 )
 
-
 // run the inner testing function against all databases we support
 func WithAllDatabases(t *testing.T, f func(*StatefulDB)) {
 	t.Run("sqlite", func(t *testing.T) {
