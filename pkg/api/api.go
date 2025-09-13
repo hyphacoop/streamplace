@@ -271,11 +271,11 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 
 	return handler, nil
 }
-func (a *StreamplaceAPI) ContextMiddleware(ctx context.Context) func(next http.Handler) http.Handler {
+func (a *StreamplaceAPI) ContextMiddleware(parentContext context.Context) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			uuid := uuid.New().String()
-			ctx = log.WithLogValues(ctx, "requestID", uuid, "method", r.Method, "path", r.URL.Path)
+			ctx := log.WithLogValues(parentContext, "requestID", uuid, "method", r.Method, "path", r.URL.Path)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
