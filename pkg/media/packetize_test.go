@@ -3,11 +3,13 @@ package media
 import (
 	"context"
 	"io"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/bus"
 )
@@ -46,4 +48,18 @@ func innerTestPacketize(t *testing.T) {
 	require.Equal(t, 49, len(packet.Video))
 	require.Equal(t, 40, len(packet.Audio))
 	require.Equal(t, time.Duration(800*time.Millisecond), packet.Duration)
+}
+
+func TestPacketizeInvalid(t *testing.T) {
+	cur := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, cur)
+	rng := rand.New(rand.NewSource(42))
+	randomData := make([]byte, 1024*1024) // 1MB
+	_, err := rng.Read(randomData)
+	require.NoError(t, err)
+	packet, err := Packetize(context.Background(), &bus.Seg{
+		Data: randomData,
+	})
+	require.Error(t, err)
+	require.Nil(t, packet)
 }
