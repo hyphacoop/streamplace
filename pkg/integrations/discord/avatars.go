@@ -15,7 +15,7 @@ var avatarCacheMutex = sync.Mutex{}
 // getAvatarURL gets the avatar URL for a Bluesky from the public appview
 // pretty ugly. we're going to replace this with indexing bluesky profiles
 // at some point.
-func getAvatarURL(ctx context.Context, did string) (string, error) {
+func GetAvatarURL(ctx context.Context, did string) (string, error) {
 	avatarCacheMutex.Lock()
 	defer avatarCacheMutex.Unlock()
 

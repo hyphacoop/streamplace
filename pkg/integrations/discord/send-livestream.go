@@ -37,7 +37,7 @@ func SendLivestream(ctx context.Context, w *discordtypes.Webhook, pdsURL string,
 		Content:  fmt.Sprintf("%s%s%s", w.Prefix, content, w.Suffix),
 	}
 
-	avatarURL, err := getAvatarURL(ctx, lsv.Author.Did)
+	avatarURL, err := GetAvatarURL(ctx, lsv.Author.Did)
 	if err != nil {
 		log.Warn(ctx, "failed to get avatar URL", "err", err)
 	}
