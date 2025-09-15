@@ -58,3 +58,5 @@ ios
 android
 code-signing-dev
 generated
+
+.env.local

@@ -3,6 +3,7 @@ import {
   LinkingOptions,
   NavigationContainer,
 } from "@react-navigation/native";
+import * as Sentry from "@sentry/react-native";
 import {
   ThemeProvider,
   StreamplaceProvider as ZustandStreamplaceProvider,
@@ -16,14 +17,51 @@ import React from "react";
 import { Provider as ReduxProvider } from "react-redux";
 import { useAppSelector } from "store/hooks";
 import { store } from "store/store";
+import { PortalProvider, TamaguiProvider } from "tamagui";
+import config from "tamagui.config";
+import { CurrentToast } from "./CurrentToast";
 
-export default function Provider({
+export default Sentry.wrap(ProviderInner);
+
+import * as Application from "expo-application";
+import Constants from "expo-constants";
+import * as Updates from "expo-updates";
+Sentry.setExtras({
+  manifest: Updates.manifest,
+  linkingUri: Constants.linkingUri,
+});
+Sentry.setTag("expoChannel", Updates.channel);
+Sentry.setTag("appVersion", Application.nativeApplicationVersion);
+Sentry.setTag("deviceId", Constants.sessionId);
+Sentry.setTag("executionEnvironment", Constants.executionEnvironment);
+Sentry.setTag("expoGoVersion", Constants.expoVersion);
+Sentry.setTag("expoRuntimeVersion", Constants.expoRuntimeVersion);
+
+function ProviderInner({
   children,
   linking,
 }: {
   children: React.ReactNode;
   linking: LinkingOptions<ReactNavigation.RootParamList>;
 }) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || undefined,
+    // Adds more context data to events (IP address, cookies, user, etc.)
+    // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+    sendDefaultPii: true,
+
+    // Configure Session Replay
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1,
+    integrations: [
+      Sentry.mobileReplayIntegration(),
+      Sentry.feedbackIntegration(),
+    ],
+
+    // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+    spotlight: __DEV__,
+  });
+
   return (
     <ThemeProvider forcedTheme="dark">
       <NavigationContainer theme={DarkTheme} linking={linking}>
