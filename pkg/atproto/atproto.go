@@ -174,7 +174,13 @@ func (atsync *ATProtoSynchronizer) resolveIdent(ctx context.Context, arg string)
 		return nil, err
 	}
 
-	return atsync.PLCDirectory.Lookup(ctx, *id)
+	resolvedID, err := atsync.PLCDirectory.Lookup(ctx, *id)
+	if err != nil {
+		return nil, err
+	}
+	log.Log(ctx, "resolved ident", "id", resolvedID.DID.String(), "handle", resolvedID.Handle.String())
+
+	return resolvedID, nil
 }
 
 func CustomDirectory(plcURL string) identity.Directory {
