@@ -34,14 +34,15 @@ import (
 )
 
 type ATProtoSynchronizer struct {
-	CLI          *config.CLI
-	Model        model.Model
-	StatefulDB   *statedb.StatefulDB
-	LastSeen     time.Time
-	LastEvent    time.Time
-	Noter        notificationpkg.FirebaseNotifier
-	Bus          *bus.Bus
-	PLCDirectory identity.Directory
+	CLI                *config.CLI
+	Model              model.Model
+	StatefulDB         *statedb.StatefulDB
+	LastSeen           time.Time
+	LastEvent          time.Time
+	Noter              notificationpkg.FirebaseNotifier
+	Bus                *bus.Bus
+	PLCDirectory       identity.Directory
+	CachedPLCDirectory identity.Directory
 }
 
 func (atsync *ATProtoSynchronizer) StartFirehose(ctx context.Context) error {
@@ -97,6 +98,10 @@ func (atsync *ATProtoSynchronizer) StartFirehoseRetry(ctx context.Context) error
 	rsc := &events.RepoStreamCallbacks{
 		RepoCommit: func(evt *comatproto.SyncSubscribeRepos_Commit) error {
 			go atsync.handleCommitEventOps(ctx, evt)
+			return nil
+		},
+		RepoIdentity: func(evt *comatproto.SyncSubscribeRepos_Identity) error {
+			go atsync.handleIdentityEventOps(ctx, evt)
 			return nil
 		},
 		Error: func(evt *events.ErrorFrame) error {
@@ -304,5 +309,27 @@ func (atsync *ATProtoSynchronizer) handleCommitEventOps(ctx context.Context, evt
 		default:
 			log.Error(ctx, "unexpected record op kind")
 		}
+	}
+}
+
+func (atsync *ATProtoSynchronizer) handleIdentityEventOps(ctx context.Context, evt *comatproto.SyncSubscribeRepos_Identity) {
+	handle := ""
+	if evt.Handle != nil {
+		handle = *evt.Handle
+	}
+	ctx = log.WithLogValues(ctx, "event", "identity", "did", evt.Did, "handle", handle, "func", "handleIdentityEventOps")
+	r, err := atsync.Model.GetRepo(evt.Did)
+	if err != nil {
+		log.Error(ctx, "failed to get repo", "err", err)
+		return
+	}
+	if r == nil {
+		log.Debug(ctx, "no repo found for identity", "did", evt.Did)
+		return
+	}
+	_, err = atsync.RefreshIdentity(ctx, evt.Did)
+	if err != nil {
+		log.Error(ctx, "failed to refresh ident", "err", err)
+		return
 	}
 }

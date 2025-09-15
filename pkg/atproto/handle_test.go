@@ -14,6 +14,7 @@ import (
 	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/devenv"
+	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/statedb"
 	"stream.place/streamplace/pkg/streamplace"
@@ -86,6 +87,7 @@ func TestHandleChange(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, user.Handle, message.Author.Handle)
 
+	log.Log(ctx, "updating handle", "handle", "new-handle.test")
 	err = comatproto.IdentityUpdateHandle(context.Background(), user.XRPC, &comatproto.IdentityUpdateHandle_Input{
 		Handle: "new-handle.test",
 	})

@@ -250,7 +250,7 @@ var GormLogger = slogGorm.New(
 	slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
 		TimeFormat: time.RFC3339,
 	})),
-	slogGorm.WithTraceAll(),
+	// slogGorm.WithTraceAll(),
 )
 
 func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {

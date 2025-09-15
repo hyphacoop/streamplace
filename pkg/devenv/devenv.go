@@ -182,6 +182,5 @@ func (d *DevEnv) TestDirectory() identity.Directory {
 		TryAuthoritativeDNS:   true,
 		SkipDNSDomainSuffixes: []string{".bsky.social"},
 	}
-	cached := identity.NewCacheDirectory(&base, 250_000, time.Hour*24, time.Minute*2, time.Minute*5)
-	return &cached
+	return &base
 }

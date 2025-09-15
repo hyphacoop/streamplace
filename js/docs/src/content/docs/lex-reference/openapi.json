@@ -849,6 +849,72 @@
         }
       }
     },
+    "/xrpc/com.atproto.identity.refreshIdentity": {
+      "post": {
+        "summary": "Request that the server re-resolve an identity (DID and handle). The server may ignore this request, or require authentication, depending on the role, implementation, and policy of the server.",
+        "operationId": "com.atproto.identity.refreshIdentity",
+        "tags": ["com.atproto.identity"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/com.atproto.identity.defs_identityInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["error", "message"],
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "const": "HandleNotFound"
+                        },
+                        {
+                          "const": "DidNotFound"
+                        },
+                        {
+                          "const": "DidDeactivated"
+                        }
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "identifier": {
+                    "type": "string",
+                    "format": "at-identifier"
+                  }
+                },
+                "required": ["identifier"]
+              }
+            }
+          }
+        }
+      }
+    },
     "/xrpc/com.atproto.identity.resolveHandle": {
       "get": {
         "summary": "Resolves an atproto handle (hostname) to a DID. Does not necessarily bi-directionally verify against the the DID document.",
@@ -1720,6 +1786,24 @@
           }
         },
         "required": ["name"]
+      },
+      "com.atproto.identity.defs_identityInfo": {
+        "type": "object",
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "handle": {
+            "type": "string",
+            "description": "The validated handle of the account; or 'handle.invalid' if the handle did not bi-directionally match the DID document.",
+            "format": "handle"
+          },
+          "didDoc": {
+            "description": "The complete DID document for the identity."
+          }
+        },
+        "required": ["did", "handle", "didDoc"]
       },
       "app.bsky.feed.defs_skeletonFeedPost": {
         "type": "object",
