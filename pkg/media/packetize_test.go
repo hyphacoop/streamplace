@@ -51,17 +51,17 @@ func innerTestPacketize(t *testing.T) {
 }
 
 func TestPacketizeInvalid(t *testing.T) {
-	withNoGSTLeaks(t, func() {
-		cur := goleak.IgnoreCurrent()
-		defer goleak.VerifyNone(t, cur)
-		rng := rand.New(rand.NewSource(42))
-		randomData := make([]byte, 1024*1024) // 1MB
-		_, err := rng.Read(randomData)
-		require.NoError(t, err)
-		packet, err := Packetize(context.Background(), &bus.Seg{
-			Data: randomData,
-		})
-		require.Error(t, err)
-		require.Nil(t, packet)
+	LeakTestMutex.Lock()
+	defer LeakTestMutex.Unlock()
+	cur := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, cur)
+	rng := rand.New(rand.NewSource(42))
+	randomData := make([]byte, 1024*1024) // 1MB
+	_, err := rng.Read(randomData)
+	require.NoError(t, err)
+	packet, err := Packetize(context.Background(), &bus.Seg{
+		Data: randomData,
 	})
+	require.Error(t, err)
+	require.Nil(t, packet)
 }
