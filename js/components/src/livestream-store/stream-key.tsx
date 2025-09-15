@@ -90,7 +90,7 @@ export const useStreamKey = (): {
       setKey(newKey);
     };
 
-    generateKey();
+    generateKey().catch((err) => setError(err.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, setStreamKey]);
 
