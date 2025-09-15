@@ -9,6 +9,7 @@ import {
   usePlayerDimensions,
   usePlayerStore,
   useSegmentDimensions,
+  useSetMuted,
   View,
   zero,
 } from "@streamplace/components";
@@ -48,7 +49,7 @@ export function MobileUi() {
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
-  const setMuted = usePlayerStore((state) => state.setMuted);
+  const setMuted = useSetMuted();
 
   const { shouldShowFloatingMetrics, safeAreaInsets } = useResponsiveLayout();
   const [showLoading, setShowLoading] = useState(false);

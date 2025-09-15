@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/lmittmann/tint"
-	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -121,17 +117,10 @@ func MakeDB(ctx context.Context, cli *config.CLI, noter notificationpkg.Firebase
 }
 
 func openDB(dial gorm.Dialector) (*gorm.DB, error) {
-	gormLogger := slogGorm.New(
-		slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
-			TimeFormat: time.RFC3339,
-		})),
-		slogGorm.WithTraceAll(),
-	)
-
 	return gorm.Open(dial, &gorm.Config{
 		SkipDefaultTransaction: true,
 		TranslateError:         true,
-		Logger:                 gormLogger,
+		Logger:                 config.GormLogger,
 	})
 }
 

@@ -21,6 +21,8 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/livepeer/go-livepeer/cmd/livepeer/starter"
+	"github.com/lmittmann/tint"
+	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/peterbourgon/ff/v3"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/constants"
@@ -113,6 +115,7 @@ type CLI struct {
 	AtprotoDID             string
 	LivepeerHelp           bool
 	PLCURL                 string
+	SQLLogging             bool
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -176,6 +179,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
 	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
+	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -242,6 +246,13 @@ func DefaultDataDir() string {
 	return filepath.Join(home, ".streamplace")
 }
 
+var GormLogger = slogGorm.New(
+	slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
+		TimeFormat: time.RFC3339,
+	})),
+	slogGorm.WithTraceAll(),
+)
+
 func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	err := ff.Parse(
 		fs, args,
@@ -282,6 +293,13 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	}
 	for _, dest := range cli.dataDirFlags {
 		*dest = strings.Replace(*dest, SPDataDir, cli.DataDir, 1)
+	}
+	if !cli.SQLLogging {
+		GormLogger = slogGorm.New(
+			slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
+				TimeFormat: time.RFC3339,
+			})),
+		)
 	}
 	return nil
 }
