@@ -18,6 +18,7 @@ import (
 	"github.com/acarl005/stripansi"
 	"github.com/cenkalti/backoff/v5"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"stream.place/streamplace/pkg/gstinit"
 )
 
@@ -137,7 +138,6 @@ func getLeakCountInner(t *testing.T) int {
 	LeakReport = []string{}
 	LeakReportMutex.Unlock()
 
-	// we want CI to be extra reliable here and a little slower is okay
 	flushes := 2
 
 	for range flushes {
@@ -147,7 +147,7 @@ func getLeakCountInner(t *testing.T) int {
 			thing := &[]byte{}
 			runtime.SetFinalizer(thing, func(thing *[]byte) {
 				done = true
-				ch <- struct{}{}
+				close(ch)
 			})
 		}()
 
@@ -196,7 +196,7 @@ func withNoGSTLeaks(t *testing.T, f func()) {
 	gstinit.InitGST()
 	before := getLeakCount(t)
 	defer checkGStreamerLeaks(t, before)
-	// ignore := goleak.IgnoreCurrent()
-	// defer goleak.VerifyNone(t, ignore)
+	ignore := goleak.IgnoreCurrent()
+	defer goleak.VerifyNone(t, ignore)
 	f()
 }
