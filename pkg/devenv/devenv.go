@@ -17,6 +17,7 @@ import (
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/xrpc"
+	"github.com/cenkalti/backoff"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/aqhttp"
@@ -183,4 +184,18 @@ func (d *DevEnv) TestDirectory() identity.Directory {
 		SkipDNSDomainSuffixes: []string{".bsky.social"},
 	}
 	return &base
+}
+
+// More aggressive backoff for tests
+func NewExponentialBackOff() *backoff.ExponentialBackOff {
+	b := &backoff.ExponentialBackOff{
+		InitialInterval:     100 * time.Millisecond,
+		RandomizationFactor: backoff.DefaultRandomizationFactor,
+		Multiplier:          backoff.DefaultMultiplier,
+		MaxInterval:         2 * time.Second,
+		MaxElapsedTime:      10 * time.Second,
+		Clock:               backoff.SystemClock,
+	}
+	b.Reset()
+	return b
 }

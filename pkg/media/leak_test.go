@@ -18,6 +18,7 @@ import (
 	"github.com/acarl005/stripansi"
 	"github.com/cenkalti/backoff/v5"
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/devenv"
 	"stream.place/streamplace/pkg/gstinit"
 )
 
@@ -111,7 +112,7 @@ func TestMain(m *testing.M) {
 // Often the GC is instance, but sometimes it takes a while. So, we retry a few times
 // with exponential backoff, giving the GC more time to do its thing.
 func getLeakCount(t *testing.T) int {
-	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+	ticker := backoff.NewTicker(devenv.NewExponentialBackOff())
 	defer ticker.Stop()
 	var leaks int
 	for i := 0; i < 10; i++ {
