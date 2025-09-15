@@ -146,7 +146,7 @@ func getLeakCountInner(t *testing.T) int {
 			thing := &[]byte{}
 			runtime.SetFinalizer(thing, func(thing *[]byte) {
 				done = true
-				close(ch)
+				ch <- struct{}{}
 			})
 		}()
 
