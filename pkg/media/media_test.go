@@ -25,12 +25,7 @@ func getFixture(name string) string {
 }
 
 func getStaticTestMediaManager(t *testing.T) (*MediaManager, MediaSigner) {
-	dir, err := os.MkdirTemp("", "atproto-test-*")
-	require.NoError(t, err)
-	// defer os.RemoveAll(dir)
-
-	fname := filepath.Join(dir, "db.sqlite")
-	mod, err := model.MakeDB(fname)
+	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
 	signer, err := c2pa.MakeStaticSigner(eip712test.KeyBytes)
 	require.NoError(t, err)

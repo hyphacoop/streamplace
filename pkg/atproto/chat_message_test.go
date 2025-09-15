@@ -35,7 +35,7 @@ func TestChatMessage(t *testing.T) {
 	cli.DataDir = t.TempDir()
 	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
-	state, err := statedb.MakeDB(&cli, nil, mod)
+	state, err := statedb.MakeDB(context.Background(), &cli, nil, mod)
 	require.NoError(t, err)
 	atsync := &ATProtoSynchronizer{
 		CLI:        &cli,

@@ -1,6 +1,6 @@
 {
   "name": "@streamplace/components",
-  "version": "0.7.21",
+  "version": "0.7.26",
   "description": "Streamplace React (Native) Components",
   "main": "dist/index.js",
   "types": "src/index.tsx",
@@ -29,6 +29,7 @@
     "@rn-primitives/slider": "^1.2.0",
     "class-variance-authority": "^0.6.1",
     "expo-keep-awake": "^14.0.0",
+    "expo-sqlite": "~15.2.12",
     "expo-video": "^2.0.0",
     "hls.js": "^1.5.17",
     "lucide-react-native": "^0.514.0",

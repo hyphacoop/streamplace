@@ -43,6 +43,8 @@ import (
 	"stream.place/streamplace/pkg/api"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/model"
+
+	_ "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 )
 
 // Additional jobs that can be injected by platforms
@@ -318,12 +320,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		}
 	}
 
+	group, ctx := TimeoutGroupWithContext(ctx)
+
 	out := carstore.SQLiteStore{}
 	err = out.Open(":memory:")
 	if err != nil {
 		return err
 	}
-	state, err := statedb.MakeDB(&cli, noter, mod)
+	state, err := statedb.MakeDB(ctx, &cli, noter, mod)
 	if err != nil {
 		return err
 	}
@@ -394,7 +398,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	group, ctx := TimeoutGroupWithContext(ctx)
 	ctx = log.WithLogValues(ctx, "version", build.Version)
 
 	group.Go(func() error {
