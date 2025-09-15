@@ -15,6 +15,9 @@ import (
 // silly technique to avoid leaking pads
 func doNothing(self *gst.Element, pad *gst.Pad) {}
 
+// Function for demuxing a single segment. Needs to be handled very carefully.
+// In particular: users of this MUST cancel the passed context when they're
+// done with the bin.
 func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 	ctx = log.WithLogValues(ctx, "func", "SegDemuxBin")
 	bin := gst.NewBin("seg-demux-bin")
@@ -122,6 +125,14 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 	outerPadAdded := func(self *gst.Element, pad *gst.Pad) {
 		padAdded(self, pad)
 	}
+
+	// Necessary to avoid leaking `mqVideoSink` and `mqAudioSink` from the
+	// pad-added function in the case where we hit invalid data and
+	// pad-added never fires.
+	go func() {
+		<-ctx.Done()
+		padAdded = doNothing
+	}()
 
 	_, err = demux.Connect("pad-added", outerPadAdded)
 	if err != nil {
