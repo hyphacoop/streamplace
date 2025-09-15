@@ -5,12 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
+	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/xrpc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -126,4 +131,56 @@ func (d *DevEnv) CreateAccount(t *testing.T) *DevEnvAccount {
 		DID:      out.Did,
 		XRPC:     xrpcc,
 	}
+}
+
+// Custom RoundTripper for intercepting .test domain requests
+type TestRoundTripper struct {
+	DevEnv *DevEnv
+}
+
+func (d *DevEnv) TestHTTPClient() *http.Client {
+	return &http.Client{
+		Transport: d.TestRoundTripper(),
+	}
+}
+
+func (d *DevEnv) TestRoundTripper() *TestRoundTripper {
+	return &TestRoundTripper{DevEnv: d}
+}
+
+func (rt *TestRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if strings.HasSuffix(req.URL.Hostname(), ".test") {
+		log.Log(context.Background(), "intercepting .test domain request", "url", req.URL.String())
+		upstreamURL := fmt.Sprintf("%s%s", rt.DevEnv.PDSURL, req.URL.Path)
+		upstreamReq, err := http.NewRequest(req.Method, upstreamURL, req.Body)
+		if err != nil {
+			return nil, err
+		}
+		upstreamReq.Header = req.Header
+		upstreamReq.Host = req.URL.Hostname()
+		upstreamResp, err := http.DefaultTransport.RoundTrip(upstreamReq)
+		if err != nil {
+			return nil, err
+		}
+		return upstreamResp, nil
+	}
+	// For non-.test domains, use the default transport
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+func (d *DevEnv) TestDirectory() identity.Directory {
+	// We need to create a new directory with our custom client
+	base := identity.BaseDirectory{
+		PLCURL:     d.PLCURL,
+		HTTPClient: *d.TestHTTPClient(),
+		Resolver: net.Resolver{
+			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+				d := net.Dialer{Timeout: time.Second * 3}
+				return d.DialContext(ctx, network, address)
+			},
+		},
+		TryAuthoritativeDNS:   true,
+		SkipDNSDomainSuffixes: []string{".bsky.social"},
+	}
+	return &base
 }

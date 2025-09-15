@@ -62,6 +62,7 @@ func (s *Server) RegisterHandlersChatBsky(e *echo.Echo) error {
 }
 
 func (s *Server) RegisterHandlersComAtproto(e *echo.Echo) error {
+	e.POST("/xrpc/com.atproto.identity.refreshIdentity", s.HandleComAtprotoIdentityRefreshIdentity)
 	e.GET("/xrpc/com.atproto.identity.resolveHandle", s.HandleComAtprotoIdentityResolveHandle)
 	e.POST("/xrpc/com.atproto.moderation.createReport", s.HandleComAtprotoModerationCreateReport)
 	e.GET("/xrpc/com.atproto.repo.describeRepo", s.HandleComAtprotoRepoDescribeRepo)
@@ -72,6 +73,24 @@ func (s *Server) RegisterHandlersComAtproto(e *echo.Echo) error {
 	e.GET("/xrpc/com.atproto.sync.getRecord", s.HandleComAtprotoSyncGetRecord)
 	e.GET("/xrpc/com.atproto.sync.listRepos", s.HandleComAtprotoSyncListRepos)
 	return nil
+}
+
+func (s *Server) HandleComAtprotoIdentityRefreshIdentity(c echo.Context) error {
+	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleComAtprotoIdentityRefreshIdentity")
+	defer span.End()
+
+	var body comatprototypes.IdentityRefreshIdentity_Input
+	if err := c.Bind(&body); err != nil {
+		return err
+	}
+	var out *comatprototypes.IdentityDefs_IdentityInfo
+	var handleErr error
+	// func (s *Server) handleComAtprotoIdentityRefreshIdentity(ctx context.Context,body *comatprototypes.IdentityRefreshIdentity_Input) (*comatprototypes.IdentityDefs_IdentityInfo, error)
+	out, handleErr = s.handleComAtprotoIdentityRefreshIdentity(ctx, &body)
+	if handleErr != nil {
+		return handleErr
+	}
+	return c.JSON(200, out)
 }
 
 func (s *Server) HandleComAtprotoIdentityResolveHandle(c echo.Context) error {

@@ -42,7 +42,7 @@ type mstNode struct {
 }
 
 func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle string, mod model.Model) (*model.Repo, error) {
-	ident, err := atsync.resolveIdent(ctx, handle)
+	ident, err := atsync.resolveIdent(ctx, handle, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve Bluesky handle %s: %w", handle, err)
 	}
@@ -165,18 +165,48 @@ func (atsync *ATProtoSynchronizer) SyncBlueskyRepo(ctx context.Context, handle s
 	return &newRepo, nil
 }
 
-func (atsync *ATProtoSynchronizer) resolveIdent(ctx context.Context, arg string) (*identity.Identity, error) {
+func (atsync *ATProtoSynchronizer) RefreshIdentity(ctx context.Context, did string) (*identity.Identity, error) {
+	id, err := atsync.resolveIdent(ctx, did, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve ident: %w", err)
+	}
+	newRepo := model.Repo{
+		DID:    id.DID.String(),
+		PDS:    id.PDSEndpoint(),
+		Handle: id.Handle.String(),
+	}
+	err = atsync.Model.UpdateRepo(&newRepo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update repo: %w", err)
+	}
+	return id, nil
+}
+
+func (atsync *ATProtoSynchronizer) resolveIdent(ctx context.Context, arg string, cached bool) (*identity.Identity, error) {
 	if atsync.PLCDirectory == nil {
 		atsync.PLCDirectory = CustomDirectory(atsync.CLI.PLCURL)
+	}
+	if atsync.CachedPLCDirectory == nil {
+		cachedDir := identity.NewCacheDirectory(atsync.PLCDirectory, 250_000, time.Hour*24, time.Minute*2, time.Minute*5)
+		atsync.CachedPLCDirectory = &cachedDir
+	}
+	dir := atsync.PLCDirectory
+	if cached {
+		dir = atsync.CachedPLCDirectory
 	}
 	id, err := syntax.ParseAtIdentifier(arg)
 	if err != nil {
 		return nil, err
 	}
 
-	return atsync.PLCDirectory.Lookup(ctx, *id)
-}
+	resolvedID, err := dir.Lookup(ctx, *id)
+	if err != nil {
+		return nil, err
+	}
+	log.Log(ctx, "resolved ident", "id", resolvedID.DID.String(), "handle", resolvedID.Handle.String())
 
+	return resolvedID, nil
+}
 func CustomDirectory(plcURL string) identity.Directory {
 	base := identity.BaseDirectory{
 		PLCURL:     plcURL,
@@ -191,8 +221,7 @@ func CustomDirectory(plcURL string) identity.Directory {
 		// primary Bluesky PDS instance only supports HTTP resolution method
 		SkipDNSDomainSuffixes: []string{".bsky.social"},
 	}
-	cached := identity.NewCacheDirectory(&base, 250_000, time.Hour*24, time.Minute*2, time.Minute*5)
-	return &cached
+	return &base
 }
 
 func DIDDoc(host string) map[string]any {
