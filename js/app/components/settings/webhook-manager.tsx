@@ -8,9 +8,9 @@ import {
 } from "@streamplace/components";
 import { ThemeProvider } from "@streamplace/components/src/lib/theme/theme";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
-import { Edit3, Plus, RefreshCw, Trash2, X } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
+import { Edit3, Plus, RefreshCw, Trash2, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, View } from "react-native";
 import { timeAgo } from "utils/timeAgo";
@@ -539,7 +539,7 @@ function WebhookForm({
                   variant="destructive"
                   onPress={() => removeReplacement(index)}
                 >
-                  <X size={20} mt={2} />
+                  <X size={20} />
                 </Button>
               )}
             </View>
