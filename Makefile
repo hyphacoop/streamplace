@@ -293,9 +293,11 @@ dev-rust:
 
 .PHONY: dev-test
 dev-test:
-	PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
+	go install github.com/jstemmer/go-junit-report/v2@latest \
+	&& PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
 	LD_LIBRARY_PATH=$(shell realpath $(BUILDDIR))/lib \
-	go test -p 1 -timeout 300s ./...
+	go test -p 1 -timeout 300s ./... | tee test.log \
+	&& go-junit-report -in test.log -out test.xml
 
 #   _      _____ _   _ _______ _____ _   _  _____
 #  | |    |_   _| \ | |__   __|_   _| \ | |/ ____|

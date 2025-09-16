@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/goleak"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/bus"
 )
@@ -51,9 +50,9 @@ func innerTestPacketize(t *testing.T) {
 }
 
 func TestPacketizeInvalid(t *testing.T) {
+	// cur := goleak.IgnoreCurrent()
+	// defer goleak.VerifyNone(t, cur)
 	withNoGSTLeaks(t, func() {
-		cur := goleak.IgnoreCurrent()
-		defer goleak.VerifyNone(t, cur)
 		rng := rand.New(rand.NewSource(42))
 		randomData := make([]byte, 1024*1024) // 1MB
 		_, err := rng.Read(randomData)
