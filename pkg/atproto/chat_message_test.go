@@ -171,7 +171,7 @@ func TestChatMessage(t *testing.T) {
 }
 
 func untilNoErrors(t *testing.T, f func() error) error {
-	ticker := backoff.NewTicker(NewExponentialBackOff())
+	ticker := backoff.NewTicker(devenv.NewExponentialBackOff())
 	defer ticker.Stop()
 	var err error
 	for i := 0; i < 10; i++ {
@@ -184,18 +184,4 @@ func untilNoErrors(t *testing.T, f func() error) error {
 		}
 	}
 	return err
-}
-
-// More aggressive backoff for tests
-func NewExponentialBackOff() *backoff.ExponentialBackOff {
-	b := &backoff.ExponentialBackOff{
-		InitialInterval:     100 * time.Millisecond,
-		RandomizationFactor: backoff.DefaultRandomizationFactor,
-		Multiplier:          backoff.DefaultMultiplier,
-		MaxInterval:         2 * time.Second,
-		MaxElapsedTime:      10 * time.Second,
-		Clock:               backoff.SystemClock,
-	}
-	b.Reset()
-	return b
 }
