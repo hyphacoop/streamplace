@@ -160,6 +160,12 @@ test:
   script:
     - git fetch --unshallow || echo 'already unshallow'
     - make dev-setup && make dev-test && make ci-lexicons
+  artifacts:
+    when: always
+    paths:
+      - test.xml
+    reports:
+      junit: test.xml
 
 build-docker-mistserver:
   stage: build

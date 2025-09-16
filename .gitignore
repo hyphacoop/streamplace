@@ -22,3 +22,4 @@ oom
 node-compile-cache
 target
 my-release-key.keystore
+test.xml
