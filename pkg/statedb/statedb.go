@@ -106,6 +106,7 @@ func MakeDB(ctx context.Context, cli *config.CLI, noter notificationpkg.Firebase
 		locks:     NewNamedLocks(),
 		model:     model,
 		pokeQueue: make(chan struct{}, 1),
+		noter:     noter,
 	}
 	if state.Type == DBTypePostgres {
 		err = state.startPostgresLockerConn(ctx)
