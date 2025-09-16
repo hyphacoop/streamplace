@@ -85,6 +85,7 @@ function WebhookRow({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
+  const { theme } = zero.useTheme();
   const isDiscord = webhook.url
     .toLowerCase()
     .startsWith("https://discord.com/api/webhooks");
@@ -134,7 +135,7 @@ function WebhookRow({
         <View style={[layout.flex.row, gap.all[2]]}>
           <Pressable
             style={[
-              bg.gray[100],
+              bg.blue[600],
               p[2],
               r.md,
               layout.flex.center,
@@ -143,7 +144,7 @@ function WebhookRow({
             onPress={() => onEdit(webhook)}
             disabled={isDeleting}
           >
-            <Edit3 size={16} color="#374151" />
+            <Edit3 size={16} color={theme.colors.text} />
           </Pressable>
 
           <Pressable
@@ -157,7 +158,7 @@ function WebhookRow({
             onPress={() => onDelete(webhook.id)}
             disabled={isDeleting}
           >
-            <Trash2 size={16} />
+            <Trash2 size={16} color={theme.colors.text} />
           </Pressable>
         </View>
       </View>
@@ -604,7 +605,7 @@ function WebhookForm({
 
 export default function WebhookManager() {
   const agent = usePDSAgent();
-
+  const { theme } = zero.useTheme();
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingWebhooks, setDeletingWebhooks] = useState<Set<string>>(
@@ -781,24 +782,33 @@ export default function WebhookManager() {
           <View style={[{ maxWidth: 800 }, mx.auto]}>
             {/* Header */}
             <View style={[mb[6]]}>
-              <Text style={[mb[2], { fontSize: 24, fontWeight: "700" }]}>
-                Webhook Integrations
-              </Text>
-              <Text style={[text.gray[400], mb[4], { fontSize: 14 }]}>
+              <Text size="xl">Webhook Integrations</Text>
+              <Text size="lg" style={[text.gray[400], mb[4]]}>
                 Create webhooks to receive notifications when you go live or get
                 chat messages.
               </Text>
 
-              <View style={[layout.flex.row, gap.all[3]]}>
-                <Button onPress={handleCreate} size="sm" leftIcon={<Plus />}>
+              <View
+                style={[
+                  layout.flex.row,
+                  layout.flex.justify.between,
+                  gap.all[3],
+                ]}
+              >
+                <Button
+                  onPress={handleCreate}
+                  size="pill"
+                  leftIcon={<Plus color={theme.colors.text} />}
+                >
                   <Text>Create Webhook</Text>
                 </Button>
 
                 <Button
                   onPress={loadWebhooks}
                   disabled={loading}
-                  leftIcon={<RefreshCw />}
-                  size="sm"
+                  leftIcon={<RefreshCw color={theme.colors.text} />}
+                  size="pill"
+                  variant="secondary"
                 >
                   <Text>Refresh</Text>
                 </Button>

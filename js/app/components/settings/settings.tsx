@@ -137,6 +137,39 @@ export function Settings() {
           </View>
         </View>
 
+          {loggedIn && (
+            <>
+              <DebugRecording />
+              <AQLink
+                to={{
+                  screen: "KeyManagement",
+                }}
+              >
+                <View
+                  style={[
+                    {
+                      flexDirection: "row",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: "#333",
+                      padding: 8,
+                      borderRadius: 16,
+                      backgroundColor: "#1a1a1a",
+                    },
+                  ]}
+                >
+                  <Text>Manage Keys</Text>
+                  <Text style={[{ fontSize: 16 }]}>→</Text>
+                </View>
+              </AQLink>
+              <WebhookManager />
+            </>
+          )}
+        </View>
+      </Container>
+    </ScrollView>
         {loggedIn && (
           <>
             <DebugRecording />
@@ -205,11 +238,13 @@ const DebugRecording = () => {
         ]}
       >
         <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-          <Text style={[{ fontSize: 32, fontWeight: "bold", color: "#fff" }]}>
+          <Text size="xl">
             Allow {u.host} to record your livestream for debugging and improving
             the service
           </Text>
-          <Text style={[{ fontSize: 20, color: "#999" }]}>Optional</Text>
+          <Text size="lg" color="muted">
+            Optional
+          </Text>
         </View>
         <Switch
           value={debugRecordingOn}
