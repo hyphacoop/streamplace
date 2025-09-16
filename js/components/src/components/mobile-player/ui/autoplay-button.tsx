@@ -17,6 +17,7 @@ export function AutoplayButton() {
         .play()
         .then(() => {
           setAutoplayFailed(false);
+          setMuted(false);
           setUserInteraction();
         })
         .catch((err) => {
