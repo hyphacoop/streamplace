@@ -247,7 +247,9 @@ static:
 
 .PHONY: static-test
 static-test:
-	meson test -C $(BUILDDIR) go-tests
+	go install github.com/jstemmer/go-junit-report/v2@latest \
+	&& PKG_CONFIG_PATH=$(shell realpath $(BUILDDIR)/meson-uninstalled) \
+	bash -euo pipefail -c "go test -p 1 -timeout 300s ./pkg/... -v | tee /dev/stderr | go-junit-report -out test.xml"
 
 #   _____  ________      __
 #  |  __ \|  ____\ \    / /
@@ -296,8 +298,7 @@ dev-test:
 	go install github.com/jstemmer/go-junit-report/v2@latest \
 	&& PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
 	LD_LIBRARY_PATH=$(shell realpath $(BUILDDIR))/lib \
-	go test -p 1 -timeout 300s ./... | tee test.log \
-	&& go-junit-report -in test.log -out test.xml
+	bash -euo pipefail -c "go test -p 1 -timeout 300s ./pkg/... -v | tee /dev/stderr | go-junit-report -out test.xml"
 
 #   _      _____ _   _ _______ _____ _   _  _____
 #  | |    |_   _| \ | |__   __|_   _| \ | |/ ____|
