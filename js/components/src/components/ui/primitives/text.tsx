@@ -129,6 +129,18 @@ const sizeMap = {
   "4xl": 36,
 } as const;
 
+// Size-specific line height mapping (provides better default line heights for each size)
+const sizeLineHeightMap = {
+  xs: 16, // 12px * 1.33 = tight but readable
+  sm: 20, // 14px * 1.43 = good for small text
+  base: 24, // 16px * 1.5 = standard body text
+  lg: 28, // 18px * 1.56 = comfortable for larger text
+  xl: 30, // 20px * 1.5 = balanced
+  "2xl": 32, // 24px * 1.33 = tighter for headings
+  "3xl": 36, // 30px * 1.2 = tight for large headings
+  "4xl": 40, // 36px * 1.11 = very tight for display text
+} as const;
+
 // Weight mapping
 const weightMap = {
   thin: "100",
@@ -286,9 +298,16 @@ export const TextRoot = forwardRef<RNText, TextPrimitiveProps>(
 
       // Apply explicit prop styles (these should override inherited and variant)
 
-      // Apply size
+      // Apply size (with corresponding line height if not explicitly set)
       ...(size && {
         fontSize: typeof size === "number" ? size : sizeMap[size],
+        // Apply size-specific line height only if leading is not explicitly set
+        ...(leading === undefined && {
+          lineHeight:
+            typeof size === "number"
+              ? size // Auto line height for numeric sizes
+              : sizeLineHeightMap[size],
+        }),
       }),
 
       // Apply weight
@@ -360,6 +379,23 @@ export const TextRoot = forwardRef<RNText, TextPrimitiveProps>(
     finalStyles.color = finalStyles.color as ColorValue;
 
     // Create context value for children
+    // Process custom styles to auto-add line height for fontSize
+    const processedStyle = Array.isArray(style)
+      ? style
+      : [style].filter(Boolean);
+    const enhancedStyles = processedStyle.map((styleObj) => {
+      if (styleObj && typeof styleObj === "object" && "fontSize" in styleObj) {
+        const fontSize = styleObj.fontSize;
+        if (typeof fontSize === "number" && !styleObj.lineHeight && !leading) {
+          return {
+            ...styleObj,
+            lineHeight: fontSize * 1.2,
+          };
+        }
+      }
+      return styleObj;
+    });
+
     const contextValue: TextContextValue = {
       fontSize:
         typeof finalStyles.fontSize === "number"
@@ -386,7 +422,7 @@ export const TextRoot = forwardRef<RNText, TextPrimitiveProps>(
 
     return (
       <TextContext.Provider value={contextValue}>
-        <RNText ref={ref} style={[finalStyles, style]} {...props}>
+        <RNText ref={ref} style={[finalStyles, ...enhancedStyles]} {...props}>
           {children}
         </RNText>
       </TextContext.Provider>
@@ -438,6 +474,13 @@ export function createTextStyle(
   if (props.size) {
     style.fontSize =
       typeof props.size === "number" ? props.size : sizeMap[props.size];
+    // Apply size-specific line height only if leading is not explicitly set
+    if (props.leading === undefined) {
+      style.lineHeight =
+        typeof props.size === "number"
+          ? props.size * 1.2 // Auto line height for numeric sizes
+          : sizeLineHeightMap[props.size];
+    }
   }
 
   if (props.weight) {
