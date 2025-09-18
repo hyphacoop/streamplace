@@ -190,11 +190,12 @@ export function PlayerInner(
     ? Math.min(calculatedWidth / aspectRatio, maxDesktopHeight)
     : height;
 
-  const showBottomMetaPanel = aspectRatio > 1 && screenWidth > 980;
+  const showFullDesktopMode = aspectRatio > 1 && screenWidth > 980;
+  const isLandscape = aspectRatio > 1;
 
   // i don't really like this, but it's the only way to ensure the
   // player is sized correctly on both desktop and mobile views
-  const ContainerElement = showBottomMetaPanel ? ScrollView : View;
+  const ContainerElement = showFullDesktopMode ? ScrollView : View;
   return (
     <ContainerElement
       style={
@@ -216,24 +217,32 @@ export function PlayerInner(
     >
       <Animated.View
         style={[
-          showBottomMetaPanel
+          showFullDesktopMode
             ? {
                 width: calculatedWidth,
                 height: calculatedHeight,
               }
             : {
                 flex: 1,
+                // i hate this but it works
+                maxHeight: isLandscape && !props.showChat ? "90%" : "auto",
               },
-          { paddingTop: isPlayerRatioGreater ? safeAreaInsets.top : 0 },
+          {
+            paddingTop:
+              isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
+          },
         ]}
       >
         <PlayerInnerInner {...props}>
-          {(showBottomMetaPanel || fullscreen) && (
-            <DesktopUi
-              dropdownPortalContainer={dropdownPortalRef.current}
-              isChatOpen={props.showChat}
-              setIsChatOpen={props.setShowChat}
-            />
+          {showFullDesktopMode || fullscreen ? (
+            <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
+          ) : (
+            isLandscape && (
+              <MobileUi
+                setShowChat={props.setShowChat}
+                showChat={props.showChat}
+              />
+            )
           )}
           <PlayerUI.ViewerLoadingOverlay />
           <OfflineCounter isMobile={true} />
@@ -250,7 +259,7 @@ export function PlayerInner(
           />
         </PlayerInnerInner>
       </Animated.View>
-      {showBottomMetaPanel && (
+      {showFullDesktopMode && (
         <BottomMetadata
           setShowChat={props.setShowChat}
           showChat={props.showChat}

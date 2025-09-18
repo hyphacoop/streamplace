@@ -20,6 +20,7 @@ import {
 } from "@streamplace/components";
 import {
   ChevronLeft,
+  ChevronRight,
   Maximize2,
   SwitchCamera,
   Volume2,
@@ -43,7 +44,13 @@ import { useResponsiveLayout } from "./useResponsiveLayout";
 const { borders, colors, gap, h, layout, position, w, bottom, px, py, r } =
   zero;
 
-export function MobileUi() {
+export function MobileUi({
+  setShowChat,
+  showChat,
+}: {
+  setShowChat?: (show: boolean) => void;
+  showChat?: boolean;
+}) {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const {
@@ -69,8 +76,19 @@ export function MobileUi() {
   const muted = useMuted();
   const setMuted = useSetMuted();
 
-  const { shouldShowFloatingMetrics, safeAreaInsets } = useResponsiveLayout();
+  const {
+    shouldShowFloatingMetrics,
+    shouldShowChatSidePanel,
+    chatPanelWidth,
+    safeAreaInsets,
+  } = useResponsiveLayout();
   const [showLoading, setShowLoading] = useState(false);
+
+  // get width/height
+  // showchat is a proxy for if we're in landscape or not :-(
+  if (showChat != undefined) {
+    safeAreaInsets.top = 0;
+  }
 
   useEffect(() => {
     return () => {
@@ -107,7 +125,10 @@ export function MobileUi() {
   }, []);
 
   const animatedFadeStyle = useAnimatedStyle(() => ({
-    opacity: shouldShowFloatingMetrics ? 1 : fadeOpacity.value,
+    opacity:
+      shouldShowFloatingMetrics || shouldShowChatSidePanel
+        ? 1
+        : fadeOpacity.value,
   }));
 
   return (
@@ -203,6 +224,9 @@ export function MobileUi() {
               <RightControlsPanel
                 ingest={ingest}
                 doSetIngestCamera={doSetIngestCamera}
+                shouldShowChatSidePanel={shouldShowChatSidePanel}
+                showChat={showChat}
+                setShowChat={setShowChat}
               />
             </View>
 
@@ -260,7 +284,7 @@ export function MobileUi() {
         </Animated.View>
       </TouchableWithoutFeedback>
 
-      {!isSelfAndNotLive && (
+      {showChat === undefined && (
         <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
       )}
       {muted && (
@@ -314,15 +338,24 @@ export function MobileUi() {
   );
 }
 
-function RightControlsPanel({ ingest, doSetIngestCamera }) {
-  const { colors } = zero;
-  const { styles, theme } = useTheme();
+function RightControlsPanel({
+  ingest,
+  doSetIngestCamera,
+  shouldShowChatSidePanel,
+  showChat,
+  setShowChat,
+}: {
+  ingest: string | null;
+  doSetIngestCamera: () => void;
+  shouldShowChatSidePanel: boolean;
+  showChat?: boolean;
+  setShowChat?: (show: boolean) => void;
+}) {
+  const { theme } = useTheme();
   const volume = useVolume();
   const setVolume = useSetVolume();
   const muted = useMuted();
   const setMuted = useSetMuted();
-  const fullscreen = usePlayerStore((state) => state.fullscreen);
-  const setFullscreen = usePlayerStore((state) => state.setFullscreen);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
@@ -372,7 +405,9 @@ function RightControlsPanel({ ingest, doSetIngestCamera }) {
             borderRadius: 12,
           },
           zero.r[2],
-          zero.layout.flex.column,
+          showChat === undefined
+            ? zero.layout.flex.column
+            : zero.layout.flex.row,
           zero.layout.flex.center,
           zero.gap.all[4],
           zero.layout.position.relative,
@@ -400,6 +435,19 @@ function RightControlsPanel({ ingest, doSetIngestCamera }) {
           </>
         ) : (
           <PlayerUI.ContextMenu />
+        )}
+        {shouldShowChatSidePanel && setShowChat && (
+          <Pressable
+            onPress={() => {
+              setShowChat(!showChat);
+            }}
+          >
+            {showChat ? (
+              <ChevronRight color="white" size={20} />
+            ) : (
+              <ChevronLeft color="white" size={20} />
+            )}
+          </Pressable>
         )}
       </View>
       {/* Volume Slider Popup */}

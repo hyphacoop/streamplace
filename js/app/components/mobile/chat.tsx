@@ -38,7 +38,7 @@ export function DesktopChatPanel({
       "Setting sidebar offset x to",
       chatVisible ? 0 : chatPanelWidth,
     );
-    sidebarOffset.value = withSpring(chatVisible ? 0 : chatPanelWidth, {
+    sidebarOffset.value = withSpring(chatVisible ? 0 : chatPanelWidth + 64, {
       damping: 100,
       stiffness: 1000,
     });
