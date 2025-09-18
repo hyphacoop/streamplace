@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import {
   PlayerUI,
+  Slider,
   Text,
   Toast,
   useAvatars,
@@ -11,12 +12,26 @@ import {
   usePlayerStore,
   useSegmentDimensions,
   useSetMuted,
+  useSetVolume,
+  useTheme,
+  useVolume,
   View,
   zero,
 } from "@streamplace/components";
-import { ChevronLeft, SwitchCamera, VolumeX } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Maximize2,
+  SwitchCamera,
+  Volume2,
+  VolumeX,
+} from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Image, Pressable, TouchableWithoutFeedback } from "react-native";
+import {
+  Image,
+  Platform,
+  Pressable,
+  TouchableWithoutFeedback,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -29,6 +44,7 @@ const { borders, colors, gap, h, layout, position, w, bottom, px, py, r } =
   zero;
 
 export function MobileUi() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const {
     ingest,
@@ -161,47 +177,37 @@ export function MobileUi() {
               </View>
             </View>
 
-            {shouldShowFloatingMetrics && (
-              <View
-                style={[
-                  {
-                    padding: 9,
-                    backgroundColor: "rgba(90,90,90, 0.3)",
-                    borderRadius: 12,
-                  },
-                  r[2],
-                  layout.position.absolute,
-                  position.right[14],
-                  { top: safeAreaInsets.top + 12 },
-                  gap.all[4],
-                ]}
-              >
-                <PlayerUI.Viewers />
-              </View>
-            )}
-
+            {/* Right Controls Column */}
             <View
               style={[
-                {
-                  padding: 9,
-                  backgroundColor: "rgba(90,90,90, 0.3)",
-                  borderRadius: 12,
-                },
-                r[2],
                 layout.position.absolute,
-                position.right[1],
-
+                position.right[2],
                 { top: safeAreaInsets.top + 12 },
-                gap.all[4],
+                layout.flex.row,
+                gap.all[2],
               ]}
             >
-              {ingest === null ? (
-                <PlayerUI.ContextMenu />
-              ) : (
-                <Pressable onPress={doSetIngestCamera}>
-                  <SwitchCamera color={colors.gray[200]} />
-                </Pressable>
+              {shouldShowFloatingMetrics && (
+                <View>
+                  <View
+                    style={[
+                      {
+                        padding: 9,
+                        backgroundColor: "rgba(90,90,90, 0.3)",
+                        borderRadius: 12,
+                      },
+                      r[2],
+                    ]}
+                  >
+                    <PlayerUI.Viewers />
+                  </View>
+                </View>
               )}
+
+              <RightControlsPanel
+                ingest={ingest}
+                doSetIngestCamera={doSetIngestCamera}
+              />
             </View>
 
             {shouldShowFloatingMetrics && isLive && (
@@ -221,7 +227,6 @@ export function MobileUi() {
               </View>
             )}
           </View>
-
           {isSelfAndNotLive && (
             <PlayerUI.InputPanel
               title={title}
@@ -310,5 +315,164 @@ export function MobileUi() {
       )}
       <PlayerUI.AutoplayButton />
     </>
+  );
+}
+
+function RightControlsPanel({ ingest, doSetIngestCamera }) {
+  const { colors } = zero;
+  const { styles, theme } = useTheme();
+  const volume = useVolume();
+  const setVolume = useSetVolume();
+  const muted = useMuted();
+  const setMuted = useSetMuted();
+  const fullscreen = usePlayerStore((state) => state.fullscreen);
+  const setFullscreen = usePlayerStore((state) => state.setFullscreen);
+
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+
+  const handleVolumePress = () => {
+    setShowVolumeSlider(!showVolumeSlider);
+  };
+
+  const handleVolumeChange = (values) => {
+    const newVolume = values[0] / 100; // Convert from 0-100 to 0-1
+    setVolume(newVolume);
+    if (newVolume === 0) {
+      setMuted(true);
+    } else {
+      setMuted(false);
+    }
+  };
+
+  const handleFullscreenToggle = () => {
+    if (Platform.OS === "web") {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.error("Fullscreen request failed:", err);
+        });
+      } else {
+        document.exitFullscreen().catch((err) => {
+          console.error("Exit fullscreen failed:", err);
+        });
+      }
+    }
+  };
+
+  const sliderValue = (muted ? 0 : volume) * 100;
+
+  return (
+    <View
+      style={[
+        zero.layout.flex.column,
+        zero.gap.all[2],
+        zero.layout.flex.align.end,
+      ]}
+    >
+      <View
+        style={[
+          {
+            padding: 9,
+            backgroundColor: "rgba(90,90,90, 0.3)",
+            borderRadius: 12,
+          },
+          zero.r[2],
+          zero.layout.flex.column,
+          zero.layout.flex.center,
+          zero.gap.all[4],
+          zero.layout.position.relative,
+        ]}
+      >
+        {ingest === null ? (
+          Platform.OS === "web" && <PlayerUI.ContextMenu />
+        ) : (
+          <Pressable onPress={doSetIngestCamera}>
+            <SwitchCamera color={theme.colors.foreground} size={20} />
+          </Pressable>
+        )}
+        {Platform.OS === "web" ? (
+          <>
+            <Pressable onPress={handleFullscreenToggle}>
+              <Maximize2 color={theme.colors.foreground} size={20} />
+            </Pressable>
+            <Pressable onPress={handleVolumePress}>
+              {muted || volume === 0 ? (
+                <VolumeX color={theme.colors.foreground} size={20} />
+              ) : (
+                <Volume2 color={theme.colors.foreground} size={20} />
+              )}
+            </Pressable>
+          </>
+        ) : (
+          <PlayerUI.ContextMenu />
+        )}
+      </View>
+      {/* Volume Slider Popup */}
+      {showVolumeSlider && (
+        <View
+          style={[
+            {
+              padding: 10,
+              backgroundColor: "rgba(90,90,90, 0.9)",
+              borderRadius: 12,
+              width: 150,
+              height: 36,
+              bottom: -36 - 10,
+            },
+            zero.r[2],
+            zero.layout.position.absolute,
+          ]}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
+          <Slider.Root
+            style={{
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              height: 12,
+            }}
+            value={sliderValue}
+            min={0}
+            max={100}
+            onValueChange={handleVolumeChange}
+          >
+            <Slider.Track
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: 3,
+                backgroundColor: "rgba(255,255,255,0.3)",
+                borderRadius: 999,
+                top: "50%",
+                transform: [{ translateY: -1.5 }],
+              }}
+            >
+              <Slider.Range
+                style={{
+                  position: "absolute",
+                  backgroundColor: "white",
+                  borderRadius: 999,
+                  height: 3,
+                  top: 0,
+                }}
+              />
+              <Slider.Thumb
+                style={{
+                  position: "absolute",
+                  width: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: "white",
+                  top: -6.5,
+                  transform: [{ translateX: -8 }],
+                }}
+              />
+            </Slider.Track>
+          </Slider.Root>
+        </View>
+      )}
+    </View>
   );
 }
