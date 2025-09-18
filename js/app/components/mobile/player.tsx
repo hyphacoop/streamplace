@@ -10,6 +10,7 @@ import {
   Text,
   usePlayerDimensions,
   usePlayerStore,
+  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
@@ -161,6 +162,7 @@ export function PlayerInner(
     screenWidth,
     contentWidth,
     availableHeight,
+    safeAreaInsets,
   } = useResponsiveLayout({
     sidebarWidth: sb.animatedWidth,
     sidebarHidden: !sb.isActive,
@@ -169,6 +171,8 @@ export function PlayerInner(
 
   // content info
   const { width, height } = usePlayerDimensions();
+
+  const { isPlayerRatioGreater } = useSegmentDimensions();
 
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
@@ -220,6 +224,7 @@ export function PlayerInner(
             : {
                 flex: 1,
               },
+          { paddingTop: isPlayerRatioGreater ? safeAreaInsets.top : 0 },
         ]}
       >
         <PlayerInnerInner {...props}>

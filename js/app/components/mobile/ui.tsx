@@ -150,30 +150,26 @@ export function MobileUi() {
                 >
                   <ChevronLeft color="white" />
                 </Pressable>
-                {shouldShowFloatingMetrics && (
-                  <>
-                    <Image
-                      source={
-                        profile?.did
-                          ? { url: avatars[profile?.did]?.avatar }
-                          : require("assets/images/goose.png")
-                      }
-                      width={32}
-                      height={32}
-                      style={[
-                        {
-                          width: 36,
-                          height: 36,
-                          backgroundColor: "green",
-                        },
-                        { borderRadius: 999 },
-                        borders.width.thin,
-                        borders.color.gray[700],
-                      ]}
-                    />
-                    <Text>{profile?.handle}</Text>
-                  </>
-                )}
+                <Image
+                  source={
+                    profile?.did
+                      ? { url: avatars[profile?.did]?.avatar }
+                      : require("assets/images/goose.png")
+                  }
+                  width={32}
+                  height={32}
+                  style={[
+                    {
+                      width: 36,
+                      height: 36,
+                      backgroundColor: "green",
+                    },
+                    { borderRadius: 999 },
+                    borders.width.thin,
+                    borders.color.gray[700],
+                  ]}
+                />
+                <Text>{profile?.handle}</Text>
               </View>
             </View>
 

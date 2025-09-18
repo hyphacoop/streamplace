@@ -17,7 +17,6 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useResponsiveLayout } from "./useResponsiveLayout";
 
 import { useNavigation } from "@react-navigation/native";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
@@ -100,7 +99,6 @@ export function MobileChatPanel({ isPlayerRatioGreater }) {
 }
 
 function ChatPanel() {
-  const { shouldShowChatSidePanel, safeAreaInsets } = useResponsiveLayout();
   const { profile } = useLivestreamInfo();
   const handle = useHandle();
 
