@@ -77,13 +77,9 @@ func (a *StreamplaceAPI) MakeMediaSigner(ctx context.Context, keyStr string) (me
 	}
 
 	ctx = log.WithLogValues(ctx, "did", did)
-	labels, err := a.Model.GetActiveLabels(did)
+	err = a.checkBanned(ctx, did)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get active labels: %w", err)
-	}
-	if atproto.IsBanned(labels...) {
-		log.Error(ctx, "user is banned", "did", did)
-		return nil, fmt.Errorf("user is banned")
+		return nil, err
 	}
 
 	var mediaSigner media.MediaSigner
@@ -97,4 +93,16 @@ func (a *StreamplaceAPI) MakeMediaSigner(ctx context.Context, keyStr string) (me
 	}
 
 	return mediaSigner, nil
+}
+
+func (a *StreamplaceAPI) checkBanned(ctx context.Context, did string) error {
+	labels, err := a.Model.GetActiveLabels(did)
+	if err != nil {
+		return fmt.Errorf("failed to get active labels: %w", err)
+	}
+	if atproto.IsBanned(labels...) {
+		log.Error(ctx, "user is banned", "did", did)
+		return fmt.Errorf("user is banned")
+	}
+	return nil
 }
