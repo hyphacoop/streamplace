@@ -237,6 +237,14 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			}
 		}
 
+		ctx = log.WithLogValues(ctx, "streamer", mediaSigner.Streamer())
+
+		err = a.checkBanned(ctx, mediaSigner.Streamer())
+		if err != nil {
+			errors.WriteHTTPUnauthorized(w, err.Error(), err)
+			return
+		}
+
 		err = a.MediaManager.MKVIngest(ctx, r.Body, mediaSigner)
 
 		if err != nil {
