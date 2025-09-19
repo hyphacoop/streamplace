@@ -18,7 +18,6 @@ import {
 } from "./tokens";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "../../components/ui";
 
 // Import pairify function for generating theme tokens
@@ -378,6 +377,7 @@ interface ThemeProviderProps {
 }
 
 // Theme provider component
+// Should be surrounded by SafeAreaProvider at the root
 export function ThemeProvider({
   children,
   defaultTheme = "system",
@@ -473,13 +473,11 @@ export function ThemeProvider({
 
   return (
     <ThemeContext.Provider value={value}>
-      <SafeAreaProvider>
-        <GestureHandlerRootView>
-          {children}
-          <PortalHost />
-          <ToastProvider />
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
+      <GestureHandlerRootView>
+        {children}
+        <PortalHost />
+        <ToastProvider />
+      </GestureHandlerRootView>
     </ThemeContext.Provider>
   );
 }
