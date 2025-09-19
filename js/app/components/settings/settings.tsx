@@ -1,12 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import {
-  Button,
-  Text,
-  Textarea,
-  useToast,
-  View,
-  zero,
-} from "@streamplace/components";
+import { Button, Input, Text, View, zero } from "@streamplace/components";
 import AQLink from "components/aqlink";
 import {
   createServerSettingsRecord,
@@ -28,8 +21,6 @@ export function Settings() {
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
-
-  const toast = useToast();
 
   // are we logged in?
   const loggedIn = useAppSelector(
@@ -108,20 +99,24 @@ export function Settings() {
             {/* Custom URL Input Row */}
             <View
               style={[
-                { alignItems: "center" },
                 {
-                  gap: 8,
                   opacity: overrideEnabled ? 1 : 0,
                   height: overrideEnabled ? "auto" : 0,
-                  overflow: "hidden",
-                  flexDirection: "row",
                 },
+                zero.gap.all[2],
+                zero.layout.flex.align.center,
+                zero.layout.flex.row,
               ]}
             >
-              <Textarea
+              <Input
                 value={newUrl}
-                style={[{ flex: 1 }]}
+                containerStyle={[
+                  { flex: 1, flexGrow: 1, width: "100%" },
+                  zero.flex.grow[1],
+                ]}
+                variant="default"
                 numberOfLines={1}
+                multiline={false}
                 placeholder={url || "Enter custom node URL"}
                 placeholderTextColor="#999"
                 onChangeText={setNewUrl}
@@ -134,7 +129,7 @@ export function Settings() {
               <Button
                 size="md"
                 variant="secondary"
-                style={[zero.py[0]]}
+                style={[zero.py[0], zero.flex.shrink[1]]}
                 onPress={onSubmitUrl}
               >
                 <Text size="lg">Save</Text>
@@ -175,12 +170,6 @@ export function Settings() {
           )}
         </View>
       </View>
-      <Button
-        variant="secondary"
-        onPress={() => toast.show("i am", "magic john", { duration: 5 })}
-      >
-        I AM Magic JOHN
-      </Button>
     </ScrollView>
   );
 }
