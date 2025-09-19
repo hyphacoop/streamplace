@@ -42,8 +42,7 @@ import Animated, {
 import { MobileChatPanel } from "./chat";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 
-const { borders, colors, gap, h, layout, position, w, bottom, px, py, r } =
-  zero;
+const { borders, gap, h, layout, position, w, r } = zero;
 
 export function MobileUi({
   setShowChat,
@@ -367,7 +366,7 @@ function RightControlsPanel({
     setShowVolumeSlider(!showVolumeSlider);
   };
 
-  const handleVolumeChange = (values) => {
+  const handleVolumeChange = (values: number[]) => {
     const newVolume = values[0] / 100; // Convert from 0-100 to 0-1
     setVolume(newVolume);
     if (newVolume === 0) {
