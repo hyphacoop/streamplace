@@ -21,7 +21,8 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  Maximize2,
+  Fullscreen,
+  Minimize,
   SwitchCamera,
   Volume2,
   VolumeX,
@@ -357,6 +358,9 @@ function RightControlsPanel({
   const muted = useMuted();
   const setMuted = useSetMuted();
 
+  const fullscreen = usePlayerStore((state) => state.fullscreen);
+  const setFullscreen = usePlayerStore((state) => state.setFullscreen);
+
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const handleVolumePress = () => {
@@ -370,20 +374,6 @@ function RightControlsPanel({
       setMuted(true);
     } else {
       setMuted(false);
-    }
-  };
-
-  const handleFullscreenToggle = () => {
-    if (Platform.OS === "web") {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((err) => {
-          console.error("Fullscreen request failed:", err);
-        });
-      } else {
-        document.exitFullscreen().catch((err) => {
-          console.error("Exit fullscreen failed:", err);
-        });
-      }
     }
   };
 
@@ -422,8 +412,14 @@ function RightControlsPanel({
         )}
         {Platform.OS === "web" ? (
           <>
-            <Pressable onPress={handleFullscreenToggle}>
-              <Maximize2 color={theme.colors.foreground} size={20} />
+            <Pressable
+              onPress={() => {
+                // check if we can Fullscreen
+                if (setFullscreen) setFullscreen(!fullscreen);
+              }}
+              style={[zero.p[2], zero.r.md]}
+            >
+              {fullscreen ? <Minimize /> : <Fullscreen />}
             </Pressable>
             <Pressable onPress={handleVolumePress}>
               {muted || volume === 0 ? (
