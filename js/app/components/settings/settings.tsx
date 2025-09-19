@@ -1,7 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
-import { Button, Text, Textarea, zero } from "@streamplace/components";
+import {
+  Button,
+  Text,
+  Textarea,
+  useToast,
+  View,
+  zero,
+} from "@streamplace/components";
 import AQLink from "components/aqlink";
-import Container from "components/container";
 import {
   createServerSettingsRecord,
   getServerSettingsFromPDS,
@@ -11,7 +17,7 @@ import {
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
-import { Switch, View } from "react-native";
+import { ScrollView, Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Updates } from "./updates";
 import WebhookManager from "./webhook-manager";
@@ -22,6 +28,8 @@ export function Settings() {
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
+
+  const toast = useToast();
 
   // are we logged in?
   const loggedIn = useAppSelector(
@@ -52,90 +60,87 @@ export function Settings() {
 
   return (
     <ScrollView>
-      <Container alignItems="center" justifyContent="center">
+      <View style={[{ alignItems: "center" }]}>
         <View
-          f={1}
-          alignItems="stretch"
-          justifyContent="flex-start"
-          mt="$8"
-          maxWidth={500}
-          $platform-web={{ width: "100%" }}
-          gap="$6"
+          style={[
+            { gap: 32 },
+            { paddingVertical: 24, maxWidth: 500, width: "100%" },
+          ]}
         >
-          <View maxHeight={200}>
+          <View>
             <Updates />
           </View>
 
-        <View
-          style={[
-            { alignItems: "stretch" },
-            { justifyContent: "flex-start" },
-            { gap: 16 },
-          ]}
-        >
           <View
             style={[
               { alignItems: "stretch" },
               { justifyContent: "flex-start" },
-              { width: "100%", flexDirection: "column" },
+              { gap: 16 },
             ]}
           >
             <View
               style={[
-                { flexDirection: "row" },
-                { alignItems: "flex-start" },
+                { alignItems: "stretch" },
                 { justifyContent: "flex-start" },
+                { width: "100%", flexDirection: "column" },
               ]}
             >
-              <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                <Text size="xl">Use Custom Node</Text>
-                <Text size="lg" color="muted">
-                  Default: {url}
-                </Text>
+              <View
+                style={[
+                  { flexDirection: "row" },
+                  { alignItems: "flex-start" },
+                  { justifyContent: "flex-start" },
+                ]}
+              >
+                <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
+                  <Text size="xl">Use Custom Node</Text>
+                  <Text size="lg" color="muted">
+                    Default: {url}
+                  </Text>
+                </View>
+                <Switch
+                  value={overrideEnabled}
+                  onValueChange={handleToggleOverride}
+                />
               </View>
-              <Switch
-                value={overrideEnabled}
-                onValueChange={handleToggleOverride}
+            </View>
+
+            {/* Custom URL Input Row */}
+            <View
+              style={[
+                { alignItems: "center" },
+                {
+                  gap: 8,
+                  opacity: overrideEnabled ? 1 : 0,
+                  height: overrideEnabled ? "auto" : 0,
+                  overflow: "hidden",
+                  flexDirection: "row",
+                },
+              ]}
+            >
+              <Textarea
+                value={newUrl}
+                style={[{ flex: 1 }]}
+                numberOfLines={1}
+                placeholder={url || "Enter custom node URL"}
+                placeholderTextColor="#999"
+                onChangeText={setNewUrl}
+                onSubmitEditing={onSubmitUrl}
+                textContentType="URL"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
               />
+              <Button
+                size="md"
+                variant="secondary"
+                style={[zero.py[0]]}
+                onPress={onSubmitUrl}
+              >
+                <Text size="lg">Save</Text>
+              </Button>
             </View>
           </View>
-
-          {/* Custom URL Input Row */}
-          <View
-            style={[
-              { alignItems: "center" },
-              {
-                gap: 8,
-                opacity: overrideEnabled ? 1 : 0,
-                height: overrideEnabled ? "auto" : 0,
-                overflow: "hidden",
-                flexDirection: "row",
-              },
-            ]}
-          >
-            <Textarea
-              value={newUrl}
-              style={[{ flex: 1 }]}
-              numberOfLines={1}
-              placeholder={url || "Enter custom node URL"}
-              placeholderTextColor="#999"
-              onChangeText={setNewUrl}
-              onSubmitEditing={onSubmitUrl}
-              textContentType="URL"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-            />
-            <Button
-              size="md"
-              variant="secondary"
-              style={[zero.py[0]]}
-              onPress={onSubmitUrl}
-            >
-              <Text size="lg">Save</Text>
-            </Button>
-          </View>
-        </View>
 
           {loggedIn && (
             <>
@@ -165,46 +170,18 @@ export function Settings() {
                 </View>
               </AQLink>
               <WebhookManager />
+              <Button></Button>
             </>
           )}
         </View>
-      </Container>
-    </ScrollView>
-        {loggedIn && (
-          <>
-            <DebugRecording />
-            <AQLink
-              to={{
-                screen: "KeyManagement",
-              }}
-            >
-              <View
-                style={[
-                  {
-                    flexDirection: "row",
-                    gap: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: "#333",
-                    padding: 8,
-                    borderRadius: 16,
-                    backgroundColor: "#1a1a1a",
-                  },
-                ]}
-              >
-                <Text
-                  style={[{ fontSize: 18, fontWeight: "600", color: "#fff" }]}
-                >
-                  Manage Keys
-                </Text>
-                <Text style={[{ fontSize: 16 }]}>→</Text>
-              </View>
-            </AQLink>
-          </>
-        )}
       </View>
-    </Container>
+      <Button
+        variant="secondary"
+        onPress={() => toast.show("i am", "magic john", { duration: 5 })}
+      >
+        I AM Magic JOHN
+      </Button>
+    </ScrollView>
   );
 }
 

@@ -12,10 +12,80 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useCallback } from "react";
 import { useTheme } from "../../ui";
 
-type ToastController = {
+type ToastConfig = {
+  title: string;
+  description?: string;
+  duration?: number;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
+type ToastState = {
+  id: string;
+  open: boolean;
+  title: string;
+  description?: string;
+  duration: number;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
+class ToastManager {
+  private listeners: Set<(state: ToastState | null) => void> = new Set();
+  private currentToast: ToastState | null = null;
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  show(config: ToastConfig) {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+
+    const toast: ToastState = {
+      id: Math.random().toString(36).substr(2, 9),
+      open: true,
+      title: config.title,
+      description: config.description,
+      duration: config.duration ?? 3,
+      actionLabel: config.actionLabel,
+      onAction: config.onAction,
+    };
+
+    this.currentToast = toast;
+    this.notifyListeners();
+
+    if (toast.duration > 0) {
+      this.timeoutId = setTimeout(() => {
+        this.hide();
+      }, toast.duration * 1000);
+    }
+  }
+
+  hide() {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+    this.currentToast = null;
+    this.notifyListeners();
+  }
+
+  subscribe(listener: (state: ToastState | null) => void) {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach((listener) => listener(this.currentToast));
+  }
+}
+
+const toastManager = new ToastManager();
+
+export const toast = {
   show: (
     title: string,
     description?: string,
@@ -24,103 +94,51 @@ type ToastController = {
       actionLabel?: string;
       onAction?: () => void;
     },
-  ) => void;
-  hide: () => void;
+  ) => {
+    toastManager.show({
+      title,
+      description,
+      ...options,
+    });
+  },
+  hide: () => toastManager.hide(),
 };
 
-type UseToastReturn = {
-  open: boolean;
-  title: string;
-  description?: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  duration?: number;
-  setOpen: (open: boolean) => void;
-  setTitle: (title: string) => void;
-  setDescription: (description: string) => void;
-  setActionLabel: (label: string) => void;
-  setOnAction: (cb?: () => void) => void;
-  setDuration: (duration: number) => void;
-  toastController: ToastController;
-};
+export function useToast() {
+  const [toastState, setToastState] = useState<ToastState | null>(null);
 
-/**
- * useToast - a hook to manage Toast state and provide a toastController.
- * Returns a ready-to-render ToastComponent.
- */
-export function useToast(
-  initial: {
-    title?: string;
-    description?: string;
-    duration?: number;
-    actionLabel?: string;
-    onAction?: () => void;
-  } = {},
-) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(initial.title ?? "");
-  const [description, setDescription] = useState(initial.description ?? "");
-  const [duration, setDuration] = useState(initial.duration ?? 3);
-  const [actionLabel, setActionLabel] = useState(
-    initial.actionLabel ?? "Action",
-  );
-  const [onAction, setOnAction] = useState<(() => void) | undefined>(
-    initial.onAction,
-  );
-
-  const show = useCallback(
-    (
-      toastTitle: string,
-      toastDescription?: string,
-      options?: {
-        duration?: number;
-        actionLabel?: string;
-        onAction?: () => void;
-      },
-    ) => {
-      setTitle(toastTitle);
-      setDescription(toastDescription ?? "");
-      setDuration(options?.duration ?? 3);
-      setActionLabel(options?.actionLabel ?? "Action");
-      setOnAction(options?.onAction);
-      setOpen(true);
-    },
-    [],
-  );
-
-  const hide = useCallback(() => {
-    setOpen(false);
+  useEffect(() => {
+    return toastManager.subscribe(setToastState);
   }, []);
 
-  // Ready-to-render Toast component
-  const ToastComponent = (
+  return {
+    toast: toastState,
+    ...toast,
+  };
+}
+
+export function ToastProvider() {
+  const [toastState, setToastState] = useState<ToastState | null>(null);
+
+  useEffect(() => {
+    return toastManager.subscribe(setToastState);
+  }, []);
+
+  if (!toastState?.open) return null;
+
+  return (
     <Toast
-      open={open}
-      onOpenChange={setOpen}
-      title={title}
-      description={description}
-      actionLabel={actionLabel}
-      onAction={onAction}
-      duration={duration}
+      open={toastState.open}
+      onOpenChange={(open) => {
+        if (!open) toastManager.hide();
+      }}
+      title={toastState.title}
+      description={toastState.description}
+      actionLabel={toastState.actionLabel}
+      onAction={toastState.onAction}
+      duration={toastState.duration}
     />
   );
-
-  return {
-    open,
-    title,
-    description,
-    actionLabel,
-    onAction,
-    duration,
-    setOpen,
-    setTitle,
-    setDescription,
-    setActionLabel,
-    setOnAction,
-    setDuration,
-    toastController: { show, hide },
-    ToastComponent,
-  };
 }
 
 type ToastProps = {
