@@ -1,7 +1,5 @@
 const { FileStore } = require("metro-cache");
 const path = require("path");
-// Enable Tamagui and add nice web support with optimizing compiler + CSS extraction
-const { withTamagui } = require("@tamagui/metro-plugin");
 
 const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 

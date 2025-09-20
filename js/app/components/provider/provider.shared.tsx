@@ -17,9 +17,6 @@ import React from "react";
 import { Provider as ReduxProvider } from "react-redux";
 import { useAppSelector } from "store/hooks";
 import { store } from "store/store";
-import { PortalProvider, TamaguiProvider } from "tamagui";
-import config from "tamagui.config";
-import { CurrentToast } from "./CurrentToast";
 
 export default Sentry.wrap(ProviderInner);
 
