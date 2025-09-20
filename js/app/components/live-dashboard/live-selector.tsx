@@ -1,13 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
 import { Button, Text, View, zero } from "@streamplace/components";
 import { flex } from "@streamplace/components/src/ui";
-import { Camera, FerrisWheel } from "@tamagui/lucide-icons";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
 import {
   selectIsReady,
   selectUserProfile,
 } from "features/bluesky/blueskySlice";
+import { Camera, FerrisWheel } from "lucide-react-native";
 import React, { useState } from "react";
 import { useAppSelector } from "store/hooks";
 import { StreamKeyScreen } from "./stream-key";

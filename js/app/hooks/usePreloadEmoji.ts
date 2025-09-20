@@ -1,6 +1,6 @@
 import { init } from "emoji-mart";
 import React from "react";
-import { isWeb } from "tamagui";
+import { Platform } from "react-native";
 
 let loadRequested = false;
 
@@ -9,7 +9,7 @@ export function usePreloadEmoji({ immediate }: { immediate?: boolean } = {}) {
     if (loadRequested) return;
     loadRequested = true;
     let data;
-    if (isWeb) {
+    if (Platform.OS === "web") {
       data = (await import("../assets/emoji-data.json")).default;
     } else {
       data = require("../assets/emoji-data.json");

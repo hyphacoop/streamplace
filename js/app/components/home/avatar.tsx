@@ -1,18 +1,45 @@
-import { Avatar, AvatarProps } from "@tamagui/avatar";
-import { Fish } from "@tamagui/lucide-icons";
+import { Text } from "@streamplace/components";
+import { Image, View } from "react-native";
 
-interface UserAvatarProps extends AvatarProps {
+interface UserAvatarProps {
   src?: string | null;
+  size?: number;
+  style?: any;
 }
 
-export function UserAvatar({ src, ...props }: UserAvatarProps) {
+export function UserAvatar({
+  src,
+  size = 32,
+  style,
+  ...props
+}: UserAvatarProps) {
   return (
-    <Avatar circular size="$4" {...props}>
-      {src ? <Avatar.Image accessibilityLabel="User avatar" src={src} /> : null}
-      <Avatar.Fallback backgroundColor="$gray8">
-        <Fish />
-      </Avatar.Fallback>
-    </Avatar>
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          overflow: "hidden",
+          backgroundColor: "#666",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        style,
+      ]}
+      {...props}
+    >
+      {src ? (
+        <Image
+          source={{ uri: src }}
+          style={{ width: "100%", height: "100%" }}
+          accessibilityLabel="User avatar"
+          resizeMode="cover"
+        />
+      ) : (
+        <Text style={[{ fontSize: size * 0.5, color: "#fff" }]}>🐟</Text>
+      )}
+    </View>
   );
 }
 

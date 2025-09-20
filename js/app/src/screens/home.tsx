@@ -1,6 +1,4 @@
-import { useStreamplaceStore } from "@streamplace/components";
-import { AlertCircle } from "@tamagui/lucide-icons";
-import { UseMediaState } from "@tamagui/web";
+import { Text, useStreamplaceStore, zero } from "@streamplace/components";
 import AQLink from "components/aqlink";
 import Container from "components/container";
 import ErrorBox from "components/error/error";
@@ -10,18 +8,14 @@ import Loading from "components/loading/loading";
 import Title from "components/title";
 import useAvatars from "hooks/useAvatars";
 import { useEffect, useState } from "react";
-import { RefreshControl } from "react-native";
-import { PlaceStreamLivestream } from "streamplace";
 import {
-  H3,
   Image,
-  Paragraph,
+  RefreshControl,
   ScrollView,
-  ScrollViewProps,
-  Text,
-  useMedia,
   View,
-} from "tamagui";
+  useWindowDimensions,
+} from "react-native";
+import { PlaceStreamLivestream } from "streamplace";
 
 // as we're not using a specific grid library these are necessary
 // to constrain the cards
@@ -69,51 +63,36 @@ function generateMockSegments(count: number): {
   return { streams: mockSegments };
 }
 
-function getHomeScreenItemSize(media: UseMediaState): StreamCardSize {
-  if (media.gtXxl) {
-    return "md";
-  } else if (media.gtLg) {
-    return "sm";
-  } else if (media.md) {
-    return "sm";
-  } else {
-    return "xs";
-  }
+function getHomeScreenItemSize(width: number): StreamCardSize {
+  if (width >= 1536) return "md"; // xxl
+  if (width >= 1280) return "sm"; // xl
+  if (width >= 1024) return "sm"; // lg
+  if (width >= 768) return "sm"; // md
+  return "xs"; // sm and below
 }
 
-function getHomeScreenCols(media: UseMediaState): number {
-  if (media.gtXxl) {
-    return 4;
-  } else if (media.gtXl) {
-    return 3;
-  } else if (media.gtMd) {
-    return 2;
-  } else if (media.gtSm) {
-    return 2;
-  } else if (media.gtXs) {
-    return 2;
-  } else {
-    return 1;
-  }
+function getHomeScreenCols(width: number): number {
+  if (width >= 1550) return 4; // Wide screens get 4 columns
+  if (width >= 1280) return 3; // xl gets 3 columns
+  if (width >= 1024) return 2; // lg gets 2 columns
+  if (width >= 768) return 2; // md gets 2 columns
+  return 1; // sm and below get 1 column
 }
-// Get the ratio for the first icon padding
-function getPadPercentage(media: UseMediaState): number {
-  if (media.gtXl) {
-    return 2.28;
-  } else {
-    return 2.3;
-  }
+
+// Get the ratio for the first icon padding based on column count
+function getPadPercentage(cols: number): number {
+  if (cols >= 4) return 2; // Less padding for 4+ columns
+  if (cols >= 3) return 1.3; // Original padding for 3 columns
+  return 1; // No extra padding for 2 or fewer columns
 }
 
 function HomeScreenItem({
   item,
-  media,
   size,
   avatarUrl,
   horizontal = false,
 }: {
   item: PlaceStreamLivestream.LivestreamView;
-  media: UseMediaState;
   size: StreamCardSize;
   avatarUrl?: string;
   horizontal?: boolean;
@@ -150,7 +129,7 @@ function HomeScreenItem({
 
 function PlaceholderItem() {
   return (
-    <View flex={1} opacity={0} pointerEvents="none">
+    <View style={[{ flex: 1 }, { opacity: 0, pointerEvents: "none" }]}>
       <StreamCardHorizontal
         size={"sm"}
         title={"you found a secret :)"}
@@ -173,10 +152,7 @@ function PlaceholderItem() {
 export default function HomeScreen({
   contentContainerStyle = {},
 }: {
-  contentContainerStyle?: Exclude<
-    ScrollViewProps["contentContainerStyle"],
-    string
-  >;
+  contentContainerStyle?: any;
 }) {
   const liveUsers = useStreamplaceStore((state) => state.liveUsers);
   const setLiveUsers = useStreamplaceStore((state) => state.setLiveUsers);
@@ -186,12 +162,12 @@ export default function HomeScreen({
   );
   const liveUsersError = useStreamplaceStore((state) => state.liveUsersError);
   const [manualRefresh, setManualRefresh] = useState(false);
+  const { width } = useWindowDimensions();
 
   // Use mock data for development/testing if needed
   //const segments = generateMockSegments(1).streams; // Uncomment this line to use mock data
   const segments = useStreamplaceStore((state) => state.liveUsers);
   // const segments = realSegments; // Comment this line out if using mock data
-  const media = useMedia();
 
   const avis = useAvatars((segments || []).map((s) => s.author.did));
 
@@ -215,10 +191,12 @@ export default function HomeScreen({
     return <Loading />;
   }
 
-  let cols = getHomeScreenCols(media);
-  let size = getHomeScreenItemSize(media);
+  let cols = getHomeScreenCols(width);
+  let size = getHomeScreenItemSize(width);
 
-  const firstRowCols = cols > 2 ? cols - 1 : cols;
+  // Only use horizontal layout for first card when we have enough columns (3+)
+  const useHorizontalFirst = cols >= 3;
+  const firstRowCols = useHorizontalFirst ? cols - 1 : cols;
 
   const firstRowItems = segments.slice(0, firstRowCols);
   let cutSegs = segments.slice(firstRowCols);
@@ -249,20 +227,24 @@ export default function HomeScreen({
       {liveUsersError && (
         <View>
           <Container
-            backgroundColor="#774316"
-            borderRadius="$4"
-            borderColor="#99889988"
-            borderWidth={2}
-            height="unset"
-            flexDirection="row"
-            alignItems="center"
-            justifyContent="flex-start"
-            paddingHorizontal="$3"
-            paddingVertical="$3"
-            gap="$3"
+            style={{
+              backgroundColor: "#774316",
+              borderRadius: 8,
+              borderColor: "#99889988",
+              borderWidth: 2,
+              height: "auto",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              paddingHorizontal: 12,
+              paddingVertical: 12,
+              gap: 12,
+            }}
           >
-            <AlertCircle size={24} minWidth={24} color="$white" />
-            <Text>
+            <Text style={{ fontSize: 24, minWidth: 24, color: "white" }}>
+              ⚠️
+            </Text>
+            <Text style={{ color: "white" }}>
               There was an error fetching the latest streams. You might be
               offline? code: {liveUsersError || "nocode"}
             </Text>
@@ -285,14 +267,16 @@ export default function HomeScreen({
           />
         }
       >
-        <Container width="100%">
+        <Container>
           {segments.length > 0 && (
             <View
-              flexDirection="row"
-              alignItems="center"
-              gap="$3"
-              marginVertical="$4"
-              paddingHorizontal="$0"
+              style={[
+                { flexDirection: "row" },
+                { alignItems: "center" },
+                { gap: 12 },
+                zero.my[8],
+                zero.px[0],
+              ]}
             >
               <LiveDot />
               <Title>
@@ -304,49 +288,66 @@ export default function HomeScreen({
 
           {segments.length === 0 && (
             <View
-              f={1}
-              justifyContent="center"
-              alignItems="center"
-              minHeight="auto"
-              paddingVertical={42}
+              style={[
+                { flex: 1 },
+                { justifyContent: "center" },
+                { alignItems: "center" },
+                { minHeight: "auto", paddingVertical: 42 },
+              ]}
             >
               <Image
                 source={require("../../assets/images/jelly.png")}
-                height="$9"
-                width="$9"
+                style={{ height: 64, width: 64 }}
               />
-              <H3>No one is streaming right now</H3>
-              <Paragraph>Check back later?</Paragraph>
+              <Text
+                style={[{ fontSize: 20, fontWeight: "bold", marginTop: 12 }]}
+              >
+                No one is streaming right now
+              </Text>
+              <Text style={{ marginTop: 8 }}>Check back later?</Text>
             </View>
           )}
           {firstRowItems.length > 0 && (
-            <View flexDirection="row" gap={24} marginBottom={24} width="full">
+            <View
+              style={[
+                { flexDirection: "row" },
+                {
+                  gap: 24,
+                  marginBottom: 24,
+                  width: "100%",
+                },
+              ]}
+            >
               {firstRowItems.map((item, itemIndex) => (
                 <View
                   key={item.cid || `item${itemIndex}`}
-                  flex={
-                    itemIndex == 0 && cols > 2 ? getPadPercentage(media) : 1
-                  }
-                  justifyContent="center"
+                  style={[
+                    {
+                      flex:
+                        itemIndex == 0 && useHorizontalFirst
+                          ? getPadPercentage(cols)
+                          : 0.97,
+                    },
+                    { justifyContent: "center" },
+                  ]}
                 >
                   <HomeScreenItem
                     item={item}
-                    media={media}
                     size={size}
                     avatarUrl={avis[item.author.did]?.avatar}
-                    horizontal={itemIndex == 0 && cols > 2}
+                    horizontal={itemIndex == 0 && useHorizontalFirst}
                   />
                 </View>
               ))}
-              {/* if cols > 2 (first el is horizontal) then pad the rest, else pad to 2 */}
+              {/* Pad the first row to match the column count */}
               {Array(
-                cols > 2
+                useHorizontalFirst
                   ? cols - firstRowItems.length - 1
                   : cols - firstRowItems.length,
               )
                 .fill(null)
-                .map((i) => (
-                  <View key={`item-${i}`} flex={1}>
+                .map((_, i) => (
+                  <View key={`item-${i}`} style={{ flex: 1 }}>
                     <PlaceholderItem />
                   </View>
                 ))}
@@ -358,25 +359,28 @@ export default function HomeScreen({
               {rows.map((row, rowIndex) => (
                 <View
                   key={`row-${rowIndex}`}
-                  flexDirection="row"
-                  gap={24} // This is the gap between columns
-                  marginBottom={24} // This is the gap between rows
+                  style={[
+                    { flexDirection: "row" },
+                    { gap: 24, marginBottom: 24 },
+                  ]}
                 >
                   {row.map((item, itemIndex) =>
                     item !== null ? (
                       <View
                         key={item.cid || `item-${rowIndex}-${itemIndex}`}
-                        flex={1}
+                        style={{ flex: 1 }}
                       >
                         <HomeScreenItem
                           item={item}
-                          media={media}
                           size={size}
                           avatarUrl={avis[item.author.did]?.avatar}
                         />
                       </View>
                     ) : (
-                      <View key={`item-${rowIndex}-${itemIndex}`} flex={1}>
+                      <View
+                        key={`item-${rowIndex}-${itemIndex}`}
+                        style={{ flex: 1 }}
+                      >
                         <PlaceholderItem />
                       </View>
                     ),

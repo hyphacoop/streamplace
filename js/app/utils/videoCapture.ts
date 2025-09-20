@@ -2,7 +2,8 @@
  * Utility functions for capturing video frames
  */
 import React from "react";
-import { isWeb } from "tamagui";
+
+const isWeb = typeof window !== "undefined";
 
 /**
  * Captures a frame from a video ref or element and returns it as a compressed JPEG blob

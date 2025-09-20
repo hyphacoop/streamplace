@@ -1,22 +1,29 @@
-import { Eye } from "@tamagui/lucide-icons";
-import { Text, View } from "tamagui";
+import { Text, useTheme, zero } from "@streamplace/components";
+import { Eye } from "lucide-react-native";
+import { View } from "react-native";
 
 export default function Viewers({ viewers }: { viewers: number }) {
+  let { theme } = useTheme();
   return (
     <View
-      justifyContent="center"
-      flexDirection="row"
-      alignItems="center"
-      gap="$2"
-      paddingHorizontal="$2"
-      paddingVertical="$1"
+      style={[
+        { justifyContent: "center", alignItems: "center" },
+        { flexDirection: "row" },
+        zero.gap.all[2],
+        zero.px[2],
+        zero.py[1],
+      ]}
     >
-      <Eye color="#fd5050" />
+      <Eye size={20} color="#fd5050" />
       <Text
-        color="#fd5050"
-        textShadowColor="black"
-        textShadowOffset={{ width: -1, height: 1 }}
-        textShadowRadius={3}
+        style={[
+          { color: "#fd5050" },
+          {
+            textShadowColor: "black",
+            textShadowOffset: { width: -1, height: 1 },
+            textShadowRadius: 3,
+          },
+        ]}
       >
         {new Intl.NumberFormat(undefined, { notation: "compact" }).format(
           viewers,

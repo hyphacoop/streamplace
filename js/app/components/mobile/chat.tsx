@@ -21,8 +21,8 @@ import { useResponsiveLayout } from "./useResponsiveLayout";
 
 import { useNavigation } from "@react-navigation/native";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
-import { ArrowRight } from "@tamagui/lucide-icons";
 import emojiData from "assets/emoji-data.json";
+import { ArrowRight } from "lucide-react-native";
 const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
 export function DesktopChatPanel({

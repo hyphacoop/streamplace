@@ -6,11 +6,10 @@ import {
   Text,
   zero,
 } from "@streamplace/components";
-import { ThemeProvider } from "@streamplace/components/src/lib/theme/theme";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
-import { Edit3, Plus, RefreshCw, Trash2, X } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
+import { Edit3, Plus, RefreshCw, Trash2, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, View } from "react-native";
 import { timeAgo } from "utils/timeAgo";
@@ -85,6 +84,7 @@ function WebhookRow({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
+  const { theme } = zero.useTheme();
   const isDiscord = webhook.url
     .toLowerCase()
     .startsWith("https://discord.com/api/webhooks");
@@ -134,7 +134,7 @@ function WebhookRow({
         <View style={[layout.flex.row, gap.all[2]]}>
           <Pressable
             style={[
-              bg.gray[100],
+              bg.blue[600],
               p[2],
               r.md,
               layout.flex.center,
@@ -143,7 +143,7 @@ function WebhookRow({
             onPress={() => onEdit(webhook)}
             disabled={isDeleting}
           >
-            <Edit3 size={16} color="#374151" />
+            <Edit3 size={16} color={theme.colors.text} />
           </Pressable>
 
           <Pressable
@@ -157,7 +157,7 @@ function WebhookRow({
             onPress={() => onDelete(webhook.id)}
             disabled={isDeleting}
           >
-            <Trash2 size={16} />
+            <Trash2 size={16} color={theme.colors.text} />
           </Pressable>
         </View>
       </View>
@@ -539,7 +539,7 @@ function WebhookForm({
                   variant="destructive"
                   onPress={() => removeReplacement(index)}
                 >
-                  <X size={20} mt={2} />
+                  <X size={20} />
                 </Button>
               )}
             </View>
@@ -604,7 +604,7 @@ function WebhookForm({
 
 export default function WebhookManager() {
   const agent = usePDSAgent();
-
+  const { theme } = zero.useTheme();
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingWebhooks, setDeletingWebhooks] = useState<Set<string>>(
@@ -775,156 +775,153 @@ export default function WebhookManager() {
   }
 
   return (
-    <ThemeProvider>
-      <View style={[flex.values[1]]}>
-        <ScrollView style={[flex.values[1]]}>
-          <View style={[{ maxWidth: 800 }, mx.auto]}>
-            {/* Header */}
-            <View style={[mb[6]]}>
-              <Text style={[mb[2], { fontSize: 24, fontWeight: "700" }]}>
-                Webhook Integrations
-              </Text>
-              <Text style={[text.gray[400], mb[4], { fontSize: 14 }]}>
-                Create webhooks to receive notifications when you go live or get
-                chat messages.
-              </Text>
+    <View style={[flex.values[1]]}>
+      <ScrollView style={[flex.values[1]]}>
+        <View style={[{ maxWidth: 800 }, mx.auto]}>
+          {/* Header */}
+          <View style={[mb[6]]}>
+            <Text size="xl">Webhook Integrations</Text>
+            <Text size="lg" style={[text.gray[400], mb[4]]}>
+              Create webhooks to receive notifications when you go live or get
+              chat messages.
+            </Text>
 
-              <View style={[layout.flex.row, gap.all[3]]}>
-                <Button onPress={handleCreate} size="sm" leftIcon={<Plus />}>
-                  <Text>Create Webhook</Text>
-                </Button>
+            <View
+              style={[layout.flex.row, layout.flex.justify.between, gap.all[3]]}
+            >
+              <Button
+                onPress={handleCreate}
+                size="pill"
+                leftIcon={<Plus color={theme.colors.text} />}
+              >
+                <Text>Create Webhook</Text>
+              </Button>
 
-                <Button
-                  onPress={loadWebhooks}
-                  disabled={loading}
-                  leftIcon={<RefreshCw />}
-                  size="sm"
-                >
-                  <Text>Refresh</Text>
-                </Button>
-              </View>
+              <Button
+                onPress={loadWebhooks}
+                disabled={loading}
+                leftIcon={<RefreshCw color={theme.colors.text} />}
+                size="pill"
+                variant="secondary"
+              >
+                <Text>Refresh</Text>
+              </Button>
             </View>
-
-            {/* Content */}
-            {loading ? (
-              <Loading />
-            ) : webhooks === null ? (
-              <View style={[layout.flex.center, mt[8]]}>
-                <Text style={[text.gray[600]]}>Failed to load webhooks</Text>
-              </View>
-            ) : webhooks.length === 0 ? (
-              <View style={[layout.flex.center, mt[8]]}>
-                <Text style={[text.gray[600], mb[4], { fontSize: 16 }]}>
-                  No webhooks yet!
-                </Text>
-                <Text
-                  style={[
-                    text.gray[500],
-                    mb[6],
-                    { fontSize: 14, textAlign: "center" },
-                  ]}
-                >
-                  Create your first webhook to start receiving notifications
-                  when you go live.
-                </Text>
-                <AQLink to={{ screen: "LiveDashboard" }}>
-                  <Text style={[text.blue[600], { fontSize: 14 }]}>
-                    Need to set up streaming first? Visit the Live Dashboard
-                  </Text>
-                </AQLink>
-              </View>
-            ) : (
-              <>
-                <View style={[mb[4]]}>
-                  <Text style={[text.gray[600], { fontSize: 14 }]}>
-                    {webhooks.length} webhook{webhooks.length !== 1 && "s"}
-                  </Text>
-                </View>
-                {webhooks.map((webhook) => (
-                  <WebhookRow
-                    key={webhook.id}
-                    webhook={webhook}
-                    onEdit={handleEdit}
-                    onDelete={deleteWebhook}
-                    isDeleting={deletingWebhooks.has(webhook.id)}
-                  />
-                ))}
-              </>
-            )}
-          </View>
-        </ScrollView>
-
-        <WebhookForm
-          webhook={editingWebhook}
-          isVisible={showForm}
-          onClose={() => {
-            setShowForm(false);
-            setEditingWebhook(undefined);
-          }}
-          onSubmit={handleSubmit}
-          isLoading={formLoading}
-        />
-
-        <Dialog
-          open={deleteDialog.isVisible}
-          onOpenChange={(open) =>
-            !open && setDeleteDialog({ isVisible: false, webhook: null })
-          }
-          title="Delete Webhook"
-          dismissible={false}
-        >
-          <View style={[w.percent[100], mb[8], mt[2]]}>
-            <Text style={[{ fontSize: 24 }]}>
-              Are you sure you want to delete "
-              {deleteDialog.webhook?.name || "Untitled Webhook"}"?
-            </Text>
-            <Text
-              style={[
-                text.gray[400],
-                mt[4],
-                { fontSize: 18, fontWeight: "700" },
-              ]}
-            >
-              This action cannot be undone.
-            </Text>
-            <Text style={[text.gray[400], { fontSize: 18, fontWeight: "700" }]}>
-              The webhook will no longer receive events.
-            </Text>
           </View>
 
-          <View style={[layout.flex.row, layout.flex.justify.end, gap.all[3]]}>
-            <Button
-              variant="secondary"
-              onPress={() =>
-                setDeleteDialog({ isVisible: false, webhook: null })
-              }
-              disabled={
-                deleteDialog.webhook
-                  ? deletingWebhooks.has(deleteDialog.webhook.id)
-                  : false
-              }
-            >
-              <Text>Cancel</Text>
-            </Button>
-            <Button
-              variant="destructive"
-              onPress={confirmDelete}
-              disabled={
-                deleteDialog.webhook
-                  ? deletingWebhooks.has(deleteDialog.webhook.id)
-                  : false
-              }
-            >
-              <Text style={[text.white, { fontSize: 14, fontWeight: "500" }]}>
-                {deleteDialog.webhook &&
-                deletingWebhooks.has(deleteDialog.webhook.id)
-                  ? "Deleting..."
-                  : "Delete"}
+          {/* Content */}
+          {loading ? (
+            <Loading />
+          ) : webhooks === null ? (
+            <View style={[layout.flex.center, mt[8]]}>
+              <Text style={[text.gray[600]]}>Failed to load webhooks</Text>
+            </View>
+          ) : webhooks.length === 0 ? (
+            <View style={[layout.flex.center, mt[8]]}>
+              <Text style={[text.gray[600], mb[4], { fontSize: 16 }]}>
+                No webhooks yet!
               </Text>
-            </Button>
-          </View>
-        </Dialog>
-      </View>
-    </ThemeProvider>
+              <Text
+                style={[
+                  text.gray[500],
+                  mb[6],
+                  { fontSize: 14, textAlign: "center" },
+                ]}
+              >
+                Create your first webhook to start receiving notifications when
+                you go live.
+              </Text>
+              <AQLink to={{ screen: "LiveDashboard" }}>
+                <Text style={[text.blue[600], { fontSize: 14 }]}>
+                  Need to set up streaming first? Visit the Live Dashboard
+                </Text>
+              </AQLink>
+            </View>
+          ) : (
+            <>
+              <View style={[mb[4]]}>
+                <Text style={[text.gray[600], { fontSize: 14 }]}>
+                  {webhooks.length} webhook{webhooks.length !== 1 && "s"}
+                </Text>
+              </View>
+              {webhooks.map((webhook) => (
+                <WebhookRow
+                  key={webhook.id}
+                  webhook={webhook}
+                  onEdit={handleEdit}
+                  onDelete={deleteWebhook}
+                  isDeleting={deletingWebhooks.has(webhook.id)}
+                />
+              ))}
+            </>
+          )}
+        </View>
+      </ScrollView>
+
+      <WebhookForm
+        webhook={editingWebhook}
+        isVisible={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setEditingWebhook(undefined);
+        }}
+        onSubmit={handleSubmit}
+        isLoading={formLoading}
+      />
+
+      <Dialog
+        open={deleteDialog.isVisible}
+        onOpenChange={(open) =>
+          !open && setDeleteDialog({ isVisible: false, webhook: null })
+        }
+        title="Delete Webhook"
+        dismissible={false}
+      >
+        <View style={[w.percent[100], mb[8], mt[2]]}>
+          <Text style={[{ fontSize: 24 }]}>
+            Are you sure you want to delete "
+            {deleteDialog.webhook?.name || "Untitled Webhook"}"?
+          </Text>
+          <Text
+            style={[text.gray[400], mt[4], { fontSize: 18, fontWeight: "700" }]}
+          >
+            This action cannot be undone.
+          </Text>
+          <Text style={[text.gray[400], { fontSize: 18, fontWeight: "700" }]}>
+            The webhook will no longer receive events.
+          </Text>
+        </View>
+
+        <View style={[layout.flex.row, layout.flex.justify.end, gap.all[3]]}>
+          <Button
+            variant="secondary"
+            onPress={() => setDeleteDialog({ isVisible: false, webhook: null })}
+            disabled={
+              deleteDialog.webhook
+                ? deletingWebhooks.has(deleteDialog.webhook.id)
+                : false
+            }
+          >
+            <Text>Cancel</Text>
+          </Button>
+          <Button
+            variant="destructive"
+            onPress={confirmDelete}
+            disabled={
+              deleteDialog.webhook
+                ? deletingWebhooks.has(deleteDialog.webhook.id)
+                : false
+            }
+          >
+            <Text style={[text.white, { fontSize: 14, fontWeight: "500" }]}>
+              {deleteDialog.webhook &&
+              deletingWebhooks.has(deleteDialog.webhook.id)
+                ? "Deleting..."
+                : "Delete"}
+            </Text>
+          </Button>
+        </View>
+      </Dialog>
+    </View>
   );
 }

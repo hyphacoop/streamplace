@@ -25,7 +25,6 @@ import {
   PlaceStreamServerSettings,
   StreamplaceAgent,
 } from "streamplace";
-import { isWeb } from "tamagui";
 import { privateKeyToAccount } from "viem/accounts";
 import { createAppSlice } from "../../hooks/createSlice";
 import { BlueskyState } from "./blueskyTypes";
@@ -108,7 +107,7 @@ const uploadThumbnail = async (
 
 // clear atproto login query params from url
 const clearQueryParams = () => {
-  if (!isWeb) {
+  if (Platform.OS !== "web") {
     return;
   }
   const u = new URL(document.location.href);

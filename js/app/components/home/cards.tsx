@@ -1,7 +1,7 @@
+import { Text, useTheme, zero } from "@streamplace/components";
 import Viewers from "components/viewers";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { Image } from "react-native";
-import { isWeb, Stack, Text, useMedia, View, XStack, YStack } from "tamagui";
+import { Image, Platform, View } from "react-native";
 
 export type StreamCardSize = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -28,10 +28,10 @@ const StreamCard = ({
   category = [],
   isLive = true,
 }: StreamCardProps) => {
-  const media = useMedia();
-
   const layoutHorizontal = horizontal;
   const { url } = useStreamplaceNode();
+  const { theme } = useTheme();
+  const isWeb = Platform.OS === "web";
 
   // Define dynamic styles
   const borderRadius = 12;
@@ -42,42 +42,39 @@ const StreamCard = ({
   const categoryPillHeight = 16;
   const categoryPillPaddingHorizontal = 4;
 
-  const MainContainer = layoutHorizontal ? XStack : YStack;
-  const SubContainer = layoutHorizontal ? YStack : XStack;
-
   const verticalContentSectionHeight = avatarSize + 2 * contentPadding;
   const horizontalContentSectionWidth = avatarSize * 2 + contentPadding;
 
   return (
-    <MainContainer
-      flex={1}
-      backgroundColor="$gray3"
-      borderRadius={borderRadius}
-      overflow="hidden"
-      borderColor="#99889988"
-      borderWidth={2}
-      alignItems={layoutHorizontal ? "center" : "stretch"}
-      hoverStyle={{
-        backgroundColor: "$gray6",
-      }}
+    <View
+      style={[
+        zero.flex.values[1],
+        {
+          backgroundColor: theme.colors.muted,
+          borderRadius,
+          overflow: "hidden",
+          borderColor: theme.colors.mutedForeground + 80,
+          borderWidth: 2,
+          alignItems: layoutHorizontal ? "center" : "stretch",
+          flexDirection: layoutHorizontal ? "row" : "column",
+        },
+      ]}
     >
       {/* Thumbnail Section */}
-      <Stack
-        flex={layoutHorizontal ? 0 : undefined}
-        minWidth={layoutHorizontal ? "67%" : "100%"}
-        $gtXl={{
-          minWidth: layoutHorizontal ? "65%" : "100%",
-        }}
-        $gtXxl={{
-          minWidth: layoutHorizontal ? "62.5%" : "100%",
-        }}
-        // native seems to be unable to adjust widths properly?
-        maxHeight={!isWeb ? "76.5%" : "100%"}
-        borderRadius={borderRadius}
-        overflow="hidden"
-        position="relative"
-        alignSelf={layoutHorizontal ? "auto" : "center"}
-        backgroundColor="$gray6"
+      <View
+        style={[
+          {
+            flex: layoutHorizontal ? 0 : undefined,
+            minWidth: layoutHorizontal ? "63%" : "100%",
+            // native seems to be unable to adjust widths properly?
+            maxHeight: !isWeb ? "76.5%" : "100%",
+            borderRadius,
+            overflow: "hidden",
+            position: "relative",
+            alignSelf: layoutHorizontal ? "auto" : "center",
+            backgroundColor: theme.colors.card,
+          },
+        ]}
       >
         <Image
           source={{ uri: `${url}/${thumbnailUrl}`, width: 160, height: 90 }}
@@ -85,46 +82,59 @@ const StreamCard = ({
           resizeMode="contain"
         />
         {isLive && (
-          <XStack
-            position="absolute"
-            top={contentPadding}
-            right={contentPadding}
-            backgroundColor="$background075"
-            borderRadius={999}
-            borderWidth={1}
-            borderColor="#7774"
-            paddingHorizontal={livePillPaddingHorizontal}
-            height={livePillHeight}
-            alignItems="center"
-            justifyContent="center"
-            gap={4}
+          <View
+            style={[
+              {
+                position: "absolute",
+                top: contentPadding,
+                right: contentPadding,
+                backgroundColor: "rgba(0, 0, 0, 0.75)",
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: "rgba(119, 119, 119, 0.25)",
+                paddingHorizontal: livePillPaddingHorizontal,
+                height: livePillHeight,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                flexDirection: "row",
+              },
+            ]}
           >
             <Viewers viewers={viewers} />
-          </XStack>
+          </View>
         )}
-      </Stack>
+      </View>
 
       {/* Content Section */}
-      <SubContainer
-        padding={contentPadding}
-        alignItems={layoutHorizontal ? "flex-start" : "center"}
-        justifyContent="flex-end"
-        gap={contentPadding}
-        height="unset"
-        width={layoutHorizontal ? horizontalContentSectionWidth : "unset"}
-        flex={1}
+      <View
+        style={[
+          {
+            padding: contentPadding,
+            alignItems: layoutHorizontal ? "flex-start" : "center",
+            justifyContent: "flex-end",
+            gap: contentPadding,
+            width: layoutHorizontal ? horizontalContentSectionWidth : "auto",
+            flex: 1,
+            flexDirection: layoutHorizontal ? "column" : "row",
+          },
+        ]}
       >
         {/* Avatar */}
-        <Stack
-          width={avatarSize}
-          height={avatarSize}
-          borderRadius={avatarSize / 2}
-          overflow="hidden"
-          flexShrink={0}
+        <View
+          style={[
+            {
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: avatarSize / 2,
+              overflow: "hidden",
+              flexShrink: 0,
+            },
+          ]}
         >
           {/* dynamically switching between these src crashes android */}
           {avatarUrl && (
-            <View f={1} key="avatar">
+            <View style={[zero.flex.values[1]]} key="avatar">
               <Image
                 key="avatar"
                 source={{
@@ -145,24 +155,29 @@ const StreamCard = ({
               />
             </View>
           )}
-        </Stack>
+        </View>
 
         {/* Text Content */}
-        <YStack
-          flex={1}
-          justifyContent="space-around"
-          alignItems="flex-start"
-          gap={contentPadding / 4}
-          width={layoutHorizontal ? "100%" : 0}
-          minHeight={0}
-          maxHeight="unset"
-          zIndex={12}
+        <View
+          style={[
+            zero.flex.values[1],
+            { justifyContent: "space-around" },
+            { alignItems: "flex-start" },
+            {
+              gap: contentPadding / 4,
+              width: layoutHorizontal ? "100%" : 0,
+              minHeight: 0,
+              zIndex: 12,
+            },
+          ]}
         >
           {title && (
             <Text
-              fontSize={16}
-              color="$color"
-              fontWeight="400"
+              style={[
+                {
+                  lineHeight: 16,
+                },
+              ]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -171,9 +186,12 @@ const StreamCard = ({
           )}
           {streamerName && (
             <Text
-              fontSize={14}
-              color="$color"
-              fontWeight="400"
+              size="sm"
+              style={[
+                {
+                  lineHeight: 16,
+                },
+              ]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -181,34 +199,51 @@ const StreamCard = ({
             </Text>
           )}
           {category.length > 0 && (
-            <XStack flexWrap="wrap" gap={4} alignItems="center">
+            <View
+              style={[
+                {
+                  flexWrap: "wrap",
+                  gap: 4,
+                  alignItems: "center",
+                  flexDirection: "row",
+                },
+              ]}
+            >
               {category.map((cat, index) => (
-                <Stack
+                <View
                   key={index}
-                  backgroundColor="$background075"
-                  borderRadius={999}
-                  paddingHorizontal={categoryPillPaddingHorizontal}
-                  height={categoryPillHeight}
-                  alignSelf="flex-start"
-                  justifyContent="center"
+                  style={[
+                    {
+                      backgroundColor: "rgba(0, 0, 0, 0.75)",
+                      borderRadius: 999,
+                      paddingHorizontal: categoryPillPaddingHorizontal,
+                      height: categoryPillHeight,
+                      alignSelf: "flex-start",
+                      justifyContent: "center",
+                    },
+                  ]}
                 >
                   <Text
-                    fontSize={12}
-                    color="$white075"
-                    fontWeight="400"
+                    style={[
+                      {
+                        fontSize: 12,
+                        color: "rgba(255, 255, 255, 0.75)",
+                        fontWeight: "400",
+                        paddingHorizontal: 3,
+                      },
+                    ]}
                     numberOfLines={1}
                     ellipsizeMode="tail"
-                    paddingHorizontal={3}
                   >
                     {cat}
                   </Text>
-                </Stack>
+                </View>
               ))}
-            </XStack>
+            </View>
           )}
-        </YStack>
-      </SubContainer>
-    </MainContainer>
+        </View>
+      </View>
+    </View>
   );
 };
 

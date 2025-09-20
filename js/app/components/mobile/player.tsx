@@ -13,10 +13,10 @@ import {
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
-import { ArrowLeft, ArrowRight } from "@tamagui/lucide-icons";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
+import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
 import { Animated, ScrollView } from "react-native";
 import { useAppSelector } from "store/hooks";
@@ -224,7 +224,11 @@ export function PlayerInner(
       >
         <PlayerInnerInner {...props}>
           {(showBottomMetaPanel || fullscreen) && (
-            <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
+            <DesktopUi
+              dropdownPortalContainer={dropdownPortalRef.current}
+              isChatOpen={props.showChat}
+              setIsChatOpen={props.setShowChat}
+            />
           )}
           <PlayerUI.ViewerLoadingOverlay />
           <OfflineCounter isMobile={true} />

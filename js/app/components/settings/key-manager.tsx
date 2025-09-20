@@ -1,5 +1,4 @@
 import { useNavigation } from "@react-navigation/native";
-import { RefreshCcw, X } from "@tamagui/lucide-icons";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
 import {
@@ -8,17 +7,15 @@ import {
   selectKeyRecords,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { PlaceStreamKey } from "streamplace";
-import {
-  Button,
-  ScrollView,
-  Spinner,
-  Text,
-  View,
-  XStack,
-  YStack,
-} from "tamagui";
 import { timeAgo } from "utils/timeAgo";
 
 function KeyRow({
@@ -33,48 +30,70 @@ function KeyRow({
   isDeleting: boolean;
 }) {
   return (
-    <XStack
-      justifyContent="space-between"
-      alignItems="stretch"
-      gap="$4"
-      opacity={isDeleting ? 0.5 : 1}
-      pointerEvents={isDeleting ? "none" : "auto"}
-      position="relative"
+    <View
+      style={[
+        { justifyContent: "space-between" },
+        { alignItems: "stretch" },
+        {
+          gap: 16,
+          opacity: isDeleting ? 0.5 : 1,
+          pointerEvents: isDeleting ? "none" : "auto",
+          flexDirection: "row",
+        },
+      ]}
     >
       <View
-        flexDirection="row"
-        $xs={{ flexDirection: "column", marginBottom: "$4" }}
-        gap="$2"
+        style={[
+          {
+            flexDirection: "row",
+            gap: 8,
+          },
+        ]}
       >
         {keyRecord?.signingKey && (
           <Text
-            fontFamily="$mono"
-            fontSize="$2"
-            $xs={{ width: "$14" }}
-            ellipse
+            style={[
+              {
+                fontFamily: "monospace",
+                fontSize: 12,
+                color: "#fff",
+              },
+            ]}
             numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {keyRecord?.signingKey}
           </Text>
         )}
         {keyRecord?.createdAt && (
-          <Text fontSize="$2" f={1}>
+          <Text style={[{ fontSize: 12, flex: 1, color: "#fff" }]}>
             made {timeAgo(new Date(keyRecord.createdAt))}
           </Text>
         )}
       </View>
-      <Button
-        aria-label="Delete"
-        size="$3"
-        aspectRatio={1 / 1}
-        padding="$2"
-        hoverStyle={{ backgroundColor: "#f46" }}
+      <TouchableOpacity
+        style={[
+          {
+            width: 32,
+            height: 32,
+            aspectRatio: 1,
+            padding: 8,
+            backgroundColor: isDeleting ? "#666" : "#333",
+            borderRadius: 8,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        ]}
         onPress={() => deleteKeyRecord(rkey)}
         disabled={isDeleting}
       >
-        {isDeleting ? <Spinner size="small" /> : <X />}
-      </Button>
-    </XStack>
+        {isDeleting ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={[{ fontSize: 16, color: "#fff" }]}>×</Text>
+        )}
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -107,66 +126,96 @@ export default function KeyManager() {
   navigation.setOptions({ title: `Key Manager` });
 
   return (
-    <ScrollView justifyContent="flex-start" alignItems="center">
-      <YStack f={1} p="$4" gap="$4" maxWidth={650}>
+    <ScrollView
+      contentContainerStyle={[
+        { justifyContent: "flex-start" },
+        { alignItems: "center" },
+      ]}
+    >
+      <View style={[{ flex: 1 }, { padding: 16, gap: 16, maxWidth: 650 }]}>
         {keyRecords === null || keyObj === null ? (
           <Loading />
         ) : keyRecords.records.length === 0 ? (
           <>
-            <Text mt="$8">No keys here!</Text>
+            <Text style={[{ marginTop: 32, fontSize: 16, color: "#fff" }]}>
+              No keys here!
+            </Text>
             <AQLink to={{ screen: "LiveDashboard" }}>
-              <Text fontSize="$2" color="$color.blue7Light">
+              <Text style={[{ fontSize: 12, color: "#007AFF" }]}>
                 Go to the live dashboard to create a key.
               </Text>
             </AQLink>
-            <Button
-              aria-label="Refresh"
-              size="$3"
-              padding="$2"
+            <TouchableOpacity
+              style={[
+                {
+                  width: 32,
+                  height: 32,
+                  padding: 8,
+                  backgroundColor: "#333",
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                },
+              ]}
               onPress={() => dispatch(getStreamKeyRecords())}
             >
-              <RefreshCcw />
-            </Button>
+              <Text style={[{ fontSize: 16, color: "#fff" }]}>↻</Text>
+            </TouchableOpacity>
           </>
         ) : keyObj.loading == true || keyRecords === null ? (
           <Loading />
         ) : keyRecords.records.length === 0 ? (
           <>
-            <Text mt="$8">No keys here!</Text>
+            <Text style={[{ marginTop: 32, fontSize: 16, color: "#fff" }]}>
+              No keys here!
+            </Text>
             <AQLink to={{ screen: "LiveDashboard" }}>
-              <Text fontSize="$2" color="$color.blue7Light">
+              <Text style={[{ fontSize: 12, color: "#007AFF" }]}>
                 Go to the live dashboard to create a key.
               </Text>
             </AQLink>
           </>
         ) : (
           <>
-            <YStack
-              gap="$2"
-              borderBottomWidth={1}
-              borderBottomColor="$color.gray3Dark"
-              pb="$2"
-              mb="$2"
+            <View
+              style={[
+                {
+                  gap: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#333",
+                  paddingBottom: 8,
+                  marginBottom: 8,
+                },
+              ]}
             >
-              <YStack
-                gap="$2"
-                borderBottomWidth={1}
-                borderBottomColor="$color.gray3Dark"
-                pb="$2"
-                mb="$2"
+              <View
+                style={[
+                  {
+                    gap: 8,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#333",
+                    paddingBottom: 8,
+                    marginBottom: 8,
+                  },
+                ]}
               >
-                <Text fontSize="$8">Your Stream Pubkeys</Text>
-                <Text fontSize="$2" color="$color.gray11Dark">
+                <Text
+                  style={[{ fontSize: 32, fontWeight: "bold", color: "#fff" }]}
+                >
+                  Your Stream Pubkeys
+                </Text>
+                <Text style={[{ fontSize: 12, color: "#999" }]}>
                   A pubkey is a pair to one of your stream keys. You can revoke
                   access for a specific stream key by revoking its associated
                   pubkey below.
                 </Text>
-              </YStack>
-              <YStack gap="$2">
+              </View>
+              <View style={[{ gap: 8 }]}>
                 {keyRecords.records.map((keyRecord) => {
                   const rkey = keyRecord.uri.split("/").pop() as string;
                   return (
                     <KeyRow
+                      key={rkey}
                       rkey={rkey}
                       keyRecord={keyRecord.value as any}
                       deleteKeyRecord={deleteKeyRecord}
@@ -174,19 +223,19 @@ export default function KeyManager() {
                     />
                   );
                 })}
-              </YStack>
-              <Text fontSize="$2" color="$color.gray11Dark">
+              </View>
+              <Text style={[{ fontSize: 12, color: "#999" }]}>
                 {keyRecords.records.length} key
                 {keyRecords.records.length > 1 && "s"}
               </Text>
-            </YStack>
+            </View>
 
-            <Text fontSize="$2" color="$color.gray11Dark">
+            <Text style={[{ fontSize: 12, color: "#999" }]}>
               Go to the live dashboard to create a key.
             </Text>
           </>
         )}
-      </YStack>
+      </View>
     </ScrollView>
   );
 }

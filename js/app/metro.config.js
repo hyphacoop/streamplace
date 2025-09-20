@@ -17,14 +17,6 @@ config.cacheStores = [
   }),
 ];
 
-// Enable Tamagui and add nice web support with optimizing compiler + CSS extraction
-const { withTamagui } = require("@tamagui/metro-plugin");
-config = withTamagui(config, {
-  components: ["tamagui"],
-  config: "./tamagui.config.ts",
-  outputCSS: "./tamagui-web.css",
-});
-
 const overrides = {};
 
 const nativeOverrides = {

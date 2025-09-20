@@ -35,13 +35,13 @@ func loadFont() (*truetype.Font, error) {
 	}
 	var fontFile string
 	for _, entry := range entries {
-		if strings.HasPrefix(entry.Name(), "FiraCode-Medium") {
+		if strings.HasPrefix(entry.Name(), "AtkinsonHyperlegibleM") {
 			fontFile = fmt.Sprintf("dist/assets/assets/fonts/%s", entry.Name())
 			break
 		}
 	}
 	if fontFile == "" {
-		return nil, fmt.Errorf("could not find FiraCode-Medium font")
+		return nil, fmt.Errorf("could not find AtkinsonHyperlegibleMono-Regular font")
 	}
 	fd, err := app.AllFiles.Open(fontFile)
 	if err != nil {

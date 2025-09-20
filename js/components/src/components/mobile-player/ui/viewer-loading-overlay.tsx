@@ -15,7 +15,7 @@ import {
 
 export function ViewerLoadingOverlay() {
   const status = usePlayerStore((x) => x.status);
-  const theme = useTheme();
+  const { theme, zero: zt } = useTheme();
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function ViewerLoadingOverlay() {
 
   let spinner = <Loader size="large" />;
   if (status === PlayerStatus.PAUSE) {
-    spinner = <Play size="$12" color={theme.styles.text.primary["color"]} />;
+    spinner = <Play size="$12" color={theme.colors.foreground} />;
   }
 
   return (

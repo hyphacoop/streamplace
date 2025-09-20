@@ -1,8 +1,7 @@
-import { ToastViewport, useToastController } from "@tamagui/toast";
+import { Text } from "@streamplace/components";
 import * as ExpoUpdates from "expo-updates";
 import { useEffect, useState } from "react";
-import { Platform } from "react-native";
-import { Button, H2, H5, Text, View } from "tamagui";
+import { Platform, TouchableOpacity, View } from "react-native";
 import pkg from "../../package.json";
 
 export function Updates() {
@@ -32,53 +31,93 @@ export function Updates() {
     runTypeMessage = "Recovery";
   }
 
-  const toast = useToastController();
-
   return (
     <View
-      f={1}
-      alignItems="center"
-      justifyContent="center"
-      fg={1}
-      flexBasis={0}
+      style={[
+        { flex: 1 },
+        { alignItems: "center" },
+        { justifyContent: "center" },
+        { flexBasis: 0 },
+      ]}
     >
-      <ToastViewport name="modal" top="$8" left={0} right={0} />
       <View>
-        <H2 textAlign="center">Streamplace v{version}</H2>
-        <H5 textAlign="center" pb="$5">
+        <Text
+          style={[
+            {
+              fontSize: 24,
+              fontWeight: "bold",
+              textAlign: "center",
+              color: "#fff",
+            },
+          ]}
+        >
+          Streamplace v{version}
+        </Text>
+        <Text
+          style={[
+            {
+              fontSize: 18,
+              fontWeight: "600",
+              textAlign: "center",
+              paddingBottom: 20,
+              color: "#fff",
+            },
+          ]}
+        >
           {runTypeMessage}
-        </H5>
-        <Button
+        </Text>
+        <TouchableOpacity
+          style={[
+            {
+              backgroundColor: "#007AFF",
+              borderRadius: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              alignItems: "center",
+            },
+          ]}
           onPress={async () => {
             try {
               setChecked(true);
               const res = await ExpoUpdates.checkForUpdateAsync();
               if (!res.isAvailable) {
-                toast.show("No update found", {
-                  viewportName: "modal",
-                  message:
-                    "You are on the latest version of Streamplace, hooray!",
-                });
+                // Removed toast functionality - replaced with console.log
+                console.log(
+                  "No update found - You are on the latest version of Streamplace, hooray!",
+                );
               }
             } catch (e) {
-              toast.show("Update failed!", {
-                viewportName: "modal",
-                message: `You may need to update the app through the ${Platform.OS === "ios" ? "App" : "Play"} Store.`,
-              });
+              // Removed toast functionality - replaced with console.log
+              console.log(
+                `Update failed! You may need to update the app through the ${Platform.OS === "ios" ? "App" : "Play"} Store.`,
+              );
             }
           }}
         >
-          <Text>{buttonText}</Text>
-        </Button>
+          <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+            {buttonText}
+          </Text>
+        </TouchableOpacity>
         {isUpdatePending && (
-          <Button
-            mt="$2"
+          <TouchableOpacity
+            style={[
+              {
+                marginTop: 8,
+                backgroundColor: "#007AFF",
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                alignItems: "center",
+              },
+            ]}
             onPress={() => {
               ExpoUpdates.reloadAsync();
             }}
           >
-            <Text>Reload app for new version</Text>
-          </Button>
+            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+              Reload app for new version
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     </View>

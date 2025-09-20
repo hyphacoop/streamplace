@@ -1,117 +1,48 @@
+import { Text, zero } from "@streamplace/components";
 import * as chrono from "chrono-node";
 import { useEffect, useState } from "react";
-import {
-  Text,
-  View,
-  YStack,
-  styled,
-  useMedia,
-  useWindowDimensions,
-} from "tamagui";
+import { View, useWindowDimensions } from "react-native";
 
-const CountdownBox = styled(View, {
-  alignSelf: "center",
-  flexDirection: "row",
-  variants: {
-    small: {
-      true: {
-        alignSelf: "auto",
-      },
-    },
-  },
-} as const);
-const Line = styled(View, {
-  // alignItems: "center",
-  // flexWrap: "wrap",
-  justifyContent: "flex-end",
-  flexDirection: "row",
-  variants: {
-    small: {
-      true: {
-        // flex: 0,
-        // flexDirection: "column",
-      },
-    },
-  },
-} as const);
-const Unit = styled(YStack, {
-  marginLeft: "$4",
-  marginRight: "$4",
-  flex: 0,
-  variants: {
-    small: {
-      true: {
-        marginLeft: "$2",
-        marginRight: "$2",
-      },
-    },
-  },
-} as const);
-const BorderBox = styled(View, {
-  borderColor: "white",
-  borderWidth: 0,
-  borderBlockStyle: "solid",
-  borderTopWidth: 4,
-  // backgroundColor: "green",
-  variants: {
-    small: {
-      true: {
-        fontSize: "$5",
-        lineHeight: "$5",
-        borderTopWidth: 2,
-      },
-    },
-  },
-} as const);
-const TimeText = styled(Text, {
-  fontFamily: "$mono",
-  fontSize: "$10",
-  // backgroundColor: "red",
-  // position: "relative",
-  // top: 5,
-  lineHeight: "$10",
-  variants: {
-    small: {
-      true: {
-        fontSize: "$6",
-        lineHeight: "$6",
-      },
-    },
-  },
-} as const);
-const LabelText = styled(Text, {
-  fontSize: "$7",
-  variants: {
-    small: {
-      true: {
-        fontSize: "$6",
-        lineHeight: "$6",
-      },
-    },
-  },
-} as const);
-
-const LabelBox = ({ children, small }) => {
-  return (
-    <BorderBox small={small}>
-      <LabelText small={small}>{children}</LabelText>
-    </BorderBox>
-  );
-};
-
-export function Countdown({
-  from,
-  to,
-  small,
-}: {
+interface CountdownProps {
   from?: string;
   to?: string;
   small?: boolean;
-}) {
-  const media = useMedia();
+}
+
+interface LabelBoxProps {
+  children: React.ReactNode;
+  small?: boolean;
+}
+
+const LabelBox = ({ children, small }: LabelBoxProps) => {
+  return (
+    <View
+      style={[
+        {
+          borderColor: "white",
+          borderWidth: 0,
+          borderTopWidth: small ? 2 : 4,
+          borderStyle: "solid",
+        },
+      ]}
+    >
+      <Text
+        style={[
+          small ? { fontSize: 18 } : { fontSize: 24 },
+          small ? { lineHeight: 24 } : { lineHeight: 28 },
+        ]}
+      >
+        {children}
+      </Text>
+    </View>
+  );
+};
+
+export function Countdown({ from, to, small }: CountdownProps) {
   const [now, setNow] = useState(Date.now());
   const [dest, setDest] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
+
   useEffect(() => {
     if (from) {
       const fromDate = chrono.parseDate(from);
@@ -129,6 +60,7 @@ export function Countdown({
       throw new Error("must provide either from or to");
     }
   }, [from, to]);
+
   useEffect(() => {
     const tick = () => {
       if (!running) {
@@ -147,6 +79,7 @@ export function Countdown({
   if (dest === null) {
     return <View />;
   }
+
   let diff = Math.abs(dest - now);
   if (to && now > dest) {
     diff = 0;
@@ -156,37 +89,54 @@ export function Countdown({
   small = small ?? width <= 600;
   const [years, days, hrs, min, sec, ms] = toLabels(diff);
 
+  const unitStyle = [
+    zero.mx[small ? 2 : 4],
+    zero.flex.values[0],
+    { flexDirection: "column" },
+  ];
+
+  const timeTextStyle = [
+    { fontFamily: "monospace" },
+    small ? { fontSize: 18 } : { fontSize: 128 },
+    small ? { lineHeight: 24 } : { lineHeight: 40 },
+  ];
+
   return (
-    <CountdownBox small={small}>
-      <Line small={small}>
-        <Unit small={small}>
-          <TimeText small={small}>{years}</TimeText>
+    <View
+      style={[
+        { flexDirection: "row" },
+        { alignSelf: small ? "auto" : "center" },
+      ]}
+    >
+      <View style={[{ flexDirection: "row" }, { justifyContent: "flex-end" }]}>
+        <View style={unitStyle}>
+          <Text style={timeTextStyle}>{years}</Text>
           <LabelBox small={small}>YEARS</LabelBox>
-        </Unit>
-        <Unit small={small}>
-          <TimeText small={small}>{days}</TimeText>
+        </View>
+        <View style={unitStyle}>
+          <Text style={timeTextStyle}>{days}</Text>
           <LabelBox small={small}>DAYS</LabelBox>
-        </Unit>
-        <Unit small={small}>
-          <TimeText small={small}>{hrs}</TimeText>
+        </View>
+        <View style={unitStyle}>
+          <Text style={timeTextStyle}>{hrs}</Text>
           <LabelBox small={small}>HRS</LabelBox>
-        </Unit>
-      </Line>
-      <Line small={small}>
-        <Unit small={small}>
-          <TimeText small={small}>{min}</TimeText>
+        </View>
+      </View>
+      <View style={[{ flexDirection: "row" }, { justifyContent: "flex-end" }]}>
+        <View style={unitStyle}>
+          <Text style={timeTextStyle}>{min}</Text>
           <LabelBox small={small}>MIN</LabelBox>
-        </Unit>
-        <Unit small={small}>
-          <TimeText small={small}>{sec}</TimeText>
+        </View>
+        <View style={unitStyle}>
+          <Text style={timeTextStyle}>{sec}</Text>
           <LabelBox small={small}>SEC</LabelBox>
-        </Unit>
-        <Unit small={small}>
-          <TimeText small={small}>{ms}</TimeText>
+        </View>
+        <View style={unitStyle}>
+          <Text style={timeTextStyle}>{ms}</Text>
           <LabelBox small={small}>MS</LabelBox>
-        </Unit>
-      </Line>
-    </CountdownBox>
+        </View>
+      </View>
+    </View>
   );
 }
 

@@ -3,8 +3,10 @@ import { Player } from "components/mobile/player";
 import { PlayerProps } from "components/player/props";
 import { FullscreenProvider } from "contexts/FullscreenContext";
 import useTitle from "hooks/useTitle";
-import { isWeb } from "tamagui";
+import { Platform } from "react-native";
 import { queryToProps } from "./util";
+
+const isWeb = Platform.OS === "web";
 
 export default function MobileStream({ route }) {
   const { user, protocol, url } = route.params;
