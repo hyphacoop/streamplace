@@ -6,6 +6,7 @@ import {
   useAvatars,
   useCameraToggle,
   useLivestreamInfo,
+  useMuted,
   usePlayerDimensions,
   usePlayerStore,
   useSegmentDimensions,
@@ -49,6 +50,7 @@ export function MobileUi() {
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
+  const muted = useMuted();
   const setMuted = useSetMuted();
 
   const { shouldShowFloatingMetrics, safeAreaInsets } = useResponsiveLayout();
@@ -260,12 +262,12 @@ export function MobileUi() {
       {!isSelfAndNotLive && (
         <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
       )}
-      {muteWasForced && (
+      {muted && (
         <View
           style={[
             layout.position.absolute,
-            position.top[14],
-            position.right[2],
+            position.top[16],
+            position.left[2],
             layout.flex.column,
             layout.flex.center,
           ]}
@@ -275,6 +277,8 @@ export function MobileUi() {
               if (muteWasForced) {
                 setMuted(false);
                 setMuteWasForced(false);
+              } else {
+                setMuted(false);
               }
             }}
             style={[
@@ -285,9 +289,6 @@ export function MobileUi() {
               },
             ]}
           >
-            <Text color="muted" size="sm">
-              Tap to unmute
-            </Text>
             <View
               style={[
                 {
@@ -301,6 +302,9 @@ export function MobileUi() {
             >
               <VolumeX size="24" color="rgba(255,120,120,0.8)" />
             </View>
+            <Text color="muted" size="sm">
+              Tap to unmute
+            </Text>
           </Pressable>
         </View>
       )}
