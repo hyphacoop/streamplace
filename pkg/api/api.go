@@ -314,7 +314,7 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 			return
 		}
 		if errors.Is(err, ErrorIndex) || f == "" {
-			bs, err := linker.GenerateDefaultCard(ctx, req.URL)
+			bs, err := linker.GenerateDefaultCard(ctx, req.URL, a.CLI.SentryDSN)
 			if err != nil {
 				log.Error(ctx, "error generating default card", "error", err)
 			}
@@ -357,7 +357,7 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 			defaultHandler.ServeHTTP(w, req)
 			return
 		}
-		bs, err := linker.GenerateStreamerCard(ctx, req.URL, lsv)
+		bs, err := linker.GenerateStreamerCard(ctx, req.URL, lsv, a.CLI.SentryDSN)
 		if err != nil {
 			log.Error(ctx, "error generating html", "error", err)
 			defaultHandler.ServeHTTP(w, req)

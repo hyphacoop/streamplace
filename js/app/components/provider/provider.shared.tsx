@@ -26,6 +26,7 @@ export default Sentry.wrap(ProviderInner);
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
+import { Platform } from "react-native";
 Sentry.setExtras({
   manifest: Updates.manifest,
   linkingUri: Constants.linkingUri,
@@ -44,8 +45,18 @@ function ProviderInner({
   children: React.ReactNode;
   linking: LinkingOptions<ReactNavigation.RootParamList>;
 }) {
+  // get proper DSN for environment
+  // on ios/android it's process.env.EXPO_PUBLIC_SENTRY_DSN
+  // on web it will be injected at runtime
+  let dsn = undefined;
+  if (Platform.OS === "web") {
+    dsn = (window as any).SENTRY_DSN;
+  } else {
+    dsn = process.env.EXPO_PUBLIC_SENTRY_DSN || undefined;
+  }
+
   Sentry.init({
-    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || undefined,
+    dsn,
     // Adds more context data to events (IP address, cookies, user, etc.)
     // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
     sendDefaultPii: true,

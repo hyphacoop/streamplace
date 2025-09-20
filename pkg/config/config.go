@@ -116,6 +116,7 @@ type CLI struct {
 	LivepeerHelp           bool
 	PLCURL                 string
 	SQLLogging             bool
+	SentryDSN              string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -180,6 +181,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
 	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
+	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
