@@ -571,6 +571,11 @@ uint64_t uniffi_iroh_streamplace_fn_method_sender_node_addr(void* ptr
 uint64_t uniffi_iroh_streamplace_fn_method_sender_send(void* ptr, RustBuffer key, RustBuffer data
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_PRINT_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_PRINT_CERT
+void uniffi_iroh_streamplace_fn_func_print_cert(RustBuffer path, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_RUSTBUFFER_ALLOC
 #define UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_RUSTBUFFER_ALLOC
 RustBuffer ffi_iroh_streamplace_rustbuffer_alloc(uint64_t size, RustCallStatus *out_status
@@ -849,6 +854,12 @@ void ffi_iroh_streamplace_rust_future_free_void(uint64_t handle
 #ifndef UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_RUST_FUTURE_COMPLETE_VOID
 #define UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_RUST_FUTURE_COMPLETE_VOID
 void ffi_iroh_streamplace_rust_future_complete_void(uint64_t handle, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_PRINT_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_PRINT_CERT
+uint16_t uniffi_iroh_streamplace_checksum_func_print_cert(void
+    
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DATAHANDLER_HANDLE_DATA

@@ -351,6 +351,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_print_cert()
+		})
+		if checksum != 62027 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_print_cert: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_method_datahandler_handle_data()
 		})
 		if checksum != 27893 {
@@ -1592,6 +1601,124 @@ func (_ FfiDestroyerSender) Destroy(value *Sender) {
 	value.Destroy()
 }
 
+type CertError struct {
+	err error
+}
+
+// Convience method to turn *CertError into error
+// Avoiding treating nil pointer as non nil error interface
+func (err *CertError) AsError() error {
+	if err == nil {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func (err CertError) Error() string {
+	return fmt.Sprintf("CertError: %s", err.err.Error())
+}
+
+func (err CertError) Unwrap() error {
+	return err.err
+}
+
+// Err* are used for checking error type with `errors.Is`
+var ErrCertErrorNoCertificateChainFound = fmt.Errorf("CertErrorNoCertificateChainFound")
+var ErrCertErrorC2paError = fmt.Errorf("CertErrorC2paError")
+
+// Variant structs
+type CertErrorNoCertificateChainFound struct {
+	message string
+}
+
+func NewCertErrorNoCertificateChainFound() *CertError {
+	return &CertError{err: &CertErrorNoCertificateChainFound{}}
+}
+
+func (e CertErrorNoCertificateChainFound) destroy() {
+}
+
+func (err CertErrorNoCertificateChainFound) Error() string {
+	return fmt.Sprintf("NoCertificateChainFound: %s", err.message)
+}
+
+func (self CertErrorNoCertificateChainFound) Is(target error) bool {
+	return target == ErrCertErrorNoCertificateChainFound
+}
+
+type CertErrorC2paError struct {
+	message string
+}
+
+func NewCertErrorC2paError() *CertError {
+	return &CertError{err: &CertErrorC2paError{}}
+}
+
+func (e CertErrorC2paError) destroy() {
+}
+
+func (err CertErrorC2paError) Error() string {
+	return fmt.Sprintf("C2paError: %s", err.message)
+}
+
+func (self CertErrorC2paError) Is(target error) bool {
+	return target == ErrCertErrorC2paError
+}
+
+type FfiConverterCertError struct{}
+
+var FfiConverterCertErrorINSTANCE = FfiConverterCertError{}
+
+func (c FfiConverterCertError) Lift(eb RustBufferI) *CertError {
+	return LiftFromRustBuffer[*CertError](c, eb)
+}
+
+func (c FfiConverterCertError) Lower(value *CertError) C.RustBuffer {
+	return LowerIntoRustBuffer[*CertError](c, value)
+}
+
+func (c FfiConverterCertError) Read(reader io.Reader) *CertError {
+	errorID := readUint32(reader)
+
+	message := FfiConverterStringINSTANCE.Read(reader)
+	switch errorID {
+	case 1:
+		return &CertError{&CertErrorNoCertificateChainFound{message}}
+	case 2:
+		return &CertError{&CertErrorC2paError{message}}
+	default:
+		panic(fmt.Sprintf("Unknown error code %d in FfiConverterCertError.Read()", errorID))
+	}
+
+}
+
+func (c FfiConverterCertError) Write(writer io.Writer, value *CertError) {
+	switch variantValue := value.err.(type) {
+	case *CertErrorNoCertificateChainFound:
+		writeInt32(writer, 1)
+	case *CertErrorC2paError:
+		writeInt32(writer, 2)
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterCertError.Write", value))
+	}
+}
+
+type FfiDestroyerCertError struct{}
+
+func (_ FfiDestroyerCertError) Destroy(value *CertError) {
+	switch variantValue := value.err.(type) {
+	case CertErrorNoCertificateChainFound:
+		variantValue.destroy()
+	case CertErrorC2paError:
+		variantValue.destroy()
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerCertError.Destroy", value))
+	}
+}
+
 // An Error.
 type Error struct {
 	err error
@@ -1982,4 +2109,12 @@ func iroh_streamplace_uniffiFreeGorutine(data C.uint64_t) {
 
 	guard := handle.Value().(chan struct{})
 	guard <- struct{}{}
+}
+
+func PrintCert(path string) *CertError {
+	_, _uniffiErr := rustCallWithError[CertError](FfiConverterCertError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_iroh_streamplace_fn_func_print_cert(FfiConverterStringINSTANCE.Lower(path), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr
 }
