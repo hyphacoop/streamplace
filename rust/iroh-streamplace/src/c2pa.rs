@@ -1,7 +1,4 @@
-use c2pa::{
-    Builder, ClaimGeneratorInfo, Error, Ingredient, ManifestDefinition, Reader, Signer,
-    identity::validator::CawgValidator, settings::Settings,
-};
+use c2pa::Reader;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 #[uniffi(flat_error)]

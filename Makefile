@@ -312,11 +312,13 @@ check: install
 	$(MAKE) golangci-lint
 	pnpm run check
 	if [ "`gofmt -l . | wc -l`" -gt 0 ]; then echo 'gofmt failed, run make fix'; exit 1; fi
+	RUSTFLAGS="-D warnings" cargo check
 
 .PHONY: fix
 fix:
 	pnpm run fix
 	gofmt -w .
+	cargo fix --allow-dirty
 
 .PHONY: golangci-lint
 golangci-lint:
