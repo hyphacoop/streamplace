@@ -288,57 +288,58 @@ export function MobileUi({
           />
         </Animated.View>
 
-      {showChat === undefined && (
-        <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
-      )}
-      {muted && (
-        <View
-          style={[
-            layout.position.absolute,
-            position.top[16],
-            position.left[2],
-            layout.flex.column,
-            layout.flex.center,
-          ]}
-        >
-          <Pressable
-            onPress={() => {
-              if (muteWasForced) {
-                setMuted(false);
-                setMuteWasForced(false);
-              } else {
-                setMuted(false);
-              }
-            }}
+        {showChat === undefined && (
+          <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
+        )}
+        {muted && (
+          <View
             style={[
-              {
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-              },
+              layout.position.absolute,
+              position.top[16],
+              position.left[2],
+              layout.flex.column,
+              layout.flex.center,
             ]}
           >
-            <View
+            <Pressable
+              onPress={() => {
+                if (muteWasForced) {
+                  setMuted(false);
+                  setMuteWasForced(false);
+                } else {
+                  setMuted(false);
+                }
+              }}
               style={[
                 {
-                  padding: 4,
-                  backgroundColor: "rgba(50, 30, 30, 0.4)",
-                  borderRadius: 999,
-                  borderWidth: 2,
-                  borderColor: "rgba(255, 120, 120, 0.2)",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
                 },
               ]}
             >
-              <VolumeX size="24" color="rgba(255,120,120,0.8)" />
-            </View>
-            <Text color="muted" size="sm">
-              Tap to unmute
-            </Text>
-          </Pressable>
-        </View>
-      )}
-      <PlayerUI.AutoplayButton />
-    </>
+              <View
+                style={[
+                  {
+                    padding: 4,
+                    backgroundColor: "rgba(50, 30, 30, 0.4)",
+                    borderRadius: 999,
+                    borderWidth: 2,
+                    borderColor: "rgba(255, 120, 120, 0.2)",
+                  },
+                ]}
+              >
+                <VolumeX size="24" color="rgba(255,120,120,0.8)" />
+              </View>
+              <Text color="muted" size="sm">
+                Tap to unmute
+              </Text>
+            </Pressable>
+          </View>
+        )}
+        <PlayerUI.AutoplayButton />
+      </>
+    </GestureDetector>
   );
 }
 
