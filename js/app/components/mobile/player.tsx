@@ -193,27 +193,20 @@ export function PlayerInner(
   const showFullDesktopMode = aspectRatio > 1 && screenWidth > 980;
   const isLandscape = aspectRatio > 1;
 
-  // i don't really like this, but it's the only way to ensure the
-  // player is sized correctly on both desktop and mobile views
-  const ContainerElement = showFullDesktopMode ? ScrollView : View;
   return (
-    <ContainerElement
-      style={
-        shouldShowChatSidePanel
-          ? {
-              height: "100%",
-              width: calculatedWidth, // Add explicit width
-            }
-          : {
-              height: "100%",
-              flex: 1,
-            }
-      }
-      contentContainerStyle={{
-        width: calculatedWidth,
+    <ScrollView
+      style={{
+        height: "100%",
+        flex: 1,
+        maxWidth: calculatedWidth,
       }}
-      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{
+        flexGrow: 1, // This makes content expand to fill available space
+        minHeight: "100%", // Ensures minimum height
+      }}
+      scrollEnabled={showFullDesktopMode}
       bounces={false}
+      showsVerticalScrollIndicator={false}
     >
       <Animated.View
         style={[
@@ -265,6 +258,6 @@ export function PlayerInner(
           showChat={props.showChat}
         />
       )}
-    </ContainerElement>
+    </ScrollView>
   );
 }

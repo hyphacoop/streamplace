@@ -28,12 +28,7 @@ import {
   VolumeX,
 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import {
-  Image,
-  Platform,
-  Pressable,
-  TouchableWithoutFeedback,
-} from "react-native";
+import { Image, Platform, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -133,156 +128,152 @@ export function MobileUi({
 
   return (
     <>
-      <TouchableWithoutFeedback onPress={resetFadeTimer}>
-        <Animated.View
-          style={[
-            layout.position.absolute,
-            h.percent[100],
-            w.percent[100],
-            animatedFadeStyle,
-          ]}
+      <Animated.View
+        style={[
+          layout.position.absolute,
+          h.percent[100],
+          w.percent[100],
+          animatedFadeStyle,
+        ]}
+      >
+        {/* Main UI Overlay */}
+        <View
+          style={[layout.position.absolute, h.percent[100], w.percent[100]]}
         >
-          {/* Main UI Overlay */}
+          {/* Top Left - Back Button and Profile */}
           <View
-            style={[layout.position.absolute, h.percent[100], w.percent[100]]}
+            style={[
+              {
+                padding: 3,
+                paddingRight: 8,
+                backgroundColor: "rgba(90,90,90, 0.25)",
+                borderRadius: 12,
+              },
+              r[2],
+              layout.position.absolute,
+              position.left[2],
+              { top: safeAreaInsets.top + 12 },
+            ]}
           >
-            {/* Top Left - Back Button and Profile */}
-            <View
-              style={[
-                {
-                  padding: 3,
-                  paddingRight: 8,
-                  backgroundColor: "rgba(90,90,90, 0.25)",
-                  borderRadius: 12,
-                },
-                r[2],
-                layout.position.absolute,
-                position.left[2],
-                { top: safeAreaInsets.top + 12 },
-              ]}
-            >
-              <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
-                <Pressable
-                  onPress={() => {
-                    navigation.canGoBack()
-                      ? navigation.goBack()
-                      : navigation.navigate("Home", { screen: "StreamList" });
-                  }}
-                >
-                  <ChevronLeft color="white" />
-                </Pressable>
-                <Image
-                  source={
-                    profile?.did
-                      ? { url: avatars[profile?.did]?.avatar }
-                      : require("assets/images/goose.png")
-                  }
-                  width={32}
-                  height={32}
+            <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
+              <Pressable
+                onPress={() => {
+                  navigation.canGoBack()
+                    ? navigation.goBack()
+                    : navigation.navigate("Home", { screen: "StreamList" });
+                }}
+              >
+                <ChevronLeft color="white" />
+              </Pressable>
+              <Image
+                source={
+                  profile?.did
+                    ? { url: avatars[profile?.did]?.avatar }
+                    : require("assets/images/goose.png")
+                }
+                width={32}
+                height={32}
+                style={[
+                  {
+                    width: 36,
+                    height: 36,
+                    backgroundColor: "green",
+                  },
+                  { borderRadius: 999 },
+                  borders.width.thin,
+                  borders.color.gray[700],
+                ]}
+              />
+              <Text>{profile?.handle}</Text>
+            </View>
+          </View>
+
+          {/* Right Controls Column */}
+          <View
+            style={[
+              layout.position.absolute,
+              position.right[2],
+              { top: safeAreaInsets.top + 12 },
+              layout.flex.row,
+              gap.all[2],
+            ]}
+          >
+            {shouldShowFloatingMetrics && (
+              <View>
+                <View
                   style={[
                     {
-                      width: 36,
-                      height: 36,
-                      backgroundColor: "green",
+                      padding: 9,
+                      backgroundColor: "rgba(90,90,90, 0.3)",
+                      borderRadius: 12,
                     },
-                    { borderRadius: 999 },
-                    borders.width.thin,
-                    borders.color.gray[700],
+                    r[2],
                   ]}
-                />
-                <Text>{profile?.handle}</Text>
+                >
+                  <PlayerUI.Viewers />
+                </View>
               </View>
-            </View>
+            )}
 
-            {/* Right Controls Column */}
+            <RightControlsPanel
+              ingest={ingest}
+              doSetIngestCamera={doSetIngestCamera}
+              shouldShowChatSidePanel={shouldShowChatSidePanel}
+              showChat={showChat}
+              setShowChat={setShowChat}
+            />
+          </View>
+
+          {shouldShowFloatingMetrics && isLive && (
             <View
               style={[
                 layout.position.absolute,
-                position.right[2],
-                { top: safeAreaInsets.top + 12 },
-                layout.flex.row,
-                gap.all[2],
+                { top: safeAreaInsets.top + 112 },
+                position.left[0],
+                position.right[0],
+                layout.flex.column,
+                layout.flex.center,
               ]}
             >
-              {shouldShowFloatingMetrics && (
-                <View>
-                  <View
-                    style={[
-                      {
-                        padding: 9,
-                        backgroundColor: "rgba(90,90,90, 0.3)",
-                        borderRadius: 12,
-                      },
-                      r[2],
-                    ]}
-                  >
-                    <PlayerUI.Viewers />
-                  </View>
-                </View>
-              )}
-
-              <RightControlsPanel
-                ingest={ingest}
-                doSetIngestCamera={doSetIngestCamera}
-                shouldShowChatSidePanel={shouldShowChatSidePanel}
-                showChat={showChat}
-                setShowChat={setShowChat}
-              />
+              <PlayerUI.MetricsPanel showMetrics={isLive || isSelfAndNotLive} />
             </View>
-
-            {shouldShowFloatingMetrics && isLive && (
-              <View
-                style={[
-                  layout.position.absolute,
-                  { top: safeAreaInsets.top + 112 },
-                  position.left[0],
-                  position.right[0],
-                  layout.flex.column,
-                  layout.flex.center,
-                ]}
-              >
-                <PlayerUI.MetricsPanel
-                  showMetrics={isLive || isSelfAndNotLive}
-                />
-              </View>
-            )}
-          </View>
-          {isSelfAndNotLive && (
-            <PlayerUI.InputPanel
-              title={title}
-              setTitle={setTitle}
-              ingestStarting={ingestStarting}
-              toggleGoLive={toggleGoLive}
-            />
           )}
+        </View>
+        {isSelfAndNotLive && (
+          <PlayerUI.InputPanel
+            title={title}
+            setTitle={setTitle}
+            ingestStarting={ingestStarting}
+            toggleGoLive={toggleGoLive}
+          />
+        )}
 
-          <PlayerUI.CountdownOverlay
-            visible={showCountdown}
-            width={width}
-            height={height - 150}
-            onDone={() => {
-              if (!recordSubmitted && title != "") {
-                setShowLoading(true);
-              }
-              setShowCountdown(false);
-            }}
-          />
-          <PlayerUI.LoadingOverlay
-            visible={showLoading}
-            width={width}
-            height={height - 150}
-            subtitle="We're setting up your stream."
-          />
+        <PlayerUI.CountdownOverlay
+          visible={showCountdown}
+          width={width}
+          height={height - 150}
+          onDone={() => {
+            if (!recordSubmitted && title != "") {
+              setShowLoading(true);
+            }
+            setShowCountdown(false);
+          }}
+        />
+        <PlayerUI.LoadingOverlay
+          visible={showLoading}
+          width={width}
+          height={height - 150}
+          subtitle="We're setting up your stream."
+        />
 
-          <Toast
-            open={recordSubmitted}
-            onOpenChange={setRecordSubmitted}
-            title="You're live!"
-            description="We're notifying your followers that you just went live."
-            duration={5}
-          />
-        </Animated.View>
-      </TouchableWithoutFeedback>
+        <Toast
+          open={recordSubmitted}
+          onOpenChange={setRecordSubmitted}
+          title="You're live!"
+          description="We're notifying your followers that you just went live."
+          duration={5}
+        />
+      </Animated.View>
 
       {showChat === undefined && (
         <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
@@ -356,9 +347,8 @@ function RightControlsPanel({
   const setVolume = useSetVolume();
   const muted = useMuted();
   const setMuted = useSetMuted();
-
-  const fullscreen = usePlayerStore((state) => state.fullscreen);
-  const setFullscreen = usePlayerStore((state) => state.setFullscreen);
+  const fullscreen = usePlayerStore((x) => x.fullscreen);
+  const setFullscreen = usePlayerStore((x) => x.setFullscreen);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
@@ -413,12 +403,16 @@ function RightControlsPanel({
           <>
             <Pressable
               onPress={() => {
-                // check if we can Fullscreen
-                if (setFullscreen) setFullscreen(!fullscreen);
+                console.log("UI.tsx Button pressed at:", Date.now());
+                setFullscreen(!fullscreen);
               }}
-              style={[zero.p[2], zero.r.md]}
+              style={[zero.p[2], r[1]]}
             >
-              {fullscreen ? <Minimize /> : <Fullscreen />}
+              {fullscreen ? (
+                <Minimize color={theme.colors.text} />
+              ) : (
+                <Fullscreen color={theme.colors.text} />
+              )}
             </Pressable>
             <Pressable onPress={handleVolumePress}>
               {muted || volume === 0 ? (
