@@ -18,7 +18,7 @@ func (s *Server) handleAppBskyActorGetProfile(ctx context.Context, actor string)
 
 	// in case the end user doesn't have a default fallback client in the pds
 	client.SetHeaders(map[string]string{
-		"atproto-proxy": "did:web:api.bsky.app#bsky_appview",
+		"Atproto-Proxy": "did:web:api.bsky.app#bsky_appview",
 	})
 
 	// brief check to make sure we can actually do stuff
