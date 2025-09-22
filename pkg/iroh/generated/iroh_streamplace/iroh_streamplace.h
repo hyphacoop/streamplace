@@ -573,7 +573,7 @@ uint64_t uniffi_iroh_streamplace_fn_method_sender_send(void* ptr, RustBuffer key
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_PRINT_CERT
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_PRINT_CERT
-void uniffi_iroh_streamplace_fn_func_print_cert(RustBuffer path, RustCallStatus *out_status
+RustBuffer uniffi_iroh_streamplace_fn_func_print_cert(RustBuffer data, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_RUSTBUFFER_ALLOC

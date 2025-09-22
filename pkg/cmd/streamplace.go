@@ -52,10 +52,14 @@ type jobFunc func(ctx context.Context, cli *config.CLI) error
 
 // parse the CLI and fire up an streamplace node!
 func start(build *config.BuildFlags, platformJobs []jobFunc) error {
-	rustErr := iroh_streamplace.PrintCert("/home/iameli/.streamplace/segments/did-plc-dkh4rwafdcda4ko7lewe43ml/2025/09/18/20/54/2025-09-18T20-54-31-693Z.mp4")
-	panic(rustErr.Error())
+	bs, err := os.ReadFile("/home/iameli/.streamplace/segments/did-plc-dkh4rwafdcda4ko7lewe43ml/2025/09/18/20/54/2025-09-18T20-54-31-693Z.mp4")
+	if err != nil {
+		return err
+	}
+	cert, _ := iroh_streamplace.PrintCert(bs)
+	panic(cert)
 	selfTest := len(os.Args) > 1 && os.Args[1] == "self-test"
-	err := media.RunSelfTest(context.Background())
+	err = media.RunSelfTest(context.Background())
 	if err != nil {
 		if selfTest {
 			fmt.Println(err.Error())

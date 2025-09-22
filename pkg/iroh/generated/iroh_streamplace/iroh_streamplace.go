@@ -353,7 +353,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_print_cert()
 		})
-		if checksum != 62027 {
+		if checksum != 39427 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_print_cert: UniFFI API checksum mismatch")
 		}
@@ -2111,10 +2111,16 @@ func iroh_streamplace_uniffiFreeGorutine(data C.uint64_t) {
 	guard <- struct{}{}
 }
 
-func PrintCert(path string) *CertError {
-	_, _uniffiErr := rustCallWithError[CertError](FfiConverterCertError{}, func(_uniffiStatus *C.RustCallStatus) bool {
-		C.uniffi_iroh_streamplace_fn_func_print_cert(FfiConverterStringINSTANCE.Lower(path), _uniffiStatus)
-		return false
+func PrintCert(data []byte) (string, *CertError) {
+	_uniffiRV, _uniffiErr := rustCallWithError[CertError](FfiConverterCertError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_func_print_cert(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
+		}
 	})
-	return _uniffiErr
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), _uniffiErr
+	}
 }
