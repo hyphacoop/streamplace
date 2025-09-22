@@ -392,7 +392,6 @@ function RightControlsPanel({
       <View
         style={[
           {
-            padding: 9,
             backgroundColor: "rgba(90,90,90, 0.3)",
             borderRadius: 12,
           },
@@ -401,7 +400,9 @@ function RightControlsPanel({
             ? zero.layout.flex.column
             : zero.layout.flex.row,
           zero.layout.flex.center,
-          zero.gap.all[4],
+          zero.gap.all[3],
+          zero.py[2],
+          zero.px[1],
           zero.layout.position.relative,
         ]}
       >
