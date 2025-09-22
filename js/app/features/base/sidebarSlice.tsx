@@ -30,6 +30,8 @@ function verifySidebarState(state: any): SidebarState {
   if (!verifiedState.isHidden) {
     if (verifiedState.targetWidth < 64) {
       verifiedState.targetWidth = 64;
+    } else if (verifiedState.targetWidth > 250) {
+      verifiedState.targetWidth = 250;
     }
   } else {
     verifiedState.targetWidth = 0;

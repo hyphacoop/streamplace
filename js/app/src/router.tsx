@@ -401,9 +401,8 @@ export function StreamplaceDrawer() {
           swipeEnabled: !sidebar.isActive,
           drawerStyle: {
             // afaict the drawer is a RN Animated component internally
-            width: sidebar.isActive
-              ? (sidebar.animatedWidth as any)
-              : undefined,
+            zIndex: 128000,
+            width: sidebar.isActive ? sidebar.animatedWidth.get() : undefined,
           },
           // rest
           headerLeft: () => (
