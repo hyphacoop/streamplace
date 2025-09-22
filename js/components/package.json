@@ -17,6 +17,7 @@
   "author": "Streamplace",
   "license": "MIT",
   "devDependencies": {
+    "@types/sdp-transform": "^2.15.0",
     "tsup": "^8.5.0"
   },
   "dependencies": {
