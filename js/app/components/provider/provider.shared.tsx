@@ -6,7 +6,6 @@ import {
 import * as Sentry from "@sentry/react-native";
 import {
   ThemeProvider,
-  DirectI18nProvider,
   StreamplaceProvider as ZustandStreamplaceProvider,
 } from "@streamplace/components";
 import { useFonts } from "expo-font";
@@ -24,10 +23,10 @@ export default Sentry.wrap(ProviderInner);
 
 import * as Application from "expo-application";
 import Constants from "expo-constants";
-import i18n from "../../src/i18n";
 import * as Updates from "expo-updates";
 import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import i18n from "../../src/i18n";
 Sentry.setExtras({
   manifest: Updates.manifest,
   linkingUri: Constants.linkingUri,

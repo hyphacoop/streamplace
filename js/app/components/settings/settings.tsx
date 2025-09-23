@@ -1,5 +1,6 @@
 import {
   Button,
+  Container,
   DropdownMenu,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -8,14 +9,9 @@ import {
   Input,
   ResponsiveDropdownMenuContent,
   Text,
-  ThemeProvider,
   View,
   zero,
-  DirectLanguageSelector,
-  Localized,
-  useLocalization
 } from "@streamplace/components";
-import { ArrowRight, ChevronDown, Search } from "lucide-react-native";
 import AQLink from "components/aqlink";
 import {
   createServerSettingsRecord,
@@ -25,12 +21,13 @@ import {
 } from "features/bluesky/blueskySlice";
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
+import { ArrowRight, ChevronDown, Search } from "lucide-react-native";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import manifest from "../../src/i18n/manifest.json";
 import { Updates } from "./updates";
-import WebhookManager from "./webhook-manager";
 
 export function Settings() {
   const dispatch = useAppDispatch();
@@ -77,110 +74,104 @@ export function Settings() {
   );
 
   return (
-    <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[16], zero.py[24]]}>
-        <View
-          style={[
-            zero.gap.all[12],
-            { paddingVertical: 24, maxWidth: 500, width: "100%" },
-          ]}
-        >
-          <View>
-            <Updates />
-          </View>
-
+    <Container>
+      <ScrollView>
+        <View style={[{ alignItems: "center" }]}>
           <View
             style={[
-              { alignItems: "stretch" },
-              zero.layout.flex.justify.center,
-              zero.gap.all[8],
+              { gap: 32 },
+              { paddingVertical: 24, maxWidth: 500, width: "100%" },
             ]}
           >
+            <View>
+              <Updates />
+            </View>
+
             <View
               style={[
                 { alignItems: "stretch" },
-                zero.layout.flex.justify.start,
-                zero.w.percent[100],
-                zero.gap.all[4],
+                { justifyContent: "flex-start" },
+                { gap: 16 },
               ]}
             >
               <View
                 style={[
-                  { flexDirection: "row" },
-                  { alignItems: "flex-start" },
+                  { alignItems: "stretch" },
                   { justifyContent: "flex-start" },
+                  { width: "100%", flexDirection: "column" },
                 ]}
               >
-                <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                  <Text size="xl">Use Custom Node</Text>
-                  <Text size="lg" color="muted">
-                    Default: {defaultUrl}
-                  </Text>
+                <View
+                  style={[
+                    { flexDirection: "row" },
+                    { alignItems: "flex-start" },
+                    { justifyContent: "flex-start" },
+                  ]}
+                >
+                  <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
+                    <Text size="xl">Use Custom Node</Text>
+                    <Text size="lg" color="muted">
+                      Default: {url}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={overrideEnabled}
+                    onValueChange={handleToggleOverride}
+                  />
                 </View>
-                <Switch
-                  value={overrideEnabled}
-                  onValueChange={handleToggleOverride}
-                />
               </View>
-            </View>
-              style={{
-                alignItems: "stretch",
-                justifyContent: "flex-start",
-                width: "100%",
-                flexDirection: "column",
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  justifyContent: "flex-start",
-                }}
-              >
-                <View style={{ flex: 1, paddingRight: 12 }}>
-                  <Text size="xl">{t("use-custom-node")}</Text>
-                  <Text style={{ fontSize: 18, color: "gray" }}>
-                    {t("default-url", { url })}
-                  </Text>
+
+              {overrideEnabled && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <Text size="xl">{t("use-custom-node")}</Text>
+                    <Text style={{ fontSize: 18, color: "gray" }}>
+                      {t("default-url", { url })}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={overrideEnabled}
+                    onValueChange={handleToggleOverride}
+                  />
                 </View>
-                <Switch
-                  value={overrideEnabled}
-                  onValueChange={handleToggleOverride}
-                />
-              </View>
+              )}
             </View>
 
-            {/* Custom URL Input Row */}
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                gap: 8,
-                opacity: overrideEnabled ? 1 : 0,
-                height: overrideEnabled ? "auto" : 0,
-                overflow: "hidden",
-              }}
-            >
-              <Input
-                value={newUrl}
-                containerStyle={[
-                  { flex: 1, flexGrow: 1, width: "100%" },
-                  zero.flex.grow[1],
-                ]}
-                numberOfLines={1}
-                multiline={false}
-                placeholder={t("enter-custom-node-url")}
-                onChangeText={setNewUrl}
-                onSubmitEditing={onSubmitUrl}
-                textContentType="URL"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-              />
-              <Button size="md" onPress={onSubmitUrl}>
-                <Text>{t("save-button")}</Text>
-              </Button>
-            </View>
+            {overrideEnabled && (
+              <View
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: 8,
+                }}
+              >
+                <Input
+                  value={newUrl}
+                  containerStyle={[
+                    { flex: 1, flexGrow: 1, width: "100%" },
+                    zero.flex.grow[1],
+                  ]}
+                  numberOfLines={1}
+                  multiline={false}
+                  placeholder={t("enter-custom-node-url")}
+                  onChangeText={setNewUrl}
+                  onSubmitEditing={onSubmitUrl}
+                  textContentType="URL"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+                <Button size="md" onPress={onSubmitUrl}>
+                  <Text>{t("save-button")}</Text>
+                </Button>
+              </View>
+            )}
           </View>
 
           <View>
@@ -359,41 +350,8 @@ export function Settings() {
             </>
           )}
         </View>
-      </Container>
-    </ThemeProvider>
-          {loggedIn && (
-            <>
-              <DebugRecording />
-              <AQLink
-                to={{
-                  screen: "KeyManagement",
-                }}
-              >
-                <View
-                  style={[
-                    {
-                      flexDirection: "row",
-                      gap: 8,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 1,
-                      borderColor: "#333",
-                      padding: 8,
-                      borderRadius: 16,
-                      backgroundColor: "#1a1a1a",
-                    },
-                  ]}
-                >
-                  <Text>Manage Keys</Text>
-                  <Text style={[{ fontSize: 16 }]}>→</Text>
-                </View>
-              </AQLink>
-              <WebhookManager />
-            </>
-          )}
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </Container>
   );
 }
 
@@ -403,6 +361,8 @@ const DebugRecording = () => {
   const serverSettings = useAppSelector(selectServerSettings);
   const { url } = useStreamplaceNode();
   const debugRecordingOn = serverSettings?.debugRecording === true;
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isReady) {
