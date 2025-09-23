@@ -381,7 +381,7 @@ func (ss *StreamSession) Transcode(ctx context.Context, spseg *streamplace.Segme
 
 	if ss.lp == nil {
 		var err error
-		ss.lp, err = livepeer.NewLivepeerSession(ctx, spseg.Creator, ss.cli.LivepeerGatewayURL)
+		ss.lp, err = livepeer.NewLivepeerSession(ctx, ss.cli, spseg.Creator, ss.cli.LivepeerGatewayURL)
 		if err != nil {
 			return err
 		}

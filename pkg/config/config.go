@@ -117,6 +117,7 @@ type CLI struct {
 	PLCURL                 string
 	SQLLogging             bool
 	SentryDSN              string
+	LivepeerDebug          bool
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -182,6 +183,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
+	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -271,6 +273,10 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	}
 	if cli.LivepeerGateway {
 		gatewayPath := cli.DataFilePath([]string{"livepeer", "gateway"})
+		err = fs.Set("livepeer.rtmp-addr", "127.0.0.1:0")
+		if err != nil {
+			return err
+		}
 		err = fs.Set("livepeer.data-dir", gatewayPath)
 		if err != nil {
 			return err
