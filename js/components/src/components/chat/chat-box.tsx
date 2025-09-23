@@ -421,7 +421,8 @@ export function ChatBox({
         >
           <Button
             variant="secondary"
-            style={{ borderRadius: 16, height: 36, maxWidth: 36 }}
+            style={{ borderRadius: 16, maxWidth: 44, aspectRatio: 1 }}
+            aria-label="Insert Mention"
             onPress={() => {
               // if the last character is not @, add it
               !message.endsWith("@") && setMessage(message + "@");
@@ -445,7 +446,8 @@ export function ChatBox({
           >
             <Button
               variant="secondary"
-              style={{ borderRadius: 16, height: 36, maxWidth: 36 }}
+              aria-label="Insert Emoji"
+              style={{ borderRadius: 16, maxWidth: 44, aspectRatio: 1 }}
               onPress={() => setShowEmojiSelector(!showEmojiSelector)}
             >
               <Text>{COOL_EMOJI_LIST[emojiIconIndex]}</Text>
@@ -454,7 +456,8 @@ export function ChatBox({
           {!isPopout && (
             <Button
               variant="secondary"
-              style={{ borderRadius: 16, height: 36, maxWidth: 36 }}
+              aria-label="Popout Chat"
+              style={{ borderRadius: 16, maxWidth: 44, aspectRatio: 1 }}
               onPress={() => {
                 if (!linfo) return;
                 const u = new URL(window.location.href);
