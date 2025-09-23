@@ -1,4 +1,6 @@
+import { useNavigation } from "@react-navigation/native";
 import {
+  Button,
   Dashboard,
   useLivestreamStore,
   usePlayerStore,
@@ -9,7 +11,6 @@ import {
 } from "@streamplace/components";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dimensions, Platform, ScrollView, View } from "react-native";
-import { useLiveUser } from "../../hooks/useLiveUser";
 import LivestreamPanel from "./livestream-panel";
 import StreamMonitor from "./stream-monitor";
 
@@ -26,11 +27,15 @@ export default function BentoGrid({
   isLive,
   videoRef,
 }: BentoGridProps) {
+  const navigation = useNavigation();
   const isWeb = Platform.OS === "web";
 
   // Screen width state for responsive design
   const [screenWidth, setScreenWidth] = useState(
     isWeb ? window.innerWidth : Dimensions.get("window").width,
+  );
+  const [screenHeight, setScreenHeight] = useState(
+    isWeb ? window.innerHeight : Dimensions.get("window").height,
   );
 
   useEffect(() => {
@@ -61,7 +66,6 @@ export default function BentoGrid({
   const seg = useSegment();
   const ingestConnectionState = usePlayerStore((x) => x.ingestConnectionState);
   const ingestStarted = usePlayerStore((x) => x.ingestStarted);
-  const userIsLive = useLiveUser();
 
   // Calculate derived values
   const isConnected = ingestConnectionState === "connected";
@@ -194,7 +198,7 @@ export default function BentoGrid({
   }
 
   return (
-    <View style={[flex.values[1], bg.black]}>
+    <ScrollView style={[flex.values[1], bg.black]}>
       {/* Header always at top */}
       <View style={[p[4]]}>
         <Dashboard.Header
@@ -208,11 +212,10 @@ export default function BentoGrid({
         />
       </View>
 
-      {/* Vertical scrolling content */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={[flex.values[1]]}
-        contentContainerStyle={[
+      {/* Fixed layout with flex */}
+      <View
+        style={[
+          flex.values[1],
           layout.flex.column,
           gap.all[4],
           p[4],
@@ -220,7 +223,7 @@ export default function BentoGrid({
         ]}
       >
         {/* Stream Monitor Panel */}
-        <View style={[layout.flex.column, { minHeight: 512 }]}>
+        <View style={[{ maxHeight: screenHeight * 0.35, height: "100%" }]}>
           <StreamMonitor
             isLive={isLive}
             userProfile={profile}
@@ -228,21 +231,23 @@ export default function BentoGrid({
           />
         </View>
 
-        {/* Chat Panel */}
-        <View style={[layout.flex.column]}>
-          <Dashboard.ChatPanel
-            isLive={isLive}
-            isConnected={isConnected}
-            messagesPerMinute={messagesPerMinute}
-            canModerate={canModerate}
-          />
+        {/* Chat Panel - takes remaining space */}
+        <View style={[flex.values[1], { maxHeight: screenHeight * 0.65 }]}>
+          <Button
+            disabled={!profile}
+            onPress={() =>
+              navigation.navigate("PopoutChat", { user: profile!.did })
+            }
+          >
+            Go to chat
+          </Button>
         </View>
 
         {/* Livestream Panel */}
-        <View style={[layout.flex.column]}>
+        <View style={[{ height: "auto" }]}>
           <LivestreamPanel />
         </View>
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }

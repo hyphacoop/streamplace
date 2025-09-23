@@ -304,6 +304,7 @@ export function Chat({
         updateCellsBatchingPeriod={50}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        nestedScrollEnabled={true}
       />
       <ModView />
     </View>

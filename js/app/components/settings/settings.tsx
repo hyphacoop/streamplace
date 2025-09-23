@@ -51,10 +51,10 @@ export function Settings() {
 
   return (
     <ScrollView>
-      <View style={[{ alignItems: "center" }]}>
+      <View style={[zero.layout.flex.align.center, zero.px[16], zero.py[24]]}>
         <View
           style={[
-            { gap: 32 },
+            zero.gap.all[12],
             { paddingVertical: 24, maxWidth: 500, width: "100%" },
           ]}
         >
@@ -65,15 +65,16 @@ export function Settings() {
           <View
             style={[
               { alignItems: "stretch" },
-              { justifyContent: "flex-start" },
-              { gap: 16 },
+              zero.layout.flex.justify.center,
+              zero.gap.all[8],
             ]}
           >
             <View
               style={[
                 { alignItems: "stretch" },
-                { justifyContent: "flex-start" },
-                { width: "100%", flexDirection: "column" },
+                zero.layout.flex.justify.start,
+                zero.w.percent[100],
+                zero.gap.all[4],
               ]}
             >
               <View
@@ -86,7 +87,7 @@ export function Settings() {
                 <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
                   <Text size="xl">Use Custom Node</Text>
                   <Text size="lg" color="muted">
-                    Default: {url}
+                    Default: {defaultUrl}
                   </Text>
                 </View>
                 <Switch
@@ -94,46 +95,41 @@ export function Settings() {
                   onValueChange={handleToggleOverride}
                 />
               </View>
-            </View>
-
-            {/* Custom URL Input Row */}
-            <View
-              style={[
-                {
-                  opacity: overrideEnabled ? 1 : 0,
-                  height: overrideEnabled ? "auto" : 0,
-                },
-                zero.gap.all[2],
-                zero.layout.flex.align.center,
-                zero.layout.flex.row,
-              ]}
-            >
-              <Input
-                value={newUrl}
-                containerStyle={[
-                  { flex: 1, flexGrow: 1, width: "100%" },
-                  zero.flex.grow[1],
+              <View
+                style={[
+                  {
+                    opacity: overrideEnabled ? 1 : 0,
+                    height: overrideEnabled ? "auto" : 0,
+                  },
+                  zero.gap.all[2],
+                  zero.layout.flex.align.center,
+                  zero.layout.flex.row,
                 ]}
-                variant="default"
-                numberOfLines={1}
-                multiline={false}
-                placeholder={url || "Enter custom node URL"}
-                placeholderTextColor="#999"
-                onChangeText={setNewUrl}
-                onSubmitEditing={onSubmitUrl}
-                textContentType="URL"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-              />
-              <Button
-                size="md"
-                variant="secondary"
-                style={[zero.py[0], zero.flex.shrink[1]]}
-                onPress={onSubmitUrl}
               >
-                <Text size="lg">Save</Text>
-              </Button>
+                <View style={{ flex: 1 }}>
+                  <Input
+                    value={newUrl}
+                    containerStyle={[
+                      { flex: 1, flexGrow: 1, width: "100%" },
+                      zero.flex.grow[1],
+                    ]}
+                    variant="default"
+                    numberOfLines={1}
+                    multiline={false}
+                    placeholder={url || "Enter custom node URL"}
+                    placeholderTextColor="#999"
+                    onChangeText={setNewUrl}
+                    onSubmitEditing={onSubmitUrl}
+                    textContentType="URL"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="url"
+                  />
+                </View>
+                <Button size="md" variant="secondary" onPress={onSubmitUrl}>
+                  <Text size="lg">Save</Text>
+                </Button>
+              </View>
             </View>
           </View>
 
@@ -165,7 +161,6 @@ export function Settings() {
                 </View>
               </AQLink>
               <WebhookManager />
-              <Button></Button>
             </>
           )}
         </View>

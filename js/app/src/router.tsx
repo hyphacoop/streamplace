@@ -82,6 +82,7 @@ import { SystemBars } from "react-native-edge-to-edge";
 import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
+  useAnimatedStyle,
 } from "react-native-reanimated";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
@@ -253,7 +254,7 @@ const AvatarButton = () => {
           alignItems: "center",
         }}
       >
-        <User size={24} color="white" />
+        <User size={24} color="white" style={{ zIndex: -2 }} />
       </ImageBackground>
     </AQLink>
   );
@@ -356,6 +357,12 @@ export function StreamplaceDrawer() {
   const notificationDestination = useAppSelector(selectNotificationDestination);
   const linkTo = useLinkTo();
 
+  const animatedDrawerStyle = useAnimatedStyle(() => {
+    return {
+      width: sidebar.isActive ? sidebar.animatedWidth.value : undefined,
+    };
+  });
+
   useEffect(() => {
     if (notificationDestination) {
       linkTo(notificationDestination);
@@ -399,12 +406,12 @@ export function StreamplaceDrawer() {
           // for the custom sidebar
           drawerType: sidebar.isActive ? "permanent" : "front",
           swipeEnabled: !sidebar.isActive,
-          drawerStyle: {
-            // afaict the drawer is a RN Animated component internally
-            width: sidebar.isActive
-              ? (sidebar.animatedWidth as any)
-              : undefined,
-          },
+          drawerStyle: [
+            {
+              zIndex: 128000,
+            },
+            animatedDrawerStyle,
+          ],
           // rest
           headerLeft: () => (
             <>
@@ -414,7 +421,7 @@ export function StreamplaceDrawer() {
             </>
           ),
           headerRight: () => <AvatarButton />,
-          drawerActiveTintColor: "#007AFF", // theme.accentColor?.val || "#007AFF",
+          drawerActiveTintColor: "#a0287c33",
           unmountOnBlur: true,
         }}
         drawerContent={
