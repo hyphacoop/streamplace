@@ -91,6 +91,7 @@
     "react-use-websocket": "^4.13.0",
     "reanimated-color-picker": "^4.0.0",
     "rtcaudiodevice": "git+https://github.com/streamplace/RTCAudioDevice.git#918e08a0f6f0818fb495a0db0b696b44d11d1336",
+    "sdp-transform": "^2.15.0",
     "stream-http": "^3.2.0",
     "streamplace": "workspace:*",
     "ua-parser-js": "^2.0.0-rc.1",
@@ -111,6 +112,7 @@
     "@types/babel__plugin-transform-runtime": "^7",
     "@types/qrcode": "^1",
     "@types/react": "~18.3.12",
+    "@types/sdp-transform": "^2.15.0",
     "@types/uuid": "^10.0.0",
     "typescript": "~5.3.3"
   },

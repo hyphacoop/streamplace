@@ -249,6 +249,9 @@ importers:
       rtcaudiodevice:
         specifier: git+https://github.com/streamplace/RTCAudioDevice.git#918e08a0f6f0818fb495a0db0b696b44d11d1336
         version: https://codeload.github.com/streamplace/RTCAudioDevice/tar.gz/918e08a0f6f0818fb495a0db0b696b44d11d1336
+      sdp-transform:
+        specifier: ^2.15.0
+        version: 2.15.0
       stream-http:
         specifier: ^3.2.0
         version: 3.2.0
@@ -304,6 +307,9 @@ importers:
       '@types/react':
         specifier: ~18.3.12
         version: 18.3.12
+      '@types/sdp-transform':
+        specifier: ^2.15.0
+        version: 2.15.0
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -447,6 +453,9 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(immer@10.1.1)(react@19.0.0)(use-sync-external-store@1.2.2(react@19.0.0))
     devDependencies:
+      '@types/sdp-transform':
+        specifier: ^2.15.0
+        version: 2.15.0
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.8.0(@swc/helpers@0.5.17))(jiti@2.4.2)(postcss@8.5.3)(typescript@5.8.3)(yaml@2.5.1)
@@ -4621,6 +4630,9 @@ packages:
 
   '@types/sax@1.2.7':
     resolution: {integrity: sha512-rO73L89PJxeYM3s3pPPjiPgVVcymqU490g0YO5n5By0k2Erzj6tay/4lr1CHAAU4JyOWd1rpQ8bCf6cZfHU96A==}
+
+  '@types/sdp-transform@2.15.0':
+    resolution: {integrity: sha512-ikIFF0EaYt/2XetIYYVeMj6SB52oVXFasJUXDzWHgzNJS5ep2Pbsu7f8f3Za+dEie8HQtt3Zr9mHYBpWT0XgxQ==}
 
   '@types/send@0.17.4':
     resolution: {integrity: sha512-x2EM6TJOybec7c52BX0ZspPodMsQUd5L6PRwOunVyVUhXiBSKf3AezDL8Dgvgt5o0UfKNfuA0eMLr2wLT4AiBA==}
@@ -10711,6 +10723,10 @@ packages:
     resolution: {integrity: sha512-L0jRsrPpjdckP3oPug3/VxNKt2trR8TcabrM6FOAAlvC/9Phcmm+cuAgTlxBqdBR1WJx7Naj9WHw+aOmheSVbw==}
     engines: {node: '>= 12.13.0'}
 
+  sdp-transform@2.15.0:
+    resolution: {integrity: sha512-KrOH82c/W+GYQ0LHqtr3caRpM3ITglq3ljGUIb8LTki7ByacJZ9z+piSGiwZDsRyhQbYBOBJgr2k6X4BZXi3Kw==}
+    hasBin: true
+
   select-hose@2.0.0:
     resolution: {integrity: sha512-mEugaLK+YfkijB4fx0e6kImuJdCIt2LxCRcbEYPqRGCs4F2ogyfZU5IAZRdjCP8JPq2AtdNoC/Dux63d9Kiryg==}
 
@@ -11565,6 +11581,7 @@ packages:
 
   ua-parser-js@2.0.0-rc.1:
     resolution: {integrity: sha512-H+kTJv7j04XbMuASIIrp7TwKj8rVHfGLR9dI36FAWneGHyQ6JZVwFukFgxSyM/OChmk7dxsV82R/tnEQxb1EXg==}
+    deprecated: You are using an early pre-release version of ua-parser-js v2.x which may be unstable. Please update to the latest stable ua-parser-js v2.x release (https://uaparser.dev)
     hasBin: true
 
   uc.micro@1.0.6:
@@ -18368,6 +18385,8 @@ snapshots:
   '@types/sax@1.2.7':
     dependencies:
       '@types/node': 22.15.17
+
+  '@types/sdp-transform@2.15.0': {}
 
   '@types/send@0.17.4':
     dependencies:
@@ -26371,6 +26390,8 @@ snapshots:
       ajv: 8.16.0
       ajv-formats: 2.1.1(ajv@8.16.0)
       ajv-keywords: 5.1.0(ajv@8.16.0)
+
+  sdp-transform@2.15.0: {}
 
   select-hose@2.0.0: {}
 
