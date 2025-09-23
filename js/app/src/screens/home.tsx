@@ -81,7 +81,7 @@ function getHomeScreenCols(width: number): number {
 
 // Get the ratio for the first icon padding based on column count
 function getPadPercentage(cols: number): number {
-  if (cols >= 4) return 2; // Less padding for 4+ columns
+  if (cols >= 4) return 2.07; // Less padding for 4+ columns
   if (cols >= 3) return 1.3; // Original padding for 3 columns
   return 1; // No extra padding for 2 or fewer columns
 }
@@ -326,7 +326,7 @@ export default function HomeScreen({
                       flex:
                         itemIndex == 0 && useHorizontalFirst
                           ? getPadPercentage(cols)
-                          : 0.97,
+                          : 1,
                     },
                     { justifyContent: "center" },
                   ]}
