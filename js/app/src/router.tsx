@@ -253,7 +253,7 @@ const AvatarButton = () => {
           alignItems: "center",
         }}
       >
-        <User size={24} color="white" />
+        <User size={24} color="white" style={{ zIndex: -2 }} />
       </ImageBackground>
     </AQLink>
   );
