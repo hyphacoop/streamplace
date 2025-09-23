@@ -1,4 +1,6 @@
+import { useNavigation } from "@react-navigation/native";
 import {
+  Button,
   Dashboard,
   useLivestreamStore,
   usePlayerStore,
@@ -25,6 +27,7 @@ export default function BentoGrid({
   isLive,
   videoRef,
 }: BentoGridProps) {
+  const navigation = useNavigation();
   const isWeb = Platform.OS === "web";
 
   // Screen width state for responsive design
@@ -230,12 +233,14 @@ export default function BentoGrid({
 
         {/* Chat Panel - takes remaining space */}
         <View style={[flex.values[1], { maxHeight: screenHeight * 0.65 }]}>
-          <Dashboard.ChatPanel
-            isLive={isLive}
-            isConnected={isConnected}
-            messagesPerMinute={messagesPerMinute}
-            canModerate={canModerate}
-          />
+          <Button
+            disabled={!profile}
+            onPress={() =>
+              navigation.navigate("PopoutChat", { user: profile!.did })
+            }
+          >
+            Go to chat
+          </Button>
         </View>
 
         {/* Livestream Panel */}
