@@ -138,17 +138,17 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 	bufW := bufio.NewWriter(w)
 	decoder := json.NewDecoder(r)
 
+	decodeErr := make(chan error)
 	go func() {
 		for {
 			var obj map[string]any
 			err := decoder.Decode(&obj)
 			if err == io.EOF {
-				log.Warn(ctx, "end of stream")
+				decodeErr <- nil
 				break // End of stream
 			}
 			if err != nil {
-				log.Error(ctx, "error decoding object", "error", err)
-				fmt.Printf("Error decoding object: %v\n", err)
+				decodeErr <- err
 				break
 			}
 			// https://github.com/GStreamer/gstreamer/blob/68fa54c7616b93d5b7cc5febaa388546fcd617e0/subprojects/gst-plugins-bad/ext/codec2json/gsth2642json.c#L836
@@ -162,6 +162,7 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 				hasBFrames = true
 			}
 		}
+		close(decodeErr)
 	}()
 
 	jsonSink.SetCallbacks(&app.SinkCallbacks{
@@ -175,7 +176,7 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 			_, err := bufW.Write(buf)
 			if err != nil {
 				log.Error(ctx, "failed to write to buffer", "error", err)
-				panic(err)
+				return gst.FlowError
 			}
 
 			return gst.FlowOK
@@ -201,6 +202,16 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 	}()
 
 	<-ctx.Done()
+
+	err = w.Close()
+	if err != nil {
+		return nil, fmt.Errorf("error closing writer: %w", err)
+	}
+
+	err = <-decodeErr
+	if err != nil {
+		return nil, fmt.Errorf("error decoding JSON object: %w", err)
+	}
 
 	if videoMetadata == nil {
 		return nil, fmt.Errorf("no video metadata")
