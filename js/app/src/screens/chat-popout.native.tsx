@@ -6,13 +6,16 @@ import {
   PlayerProvider,
   Text,
   useKeyboard,
+  useLivestreamInfo,
   usePlayerStore,
+  useSegment,
   zero,
 } from "@streamplace/components";
 import emojiData from "assets/emoji-data.json";
+import LiveDot from "components/home/live-dot";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { ArrowLeft } from "lucide-react-native";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { KeyboardAvoidingView, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppSelector } from "store/hooks";
@@ -46,11 +49,41 @@ export function PopoutChatInner({ user }: { user: string }) {
   const setSrc = usePlayerStore((x) => x.setSrc);
   const profile = useAppSelector(selectUserProfile);
   const navigation = useNavigation();
+  const { ingest, profile: streamProfile } = useLivestreamInfo();
+  const status = usePlayerStore((x) => x.status);
+  const seg = useSegment();
+
+  const segmentReceivedTimeRef = useRef<number | null>(null);
+  const lastSegmentIdRef = useRef<string | null>(null);
+
+  // Track when we receive a new segment
+  useEffect(() => {
+    if (seg && seg.id !== lastSegmentIdRef.current) {
+      segmentReceivedTimeRef.current = Date.now();
+      lastSegmentIdRef.current = seg.id;
+    }
+  }, [seg?.id]);
+
+  const getLatency = useCallback((): string => {
+    if (!segmentReceivedTimeRef.current) return "";
+    const secondsAgo = Math.floor(Date.now() - segmentReceivedTimeRef.current);
+    const isThreeDigits = secondsAgo >= 100 && secondsAgo < 1000;
+    if (isThreeDigits) {
+      return `0${secondsAgo}`;
+    }
+    return `${secondsAgo}`;
+  }, [seg?.id]); // depend on seg.id to update when new segments arrive
+
   useEffect(() => {
     setSrc(user);
   }, [user]);
+
   const safe = useSafeAreaInsets();
   const kb = useKeyboard();
+
+  // if a seg exists and it started less than 10 seconds ago, consider it live
+  const isLive = seg && Date.now() - new Date(seg.startTime).getTime() < 10000;
+
   return (
     <KeyboardAvoidingView
       style={[
@@ -66,22 +99,77 @@ export function PopoutChatInner({ user }: { user: string }) {
       ]}
     >
       <View style={[zero.flex.values[1]]}>
-        <Pressable
-          onPress={() => navigation.goBack()}
+        <View
           style={[
             zero.layout.flex.row,
             zero.layout.flex.align.center,
-            zero.p[3],
-            zero.mb[2],
-            {
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              borderRadius: 8,
-            },
+            zero.gap.all[4],
+            zero.px[4],
           ]}
         >
-          <ArrowLeft size={20} color="white" />
-          <Text style={[zero.text.white, zero.ml[2]]}>Go Back</Text>
-        </Pressable>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={[
+              zero.layout.flex.row,
+              zero.layout.flex.align.center,
+              zero.p[3],
+              { borderRadius: zero.borderRadius.xl },
+            ]}
+          >
+            <ArrowLeft size={20} color="white" />
+          </Pressable>
+          <View
+            style={[
+              zero.flex.values[1],
+              zero.layout.flex.row,
+              zero.layout.flex.justify.between,
+              zero.layout.flex.align.center,
+            ]}
+          >
+            <View
+              style={[
+                zero.flex.values[1],
+                zero.layout.flex.row,
+                zero.layout.flex.justify.start,
+                zero.layout.flex.align.center,
+                { marginLeft: -20 },
+              ]}
+            >
+              {isLive ? (
+                <LiveDot />
+              ) : (
+                <View
+                  style={[
+                    zero.w[3],
+                    zero.h[3],
+                    zero.m[2],
+                    zero.bg.gray[700],
+                    { borderRadius: zero.borderRadius.full },
+                  ]}
+                />
+              )}
+              <Text style={[zero.text.white]}>
+                {streamProfile?.handle || user}
+              </Text>
+            </View>
+            <View
+              style={[
+                zero.layout.flex.row,
+                zero.layout.flex.align.center,
+                zero.gap[3],
+              ]}
+            >
+              <Text style={[zero.text.white]}>
+                {isLive ? "Live" : "Offline"}
+              </Text>
+              {isLive && (
+                <Text style={[zero.ml[3], zero.typography.mono.lg]}>
+                  {getLatency()}ms
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
         <View style={[zero.flex.values[1], zero.p[4]]}>
           <Chat canModerate={profile?.handle === user} />
           {profile && <ChatBox emojiData={emojiData} isPopout={true} />}
