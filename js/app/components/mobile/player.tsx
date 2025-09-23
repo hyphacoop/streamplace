@@ -10,6 +10,7 @@ import {
   Text,
   usePlayerDimensions,
   usePlayerStore,
+  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
@@ -161,6 +162,7 @@ export function PlayerInner(
     screenWidth,
     contentWidth,
     availableHeight,
+    safeAreaInsets,
   } = useResponsiveLayout({
     sidebarWidth: sb.animatedWidth,
     sidebarHidden: !sb.isActive,
@@ -169,6 +171,8 @@ export function PlayerInner(
 
   // content info
   const { width, height } = usePlayerDimensions();
+
+  const { isPlayerRatioGreater } = useSegmentDimensions();
 
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
@@ -186,49 +190,52 @@ export function PlayerInner(
     ? Math.min(calculatedWidth / aspectRatio, maxDesktopHeight)
     : height;
 
-  const showBottomMetaPanel = aspectRatio > 1 && screenWidth > 980;
+  const showFullDesktopMode = aspectRatio > 1 && screenWidth > 980;
+  const isLandscape = aspectRatio > 1;
 
-  // i don't really like this, but it's the only way to ensure the
-  // player is sized correctly on both desktop and mobile views
-  const ContainerElement = showBottomMetaPanel ? ScrollView : View;
   return (
-    <ContainerElement
-      style={
-        shouldShowChatSidePanel
-          ? {
-              height: "100%",
-              width: calculatedWidth, // Add explicit width
-            }
-          : {
-              height: "100%",
-              flex: 1,
-            }
-      }
-      contentContainerStyle={{
-        width: calculatedWidth,
+    <ScrollView
+      style={{
+        height: "100%",
+        flex: 1,
+        maxWidth: calculatedWidth,
       }}
-      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{
+        flexGrow: 1, // This makes content expand to fill available space
+        minHeight: "100%", // Ensures minimum height
+      }}
+      scrollEnabled={showFullDesktopMode}
       bounces={false}
+      showsVerticalScrollIndicator={false}
     >
       <Animated.View
         style={[
-          showBottomMetaPanel
+          showFullDesktopMode
             ? {
                 width: calculatedWidth,
                 height: calculatedHeight,
               }
             : {
                 flex: 1,
+                // i hate this but it works
+                maxHeight: isLandscape && !props.showChat ? "90%" : "auto",
               },
+          {
+            paddingTop:
+              isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
+          },
         ]}
       >
         <PlayerInnerInner {...props}>
-          {(showBottomMetaPanel || fullscreen) && (
-            <DesktopUi
-              dropdownPortalContainer={dropdownPortalRef.current}
-              isChatOpen={props.showChat}
-              setIsChatOpen={props.setShowChat}
-            />
+          {showFullDesktopMode || fullscreen ? (
+            <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
+          ) : (
+            isLandscape && (
+              <MobileUi
+                setShowChat={props.setShowChat}
+                showChat={props.showChat}
+              />
+            )
           )}
           <PlayerUI.ViewerLoadingOverlay />
           <OfflineCounter isMobile={true} />
@@ -245,12 +252,12 @@ export function PlayerInner(
           />
         </PlayerInnerInner>
       </Animated.View>
-      {showBottomMetaPanel && (
+      {showFullDesktopMode && (
         <BottomMetadata
           setShowChat={props.setShowChat}
           showChat={props.showChat}
         />
       )}
-    </ContainerElement>
+    </ScrollView>
   );
 }

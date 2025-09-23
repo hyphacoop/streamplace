@@ -663,6 +663,7 @@ const MainTab = () => {
         options={{
           headerTitle: "Stream",
           title: "Streamplace Stream",
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
