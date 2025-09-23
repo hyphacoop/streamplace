@@ -1,9 +1,12 @@
 package media
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -22,8 +25,8 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 	defer cancel()
 	pipelineSlice := []string{
 		"appsrc name=appsrc ! qtdemux name=demux",
-		"demux.video_0 ! queue ! h264parse name=videoparse disable-passthrough=true config-interval=-1 ! h264timestamper ! appsink sync=false name=videoappsink",
-		"demux.audio_0 ! queue ! opusparse name=audioparse ! appsink sync=false name=audioappsink",
+		"demux.video_0 ! queue ! h264parse name=videoparse disable-passthrough=true config-interval=-1 ! h2642json ! appsink sync=false name=jsonappsink",
+		"demux.audio_0 ! queue ! opusparse name=audioparse ! fakesink sync=false",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -120,49 +123,59 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 		return nil, fmt.Errorf("error connecting pad-add: %w", err)
 	}
 
-	audioSinkElem, err := pipeline.GetElementByName("audioappsink")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get audioappsink element: %w", err)
-	}
-	audioSink := app.SinkFromElement(audioSinkElem)
-	if audioSink == nil {
-		return nil, fmt.Errorf("failed to get audioappsink element: %w", err)
-	}
-
-	audioSink.SetCallbacks(&app.SinkCallbacks{
-		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
-			sample := sink.PullSample()
-			if sample == nil {
-				return gst.FlowOK
-			}
-
-			return gst.FlowOK
-		},
-	})
-
-	videoSinkElem, err := pipeline.GetElementByName("videoappsink")
+	jsonSinkElem, err := pipeline.GetElementByName("jsonappsink")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get videoappsink element: %w", err)
 	}
-	videoSink := app.SinkFromElement(videoSinkElem)
-	if videoSink == nil {
+	jsonSink := app.SinkFromElement(jsonSinkElem)
+	if jsonSink == nil {
 		return nil, fmt.Errorf("failed to get videoappsink element: %w", err)
 	}
 
 	hasBFrames := false
-	videoSink.SetCallbacks(&app.SinkCallbacks{
+
+	r, w := io.Pipe()
+	bufW := bufio.NewWriter(w)
+	decoder := json.NewDecoder(r)
+
+	go func() {
+		for {
+			var obj map[string]any
+			err := decoder.Decode(&obj)
+			if err == io.EOF {
+				log.Warn(ctx, "end of stream")
+				break // End of stream
+			}
+			if err != nil {
+				log.Error(ctx, "error decoding object", "error", err)
+				fmt.Printf("Error decoding object: %v\n", err)
+				break
+			}
+			// https://github.com/GStreamer/gstreamer/blob/68fa54c7616b93d5b7cc5febaa388546fcd617e0/subprojects/gst-plugins-bad/ext/codec2json/gsth2642json.c#L836
+			header, ok := obj["slice header"].(map[string]any)
+			if !ok {
+				continue
+			}
+			// https://github.com/GStreamer/gstreamer/blob/68fa54c7616b93d5b7cc5febaa388546fcd617e0/subprojects/gst-plugins-bad/ext/codec2json/gsth2642json.c#L622
+			flag, ok := header["direct spatial mv pred flag"].(bool)
+			if ok && flag {
+				hasBFrames = true
+			}
+		}
+	}()
+
+	jsonSink.SetCallbacks(&app.SinkCallbacks{
 		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
 			sample := sink.PullSample()
 			if sample == nil {
 				return gst.FlowOK
 			}
 
-			buf := sample.GetBuffer()
-			pts := buf.PresentationTimestamp().String()
-			dts := buf.DecodingTimestamp().String()
-
-			if pts != dts {
-				hasBFrames = true
+			buf := sample.GetBuffer().Bytes()
+			_, err := bufW.Write(buf)
+			if err != nil {
+				log.Error(ctx, "failed to write to buffer", "error", err)
+				panic(err)
 			}
 
 			return gst.FlowOK
