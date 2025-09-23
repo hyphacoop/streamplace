@@ -17,7 +17,6 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useResponsiveLayout } from "./useResponsiveLayout";
 
 import { useNavigation } from "@react-navigation/native";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
@@ -100,7 +99,6 @@ export function MobileChatPanel({ isPlayerRatioGreater }) {
 }
 
 function ChatPanel() {
-  const { shouldShowChatSidePanel, safeAreaInsets } = useResponsiveLayout();
   const { profile } = useLivestreamInfo();
   const handle = useHandle();
 
@@ -115,12 +113,13 @@ function ChatPanel() {
         layout.flex.column,
         flex.values[1],
         { width: "100%", maxWidth: "100%" },
+        px[2],
       ]}
     >
       <View style={[flex.values[1]]}>
         <Chat canModerate={canModerate} />
       </View>
-      <View style={[layout.flex.column, gap.all[2], px[4]]}>
+      <View style={[layout.flex.column, gap.all[2], px[2]]}>
         {agent?.did ? (
           <ChatBox
             emojiData={emojiData}
