@@ -32,7 +32,7 @@ export function Player(
     setFullscreen?: (fullscreen: boolean) => void;
   },
 ) {
-  const [showChat, setShowChat] = useState(true);
+  const [showChat, setShowChat] = useState(!props.ingest);
   const { shouldShowChatSidePanel, chatPanelWidth, safeAreaInsets } =
     useResponsiveLayout();
   const chatVisible = shouldShowChatSidePanel && showChat;
