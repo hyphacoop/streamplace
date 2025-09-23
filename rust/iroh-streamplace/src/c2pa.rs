@@ -24,3 +24,14 @@ pub fn print_cert(data: Vec<u8>) -> Result<String, CertError> {
     }
     Err(CertError::NoCertificateChainFound)
 }
+
+#[uniffi::export]
+pub fn get_manifest(data: Vec<u8>) -> Result<String, CertError> {
+    let reader = Reader::from_stream("video/mp4", Cursor::new(data))
+        .map_err(|e| CertError::C2paError(e.to_string()))?;
+    // todo: add cawg certs here??
+    if let Some(manifest) = reader.active_manifest() {
+        return Ok(manifest.to_string());
+    }
+    Err(CertError::NoCertificateChainFound)
+}

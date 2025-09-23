@@ -1,140 +1,17 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Builder",
-  "description": "Use a Builder to add a signed manifest to an asset.\n\n# Example: Building and signing a manifest\n\n``` use c2pa::Result; use std::path::PathBuf;\n\nuse c2pa::{create_signer, Builder, SigningAlg}; use serde::Serialize; use serde_json::json; use tempfile::tempdir;\n\n#[derive(Serialize)] struct Test { my_tag: usize, }\n\n# fn main() -> Result<()> { #[cfg(feature = \"file_io\")] { let manifest_json = json!({ \"claim_generator_info\": [ { \"name\": \"c2pa_test\", \"version\": \"1.0.0\" } ], \"title\": \"Test_Manifest\" }).to_string();\n\nlet mut builder = Builder::from_json(&manifest_json)?; builder.add_assertion(\"org.contentauth.test\", &Test { my_tag: 42 })?;\n\nlet source = PathBuf::from(\"tests/fixtures/C.jpg\"); let dir = tempdir()?; let dest = dir.path().join(\"test_file.jpg\");\n\n// Create a ps256 signer using certs and key files. TO DO: Update example. let signcert_path = \"tests/fixtures/certs/ps256.pub\"; let pkey_path = \"tests/fixtures/certs/ps256.pem\"; let signer = create_signer::from_files(signcert_path, pkey_path, SigningAlg::Ps256, None)?;\n\n// embed a manifest using the signer builder.sign_file( signer.as_ref(), &source, &dest)?; } # Ok(()) # } ```",
+  "title": "Everything",
   "type": "object",
-  "required": [
-    "no_embed"
-  ],
+  "required": ["builder", "manifest_definition", "reader"],
   "properties": {
-    "assertions": {
-      "description": "A list of assertions",
-      "default": [],
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/AssertionDefinition"
-      }
+    "builder": {
+      "$ref": "#/definitions/Builder"
     },
-    "base_path": {
-      "description": "Base path to search for resources.",
-      "type": [
-        "string",
-        "null"
-      ]
+    "manifest_definition": {
+      "$ref": "#/definitions/ManifestDefinition"
     },
-    "builder_flow": {
-      "description": "The type of builder being used.",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/BuilderFlow"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "claim_generator_info": {
-      "description": "Claim Generator Info is always required with at least one entry",
-      "default": [
-        {
-          "name": "c2pa-rs",
-          "version": "0.58.0"
-        }
-      ],
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/ClaimGeneratorInfo"
-      }
-    },
-    "claim_version": {
-      "description": "The version of the claim.  Defaults to 1.",
-      "type": [
-        "integer",
-        "null"
-      ],
-      "format": "uint8",
-      "minimum": 0.0
-    },
-    "format": {
-      "description": "The format of the source file as a MIME type.",
-      "default": "application/octet-stream",
-      "type": "string"
-    },
-    "ingredients": {
-      "description": "A List of ingredients",
-      "default": [],
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Ingredient"
-      }
-    },
-    "instance_id": {
-      "description": "Instance ID from `xmpMM:InstanceID` in XMP metadata.",
-      "default": "xmp:iid:4caa88cb-6034-4d42-8969-409379d34945",
-      "type": "string"
-    },
-    "label": {
-      "description": "Allows you to pre-define the manifest label, which must be unique. Not intended for general use.  If not set, it will be assigned automatically.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "metadata": {
-      "description": "Optional manifest metadata. This will be deprecated in the future; not recommended to use.",
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "$ref": "#/definitions/AssertionMetadata"
-      }
-    },
-    "no_embed": {
-      "description": "If true, the manifest store will not be embedded in the asset on sign",
-      "type": "boolean"
-    },
-    "redactions": {
-      "description": "A list of redactions - URIs to redacted assertions.",
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "type": "string"
-      }
-    },
-    "remote_url": {
-      "description": "Optional remote URL for the manifest",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "thumbnail": {
-      "description": "An optional ResourceRef to a thumbnail image that represents the asset that was signed. Must be available when the manifest is signed.",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/ResourceRef"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "title": {
-      "description": "A human-readable title, generally source filename.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "vendor": {
-      "description": "Optional prefix added to the generated Manifest Label This is typically a reverse domain name.",
-      "type": [
-        "string",
-        "null"
-      ]
+    "reader": {
+      "$ref": "#/definitions/Reader"
     }
   },
   "definitions": {
@@ -144,36 +21,25 @@
       "properties": {
         "credentials": {
           "description": "List of references to W3C Verifiable Credentials.",
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/HashedUri"
           }
         },
         "identifier": {
           "description": "An identifier for a human actor, used when the \"type\" is `humanEntry.identified`.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       }
     },
     "AssertionData": {
       "description": "This allows the assertion to be expressed as CBOR or JSON. The default is CBOR unless you specify that an assertion should be JSON.",
-      "anyOf": [
-        true
-      ]
+      "anyOf": [true]
     },
     "AssertionDefinition": {
       "description": "Defines an assertion that consists of a label that can be either a C2PA-defined assertion label or a custom label in reverse domain format.",
       "type": "object",
-      "required": [
-        "data",
-        "label"
-      ],
+      "required": ["data", "label"],
       "properties": {
         "data": {
           "$ref": "#/definitions/AssertionData"
@@ -228,10 +94,7 @@
           ]
         },
         "reviewRatings": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/ReviewRating"
           }
@@ -240,18 +103,125 @@
     },
     "AssetType": {
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string"
         },
         "version": {
-          "type": [
-            "string",
-            "null"
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "Builder": {
+      "description": "Use a Builder to add a signed manifest to an asset.\n\n# Example: Building and signing a manifest\n\n``` use c2pa::Result; use std::path::PathBuf;\n\nuse c2pa::{create_signer, Builder, SigningAlg}; use serde::Serialize; use serde_json::json; use tempfile::tempdir;\n\n#[derive(Serialize)] struct Test { my_tag: usize, }\n\n# fn main() -> Result<()> { #[cfg(feature = \"file_io\")] { let manifest_json = json!({ \"claim_generator_info\": [ { \"name\": \"c2pa_test\", \"version\": \"1.0.0\" } ], \"title\": \"Test_Manifest\" }).to_string();\n\nlet mut builder = Builder::from_json(&manifest_json)?; builder.add_assertion(\"org.contentauth.test\", &Test { my_tag: 42 })?;\n\nlet source = PathBuf::from(\"tests/fixtures/C.jpg\"); let dir = tempdir()?; let dest = dir.path().join(\"test_file.jpg\");\n\n// Create a ps256 signer using certs and key files. TO DO: Update example. let signcert_path = \"tests/fixtures/certs/ps256.pub\"; let pkey_path = \"tests/fixtures/certs/ps256.pem\"; let signer = create_signer::from_files(signcert_path, pkey_path, SigningAlg::Ps256, None)?;\n\n// embed a manifest using the signer builder.sign_file( signer.as_ref(), &source, &dest)?; } # Ok(()) # } ```",
+      "type": "object",
+      "required": ["no_embed"],
+      "properties": {
+        "assertions": {
+          "description": "A list of assertions",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssertionDefinition"
+          }
+        },
+        "base_path": {
+          "description": "Base path to search for resources.",
+          "type": ["string", "null"]
+        },
+        "builder_flow": {
+          "description": "The type of builder being used.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BuilderFlow"
+            },
+            {
+              "type": "null"
+            }
           ]
+        },
+        "claim_generator_info": {
+          "description": "Claim Generator Info is always required with at least one entry",
+          "default": [
+            {
+              "name": "c2pa-rs",
+              "version": "0.58.0"
+            }
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClaimGeneratorInfo"
+          }
+        },
+        "claim_version": {
+          "description": "The version of the claim.  Defaults to 1.",
+          "type": ["integer", "null"],
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "format": {
+          "description": "The format of the source file as a MIME type.",
+          "default": "application/octet-stream",
+          "type": "string"
+        },
+        "ingredients": {
+          "description": "A List of ingredients",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Ingredient"
+          }
+        },
+        "instance_id": {
+          "description": "Instance ID from `xmpMM:InstanceID` in XMP metadata.",
+          "default": "xmp:iid:ad854dd7-b8f6-46cf-93d5-9e0607131a38",
+          "type": "string"
+        },
+        "label": {
+          "description": "Allows you to pre-define the manifest label, which must be unique. Not intended for general use.  If not set, it will be assigned automatically.",
+          "type": ["string", "null"]
+        },
+        "metadata": {
+          "description": "Optional manifest metadata. This will be deprecated in the future; not recommended to use.",
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/AssertionMetadata"
+          }
+        },
+        "no_embed": {
+          "description": "If true, the manifest store will not be embedded in the asset on sign",
+          "type": "boolean"
+        },
+        "redactions": {
+          "description": "A list of redactions - URIs to redacted assertions.",
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "remote_url": {
+          "description": "Optional remote URL for the manifest",
+          "type": ["string", "null"]
+        },
+        "thumbnail": {
+          "description": "An optional ResourceRef to a thumbnail image that represents the asset that was signed. Must be available when the manifest is signed.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ResourceRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "description": "A human-readable title, generally source filename.",
+          "type": ["string", "null"]
+        },
+        "vendor": {
+          "description": "Optional prefix added to the generated Manifest Label This is typically a reverse domain name.",
+          "type": ["string", "null"]
         }
       }
     },
@@ -260,16 +230,11 @@
       "oneOf": [
         {
           "type": "string",
-          "enum": [
-            "Open",
-            "Update"
-          ]
+          "enum": ["Open", "Update"]
         },
         {
           "type": "object",
-          "required": [
-            "Create"
-          ],
+          "required": ["Create"],
           "properties": {
             "Create": {
               "$ref": "#/definitions/DigitalSourceType"
@@ -282,9 +247,7 @@
     "ClaimGeneratorInfo": {
       "description": "Description of the claim generator, or the software used in generating the claim.\n\nThis structure is also used for actions softwareAgent",
       "type": "object",
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "properties": {
         "icon": {
           "description": "hashed URI to the icon (either embedded or remote)",
@@ -303,17 +266,11 @@
         },
         "operating_system": {
           "description": "A human readable string of the OS the claim generator is running on",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "version": {
           "description": "A human readable string of the product's version",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       },
       "additionalProperties": true
@@ -321,10 +278,7 @@
     "Coordinate": {
       "description": "An x, y coordinate used for specifying vertices in polygons.",
       "type": "object",
-      "required": [
-        "x",
-        "y"
-      ],
+      "required": ["x", "y"],
       "properties": {
         "x": {
           "description": "The coordinate along the x-axis.",
@@ -341,26 +295,18 @@
     "DataSource": {
       "description": "A description of the source for assertion data",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "actors": {
           "description": "A list of [`Actor`]s associated with this source.",
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/Actor"
           }
         },
         "details": {
           "description": "A human-readable string giving details about the source of the assertion data.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "type": {
           "description": "A value from among the enumerated list indicating the source of the assertion.",
@@ -376,16 +322,12 @@
         {
           "description": "Media whose digital content is effectively empty, such as a blank canvas or zero-length video.",
           "type": "string",
-          "enum": [
-            "Empty"
-          ]
+          "enum": ["Empty"]
         },
         {
           "description": "Data that is the result of algorithmically using a model derived from sampled content and data. Differs from <http://cv.iptc.org/newscodes/digitalsourcetype/>trainedAlgorithmicMedia in that the result isn’t a media type (e.g., image or video) but is a data format (e.g., CSV, pickle).",
           "type": "string",
-          "enum": [
-            "TrainedAlgorithmicData"
-          ]
+          "enum": ["TrainedAlgorithmicData"]
         }
       ]
     },
@@ -395,18 +337,12 @@
       "properties": {
         "end": {
           "description": "The end of the frame inclusive or the end of the asset if not present.",
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "format": "int32"
         },
         "start": {
           "description": "The start of the frame or the end of the asset if not present.\n\nThe first frame/page starts at 0.",
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "format": "int32"
         }
       }
@@ -414,17 +350,11 @@
     "HashedUri": {
       "description": "A `HashedUri` provides a reference to content available within the same manifest store.\n\nThis is described in [§8.3, URI References], of the C2PA Technical Specification.\n\n[§8.3, URI References]: https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html#_uri_references",
       "type": "object",
-      "required": [
-        "hash",
-        "url"
-      ],
+      "required": ["hash", "url"],
       "properties": {
         "alg": {
           "description": "A string identifying the cryptographic hash algorithm used to compute the hash",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "hash": {
           "description": "Byte string containing the hash value",
@@ -447,10 +377,7 @@
       "properties": {
         "active_manifest": {
           "description": "The active manifest label (if one exists).\n\nIf this ingredient has a [`ManifestStore`], this will hold the label of the active [`Manifest`].\n\n[`Manifest`]: crate::Manifest [`ManifestStore`]: crate::ManifestStore",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "data": {
           "description": "A reference to the actual data of the ingredient.",
@@ -465,62 +392,38 @@
         },
         "data_types": {
           "description": "Additional information about the data's type to the ingredient V2 structure.",
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/AssetType"
           }
         },
         "description": {
           "description": "Additional description of the ingredient.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "document_id": {
           "description": "Document ID from `xmpMM:DocumentID` in XMP metadata.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "format": {
           "description": "The format of the source file as a MIME type.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "hash": {
           "description": "An optional hash of the asset to prevent duplicates.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "informational_URI": {
           "description": "URI to an informational page about the ingredient or its data.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "instance_id": {
           "description": "Instance ID from `xmpMM:InstanceID` in XMP metadata.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "label": {
           "description": "The ingredient's label as assigned in the manifest.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "manifest_data": {
           "description": "A [`ManifestStore`] from the source asset extracted as a binary C2PA blob.\n\n[`ManifestStore`]: crate::ManifestStore",
@@ -546,10 +449,7 @@
         },
         "provenance": {
           "description": "URI from `dcterms:provenance` in XMP metadata.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "relationship": {
           "description": "Set to `ParentOf` if this is the parent ingredient.\n\nThere can only be one parent ingredient in the ingredients.",
@@ -581,10 +481,7 @@
         },
         "title": {
           "description": "A human-readable title, generally source filename.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "validation_results": {
           "description": "Validation results (Ingredient.V3)",
@@ -599,10 +496,7 @@
         },
         "validation_status": {
           "description": "Validation status (Ingredient v1 & v2)",
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/ValidationStatus"
           }
@@ -612,10 +506,7 @@
     "IngredientDeltaValidationResult": {
       "description": "Represents any changes or deltas between the current and previous validation results for an ingredient's manifest.",
       "type": "object",
-      "required": [
-        "ingredientAssertionURI",
-        "validationDeltas"
-      ],
+      "required": ["ingredientAssertionURI", "validationDeltas"],
       "properties": {
         "ingredientAssertionURI": {
           "description": "JUMBF URI reference to the ingredient assertion",
@@ -634,10 +525,7 @@
     "Item": {
       "description": "Description of the boundaries of an identified range.",
       "type": "object",
-      "required": [
-        "identifier",
-        "value"
-      ],
+      "required": ["identifier", "value"],
       "properties": {
         "identifier": {
           "description": "The container-specific term used to identify items, such as \"track_id\" for MP4 or \"item_ID\" for HEIF.",
@@ -649,12 +537,254 @@
         }
       }
     },
+    "Manifest": {
+      "description": "A Manifest represents all the information in a c2pa manifest",
+      "type": "object",
+      "properties": {
+        "assertions": {
+          "description": "A list of assertions",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManifestAssertion"
+          }
+        },
+        "claim_generator": {
+          "description": "A User Agent formatted string identifying the software/hardware/system produced this claim Spaces are not allowed in names, versions can be specified with product/1.0 syntax.",
+          "type": ["string", "null"]
+        },
+        "claim_generator_info": {
+          "description": "A list of claim generator info data identifying the software/hardware/system produced this claim.",
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/ClaimGeneratorInfo"
+          }
+        },
+        "credentials": {
+          "description": "A List of verified credentials",
+          "type": ["array", "null"],
+          "items": true
+        },
+        "format": {
+          "description": "The format of the source file as a MIME type.",
+          "type": ["string", "null"]
+        },
+        "ingredients": {
+          "description": "A List of ingredients",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Ingredient"
+          }
+        },
+        "instance_id": {
+          "description": "Instance ID from `xmpMM:InstanceID` in XMP metadata.",
+          "default": "xmp:iid:162c4576-2f5c-4852-93ad-e15b784e19e8",
+          "type": "string"
+        },
+        "label": {
+          "type": ["string", "null"]
+        },
+        "metadata": {
+          "description": "A list of user metadata for this claim.",
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/AssertionMetadata"
+          }
+        },
+        "redactions": {
+          "description": "A list of redactions - URIs to a redacted assertions",
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "resources": {
+          "description": "container for binary assets (like thumbnails)",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/ResourceStore"
+            }
+          ]
+        },
+        "signature_info": {
+          "description": "Signature data (only used for reporting)",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SignatureInfo"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thumbnail": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ResourceRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "description": "A human-readable title, generally source filename.",
+          "type": ["string", "null"]
+        },
+        "vendor": {
+          "description": "Optional prefix added to the generated Manifest label. This is typically an internet domain name for the vendor (i.e. `adobe`).",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "ManifestAssertion": {
+      "description": "A labeled container for an Assertion value in a Manifest",
+      "type": "object",
+      "required": ["data", "label"],
+      "properties": {
+        "data": {
+          "description": "The data of the assertion as Value",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ManifestData"
+            }
+          ]
+        },
+        "instance": {
+          "description": "There can be more than one assertion for any label",
+          "type": ["integer", "null"],
+          "format": "uint",
+          "minimum": 0.0
+        },
+        "kind": {
+          "description": "The [ManifestAssertionKind] for this assertion (as stored in c2pa content)",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ManifestAssertionKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "label": {
+          "description": "An assertion label in reverse domain format",
+          "type": "string"
+        }
+      }
+    },
+    "ManifestAssertionKind": {
+      "description": "Assertions in C2PA can be stored in several formats",
+      "type": "string",
+      "enum": ["Cbor", "Json", "Binary", "Uri"]
+    },
+    "ManifestData": {
+      "anyOf": [
+        true,
+        {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          }
+        }
+      ]
+    },
+    "ManifestDefinition": {
+      "description": "Use a ManifestDefinition to define a manifest and to build a `ManifestStore`. A manifest is a collection of ingredients and assertions used to define a claim that can be signed and embedded into a file.",
+      "type": "object",
+      "properties": {
+        "assertions": {
+          "description": "A list of assertions",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AssertionDefinition"
+          }
+        },
+        "claim_generator_info": {
+          "description": "Claim Generator Info is always required with at least one entry",
+          "default": [
+            {
+              "name": "c2pa-rs",
+              "version": "0.58.0"
+            }
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClaimGeneratorInfo"
+          }
+        },
+        "claim_version": {
+          "description": "The version of the claim.  Defaults to 1.",
+          "type": ["integer", "null"],
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "format": {
+          "description": "The format of the source file as a MIME type.",
+          "default": "application/octet-stream",
+          "type": "string"
+        },
+        "ingredients": {
+          "description": "A List of ingredients",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Ingredient"
+          }
+        },
+        "instance_id": {
+          "description": "Instance ID from `xmpMM:InstanceID` in XMP metadata.",
+          "default": "xmp:iid:39745b0f-82b0-4848-b2ac-695b1acd4893",
+          "type": "string"
+        },
+        "label": {
+          "description": "Allows you to pre-define the manifest label, which must be unique. Not intended for general use.  If not set, it will be assigned automatically.",
+          "type": ["string", "null"]
+        },
+        "metadata": {
+          "description": "Optional manifest metadata. This will be deprecated in the future; not recommended to use.",
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/AssertionMetadata"
+          }
+        },
+        "redactions": {
+          "description": "A list of redactions - URIs to redacted assertions.",
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "thumbnail": {
+          "description": "An optional ResourceRef to a thumbnail image that represents the asset that was signed. Must be available when the manifest is signed.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ResourceRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "description": "A human-readable title, generally source filename.",
+          "type": ["string", "null"]
+        },
+        "vendor": {
+          "description": "Optional prefix added to the generated Manifest Label This is typically a reverse domain name.",
+          "type": ["string", "null"]
+        }
+      }
+    },
     "Range": {
       "description": "A spatial, temporal, frame, or textual range describing the region of interest.",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "frame": {
           "description": "A frame range.",
@@ -727,60 +857,89 @@
         {
           "description": "A spatial range, see [`Shape`] for more details.",
           "type": "string",
-          "enum": [
-            "spatial"
-          ]
+          "enum": ["spatial"]
         },
         {
           "description": "A temporal range, see [`Time`] for more details.",
           "type": "string",
-          "enum": [
-            "temporal"
-          ]
+          "enum": ["temporal"]
         },
         {
           "description": "A spatial range, see [`Frame`] for more details.",
           "type": "string",
-          "enum": [
-            "frame"
-          ]
+          "enum": ["frame"]
         },
         {
           "description": "A textual range, see [`Text`] for more details.",
           "type": "string",
-          "enum": [
-            "textual"
-          ]
+          "enum": ["textual"]
         },
         {
           "description": "A range identified by a specific identifier and value, see [`Item`] for more details.",
           "type": "string",
-          "enum": [
-            "identified"
-          ]
+          "enum": ["identified"]
         }
       ]
+    },
+    "Reader": {
+      "description": "Use a Reader to read and validate a manifest store.",
+      "type": "object",
+      "required": ["manifests"],
+      "properties": {
+        "active_manifest": {
+          "description": "A label for the active (most recent) manifest in the store",
+          "type": ["string", "null"]
+        },
+        "manifests": {
+          "description": "A HashMap of Manifests",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Manifest"
+          }
+        },
+        "validation_results": {
+          "description": "ValidationStatus generated when loading the ManifestStore from an asset",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ValidationResults"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "validation_state": {
+          "description": "The validation state of the manifest store",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ValidationState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "validation_status": {
+          "description": "ValidationStatus generated when loading the ManifestStore from an asset",
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/ValidationStatus"
+          }
+        }
+      }
     },
     "RegionOfInterest": {
       "description": "A region of interest within an asset describing the change.\n\nThis struct can be used from [`Action::changes`][crate::assertions::Action::changes] or [`AssertionMetadata::region_of_interest`][crate::assertions::AssertionMetadata::region_of_interest].",
       "type": "object",
-      "required": [
-        "region"
-      ],
+      "required": ["region"],
       "properties": {
         "description": {
           "description": "A free-text string.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "identifier": {
           "description": "A free-text string representing a machine-readable, unique to this assertion, identifier for the region.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "metadata": {
           "description": "Additional information about the asset.",
@@ -795,10 +954,7 @@
         },
         "name": {
           "description": "A free-text string representing a human-readable name for the region which might be used in a user interface.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "region": {
           "description": "A range describing the region of interest for the specific asset.",
@@ -820,10 +976,7 @@
         },
         "type": {
           "description": "A value from a controlled vocabulary such as <https://cv.iptc.org/newscodes/imageregiontype/> or an entity-specific value (e.g., com.litware.newType) that represents the type of thing(s) depicted by a region.\n\nNote this field serializes/deserializes into the name `type`.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       }
     },
@@ -833,47 +986,32 @@
         {
           "description": "The current asset is derived from this ingredient.",
           "type": "string",
-          "enum": [
-            "parentOf"
-          ]
+          "enum": ["parentOf"]
         },
         {
           "description": "The current asset is a part of this ingredient.",
           "type": "string",
-          "enum": [
-            "componentOf"
-          ]
+          "enum": ["componentOf"]
         },
         {
           "description": "The ingredient was used as an input to a computational process to create or modify the asset.",
           "type": "string",
-          "enum": [
-            "inputTo"
-          ]
+          "enum": ["inputTo"]
         }
       ]
     },
     "ResourceRef": {
       "description": "A reference to a resource to be used in JSON serialization.\n\nThe underlying data can be read as a stream via [`Reader::resource_to_stream`][crate::Reader::resource_to_stream].",
       "type": "object",
-      "required": [
-        "format",
-        "identifier"
-      ],
+      "required": ["format", "identifier"],
       "properties": {
         "alg": {
           "description": "The algorithm used to hash the resource (if applicable).",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "data_types": {
           "description": "More detailed data types as defined in the C2PA spec.",
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/AssetType"
           }
@@ -884,10 +1022,7 @@
         },
         "hash": {
           "description": "The hash of the resource (if applicable).",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "identifier": {
           "description": "A URI that identifies the resource as referenced from the manifest.\n\nThis may be a JUMBF URI, a file path, a URL or any other string. Relative JUMBF URIs will be resolved with the manifest label. Relative file paths will be resolved with the base path if provided.",
@@ -898,21 +1033,13 @@
     "ResourceStore": {
       "description": "Resource store to contain binary objects referenced from JSON serializable structures",
       "type": "object",
-      "required": [
-        "resources"
-      ],
+      "required": ["resources"],
       "properties": {
         "base_path": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "label": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "resources": {
           "type": "object",
@@ -930,16 +1057,10 @@
     "ReviewRating": {
       "description": "A rating on an Assertion.\n\nSee <https://c2pa.org/specifications/specifications/2.2/specs/C2PA_Specification.html#_review_ratings>.",
       "type": "object",
-      "required": [
-        "explanation",
-        "value"
-      ],
+      "required": ["explanation", "value"],
       "properties": {
         "code": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "explanation": {
           "type": "string"
@@ -957,91 +1078,63 @@
         {
           "description": "Arbitrary area worth identifying.",
           "type": "string",
-          "enum": [
-            "c2pa.areaOfInterest"
-          ]
+          "enum": ["c2pa.areaOfInterest"]
         },
         {
           "description": "This area is all that is left after a crop action.",
           "type": "string",
-          "enum": [
-            "c2pa.cropped"
-          ]
+          "enum": ["c2pa.cropped"]
         },
         {
           "description": "This area has had edits applied to it.",
           "type": "string",
-          "enum": [
-            "c2pa.edited"
-          ]
+          "enum": ["c2pa.edited"]
         },
         {
           "description": "The area where an ingredient was placed/added.",
           "type": "string",
-          "enum": [
-            "c2pa.placed"
-          ]
+          "enum": ["c2pa.placed"]
         },
         {
           "description": "Something in this area was redacted.",
           "type": "string",
-          "enum": [
-            "c2pa.redacted"
-          ]
+          "enum": ["c2pa.redacted"]
         },
         {
           "description": "Area specific to a subject (human or not).",
           "type": "string",
-          "enum": [
-            "c2pa.subjectArea"
-          ]
+          "enum": ["c2pa.subjectArea"]
         },
         {
           "description": "A range of information was removed/deleted.",
           "type": "string",
-          "enum": [
-            "c2pa.deleted"
-          ]
+          "enum": ["c2pa.deleted"]
         },
         {
           "description": "Styling was applied to this area.",
           "type": "string",
-          "enum": [
-            "c2pa.styled"
-          ]
+          "enum": ["c2pa.styled"]
         },
         {
           "description": "Invisible watermarking was applied to this area for the purpose of soft binding.",
           "type": "string",
-          "enum": [
-            "c2pa.watermarked"
-          ]
+          "enum": ["c2pa.watermarked"]
         }
       ]
     },
     "Shape": {
       "description": "A spatial range representing rectangle, circle, or a polygon.",
       "type": "object",
-      "required": [
-        "origin",
-        "type",
-        "unit"
-      ],
+      "required": ["origin", "type", "unit"],
       "properties": {
         "height": {
           "description": "The height of a rectnagle.\n\nThis field can be ignored for circles and polygons.",
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "format": "double"
         },
         "inside": {
           "description": "If the range is inside the shape.\n\nThe default value is true.",
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": ["boolean", "null"]
         },
         "origin": {
           "description": "THe origin of the coordinate in the shape.",
@@ -1069,20 +1162,14 @@
         },
         "vertices": {
           "description": "The vertices of the polygon.\n\nThis field can be ignored for rectangles and circles.",
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/Coordinate"
           }
         },
         "width": {
           "description": "The width for rectangles or diameter for circles.\n\nThis field can be ignored for polygons.",
-          "type": [
-            "number",
-            "null"
-          ],
+          "type": ["number", "null"],
           "format": "double"
         }
       }
@@ -1093,34 +1180,102 @@
         {
           "description": "A rectangle.",
           "type": "string",
-          "enum": [
-            "rectangle"
-          ]
+          "enum": ["rectangle"]
         },
         {
           "description": "A circle.",
           "type": "string",
-          "enum": [
-            "circle"
-          ]
+          "enum": ["circle"]
         },
         {
           "description": "A polygon.",
           "type": "string",
-          "enum": [
-            "polygon"
+          "enum": ["polygon"]
+        }
+      ]
+    },
+    "SignatureInfo": {
+      "description": "Holds information about a signature",
+      "type": "object",
+      "properties": {
+        "alg": {
+          "description": "Human-readable issuing authority for this signature.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SigningAlg"
+            },
+            {
+              "type": "null"
+            }
           ]
+        },
+        "cert_serial_number": {
+          "description": "The serial number of the certificate.",
+          "type": ["string", "null"]
+        },
+        "issuer": {
+          "description": "Human-readable issuing authority for this signature.",
+          "type": ["string", "null"]
+        },
+        "revocation_status": {
+          "description": "Revocation status of the certificate.",
+          "type": ["boolean", "null"]
+        },
+        "time": {
+          "description": "The time the signature was created.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "SigningAlg": {
+      "description": "Describes the digital signature algorithms allowed by the C2PA spec.\n\nPer [§13.2, “Digital Signatures”]:\n\n> All digital signatures applied as per the technical requirements of this > specification shall be generated using one of the digital signature > algorithms and key types listed as described in this section.\n\n[§13.2, “Digital Signatures”]: https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html#_digital_signatures",
+      "oneOf": [
+        {
+          "description": "ECDSA with SHA-256",
+          "type": "string",
+          "enum": ["Es256"]
+        },
+        {
+          "description": "ECDSA with SHA-256 on secp256k1 curve",
+          "type": "string",
+          "enum": ["Es256K"]
+        },
+        {
+          "description": "ECDSA with SHA-384",
+          "type": "string",
+          "enum": ["Es384"]
+        },
+        {
+          "description": "ECDSA with SHA-512",
+          "type": "string",
+          "enum": ["Es512"]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-256 and MGF1 with SHA-256",
+          "type": "string",
+          "enum": ["Ps256"]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-384 and MGF1 with SHA-384",
+          "type": "string",
+          "enum": ["Ps384"]
+        },
+        {
+          "description": "RSASSA-PSS using SHA-512 and MGF1 with SHA-512",
+          "type": "string",
+          "enum": ["Ps512"]
+        },
+        {
+          "description": "Edwards-Curve DSA (Ed25519 instance only)",
+          "type": "string",
+          "enum": ["Ed25519"]
         }
       ]
     },
     "StatusCodes": {
       "description": "Contains a set of success, informational, and failure validation status codes.",
       "type": "object",
-      "required": [
-        "failure",
-        "informational",
-        "success"
-      ],
+      "required": ["failure", "informational", "success"],
       "properties": {
         "failure": {
           "type": "array",
@@ -1145,9 +1300,7 @@
     "Text": {
       "description": "A textual range representing multiple (possibly discontinuous) ranges of text.",
       "type": "object",
-      "required": [
-        "selectors"
-      ],
+      "required": ["selectors"],
       "properties": {
         "selectors": {
           "description": "The ranges of text to select.",
@@ -1161,16 +1314,11 @@
     "TextSelector": {
       "description": "Selects a range of text via a fragment identifier.\n\nThis is modeled after the W3C Web Annotation selector model.",
       "type": "object",
-      "required": [
-        "fragment"
-      ],
+      "required": ["fragment"],
       "properties": {
         "end": {
           "description": "The end character offset or the end of the fragment if not present.",
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "format": "int32"
         },
         "fragment": {
@@ -1179,10 +1327,7 @@
         },
         "start": {
           "description": "The start character offset or the start of the fragment if not present.",
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "format": "int32"
         }
       }
@@ -1190,9 +1335,7 @@
     "TextSelectorRange": {
       "description": "One or two [`TextSelector`][TextSelector] identifiying the range to select.",
       "type": "object",
-      "required": [
-        "selector"
-      ],
+      "required": ["selector"],
       "properties": {
         "end": {
           "description": "The end of the text range.",
@@ -1221,17 +1364,11 @@
       "properties": {
         "end": {
           "description": "The end time or the end of the asset if not present.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "start": {
           "description": "The start time or the start of the asset if not present.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "type": {
           "description": "The type of time.",
@@ -1250,9 +1387,7 @@
         {
           "description": "Times are described using Normal Play Time (npt) as described in RFC 2326.",
           "type": "string",
-          "enum": [
-            "npt"
-          ]
+          "enum": ["npt"]
         }
       ]
     },
@@ -1262,16 +1397,12 @@
         {
           "description": "Use pixels.",
           "type": "string",
-          "enum": [
-            "pixel"
-          ]
+          "enum": ["pixel"]
         },
         {
           "description": "Use percentage.",
           "type": "string",
-          "enum": [
-            "percent"
-          ]
+          "enum": ["percent"]
         }
       ]
     },
@@ -1300,44 +1431,50 @@
           ]
         },
         "ingredientDeltas": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": ["array", "null"],
           "items": {
             "$ref": "#/definitions/IngredientDeltaValidationResult"
           }
         }
       }
     },
+    "ValidationState": {
+      "description": "Indicates if the manifest store is valid and trusted.\n\nThe Trusted state implies the manifest store is valid and the active signature is trusted.",
+      "oneOf": [
+        {
+          "description": "Errors were found in the manifest store.",
+          "type": "string",
+          "enum": ["Invalid"]
+        },
+        {
+          "description": "No errors were found in validation, but the active signature is not trusted.",
+          "type": "string",
+          "enum": ["Valid"]
+        },
+        {
+          "description": "The manifest store is valid and the active signature is trusted.",
+          "type": "string",
+          "enum": ["Trusted"]
+        }
+      ]
+    },
     "ValidationStatus": {
       "description": "A `ValidationStatus` struct describes the validation status of a specific part of a manifest.\n\nSee <https://c2pa.org/specifications/specifications/2.2/specs/C2PA_Specification.html#_existing_manifests>.",
       "type": "object",
-      "required": [
-        "code"
-      ],
+      "required": ["code"],
       "properties": {
         "code": {
           "type": "string"
         },
         "explanation": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "success": {
           "writeOnly": true,
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": ["boolean", "null"]
         },
         "url": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       }
     }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"crypto"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/bus"
+	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/crypto/signers/eip712"
 	"stream.place/streamplace/pkg/director"
@@ -56,8 +58,17 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	if err != nil {
 		return err
 	}
-	cert, _ := iroh_streamplace.PrintCert(bs)
-	panic(cert)
+	manifest, rustErr := iroh_streamplace.GetManifest(bs)
+	if rustErr.AsError() != nil {
+		return rustErr.AsError()
+	}
+	var mani c2patypes.Manifest
+	err = json.Unmarshal([]byte(manifest), &mani)
+	if err != nil {
+		return err
+	}
+	fmt.Println(mani)
+	os.Exit(0)
 	selfTest := len(os.Args) > 1 && os.Args[1] == "self-test"
 	err = media.RunSelfTest(context.Background())
 	if err != nil {
