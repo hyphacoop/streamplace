@@ -1,4 +1,5 @@
 import { Text } from "@streamplace/components";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import pkg from "../../package.json";
 

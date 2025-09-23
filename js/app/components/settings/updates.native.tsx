@@ -1,4 +1,4 @@
-import { Text } from "@streamplace/components";
+import { Text, useToast } from "@streamplace/components";
 import * as ExpoUpdates from "expo-updates";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +9,7 @@ export function Updates() {
   const version = pkg.version;
   const updateInfo = ExpoUpdates.useUpdates();
   const { currentlyRunning, isUpdateAvailable, isUpdatePending } = updateInfo;
-
+  const toast = useToast();
   const { t } = useTranslation();
 
   console.log(`updateInfo: ${JSON.stringify(updateInfo)}`);
@@ -85,21 +85,24 @@ export function Updates() {
               setChecked(true);
               const res = await ExpoUpdates.checkForUpdateAsync();
               if (!res.isAvailable) {
-                // Removed toast functionality - replaced with console.log
-                console.log(
-                  "No update found - You are on the latest version of Streamplace, hooray!",
+                toast.show(
+                  t("modal-latest-version"),
+                  t("modal-no-update-available"),
+                  { duration: 2000 },
+                );
+              } else {
+                toast.show(
+                  t("modal-update-available-title"),
+                  t("modal-update-available-description"),
+                  { duration: 2000 },
                 );
               }
             } catch (e) {
-              toast.show("Update failed!", {
-                viewportName: "modal",
-                message: t("modal-update-failed", {
+              toast.show(
+                t("modal-update-failed-title"),
+                t("modal-update-failed-description", {
                   store: Platform.OS === "ios" ? "App Store" : "Play Store",
                 }),
-              });
-              // Removed toast functionality - replaced with console.log
-              console.log(
-                `Update failed! You may need to update the app through the ${Platform.OS === "ios" ? "App" : "Play"} Store.`,
               );
             }
           }}
@@ -124,8 +127,10 @@ export function Updates() {
               ExpoUpdates.reloadAsync();
             }}
           >
-            <Text>{t("button-reload-app-on-update")}</Text>
-          </Button>
+            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+              {t("button-reload-app-on-update")}
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     </View>
