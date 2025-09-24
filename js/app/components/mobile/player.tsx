@@ -19,7 +19,7 @@ import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
-import { Animated, ScrollView } from "react-native";
+import { Animated, ScrollView, StatusBar } from "react-native";
 import { useAppSelector } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
@@ -54,6 +54,12 @@ export function Player(
   }, [userIsLive]);
 
   const navigation = useNavigation();
+
+  useEffect(() => {
+    return () => {
+      StatusBar.setHidden(false, "slide");
+    };
+  }, []);
 
   if (isStreamingElsewhere) {
     return (
@@ -116,6 +122,7 @@ export function Player(
 
   return (
     <LivestreamProvider src={props.src ?? ""}>
+      <StatusBar hidden={true} />
       <PlayerProvider defaultId={props.playerId || undefined}>
         <View
           style={{
@@ -176,7 +183,8 @@ export function PlayerInner(
 
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
-  const isDesktopMode = shouldShowChatSidePanel || screenWidth > 768;
+  // should cover full width on mobile?
+  const isDesktopMode = shouldShowChatSidePanel || screenWidth > 1200;
 
   // Calculate optimal height for desktop mode (90% of available height)
   const maxDesktopHeight = availableHeight * 0.8;
@@ -190,7 +198,7 @@ export function PlayerInner(
     ? Math.min(calculatedWidth / aspectRatio, maxDesktopHeight)
     : height;
 
-  const showFullDesktopMode = aspectRatio > 1 && screenWidth > 980;
+  const showFullDesktopMode = aspectRatio > 1 && screenWidth > 1200;
   const isLandscape = aspectRatio > 1;
 
   return (
