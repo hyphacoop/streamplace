@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	comatprototypes "github.com/bluesky-social/indigo/api/atproto"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
@@ -17,6 +18,23 @@ import (
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/log"
 )
+
+func resolveRepoService(ctx context.Context, repo string) (did, service, handle string, err error) {
+	did = repo
+	if !strings.HasPrefix(repo, "did:") {
+		did, err = oatproxy.ResolveHandle(ctx, repo)
+		if err != nil {
+			return "", "", "", fmt.Errorf("failed to resolve handle %q: %w", repo, err)
+		}
+	}
+
+	service, handle, err = oatproxy.ResolveService(ctx, did)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to resolve service for did %q: %w", did, err)
+	}
+
+	return did, service, handle, nil
+}
 
 func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context, r io.Reader, contentType string) (*comatprototypes.RepoUploadBlob_Output, error) {
 	ctx, span := otel.Tracer("server").Start(ctx, "handleComAtprotoRepoUploadBlob")
@@ -43,9 +61,44 @@ func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context, r io.Reader
 }
 
 func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context, repo string) (*comatprototypes.RepoDescribeRepo_Output, error) {
+	did, svc, handle, err := resolveRepoService(ctx, repo)
+	if err != nil {
+		return nil, fmt.Errorf("handleComAtprotoRepoDescribeRepo: %w", err)
+	}
+
+	// if the service isn't the current host, we proxy the request
+	if svc != s.cli.PublicHost {
+		session, client := oatproxy.GetOAuthSession(ctx)
+		if session != nil {
+			// authenticated request
+			var out *comatprototypes.RepoDescribeRepo_Output
+			params := make(map[string]any)
+			params["repo"] = repo
+
+			err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.describeRepo", params, nil, &out)
+			if err != nil {
+				log.Error(ctx, "upstream xrpc error", "error", err)
+				return nil, err
+			}
+			return out, nil
+		} else {
+			// unauthenticated request
+			var out comatprototypes.RepoDescribeRepo_Output
+			params := make(map[string]interface{})
+			params["repo"] = repo
+
+			err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.describeRepo", params, &out)
+			if err != nil {
+				log.Error(ctx, "upstream xrpc error", "error", err)
+				return nil, err
+			}
+			return &out, nil
+		}
+	}
+
 	return &comatprototypes.RepoDescribeRepo_Output{
-		Handle: s.cli.PublicHost,
-		Did:    fmt.Sprintf("did:web:%s", s.cli.PublicHost),
+		Handle: handle,
+		Did:    did,
 		DidDoc: atproto.DIDDoc(s.cli.PublicHost),
 		Collections: []string{
 			"com.atproto.lexicon.schema",
@@ -55,6 +108,57 @@ func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context, repo stri
 }
 
 func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context, collection string, cursor string, limit int, repo string, reverse *bool) (*comatprototypes.RepoListRecords_Output, error) {
+	_, svc, _, err := resolveRepoService(ctx, repo)
+	if err != nil {
+		return nil, fmt.Errorf("handleComAtprotoRepoListRecords: %w", err)
+	}
+	// if the service isn't the current host, we proxy the request
+	if svc != s.cli.PublicHost {
+		session, client := oatproxy.GetOAuthSession(ctx)
+		if session != nil {
+			// authenticated request
+			var out *comatprototypes.RepoListRecords_Output
+			xrpcType := xrpc.Procedure
+			params := make(map[string]any)
+			params["collection"] = collection
+			if cursor != "" {
+				params["cursor"] = cursor
+			}
+			if limit != 0 {
+				params["limit"] = limit
+			}
+			if reverse != nil {
+				params["reverse"] = *reverse
+			}
+			err = client.Do(ctx, xrpcType, "application/json", "com.atproto.repo.listRecords", params, nil, &out)
+			if err != nil {
+				log.Error(ctx, "upstream xrpc error", "error", err)
+				return nil, err
+			}
+			return out, nil
+		} else {
+			// unauthenticated request
+			var out comatprototypes.RepoListRecords_Output
+			params := make(map[string]interface{})
+			params["collection"] = collection
+			if cursor != "" {
+				params["cursor"] = cursor
+			}
+			if limit != 0 {
+				params["limit"] = limit
+			}
+			if reverse != nil {
+				params["reverse"] = *reverse
+			}
+			err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.listRecords", params, &out)
+			if err != nil {
+				log.Error(ctx, "upstream xrpc error", "error", err)
+				return nil, err
+			}
+			return &out, nil
+		}
+	}
+
 	r, ses, err := atproto.OpenLexiconRepo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("handleComAtprotoRepoListRecords: failed to open repo: %w", err)
@@ -82,6 +186,51 @@ func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context, collection
 }
 
 func (s *Server) handleComAtprotoRepoGetRecord(ctx context.Context, c string, collection string, repo string, rkey string) (*comatprototypes.RepoGetRecord_Output, error) {
+	_, svc, _, err := resolveRepoService(ctx, repo)
+	if err != nil {
+		return nil, fmt.Errorf("handleComAtprotoRepoGetRecord: %w", err)
+	}
+
+	// if the service isn't the current host, we proxy the request
+	if svc != s.cli.PublicHost {
+		session, client := oatproxy.GetOAuthSession(ctx)
+		if session != nil {
+			// authenticated request
+			var out *comatprototypes.RepoGetRecord_Output
+			params := make(map[string]interface{})
+			params["repo"] = repo
+			params["collection"] = collection
+			params["rkey"] = rkey
+			if c != "" {
+				params["cid"] = c
+			}
+
+			err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", params, nil, &out)
+			if err != nil {
+				log.Error(ctx, "upstream xrpc error", "error", err)
+				return nil, err
+			}
+			return out, nil
+		} else {
+			// unauthenticated request
+			var out comatprototypes.RepoGetRecord_Output
+			params := make(map[string]interface{})
+			params["repo"] = repo
+			params["collection"] = collection
+			params["rkey"] = rkey
+			if c != "" {
+				params["cid"] = c
+			}
+
+			err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.getRecord", params, &out)
+			if err != nil {
+				log.Error(ctx, "upstream xrpc error", "error", err)
+				return nil, err
+			}
+			return &out, nil
+		}
+	}
+
 	r, ses, err := atproto.OpenLexiconRepo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("handleComAtprotoRepoGetRecord: failed to open repo: %w", err)
