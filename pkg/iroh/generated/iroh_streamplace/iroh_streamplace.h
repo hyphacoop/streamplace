@@ -613,14 +613,9 @@ uint64_t uniffi_iroh_streamplace_fn_method_sender_node_addr(void* ptr
 uint64_t uniffi_iroh_streamplace_fn_method_sender_send(void* ptr, RustBuffer key, RustBuffer data
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_CERT
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_CERT
-RustBuffer uniffi_iroh_streamplace_fn_func_get_cert(RustBuffer data, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST
-RustBuffer uniffi_iroh_streamplace_fn_func_get_manifest(RustBuffer data, RustCallStatus *out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST_AND_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST_AND_CERT
+RustBuffer uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(RustBuffer data, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
@@ -908,15 +903,9 @@ void ffi_iroh_streamplace_rust_future_free_void(uint64_t handle
 void ffi_iroh_streamplace_rust_future_complete_void(uint64_t handle, RustCallStatus *out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_CERT
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_CERT
-uint16_t uniffi_iroh_streamplace_checksum_func_get_cert(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST
-uint16_t uniffi_iroh_streamplace_checksum_func_get_manifest(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST_AND_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST_AND_CERT
+uint16_t uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert(void
     
 );
 #endif

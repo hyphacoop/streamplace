@@ -2,6 +2,7 @@ use c2pa::Builder;
 use c2pa::CallbackSigner;
 use c2pa::Reader;
 use c2pa::settings::Settings;
+use serde_json;
 use std::io::Cursor;
 use std::sync::Arc;
 
@@ -15,23 +16,22 @@ pub enum SPError {
 }
 
 #[uniffi::export]
-pub fn get_cert(data: Vec<u8>) -> Result<String, SPError> {
+pub fn get_manifest_and_cert(data: Vec<u8>) -> Result<String, SPError> {
     let reader = Reader::from_stream("video/mp4", Cursor::new(data))
         .map_err(|e| SPError::C2paError(e.to_string()))?;
     if let Some(manifest) = reader.active_manifest() {
-        if let Some(si) = manifest.signature_info() {
-            return Ok(si.cert_chain().to_string());
-        }
-    }
-    Err(SPError::NoCertificateChainFound)
-}
+        let cert_chain = if let Some(si) = manifest.signature_info() {
+            si.cert_chain()
+        } else {
+            return Err(SPError::NoCertificateChainFound);
+        };
 
-#[uniffi::export]
-pub fn get_manifest(data: Vec<u8>) -> Result<String, SPError> {
-    let reader = Reader::from_stream("video/mp4", Cursor::new(data))
-        .map_err(|e| SPError::C2paError(e.to_string()))?;
-    if let Some(manifest) = reader.active_manifest() {
-        return Ok(manifest.to_string());
+        let result = serde_json::json!({
+            "manifest": manifest,
+            "cert": cert_chain
+        });
+
+        return Ok(result.to_string());
     }
     Err(SPError::NoCertificateChainFound)
 }

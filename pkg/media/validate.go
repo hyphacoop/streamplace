@@ -18,6 +18,11 @@ import (
 	"stream.place/streamplace/pkg/model"
 )
 
+type ManifestAndCert struct {
+	Manifest c2patypes.Manifest `json:"manifest"`
+	Cert     string             `json:"cert"`
+}
+
 func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error {
 	ctx, span := otel.Tracer("signer").Start(ctx, "ValidateMP4")
 	defer span.End()
@@ -25,24 +30,20 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
-	maniStr, rustErr := iroh_streamplace.GetManifest(buf)
+	var maniCert ManifestAndCert
+	maniStr, rustErr := iroh_streamplace.GetManifestAndCert(buf)
 	if rustErr.AsError() != nil {
 		return rustErr.AsError()
 	}
-	var mani c2patypes.Manifest
-	err = json.Unmarshal([]byte(maniStr), &mani)
+	err = json.Unmarshal([]byte(maniStr), &maniCert)
 	if err != nil {
 		return err
 	}
-	certStr, rustErr := iroh_streamplace.GetCert(buf)
-	if rustErr.AsError() != nil {
-		return rustErr.AsError()
-	}
-	pub, err := signers.ParseES256KCert([]byte(certStr))
+	pub, err := signers.ParseES256KCert([]byte(maniCert.Cert))
 	if err != nil {
 		return err
 	}
-	meta, err := ParseSegmentAssertions(ctx, &mani)
+	meta, err := ParseSegmentAssertions(ctx, &maniCert.Manifest)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		return err
 	}
 	seg := &model.Segment{
-		ID:            *mani.Label,
+		ID:            *maniCert.Manifest.Label,
 		SigningKeyDID: signingKeyDID,
 		RepoDID:       repoDID,
 		StartTime:     meta.StartTime.Time(),
@@ -106,6 +107,6 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		go func() { ch <- not }()
 	}
 	aqt := aqtime.FromTime(meta.StartTime.Time())
-	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *mani.Label)
+	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *maniCert.Manifest.Label)
 	return nil
 }

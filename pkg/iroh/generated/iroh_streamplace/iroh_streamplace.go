@@ -352,20 +352,11 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_iroh_streamplace_checksum_func_get_cert()
+			return C.uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert()
 		})
-		if checksum != 59172 {
+		if checksum != 17550 {
 			// If this happens try cleaning and rebuilding your project
-			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_cert: UniFFI API checksum mismatch")
-		}
-	}
-	{
-		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_iroh_streamplace_checksum_func_get_manifest()
-		})
-		if checksum != 23005 {
-			// If this happens try cleaning and rebuilding your project
-			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_manifest: UniFFI API checksum mismatch")
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -2268,24 +2259,10 @@ func iroh_streamplace_uniffiFreeGorutine(data C.uint64_t) {
 	guard <- struct{}{}
 }
 
-func GetCert(data []byte) (string, *SpError) {
+func GetManifestAndCert(data []byte) (string, *SpError) {
 	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
-			inner: C.uniffi_iroh_streamplace_fn_func_get_cert(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
-		}
-	})
-	if _uniffiErr != nil {
-		var _uniffiDefaultValue string
-		return _uniffiDefaultValue, _uniffiErr
-	} else {
-		return FfiConverterStringINSTANCE.Lift(_uniffiRV), _uniffiErr
-	}
-}
-
-func GetManifest(data []byte) (string, *SpError) {
-	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
-		return GoRustBuffer{
-			inner: C.uniffi_iroh_streamplace_fn_func_get_manifest(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
+			inner: C.uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
 		}
 	})
 	if _uniffiErr != nil {
