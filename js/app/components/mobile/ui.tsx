@@ -31,6 +31,7 @@ import { useEffect, useRef, useState } from "react";
 import { Image, Platform, Pressable } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -120,9 +121,16 @@ export function MobileUi({
     };
   }, []);
 
+  const showUI = () => {
+    "worklet";
+    fadeOpacity.value = withTiming(1, { duration: 200 });
+  };
+
   const onPlayerHover = () => {
     "worklet";
-    resetFadeTimer();
+    showUI();
+    // Schedule timer reset on JS thread
+    runOnJS(resetFadeTimer)();
   };
 
   const animatedFadeStyle = useAnimatedStyle(() => ({
@@ -137,209 +145,212 @@ export function MobileUi({
 
   const combined = Gesture.Race(hover, pan);
   return (
-    <GestureDetector gesture={combined}>
-      <>
-        <Animated.View
-          style={[
-            layout.position.absolute,
-            h.percent[100],
-            w.percent[100],
-            animatedFadeStyle,
-          ]}
+    <>
+      <GestureDetector gesture={combined}>
+        <View
+          style={[layout.position.absolute, h.percent[100], w.percent[100]]}
         >
-          {/* Main UI Overlay */}
-          <View
-            style={[layout.position.absolute, h.percent[100], w.percent[100]]}
-          >
-            {/* Top Left - Back Button and Profile */}
-            <View
-              style={[
-                {
-                  padding: 3,
-                  paddingRight: 8,
-                  backgroundColor: "rgba(90,90,90, 0.25)",
-                  borderRadius: 12,
-                },
-                r[2],
-                layout.position.absolute,
-                position.left[2],
-                { top: safeAreaInsets.top + 12 },
-              ]}
-            >
-              <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
-                <Pressable
-                  onPress={() => {
-                    navigation.canGoBack()
-                      ? navigation.goBack()
-                      : navigation.navigate("Home", { screen: "StreamList" });
-                  }}
-                >
-                  <ChevronLeft color="white" />
-                </Pressable>
-                <Image
-                  source={
-                    profile?.did
-                      ? { url: avatars[profile?.did]?.avatar }
-                      : require("assets/images/goose.png")
-                  }
-                  width={32}
-                  height={32}
-                  style={[
-                    {
-                      width: 36,
-                      height: 36,
-                      backgroundColor: "green",
-                    },
-                    { borderRadius: 999 },
-                    borders.width.thin,
-                    borders.color.gray[700],
-                  ]}
-                />
-                <Text>{profile?.handle}</Text>
-              </View>
-            </View>
-
-            {/* Right Controls Column */}
-            <View
-              style={[
-                layout.position.absolute,
-                position.right[2],
-                { top: safeAreaInsets.top + 12 },
-                layout.flex.row,
-                gap.all[2],
-              ]}
-            >
-              {shouldShowFloatingMetrics && (
-                <View>
-                  <View
-                    style={[
-                      {
-                        padding: 9,
-                        backgroundColor: "rgba(90,90,90, 0.3)",
-                        borderRadius: 12,
-                      },
-                      r[2],
-                    ]}
-                  >
-                    <PlayerUI.Viewers />
-                  </View>
-                </View>
-              )}
-
-              <RightControlsPanel
-                ingest={ingest}
-                doSetIngestCamera={doSetIngestCamera}
-                shouldShowChatSidePanel={shouldShowChatSidePanel}
-                showChat={showChat}
-                setShowChat={setShowChat}
-              />
-            </View>
-
-            {shouldShowFloatingMetrics && isLive && (
-              <View
-                style={[
-                  layout.position.absolute,
-                  { top: safeAreaInsets.top + 112 },
-                  position.left[0],
-                  position.right[0],
-                  layout.flex.column,
-                  layout.flex.center,
-                ]}
-              >
-                <PlayerUI.MetricsPanel
-                  showMetrics={isLive || isSelfAndNotLive}
-                />
-              </View>
-            )}
-          </View>
-          {isSelfAndNotLive && (
-            <PlayerUI.InputPanel
-              title={title}
-              setTitle={setTitle}
-              ingestStarting={ingestStarting}
-              toggleGoLive={toggleGoLive}
-            />
-          )}
-
-          <PlayerUI.CountdownOverlay
-            visible={showCountdown}
-            width={width}
-            height={height - 150}
-            onDone={() => {
-              if (!recordSubmitted && title != "") {
-                setShowLoading(true);
-              }
-              setShowCountdown(false);
-            }}
-          />
-          <PlayerUI.LoadingOverlay
-            visible={showLoading}
-            width={width}
-            height={height - 150}
-            subtitle="We're setting up your stream."
-          />
-
-          <Toast
-            open={recordSubmitted}
-            onOpenChange={setRecordSubmitted}
-            title="You're live!"
-            description="We're notifying your followers that you just went live."
-            duration={5}
-          />
-        </Animated.View>
-
-        {showChat === undefined && (
-          <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
-        )}
-        {muted && (
-          <View
+          <Animated.View
             style={[
               layout.position.absolute,
-              position.top[16],
-              position.left[2],
-              layout.flex.column,
-              layout.flex.center,
+              h.percent[100],
+              w.percent[100],
+              animatedFadeStyle,
             ]}
           >
-            <Pressable
-              onPress={() => {
-                if (muteWasForced) {
-                  setMuted(false);
-                  setMuteWasForced(false);
-                } else {
-                  setMuted(false);
-                }
-              }}
-              style={[
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                },
-              ]}
+            {/* Main UI Overlay */}
+            <View
+              style={[layout.position.absolute, h.percent[100], w.percent[100]]}
             >
+              {/* Top Left - Back Button and Profile */}
               <View
                 style={[
                   {
-                    padding: 4,
-                    backgroundColor: "rgba(50, 30, 30, 0.4)",
-                    borderRadius: 999,
-                    borderWidth: 2,
-                    borderColor: "rgba(255, 120, 120, 0.2)",
+                    padding: 3,
+                    paddingRight: 8,
+                    backgroundColor: "rgba(90,90,90, 0.25)",
+                    borderRadius: 12,
+                  },
+                  r[2],
+                  layout.position.absolute,
+                  position.left[2],
+                  { top: safeAreaInsets.top + 12 },
+                ]}
+              >
+                <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
+                  <Pressable
+                    onPress={() => {
+                      navigation.canGoBack()
+                        ? navigation.goBack()
+                        : navigation.navigate("Home", { screen: "StreamList" });
+                    }}
+                  >
+                    <ChevronLeft color="white" />
+                  </Pressable>
+                  <Image
+                    source={
+                      profile?.did
+                        ? { url: avatars[profile?.did]?.avatar }
+                        : require("assets/images/goose.png")
+                    }
+                    width={32}
+                    height={32}
+                    style={[
+                      {
+                        width: 36,
+                        height: 36,
+                        backgroundColor: "green",
+                      },
+                      { borderRadius: 999 },
+                      borders.width.thin,
+                      borders.color.gray[700],
+                    ]}
+                  />
+                  <Text>{profile?.handle}</Text>
+                </View>
+              </View>
+
+              {/* Right Controls Column */}
+              <View
+                style={[
+                  layout.position.absolute,
+                  position.right[2],
+                  { top: safeAreaInsets.top + 12 },
+                  layout.flex.row,
+                  gap.all[2],
+                ]}
+              >
+                {shouldShowFloatingMetrics && (
+                  <View>
+                    <View
+                      style={[
+                        {
+                          padding: 9,
+                          backgroundColor: "rgba(90,90,90, 0.3)",
+                          borderRadius: 12,
+                        },
+                        r[2],
+                      ]}
+                    >
+                      <PlayerUI.Viewers />
+                    </View>
+                  </View>
+                )}
+
+                <RightControlsPanel
+                  ingest={ingest}
+                  doSetIngestCamera={doSetIngestCamera}
+                  shouldShowChatSidePanel={shouldShowChatSidePanel}
+                  showChat={showChat}
+                  setShowChat={setShowChat}
+                />
+              </View>
+
+              {shouldShowFloatingMetrics && isLive && (
+                <View
+                  style={[
+                    layout.position.absolute,
+                    { top: safeAreaInsets.top + 112 },
+                    position.left[0],
+                    position.right[0],
+                    layout.flex.column,
+                    layout.flex.center,
+                  ]}
+                >
+                  <PlayerUI.MetricsPanel
+                    showMetrics={isLive || isSelfAndNotLive}
+                  />
+                </View>
+              )}
+            </View>
+            {isSelfAndNotLive && (
+              <PlayerUI.InputPanel
+                title={title}
+                setTitle={setTitle}
+                ingestStarting={ingestStarting}
+                toggleGoLive={toggleGoLive}
+              />
+            )}
+
+            <PlayerUI.CountdownOverlay
+              visible={showCountdown}
+              width={width}
+              height={height - 150}
+              onDone={() => {
+                if (!recordSubmitted && title != "") {
+                  setShowLoading(true);
+                }
+                setShowCountdown(false);
+              }}
+            />
+            <PlayerUI.LoadingOverlay
+              visible={showLoading}
+              width={width}
+              height={height - 150}
+              subtitle="We're setting up your stream."
+            />
+
+            <Toast
+              open={recordSubmitted}
+              onOpenChange={setRecordSubmitted}
+              title="You're live!"
+              description="We're notifying your followers that you just went live."
+              duration={5}
+            />
+          </Animated.View>
+          {muted && (
+            <View
+              style={[
+                layout.position.absolute,
+                position.top[16],
+                position.left[2],
+                layout.flex.column,
+                layout.flex.center,
+              ]}
+            >
+              <Pressable
+                onPress={() => {
+                  if (muteWasForced) {
+                    setMuted(false);
+                    setMuteWasForced(false);
+                  } else {
+                    setMuted(false);
+                  }
+                }}
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
                   },
                 ]}
               >
-                <VolumeX size="24" color="rgba(255,120,120,0.8)" />
-              </View>
-              <Text color="muted" size="sm">
-                Tap to unmute
-              </Text>
-            </Pressable>
-          </View>
-        )}
-        <PlayerUI.AutoplayButton />
-      </>
-    </GestureDetector>
+                <View
+                  style={[
+                    {
+                      padding: 4,
+                      backgroundColor: "rgba(50, 30, 30, 0.4)",
+                      borderRadius: 999,
+                      borderWidth: 2,
+                      borderColor: "rgba(255, 120, 120, 0.2)",
+                    },
+                  ]}
+                >
+                  <VolumeX size="24" color="rgba(255,120,120,0.8)" />
+                </View>
+                <Text color="muted" size="sm">
+                  Tap to unmute
+                </Text>
+              </Pressable>
+            </View>
+          )}
+          <PlayerUI.AutoplayButton />
+        </View>
+      </GestureDetector>
+      {showChat === undefined && (
+        <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
+      )}
+    </>
   );
 }
 
