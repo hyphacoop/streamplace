@@ -3,18 +3,19 @@ package media
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqtime"
+	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/signers"
+	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
-
-	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 )
 
 func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error {
@@ -24,18 +25,24 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
-	r := bytes.NewReader(buf)
-	reader, err := c2pa.FromStream(r, "video/mp4")
+	maniStr, rustErr := iroh_streamplace.GetManifest(buf)
+	if rustErr.AsError() != nil {
+		return rustErr.AsError()
+	}
+	var mani c2patypes.Manifest
+	err = json.Unmarshal([]byte(maniStr), &mani)
 	if err != nil {
 		return err
 	}
-	mani := reader.GetActiveManifest()
-	certs := reader.GetProvenanceCertChain()
-	pub, err := signers.ParseES256KCert([]byte(certs))
+	certStr, rustErr := iroh_streamplace.GetCert(buf)
+	if rustErr.AsError() != nil {
+		return rustErr.AsError()
+	}
+	pub, err := signers.ParseES256KCert([]byte(certStr))
 	if err != nil {
 		return err
 	}
-	meta, err := ParseSegmentAssertions(ctx, mani)
+	meta, err := ParseSegmentAssertions(ctx, &mani)
 	if err != nil {
 		return err
 	}
@@ -75,7 +82,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	}
 	defer fd.Close()
 	go mm.replicator.NewSegment(ctx, buf)
-	r = bytes.NewReader(buf)
+	r := bytes.NewReader(buf)
 	if _, err := io.Copy(fd, r); err != nil {
 		return err
 	}

@@ -42,14 +42,18 @@ func GenerateES256KCert(signer gocrypto.Signer) ([]byte, error) {
 	// publicKeyBytes := elliptic.Marshal(elliptic.P256(), pub.X, pub.Y)
 	pub := signer.Public().(*ecdsa.PublicKey)
 	publicKeyBytes := elliptic.Marshal(crypto.S256(), pub.X, pub.Y) //nolint:all
+	atpub, err := atcrypto.ParsePublicUncompressedBytesK256(publicKeyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse public key: %w", err)
+	}
 	idhash := sha1.Sum(publicKeyBytes)
 	subjectKeyID := idhash[:]
-	hex := HexAddr(pub)
 
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName: hex,
+			CommonName:   atpub.DIDKey(),
+			Organization: []string{"Streamplace"},
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,

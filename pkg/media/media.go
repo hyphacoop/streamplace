@@ -18,6 +18,7 @@ import (
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/bus"
+	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/model"
@@ -25,7 +26,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/replication"
 
-	"git.stream.place/streamplace/c2pa-go/pkg/c2pa/generated/manifeststore"
 	"github.com/piprate/json-gold/ld"
 
 	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
@@ -195,10 +195,10 @@ type SegmentMetadata struct {
 
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
 
-func ParseSegmentAssertions(ctx context.Context, mani *manifeststore.Manifest) (*SegmentMetadata, error) {
+func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*SegmentMetadata, error) {
 	_, span := otel.Tracer("signer").Start(ctx, "ParseSegmentAssertions")
 	defer span.End()
-	var ass *manifeststore.ManifestAssertion
+	var ass *c2patypes.ManifestAssertion
 	for _, a := range mani.Assertions {
 		if a.Label == StreamplaceMetadata {
 			ass = &a

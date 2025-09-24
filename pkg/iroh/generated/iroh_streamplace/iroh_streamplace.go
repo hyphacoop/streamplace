@@ -335,6 +335,7 @@ func readFloat64(reader io.Reader) float64 {
 func init() {
 
 	FfiConverterDataHandlerINSTANCE.register()
+	FfiConverterGoSignerINSTANCE.register()
 	uniffiCheckChecksums()
 }
 
@@ -351,20 +352,29 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_get_cert()
+		})
+		if checksum != 59172 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_cert: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_get_manifest()
 		})
-		if checksum != 65147 {
+		if checksum != 23005 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_manifest: UniFFI API checksum mismatch")
 		}
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
-			return C.uniffi_iroh_streamplace_checksum_func_print_cert()
+			return C.uniffi_iroh_streamplace_checksum_func_sign()
 		})
-		if checksum != 39427 {
+		if checksum != 23786 {
 			// If this happens try cleaning and rebuilding your project
-			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_print_cert: UniFFI API checksum mismatch")
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_sign: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -383,6 +393,15 @@ func uniffiCheckChecksums() {
 		if checksum != 17254 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_endpoint_node_addr: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_gosigner_sign()
+		})
+		if checksum != 50597 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_gosigner_sign: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1041,6 +1060,135 @@ func (_ FfiDestroyerEndpoint) Destroy(value *Endpoint) {
 	value.Destroy()
 }
 
+type GoSigner interface {
+	Sign(data []byte) ([]byte, *SpError)
+}
+type GoSignerImpl struct {
+	ffiObject FfiObject
+}
+
+func (_self *GoSignerImpl) Sign(data []byte) ([]byte, *SpError) {
+	_pointer := _self.ffiObject.incrementPointer("GoSigner")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_method_gosigner_sign(
+				_pointer, FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []byte
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBytesINSTANCE.Lift(_uniffiRV), _uniffiErr
+	}
+}
+func (object *GoSignerImpl) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterGoSigner struct {
+	handleMap *concurrentHandleMap[GoSigner]
+}
+
+var FfiConverterGoSignerINSTANCE = FfiConverterGoSigner{
+	handleMap: newConcurrentHandleMap[GoSigner](),
+}
+
+func (c FfiConverterGoSigner) Lift(pointer unsafe.Pointer) GoSigner {
+	result := &GoSignerImpl{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_iroh_streamplace_fn_clone_gosigner(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_iroh_streamplace_fn_free_gosigner(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*GoSignerImpl).Destroy)
+	return result
+}
+
+func (c FfiConverterGoSigner) Read(reader io.Reader) GoSigner {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterGoSigner) Lower(value GoSigner) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := unsafe.Pointer(uintptr(c.handleMap.insert(value)))
+	return pointer
+
+}
+
+func (c FfiConverterGoSigner) Write(writer io.Writer, value GoSigner) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerGoSigner struct{}
+
+func (_ FfiDestroyerGoSigner) Destroy(value GoSigner) {
+	if val, ok := value.(*GoSignerImpl); ok {
+		val.Destroy()
+	} else {
+		panic("Expected *GoSignerImpl")
+	}
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerMethod0
+func iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerMethod0(uniffiHandle C.uint64_t, data C.RustBuffer, uniffiOutReturn *C.RustBuffer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterGoSignerINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res, err :=
+		uniffiObj.Sign(
+			FfiConverterBytesINSTANCE.Lift(GoRustBuffer{
+				inner: data,
+			}),
+		)
+
+	if err != nil {
+		// The only way to bypass an unexpected error is to bypass pointer to an empty
+		// instance of the error
+		if err.err == nil {
+			*callStatus = C.RustCallStatus{
+				code: C.int8_t(uniffiCallbackUnexpectedResultError),
+			}
+			return
+		}
+
+		*callStatus = C.RustCallStatus{
+			code:     C.int8_t(uniffiCallbackResultError),
+			errorBuf: FfiConverterSpErrorINSTANCE.Lower(err),
+		}
+		return
+	}
+
+	*uniffiOutReturn = FfiConverterBytesINSTANCE.Lower(res)
+}
+
+var UniffiVTableCallbackInterfaceGoSignerINSTANCE = C.UniffiVTableCallbackInterfaceGoSigner{
+	sign: (C.UniffiCallbackInterfaceGoSignerMethod0)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerMethod0),
+
+	uniffiFree: (C.UniffiCallbackInterfaceFree)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerFree),
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerFree
+func iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerFree(handle C.uint64_t) {
+	FfiConverterGoSignerINSTANCE.handleMap.remove(uint64(handle))
+}
+
+func (c FfiConverterGoSigner) register() {
+	C.uniffi_iroh_streamplace_fn_init_callback_vtable_gosigner(&UniffiVTableCallbackInterfaceGoSignerINSTANCE)
+}
+
 // A peer and it's addressing information.
 type NodeAddrInterface interface {
 	// Get the direct addresses of this peer.
@@ -1610,124 +1758,6 @@ func (_ FfiDestroyerSender) Destroy(value *Sender) {
 	value.Destroy()
 }
 
-type CertError struct {
-	err error
-}
-
-// Convience method to turn *CertError into error
-// Avoiding treating nil pointer as non nil error interface
-func (err *CertError) AsError() error {
-	if err == nil {
-		return nil
-	} else {
-		return err
-	}
-}
-
-func (err CertError) Error() string {
-	return fmt.Sprintf("CertError: %s", err.err.Error())
-}
-
-func (err CertError) Unwrap() error {
-	return err.err
-}
-
-// Err* are used for checking error type with `errors.Is`
-var ErrCertErrorNoCertificateChainFound = fmt.Errorf("CertErrorNoCertificateChainFound")
-var ErrCertErrorC2paError = fmt.Errorf("CertErrorC2paError")
-
-// Variant structs
-type CertErrorNoCertificateChainFound struct {
-	message string
-}
-
-func NewCertErrorNoCertificateChainFound() *CertError {
-	return &CertError{err: &CertErrorNoCertificateChainFound{}}
-}
-
-func (e CertErrorNoCertificateChainFound) destroy() {
-}
-
-func (err CertErrorNoCertificateChainFound) Error() string {
-	return fmt.Sprintf("NoCertificateChainFound: %s", err.message)
-}
-
-func (self CertErrorNoCertificateChainFound) Is(target error) bool {
-	return target == ErrCertErrorNoCertificateChainFound
-}
-
-type CertErrorC2paError struct {
-	message string
-}
-
-func NewCertErrorC2paError() *CertError {
-	return &CertError{err: &CertErrorC2paError{}}
-}
-
-func (e CertErrorC2paError) destroy() {
-}
-
-func (err CertErrorC2paError) Error() string {
-	return fmt.Sprintf("C2paError: %s", err.message)
-}
-
-func (self CertErrorC2paError) Is(target error) bool {
-	return target == ErrCertErrorC2paError
-}
-
-type FfiConverterCertError struct{}
-
-var FfiConverterCertErrorINSTANCE = FfiConverterCertError{}
-
-func (c FfiConverterCertError) Lift(eb RustBufferI) *CertError {
-	return LiftFromRustBuffer[*CertError](c, eb)
-}
-
-func (c FfiConverterCertError) Lower(value *CertError) C.RustBuffer {
-	return LowerIntoRustBuffer[*CertError](c, value)
-}
-
-func (c FfiConverterCertError) Read(reader io.Reader) *CertError {
-	errorID := readUint32(reader)
-
-	message := FfiConverterStringINSTANCE.Read(reader)
-	switch errorID {
-	case 1:
-		return &CertError{&CertErrorNoCertificateChainFound{message}}
-	case 2:
-		return &CertError{&CertErrorC2paError{message}}
-	default:
-		panic(fmt.Sprintf("Unknown error code %d in FfiConverterCertError.Read()", errorID))
-	}
-
-}
-
-func (c FfiConverterCertError) Write(writer io.Writer, value *CertError) {
-	switch variantValue := value.err.(type) {
-	case *CertErrorNoCertificateChainFound:
-		writeInt32(writer, 1)
-	case *CertErrorC2paError:
-		writeInt32(writer, 2)
-	default:
-		_ = variantValue
-		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterCertError.Write", value))
-	}
-}
-
-type FfiDestroyerCertError struct{}
-
-func (_ FfiDestroyerCertError) Destroy(value *CertError) {
-	switch variantValue := value.err.(type) {
-	case CertErrorNoCertificateChainFound:
-		variantValue.destroy()
-	case CertErrorC2paError:
-		variantValue.destroy()
-	default:
-		_ = variantValue
-		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerCertError.Destroy", value))
-	}
-}
-
 // An Error.
 type Error struct {
 	err error
@@ -1977,6 +2007,124 @@ func (_ FfiDestroyerError) Destroy(value *Error) {
 	}
 }
 
+type SpError struct {
+	err error
+}
+
+// Convience method to turn *SpError into error
+// Avoiding treating nil pointer as non nil error interface
+func (err *SpError) AsError() error {
+	if err == nil {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func (err SpError) Error() string {
+	return fmt.Sprintf("SpError: %s", err.err.Error())
+}
+
+func (err SpError) Unwrap() error {
+	return err.err
+}
+
+// Err* are used for checking error type with `errors.Is`
+var ErrSpErrorNoCertificateChainFound = fmt.Errorf("SpErrorNoCertificateChainFound")
+var ErrSpErrorC2paError = fmt.Errorf("SpErrorC2paError")
+
+// Variant structs
+type SpErrorNoCertificateChainFound struct {
+	message string
+}
+
+func NewSpErrorNoCertificateChainFound() *SpError {
+	return &SpError{err: &SpErrorNoCertificateChainFound{}}
+}
+
+func (e SpErrorNoCertificateChainFound) destroy() {
+}
+
+func (err SpErrorNoCertificateChainFound) Error() string {
+	return fmt.Sprintf("NoCertificateChainFound: %s", err.message)
+}
+
+func (self SpErrorNoCertificateChainFound) Is(target error) bool {
+	return target == ErrSpErrorNoCertificateChainFound
+}
+
+type SpErrorC2paError struct {
+	message string
+}
+
+func NewSpErrorC2paError() *SpError {
+	return &SpError{err: &SpErrorC2paError{}}
+}
+
+func (e SpErrorC2paError) destroy() {
+}
+
+func (err SpErrorC2paError) Error() string {
+	return fmt.Sprintf("C2paError: %s", err.message)
+}
+
+func (self SpErrorC2paError) Is(target error) bool {
+	return target == ErrSpErrorC2paError
+}
+
+type FfiConverterSpError struct{}
+
+var FfiConverterSpErrorINSTANCE = FfiConverterSpError{}
+
+func (c FfiConverterSpError) Lift(eb RustBufferI) *SpError {
+	return LiftFromRustBuffer[*SpError](c, eb)
+}
+
+func (c FfiConverterSpError) Lower(value *SpError) C.RustBuffer {
+	return LowerIntoRustBuffer[*SpError](c, value)
+}
+
+func (c FfiConverterSpError) Read(reader io.Reader) *SpError {
+	errorID := readUint32(reader)
+
+	message := FfiConverterStringINSTANCE.Read(reader)
+	switch errorID {
+	case 1:
+		return &SpError{&SpErrorNoCertificateChainFound{message}}
+	case 2:
+		return &SpError{&SpErrorC2paError{message}}
+	default:
+		panic(fmt.Sprintf("Unknown error code %d in FfiConverterSpError.Read()", errorID))
+	}
+
+}
+
+func (c FfiConverterSpError) Write(writer io.Writer, value *SpError) {
+	switch variantValue := value.err.(type) {
+	case *SpErrorNoCertificateChainFound:
+		writeInt32(writer, 1)
+	case *SpErrorC2paError:
+		writeInt32(writer, 2)
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterSpError.Write", value))
+	}
+}
+
+type FfiDestroyerSpError struct{}
+
+func (_ FfiDestroyerSpError) Destroy(value *SpError) {
+	switch variantValue := value.err.(type) {
+	case SpErrorNoCertificateChainFound:
+		variantValue.destroy()
+	case SpErrorC2paError:
+		variantValue.destroy()
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerSpError.Destroy", value))
+	}
+}
+
 type FfiConverterOptionalString struct{}
 
 var FfiConverterOptionalStringINSTANCE = FfiConverterOptionalString{}
@@ -2120,8 +2268,22 @@ func iroh_streamplace_uniffiFreeGorutine(data C.uint64_t) {
 	guard <- struct{}{}
 }
 
-func GetManifest(data []byte) (string, *CertError) {
-	_uniffiRV, _uniffiErr := rustCallWithError[CertError](FfiConverterCertError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+func GetCert(data []byte) (string, *SpError) {
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_func_get_cert(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), _uniffiErr
+	}
+}
+
+func GetManifest(data []byte) (string, *SpError) {
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
 			inner: C.uniffi_iroh_streamplace_fn_func_get_manifest(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
 		}
@@ -2134,16 +2296,16 @@ func GetManifest(data []byte) (string, *CertError) {
 	}
 }
 
-func PrintCert(data []byte) (string, *CertError) {
-	_uniffiRV, _uniffiErr := rustCallWithError[CertError](FfiConverterCertError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+func Sign(manifest string, data []byte, certs []byte, gosigner GoSigner) ([]byte, *SpError) {
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
-			inner: C.uniffi_iroh_streamplace_fn_func_print_cert(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
+			inner: C.uniffi_iroh_streamplace_fn_func_sign(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterBytesINSTANCE.Lower(data), FfiConverterBytesINSTANCE.Lower(certs), FfiConverterGoSignerINSTANCE.Lower(gosigner), _uniffiStatus),
 		}
 	})
 	if _uniffiErr != nil {
-		var _uniffiDefaultValue string
+		var _uniffiDefaultValue []byte
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
-		return FfiConverterStringINSTANCE.Lift(_uniffiRV), _uniffiErr
+		return FfiConverterBytesINSTANCE.Lift(_uniffiRV), _uniffiErr
 	}
 }
