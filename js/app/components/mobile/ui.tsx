@@ -135,15 +135,16 @@ export function MobileUi({
 
   const animatedFadeStyle = useAnimatedStyle(() => ({
     opacity:
-      shouldShowFloatingMetrics || shouldShowChatSidePanel
+      shouldShowFloatingMetrics || showChat === undefined
         ? 1
         : fadeOpacity.value,
   }));
 
   const hover = Gesture.Hover().onChange(onPlayerHover);
   const pan = Gesture.Pan().onChange(onPlayerHover);
+  const tap = Gesture.Tap().onEnd(onPlayerHover);
 
-  const combined = Gesture.Race(hover, pan);
+  const combined = Gesture.Race(hover, pan, tap);
   return (
     <>
       <GestureDetector gesture={combined}>
@@ -412,9 +413,9 @@ function RightControlsPanel({
             ? zero.layout.flex.column
             : zero.layout.flex.row,
           zero.layout.flex.center,
-          zero.gap.all[3],
+          zero.gap.all[4],
           zero.py[2],
-          zero.px[1],
+          showChat === undefined ? zero.px[2] : zero.px[3],
           zero.layout.position.relative,
         ]}
       >
