@@ -24,6 +24,7 @@ import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
 import { Platform } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 Sentry.setExtras({
   manifest: Updates.manifest,
   linkingUri: Constants.linkingUri,
@@ -71,19 +72,21 @@ function ProviderInner({
   });
 
   return (
-    <ThemeProvider forcedTheme="dark">
-      <NavigationContainer theme={DarkTheme} linking={linking}>
-        <ReduxProvider store={store}>
-          <StreamplaceProvider>
-            <BlueskyProvider>
-              <NewStreamplaceProvider>
-                <FontProvider>{children}</FontProvider>
-              </NewStreamplaceProvider>
-            </BlueskyProvider>
-          </StreamplaceProvider>
-        </ReduxProvider>
-      </NavigationContainer>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider forcedTheme="dark">
+        <NavigationContainer theme={DarkTheme} linking={linking}>
+          <ReduxProvider store={store}>
+            <StreamplaceProvider>
+              <BlueskyProvider>
+                <NewStreamplaceProvider>
+                  <FontProvider>{children}</FontProvider>
+                </NewStreamplaceProvider>
+              </BlueskyProvider>
+            </StreamplaceProvider>
+          </ReduxProvider>
+        </NavigationContainer>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
