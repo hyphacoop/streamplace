@@ -12,7 +12,6 @@ replace github.com/bluesky-social/indigo => github.com/streamplace/indigo v0.0.0
 
 require (
 	firebase.google.com/go/v4 v4.14.1
-	git.stream.place/streamplace/c2pa-go v0.7.0
 	github.com/99designs/gqlgen v0.17.64
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/ThalesGroup/crypto11 v0.0.0-00010101000000-000000000000
@@ -66,6 +65,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/sdk v1.36.0
 	go.opentelemetry.io/otel/trace v1.36.0
+	go.uber.org/goleak v1.3.0
 	golang.org/x/image v0.30.0
 	golang.org/x/net v0.43.0
 	golang.org/x/sync v0.16.0
@@ -500,7 +500,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
-	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect

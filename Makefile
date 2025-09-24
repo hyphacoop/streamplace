@@ -659,12 +659,6 @@ link-mist:
 	rm -rf subprojects/mistserver
 	ln -s $$(realpath ../mistserver) ./subprojects/mistserver
 
-# link your local version of c2pa-go for dev
-.PHONY: link-c2pa-go
-link-c2pa-go:
-	rm -rf subprojects/c2pa_go
-	ln -s $$(realpath ../c2pa-go) ./subprojects/c2pa_go
-
 # link your local version of gstreamer
 .PHONY: link-gstreamer
 link-gstreamer:
