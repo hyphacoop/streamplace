@@ -33,7 +33,7 @@ export function Player(
     setFullscreen?: (fullscreen: boolean) => void;
   },
 ) {
-  const [showChat, setShowChat] = useState(!props.ingest);
+  const [showChat, setShowChat] = useState(true);
   const { shouldShowChatSidePanel, chatPanelWidth, safeAreaInsets } =
     useResponsiveLayout();
   const chatVisible = shouldShowChatSidePanel && showChat;
@@ -196,14 +196,20 @@ export function PlayerInner(
   return (
     <ScrollView
       style={{
-        height: "100%",
-        flex: 1,
+        height: showFullDesktopMode ? "100%" : undefined,
+        flex: showFullDesktopMode ? 1 : undefined,
         maxWidth: calculatedWidth,
       }}
-      contentContainerStyle={{
-        flexGrow: 1, // This makes content expand to fill available space
-        minHeight: "100%", // Ensures minimum height
-      }}
+      contentContainerStyle={
+        showFullDesktopMode
+          ? {
+              flexGrow: 1, // This makes content expand to fill available space
+              minHeight: "100%", // Ensures minimum height
+            }
+          : {
+              flex: 1,
+            }
+      }
       scrollEnabled={showFullDesktopMode}
       bounces={false}
       showsVerticalScrollIndicator={false}
