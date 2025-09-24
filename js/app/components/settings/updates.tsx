@@ -25,7 +25,7 @@ export function Updates() {
             },
           ]}
         >
-          Streamplace v{pkg.version}
+          {t("app-version", { version: pkg.version })}
         </Text>
       </View>
     </View>

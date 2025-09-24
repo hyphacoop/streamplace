@@ -1,6 +1,5 @@
 import {
   Button,
-  Container,
   DropdownMenu,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -21,13 +20,14 @@ import {
 } from "features/bluesky/blueskySlice";
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { ArrowRight, ChevronDown, Search } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { ChevronDown, Search } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import manifest from "../../src/i18n/manifest.json";
 import { Updates } from "./updates";
+import WebhookManager from "./webhook-manager";
 
 export function Settings() {
   const dispatch = useAppDispatch();
@@ -74,109 +74,96 @@ export function Settings() {
   );
 
   return (
-    <Container>
-      <ScrollView>
-        <View style={[{ alignItems: "center" }]}>
+    <ScrollView>
+      <View style={[zero.layout.flex.align.center, zero.px[8], zero.py[4]]}>
+        <View
+          style={[
+            zero.gap.all[12],
+            { paddingVertical: 24, maxWidth: 500, width: "100%" },
+          ]}
+        >
+          <View>
+            <Updates />
+          </View>
+
           <View
             style={[
-              { gap: 32 },
-              { paddingVertical: 24, maxWidth: 500, width: "100%" },
+              { alignItems: "stretch" },
+              zero.layout.flex.justify.center,
+              zero.gap.all[8],
             ]}
           >
-            <View>
-              <Updates />
-            </View>
-
             <View
               style={[
                 { alignItems: "stretch" },
-                { justifyContent: "flex-start" },
-                { gap: 16 },
+                zero.layout.flex.justify.start,
+                zero.w.percent[100],
+                zero.gap.all[4],
               ]}
             >
               <View
                 style={[
-                  { alignItems: "stretch" },
+                  { flexDirection: "row" },
+                  { alignItems: "flex-start" },
                   { justifyContent: "flex-start" },
-                  { width: "100%", flexDirection: "column" },
                 ]}
               >
-                <View
-                  style={[
-                    { flexDirection: "row" },
-                    { alignItems: "flex-start" },
-                    { justifyContent: "flex-start" },
-                  ]}
-                >
-                  <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                    <Text size="xl">Use Custom Node</Text>
-                    <Text size="lg" color="muted">
-                      Default: {url}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={overrideEnabled}
-                    onValueChange={handleToggleOverride}
-                  />
+                <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
+                  <Text size="xl">{t("use-custom-node")}</Text>
+                  <Text size="lg" color="muted">
+                    {t("default-url", { url: defaultUrl })}
+                  </Text>
                 </View>
+                <Switch
+                  value={overrideEnabled}
+                  onValueChange={handleToggleOverride}
+                />
               </View>
 
               {overrideEnabled && (
                 <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    justifyContent: "flex-start",
-                  }}
+                  style={[
+                    {
+                      opacity: overrideEnabled ? 1 : 0,
+                      height: overrideEnabled ? "auto" : 0,
+                    },
+                    zero.gap.all[2],
+                    zero.layout.flex.align.center,
+                    zero.layout.flex.row,
+                  ]}
                 >
-                  <View style={{ flex: 1, paddingRight: 12 }}>
-                    <Text size="xl">{t("use-custom-node")}</Text>
-                    <Text style={{ fontSize: 18, color: "gray" }}>
-                      {t("default-url", { url })}
-                    </Text>
+                  <View style={{ flex: 1 }}>
+                    <Input
+                      value={newUrl}
+                      containerStyle={[
+                        { flex: 1, flexGrow: 1, width: "100%" },
+                        zero.flex.grow[1],
+                      ]}
+                      variant="default"
+                      numberOfLines={1}
+                      multiline={false}
+                      placeholder={t("enter-custom-node-url")}
+                      placeholderTextColor="#999"
+                      onChangeText={setNewUrl}
+                      onSubmitEditing={onSubmitUrl}
+                      textContentType="URL"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                    />
                   </View>
-                  <Switch
-                    value={overrideEnabled}
-                    onValueChange={handleToggleOverride}
-                  />
+                  <Button size="md" variant="secondary" onPress={onSubmitUrl}>
+                    <Text size="lg">{t("save-button")}</Text>
+                  </Button>
                 </View>
               )}
             </View>
-
-            {overrideEnabled && (
-              <View
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  gap: 8,
-                }}
-              >
-                <Input
-                  value={newUrl}
-                  containerStyle={[
-                    { flex: 1, flexGrow: 1, width: "100%" },
-                    zero.flex.grow[1],
-                  ]}
-                  numberOfLines={1}
-                  multiline={false}
-                  placeholder={t("enter-custom-node-url")}
-                  onChangeText={setNewUrl}
-                  onSubmitEditing={onSubmitUrl}
-                  textContentType="URL"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="url"
-                />
-                <Button size="md" onPress={onSubmitUrl}>
-                  <Text>{t("save-button")}</Text>
-                </Button>
-              </View>
-            )}
           </View>
 
           <View>
-            <Text style={{ fontSize: 24, marginBottom: 8 }}>
-              {t("language-selection")}
+            <Text size="xl">{t("language-selection")}</Text>
+            <Text size="lg" color="muted">
+              {t("language-selection-description")}
             </Text>
             <DropdownMenu>
               <DropdownMenuTrigger>
@@ -233,90 +220,87 @@ export function Settings() {
                     />
                   </View>
 
-                  {
-                    <DropdownMenuGroup>
-                      {filteredLanguages.map(([code, info], i) => (
-                        <>
-                          <DropdownMenuItem
-                            key={code}
-                            onPress={() => {
-                              i18n.changeLanguage(code);
-                              setLanguageSearchQuery("");
+                  <DropdownMenuGroup>
+                    {filteredLanguages.map(([code, info], i) => (
+                      <React.Fragment key={code}>
+                        <DropdownMenuItem
+                          onPress={() => {
+                            i18n.changeLanguage(code);
+                            setLanguageSearchQuery("");
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              width: "100%",
                             }}
                           >
                             <View
                               style={{
                                 flexDirection: "row",
                                 alignItems: "center",
-                                justifyContent: "space-between",
-                                width: "100%",
+                                gap: 8,
                               }}
                             >
+                              <Text>{info.flag}</Text>
                               <View
                                 style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  gap: 8,
+                                  paddingVertical:
+                                    info.name === info.nativeName ? 6 : 0,
                                 }}
                               >
-                                <Text>{info.flag}</Text>
-                                <View
+                                <Text
                                   style={{
-                                    paddingVertical:
-                                      info.name === info.nativeName ? 6 : 0,
+                                    fontWeight:
+                                      i18n.language === code
+                                        ? "bold"
+                                        : "normal",
+                                    lineHeight: 18,
                                   }}
                                 >
+                                  {info.nativeName}
+                                </Text>
+                                {info.name !== info.nativeName && (
                                   <Text
                                     style={{
-                                      fontWeight:
-                                        i18n.language === code
-                                          ? "bold"
-                                          : "normal",
+                                      fontSize: 12,
+                                      opacity: 0.7,
                                       lineHeight: 18,
                                     }}
                                   >
-                                    {info.nativeName}
+                                    {info.name}
                                   </Text>
-                                  {info.name !== info.nativeName && (
-                                    <Text
-                                      style={{
-                                        fontSize: 12,
-                                        opacity: 0.7,
-                                        lineHeight: 18,
-                                      }}
-                                    >
-                                      {info.name}
-                                    </Text>
-                                  )}
-                                </View>
+                                )}
                               </View>
-                              {i18n.language === code && (
-                                <Text
-                                  style={{
-                                    color: "white",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  ✓
-                                </Text>
-                              )}
                             </View>
-                          </DropdownMenuItem>
-                          {i < filteredLanguages.length - 1 && (
-                            <DropdownMenuSeparator />
-                          )}
-                        </>
-                      ))}
+                            {i18n.language === code && (
+                              <Text
+                                style={{
+                                  color: "white",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                ✓
+                              </Text>
+                            )}
+                          </View>
+                        </DropdownMenuItem>
+                        {i < filteredLanguages.length - 1 && (
+                          <DropdownMenuSeparator />
+                        )}
+                      </React.Fragment>
+                    ))}
 
-                      {filteredLanguages.length === 0 && (
-                        <View style={{ padding: 12 }}>
-                          <Text style={{ opacity: 0.7, textAlign: "center" }}>
-                            No languages found
-                          </Text>
-                        </View>
-                      )}
-                    </DropdownMenuGroup>
-                  }
+                    {filteredLanguages.length === 0 && (
+                      <View style={{ padding: 12 }}>
+                        <Text style={{ opacity: 0.7, textAlign: "center" }}>
+                          No languages found
+                        </Text>
+                      </View>
+                    )}
+                  </DropdownMenuGroup>
                 </ScrollView>
               </ResponsiveDropdownMenuContent>
             </DropdownMenu>
@@ -331,27 +315,30 @@ export function Settings() {
                 }}
               >
                 <View
-                  style={{
-                    flexDirection: "row",
-                    gap: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: "gray",
-                    padding: 8,
-                    borderRadius: 16,
-                    backgroundColor: "lightgray",
-                  }}
+                  style={[
+                    {
+                      flexDirection: "row",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: "#333",
+                      padding: 8,
+                      borderRadius: 16,
+                      backgroundColor: "#1a1a1a",
+                    },
+                  ]}
                 >
-                  <Text size="xl">{t("manage-keys")}</Text>
-                  <ArrowRight size="$1" />
+                  <Text>{t("manage-keys")}</Text>
+                  <Text style={[{ fontSize: 16 }]}>→</Text>
                 </View>
               </AQLink>
+              <WebhookManager />
             </>
           )}
         </View>
-      </ScrollView>
-    </Container>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -360,9 +347,8 @@ const DebugRecording = () => {
   const isReady = useAppSelector(selectIsReady);
   const serverSettings = useAppSelector(selectServerSettings);
   const { url } = useStreamplaceNode();
-  const debugRecordingOn = serverSettings?.debugRecording === true;
-
   const { t } = useTranslation();
+  const debugRecordingOn = serverSettings?.debugRecording === true;
 
   useEffect(() => {
     if (isReady) {
@@ -372,18 +358,23 @@ const DebugRecording = () => {
 
   const u = new URL(url);
   return (
-    <View style={{ alignItems: "center", justifyContent: "center", gap: 16 }}>
+    <View
+      style={[
+        { alignItems: "center" },
+        { justifyContent: "center" },
+        { gap: 16 },
+      ]}
+    >
       <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-        }}
+        style={[
+          { alignItems: "center" },
+          { justifyContent: "space-between" },
+          { width: "100%", flexDirection: "row" },
+        ]}
       >
-        <View style={{ flex: 1, paddingRight: 12 }}>
+        <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
           <Text size="xl">{t("debug-recording-title", { host: u.host })}</Text>
-          <Text style={{ fontSize: 18, color: "gray" }}>
+          <Text size="lg" color="muted">
             {t("debug-recording-description")}
           </Text>
         </View>
