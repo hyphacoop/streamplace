@@ -223,8 +223,7 @@ export function PlayerInner(
               }
             : {
                 flex: 1,
-                // i hate this but it works
-                maxHeight: isLandscape && !props.showChat ? "90%" : "auto",
+                maxHeight: "auto",
               },
           {
             paddingTop:
