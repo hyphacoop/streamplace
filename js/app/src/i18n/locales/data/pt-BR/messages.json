@@ -1,4 +1,9 @@
 {
+  "modal-no-update-available": "modal-no-update-available",
+  "modal-update-available-description": "modal-update-available-description",
+  "modal-update-available-title": "modal-update-available-title",
+  "modal-update-failed-description": "modal-update-failed-description",
+  "modal-update-failed-title": "modal-update-failed-title",
   "app-version": "Streamplace v{ $version }",
   "download-new-update": "Baixar Nova Atualização",
   "check-for-updates": "Verificar Atualizações",

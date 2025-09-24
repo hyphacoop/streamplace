@@ -10,7 +10,12 @@ ota-runtype = Over-the-Air (OTA)
 recovery-runtype = Modo de Recuperação
 
 modal-latest-version = Você está usando a versão mais recente.
+modal-no-update-available = Você está na versão mais recente do Streamplace, eba!
+modal-update-available-title = Atualização Disponível
+modal-update-available-description = Uma nova versão do Streamplace está pronta para download
 modal-update-failed = A verificação de atualizações falhou. Você pode precisar atualizar o aplicativo através do { $store }.
+modal-update-failed-title = Atualização Falhou
+modal-update-failed-description = A verificação de atualizações falhou. Você pode precisar atualizar o aplicativo através do { $store }.
 button-reload-app-on-update = Aplicar Atualização (o aplicativo será recarregado)
 
 ## Configurações de Nó Personalizado

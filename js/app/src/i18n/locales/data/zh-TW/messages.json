@@ -1,4 +1,9 @@
 {
+  "modal-no-update-available": "您已經在使用最新版本的直播地，太棒了！",
+  "modal-update-available-description": "新版本的直播地已準備好下載",
+  "modal-update-available-title": "有可用更新",
+  "modal-update-failed-description": "更新檢查失敗。您可能需要透過 { $store } 更新應用程式。",
+  "modal-update-failed-title": "更新失敗",
   "app-version": "直播地 v{ $version }",
   "download-new-update": "下載新更新",
   "check-for-updates": "檢查更新",
