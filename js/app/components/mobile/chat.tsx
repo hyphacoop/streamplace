@@ -85,7 +85,6 @@ export function MobileChatPanel({ isPlayerRatioGreater }) {
           ? layout.position.relative
           : layout.position.absolute,
         bottom[0],
-        px[2],
         { width: "100%", maxWidth: "100%" },
       ]}
     >
