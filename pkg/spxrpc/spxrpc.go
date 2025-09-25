@@ -67,7 +67,7 @@ func NewServer(ctx context.Context, cli *config.CLI, model model.Model, stateful
 }
 
 func makeUnauthenticatedRequest(ctx context.Context, service, method string, params map[string]interface{}, out interface{}) error {
-	u, err := url.Parse(fmt.Sprintf("https://%s/xrpc/%s", service, method))
+	u, err := url.Parse(fmt.Sprintf("%s/xrpc/%s", service, method))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
@@ -78,6 +78,8 @@ func makeUnauthenticatedRequest(ctx context.Context, service, method string, par
 		query.Set(k, fmt.Sprintf("%v", v))
 	}
 	u.RawQuery = query.Encode()
+
+	log.Error(ctx, "making unauthenticated request", "url", u.String())
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {

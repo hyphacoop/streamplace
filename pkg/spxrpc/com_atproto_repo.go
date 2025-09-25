@@ -68,32 +68,17 @@ func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context, repo stri
 
 	// if the service isn't the current host, we proxy the request
 	if svc != s.cli.PublicHost {
-		session, client := oatproxy.GetOAuthSession(ctx)
-		if session != nil {
-			// authenticated request
-			var out *comatprototypes.RepoDescribeRepo_Output
-			params := make(map[string]any)
-			params["repo"] = repo
+		var out comatprototypes.RepoDescribeRepo_Output
+		params := make(map[string]interface{})
+		params["repo"] = repo
 
-			err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.describeRepo", params, nil, &out)
-			if err != nil {
-				log.Error(ctx, "upstream xrpc error", "error", err)
-				return nil, err
-			}
-			return out, nil
-		} else {
-			// unauthenticated request
-			var out comatprototypes.RepoDescribeRepo_Output
-			params := make(map[string]interface{})
-			params["repo"] = repo
-
-			err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.describeRepo", params, &out)
-			if err != nil {
-				log.Error(ctx, "upstream xrpc error", "error", err)
-				return nil, err
-			}
-			return &out, nil
+		err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.describeRepo", params, &out)
+		if err != nil {
+			log.Error(ctx, "upstream xrpc error", "error", err)
+			return nil, err
 		}
+		return &out, nil
+
 	}
 
 	return &comatprototypes.RepoDescribeRepo_Output{
@@ -114,49 +99,26 @@ func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context, collection
 	}
 	// if the service isn't the current host, we proxy the request
 	if svc != s.cli.PublicHost {
-		session, client := oatproxy.GetOAuthSession(ctx)
-		if session != nil {
-			// authenticated request
-			var out *comatprototypes.RepoListRecords_Output
-			xrpcType := xrpc.Procedure
-			params := make(map[string]any)
-			params["collection"] = collection
-			if cursor != "" {
-				params["cursor"] = cursor
-			}
-			if limit != 0 {
-				params["limit"] = limit
-			}
-			if reverse != nil {
-				params["reverse"] = *reverse
-			}
-			err = client.Do(ctx, xrpcType, "application/json", "com.atproto.repo.listRecords", params, nil, &out)
-			if err != nil {
-				log.Error(ctx, "upstream xrpc error", "error", err)
-				return nil, err
-			}
-			return out, nil
-		} else {
-			// unauthenticated request
-			var out comatprototypes.RepoListRecords_Output
-			params := make(map[string]interface{})
-			params["collection"] = collection
-			if cursor != "" {
-				params["cursor"] = cursor
-			}
-			if limit != 0 {
-				params["limit"] = limit
-			}
-			if reverse != nil {
-				params["reverse"] = *reverse
-			}
-			err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.listRecords", params, &out)
-			if err != nil {
-				log.Error(ctx, "upstream xrpc error", "error", err)
-				return nil, err
-			}
-			return &out, nil
+		var out comatprototypes.RepoListRecords_Output
+		params := make(map[string]interface{})
+		params["collection"] = collection
+		if cursor != "" {
+			params["cursor"] = cursor
 		}
+		if limit != 0 {
+			params["limit"] = limit
+		}
+		if reverse != nil {
+			params["reverse"] = *reverse
+		}
+		params["repo"] = repo
+
+		err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.listRecords", params, &out)
+		if err != nil {
+			log.Error(ctx, "upstream xrpc error", "error", err)
+			return nil, err
+		}
+		return &out, nil
 	}
 
 	r, ses, err := atproto.OpenLexiconRepo(ctx)
@@ -193,42 +155,21 @@ func (s *Server) handleComAtprotoRepoGetRecord(ctx context.Context, c string, co
 
 	// if the service isn't the current host, we proxy the request
 	if svc != s.cli.PublicHost {
-		session, client := oatproxy.GetOAuthSession(ctx)
-		if session != nil {
-			// authenticated request
-			var out *comatprototypes.RepoGetRecord_Output
-			params := make(map[string]interface{})
-			params["repo"] = repo
-			params["collection"] = collection
-			params["rkey"] = rkey
-			if c != "" {
-				params["cid"] = c
-			}
-
-			err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", params, nil, &out)
-			if err != nil {
-				log.Error(ctx, "upstream xrpc error", "error", err)
-				return nil, err
-			}
-			return out, nil
-		} else {
-			// unauthenticated request
-			var out comatprototypes.RepoGetRecord_Output
-			params := make(map[string]interface{})
-			params["repo"] = repo
-			params["collection"] = collection
-			params["rkey"] = rkey
-			if c != "" {
-				params["cid"] = c
-			}
-
-			err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.getRecord", params, &out)
-			if err != nil {
-				log.Error(ctx, "upstream xrpc error", "error", err)
-				return nil, err
-			}
-			return &out, nil
+		var out comatprototypes.RepoGetRecord_Output
+		params := make(map[string]interface{})
+		params["repo"] = repo
+		params["collection"] = collection
+		params["rkey"] = rkey
+		if c != "" {
+			params["cid"] = c
 		}
+
+		err = makeUnauthenticatedRequest(ctx, svc, "com.atproto.repo.getRecord", params, &out)
+		if err != nil {
+			log.Error(ctx, "upstream xrpc error", "error", err)
+			return nil, err
+		}
+		return &out, nil
 	}
 
 	r, ses, err := atproto.OpenLexiconRepo(ctx)
