@@ -610,7 +610,7 @@ darwin-amd64:
 	&& tar -czvf ../bin/streamplace-$(VERSION)-darwin-amd64.tar.gz ./streamplace \
 	&& cd -
 
-.PHONY: darwin-arm64
+.PHONY: darwin-arm64gofmt -w .
 darwin-arm64:
 	export CC=aarch64-apple-darwin24.4-clang \
 	&& export CC_AARCH64_APPLE_DARWIN=aarch64-apple-darwin24.4-clang \
@@ -974,3 +974,4 @@ c2pa-types:
 	$(MAKE) dev-rust
 	./target/debug/export_c2pa_schema
 	npx quicktype --lang go --src-lang schema --package c2patypes --out pkg/c2patypes/c2patypes.go ./target/schema/C2PA.schema.json
+	gofmt -w pkg/c2patypes/c2patypes.go
