@@ -23,8 +23,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Fullscreen,
+  Maximize,
   Minimize,
-  RotateCw,
   SwitchCamera,
   Volume2,
   VolumeX,
@@ -419,7 +419,7 @@ function RightControlsPanel({
             : zero.layout.flex.row,
           zero.layout.flex.center,
           zero.gap.all[4],
-          zero.py[2],
+          zero.py[3],
           showChat === undefined ? zero.px[2] : zero.px[3],
           zero.layout.position.relative,
         ]}
@@ -456,18 +456,30 @@ function RightControlsPanel({
             </Pressable>
           </>
         ) : (
-          <>
+          <View
+            style={[
+              showChat === undefined
+                ? { flexDirection: "column-reverse" }
+                : { flexDirection: "row" },
+              zero.layout.flex.center,
+              zero.gap.all[4],
+            ]}
+          >
             {canRotate && (
               <Pressable
                 onPress={() => {
                   toggleRotation();
                 }}
               >
-                <RotateCw color={theme.colors.foreground} size={20} />
+                {currentOrientation === 1 ? (
+                  <Maximize color={theme.colors.foreground} size={20} />
+                ) : (
+                  <Minimize color={theme.colors.foreground} size={20} />
+                )}
               </Pressable>
             )}
             <PlayerUI.ContextMenu />
-          </>
+          </View>
         )}
         {shouldShowChatSidePanel && setShowChat && (
           <Pressable
