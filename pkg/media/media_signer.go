@@ -27,7 +27,6 @@ type MediaSigner interface {
 	Pub() aqpub.Pub
 	Streamer() string
 	DID() string
-	Sign(data []byte) ([]byte, *iroh_streamplace.SpError)
 }
 
 type MediaSignerLocal struct {
@@ -123,7 +122,10 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 		return nil, fmt.Errorf("failed to read input: %w", err)
 	}
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_Sign")
-	bs, rustErr := iroh_streamplace.Sign(string(manifestBs), bs, ms.Cert, ms)
+	rustCallbackSigner := &RustCallbackSigner{
+		Signer: ms.Signer,
+	}
+	bs, rustErr := iroh_streamplace.Sign(string(manifestBs), bs, ms.Cert, rustCallbackSigner)
 	if rustErr.AsError() != nil {
 		return nil, rustErr.AsError()
 	}
@@ -139,19 +141,23 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	return bs, nil
 }
 
-func (ms *MediaSignerLocal) Sign(data []byte) ([]byte, *iroh_streamplace.SpError) {
-	digest := sha256.Sum256(data)
-	sig, err := ms.Signer.Sign(rand.Reader, digest[:], nil)
-	if err != nil {
-		return nil, iroh_streamplace.NewSpErrorNoCertificateChainFound()
-	}
-	return sig, nil
-}
-
 func (ms *MediaSignerLocal) Pub() aqpub.Pub {
 	return ms.AQPub
 }
 
 func (ms *MediaSignerLocal) DID() string {
 	return ms.did
+}
+
+type RustCallbackSigner struct {
+	Signer crypto.Signer
+}
+
+func (rcs *RustCallbackSigner) Sign(data []byte) ([]byte, *iroh_streamplace.SpError) {
+	digest := sha256.Sum256(data)
+	sig, err := rcs.Signer.Sign(rand.Reader, digest[:], nil)
+	if err != nil {
+		return nil, iroh_streamplace.NewSpErrorNoCertificateChainFound()
+	}
+	return sig, nil
 }
