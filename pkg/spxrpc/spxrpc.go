@@ -2,7 +2,11 @@ package spxrpc
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -10,6 +14,7 @@ import (
 	"github.com/slok/go-http-metrics/middleware"
 	echomiddleware "github.com/slok/go-http-metrics/middleware/echo"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
+	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
@@ -59,6 +64,48 @@ func NewServer(ctx context.Context, cli *config.CLI, model model.Model, stateful
 	e.GET("/xrpc/*", s.HandleWildcard)
 	e.POST("/xrpc/*", s.HandleWildcard)
 	return s, nil
+}
+
+func makeUnauthenticatedRequest(ctx context.Context, service, method string, params map[string]interface{}, out interface{}) error {
+	u, err := url.Parse(fmt.Sprintf("%s/xrpc/%s", service, method))
+	if err != nil {
+		return fmt.Errorf("failed to parse URL: %w", err)
+	}
+
+	// add query parameters
+	query := u.Query()
+	for k, v := range params {
+		query.Set(k, fmt.Sprintf("%v", v))
+	}
+	u.RawQuery = query.Encode()
+
+	log.Error(ctx, "making unauthenticated request", "url", u.String())
+
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := aqhttp.Client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("upstream request failed with status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if err := json.Unmarshal(body, out); err != nil {
+		return fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
