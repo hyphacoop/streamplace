@@ -379,7 +379,6 @@ function RightControlsPanel({
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
   const { toggleRotation, canRotate, currentOrientation } = useRotation();
 
-  console.log("rotation", canRotate, currentOrientation);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
