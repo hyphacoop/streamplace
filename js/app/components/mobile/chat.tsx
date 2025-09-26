@@ -119,7 +119,7 @@ function ChatPanel() {
       <View style={[flex.values[1]]}>
         <Chat canModerate={canModerate} />
       </View>
-      <View style={[layout.flex.column, gap.all[2], px[2]]}>
+      <View style={[layout.flex.column, gap.all[2]]}>
         {agent?.did ? (
           <ChatBox
             emojiData={emojiData}
@@ -146,7 +146,7 @@ function ChatPanel() {
             style={[
               layout.flex.row,
               layout.flex.center,
-              gap.all[2],
+              gap.all[4],
               {
                 padding: 18,
                 borderRadius: borderRadius.xl,

@@ -410,7 +410,7 @@ export function StreamplaceDrawer() {
             {
               zIndex: 128000,
             },
-            animatedDrawerStyle,
+            sidebar.isActive ? animatedDrawerStyle : [],
           ],
           // rest
           headerLeft: () => (
