@@ -33,6 +33,16 @@ export * from "./components/chat/system-message";
 export { default as VideoRetry } from "./components/mobile-player/video-retry";
 export * from "./lib/system-messages";
 
+// Rotation lock system exports
+export {
+  RotationProvider,
+  useRotation,
+} from "./components/mobile-player/rotation-lock";
+export type {
+  RotationContextValue,
+  RotationProviderProps,
+} from "./components/mobile-player/rotation-lock";
+
 export * from "./components/share/sharesheet";
 
 export * from "./components/keep-awake";

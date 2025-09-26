@@ -7,6 +7,7 @@ import {
   PlayerProps,
   PlayerProvider,
   PlayerUI,
+  RotationProvider,
   Text,
   usePlayerDimensions,
   usePlayerStore,
@@ -19,7 +20,7 @@ import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
-import { Animated, ScrollView, StatusBar } from "react-native";
+import { Animated, Platform, ScrollView, StatusBar } from "react-native";
 import { useAppSelector } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
@@ -121,36 +122,38 @@ export function Player(
   }
 
   return (
-    <LivestreamProvider src={props.src ?? ""}>
-      <StatusBar hidden={true} />
-      <PlayerProvider defaultId={props.playerId || undefined}>
-        <View
-          style={{
-            flexDirection: chatVisible ? "row" : "column",
-            flex: 1,
-            width: "100%",
-            height: "100%",
-            paddingLeft: safeAreaInsets.left,
-            paddingRight: safeAreaInsets.right,
-          }}
-        >
-          <PlayerInner
-            {...props}
-            showChat={showChat}
-            setShowChat={setShowChat}
-          />
-          {shouldShowChatSidePanel ? (
-            <DesktopChatPanel
-              chatVisible={chatVisible}
-              chatPanelWidth={chatPanelWidth}
-              safeAreaInsets={safeAreaInsets}
+    <RotationProvider enabled={Platform.OS !== "web"}>
+      <LivestreamProvider src={props.src ?? ""}>
+        <StatusBar hidden={true} />
+        <PlayerProvider defaultId={props.playerId || undefined}>
+          <View
+            style={{
+              flexDirection: chatVisible ? "row" : "column",
+              flex: 1,
+              width: "100%",
+              height: "100%",
+              paddingLeft: safeAreaInsets.left,
+              paddingRight: safeAreaInsets.right,
+            }}
+          >
+            <PlayerInner
+              {...props}
+              showChat={showChat}
+              setShowChat={setShowChat}
             />
-          ) : (
-            <MobileUi />
-          )}
-        </View>
-      </PlayerProvider>
-    </LivestreamProvider>
+            {shouldShowChatSidePanel ? (
+              <DesktopChatPanel
+                chatVisible={chatVisible}
+                chatPanelWidth={chatPanelWidth}
+                safeAreaInsets={safeAreaInsets}
+              />
+            ) : (
+              <MobileUi />
+            )}
+          </View>
+        </PlayerProvider>
+      </LivestreamProvider>
+    </RotationProvider>
   );
 }
 

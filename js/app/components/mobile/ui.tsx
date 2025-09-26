@@ -10,6 +10,7 @@ import {
   useMuted,
   usePlayerDimensions,
   usePlayerStore,
+  useRotation,
   useSegmentDimensions,
   useSetMuted,
   useSetVolume,
@@ -23,6 +24,7 @@ import {
   ChevronRight,
   Fullscreen,
   Minimize,
+  RotateCw,
   SwitchCamera,
   Volume2,
   VolumeX,
@@ -375,6 +377,9 @@ function RightControlsPanel({
   const setMuted = useSetMuted();
   const fullscreen = usePlayerStore((x) => x.fullscreen);
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
+  const { toggleRotation, canRotate, currentOrientation } = useRotation();
+
+  console.log("rotation", canRotate, currentOrientation);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
@@ -422,23 +427,24 @@ function RightControlsPanel({
         {ingest === null ? (
           Platform.OS === "web" && <PlayerUI.ContextMenu />
         ) : (
-          <Pressable onPress={doSetIngestCamera}>
-            <SwitchCamera color={theme.colors.foreground} size={20} />
-          </Pressable>
+          <>
+            <Pressable onPress={doSetIngestCamera}>
+              <SwitchCamera color={theme.colors.foreground} size={20} />
+            </Pressable>
+          </>
         )}
         {Platform.OS === "web" ? (
           <>
             <Pressable
               onPress={() => {
-                console.log("UI.tsx Button pressed at:", Date.now());
                 setFullscreen(!fullscreen);
               }}
               style={[zero.p[2], r[1]]}
             >
               {fullscreen ? (
-                <Minimize color={theme.colors.text} />
+                <Minimize color={theme.colors.text} size={20} />
               ) : (
-                <Fullscreen color={theme.colors.text} />
+                <Fullscreen color={theme.colors.text} size={20} />
               )}
             </Pressable>
             <Pressable onPress={handleVolumePress}>
@@ -450,7 +456,18 @@ function RightControlsPanel({
             </Pressable>
           </>
         ) : (
-          <PlayerUI.ContextMenu />
+          <>
+            {canRotate && (
+              <Pressable
+                onPress={() => {
+                  toggleRotation();
+                }}
+              >
+                <RotateCw color={theme.colors.foreground} size={20} />
+              </Pressable>
+            )}
+            <PlayerUI.ContextMenu />
+          </>
         )}
         {shouldShowChatSidePanel && setShowChat && (
           <Pressable
