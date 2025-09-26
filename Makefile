@@ -969,4 +969,8 @@ ci-download-file:
 		-o bin/$(download_file) \
 		"$$CI_API_V4_URL/projects/$$CI_PROJECT_ID/packages/generic/$(BRANCH)/$(VERSION)/$(download_file)";
 
+.PHONY: c2pa-types
 c2pa-types:
+	$(MAKE) dev-rust
+	./target/debug/export_c2pa_schema
+	npx quicktype --lang go --src-lang schema --package c2patypes --out pkg/c2patypes/c2patypes.go ./target/schema/C2PA.schema.json
