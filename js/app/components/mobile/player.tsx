@@ -29,6 +29,12 @@ import { OfflineCounter } from "./offline-counter";
 import { MobileUi } from "./ui";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 
+import {
+  setSidebarHidden,
+  setSidebarUnhidden,
+} from "features/base/sidebarSlice";
+import { useDispatch } from "react-redux";
+
 export function Player(
   props: Partial<PlayerProps> & {
     setFullscreen?: (fullscreen: boolean) => void;
@@ -179,6 +185,9 @@ export function PlayerInner(
     showChatSidePanelOnLandscape: props.showChat,
   });
 
+  // for hiding sidebar
+  const dispatch = useDispatch();
+
   // content info
   const { width, height } = usePlayerDimensions();
 
@@ -186,6 +195,19 @@ export function PlayerInner(
 
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
+
+  // on mobile we want to hide the sidebar when going fullscreen
+  useEffect(() => {
+    if (Platform.OS !== "web" && width > height) {
+      console.log("hiding sb");
+      dispatch(setSidebarHidden());
+    } else {
+      dispatch(setSidebarUnhidden());
+    }
+    return () => {
+      dispatch(setSidebarUnhidden());
+    };
+  }, [width, height]);
   // should cover full width on mobile?
   const isDesktopMode = shouldShowChatSidePanel || screenWidth > 1200;
 

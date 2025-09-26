@@ -37,7 +37,13 @@ export function useResponsiveLayout({
       return sidebarWidth.value;
     }
     return sidebarWidth;
-  }, [sidebarWidth]);
+  }, [
+    sidebarWidth,
+    // weirddd
+    (sidebarWidth as any)?.value,
+    sidebarHidden,
+    showChatSidePanelOnLandscape,
+  ]);
 
   const isLandscape = screenWidth > screenHeight;
   const shouldShowChatSidePanel =
