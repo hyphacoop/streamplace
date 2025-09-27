@@ -4,6 +4,7 @@ import {
   CommonActions,
   DrawerNavigationState,
   ParamListBase,
+  useNavigation,
 } from "@react-navigation/native";
 import { Text, useTheme } from "@streamplace/components";
 import React from "react";
@@ -44,6 +45,7 @@ export default function Sidebar({
   externalItems = [],
 }: SidebarProps) {
   const theme = useTheme();
+  const navigation = useNavigation();
   // Apply the defined type to the component props
   const animatedSidebarStyle = useAnimatedStyle(() => {
     return {
@@ -106,7 +108,7 @@ export default function Sidebar({
             onPress={() => {
               if (route.name === "Home") {
                 // copy logic for 'Home' to reset the stack
-                descriptor.navigation.dispatch(
+                navigation.dispatch(
                   CommonActions.reset({
                     index: 0,
                     routes: [
@@ -120,7 +122,7 @@ export default function Sidebar({
                   }),
                 );
               } else {
-                descriptor.navigation.navigate(route.name);
+                navigation.navigate(route.name as any);
               }
             }}
             style={options.drawerItemStyle}
