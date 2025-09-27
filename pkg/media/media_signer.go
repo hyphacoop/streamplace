@@ -1,25 +1,24 @@
 package media
 
 import (
-	"bytes"
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
-	"path/filepath"
 	"time"
 
-	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"go.opentelemetry.io/otel"
-	"stream.place/streamplace/pkg/aqio"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
+	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/crypto/signers"
-	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
@@ -39,40 +38,18 @@ type MediaSignerLocal struct {
 	did          string
 }
 
-func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]byte, string, error) {
-	pub, err := aqpub.FromPublicKey(signer.Public().(*ecdsa.PublicKey))
+func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]byte, error) {
+
+	cert, err := signers.GenerateES256KCert(signer)
 	if err != nil {
-		return nil, "", err
-	}
-	fSlice := []string{pub.String(), CertFile}
-	exists, err := cli.DataFileExists(fSlice)
-	if err != nil {
-		return nil, "", err
-	}
-	if !exists {
-		cert, err := signers.GenerateES256KCert(signer)
-		if err != nil {
-			return nil, "", err
-		}
-		r := bytes.NewReader(cert)
-		err = cli.DataFileWrite(fSlice, r, false)
-		if err != nil {
-			return nil, "", err
-		}
-		log.Log(ctx, "wrote new media signing certificate", "file", filepath.Join(pub.String(), CertFile))
-	}
-	buf := bytes.Buffer{}
-	if err := cli.DataFileRead(fSlice, &buf); err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	fPath := cli.DataFilePath(fSlice)
-	cert := buf.Bytes()
-	return cert, fPath, nil
+	return cert, nil
 }
 
 func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, signer crypto.Signer) (MediaSigner, error) {
-	cert, _, err := prepareCert(ctx, cli, signer)
+	cert, err := prepareCert(ctx, cli, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -133,43 +110,29 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal manifest: %w", err)
 	}
-	var manifest c2pa.ManifestDefinition
+	var manifest c2patypes.ManifestDefinition
 	err = json.Unmarshal(manifestBs, &manifest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal manifest: %w", err)
 	}
 	span.End()
 
-	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_GetSigningAlgorithm")
-	alg, err := c2pa.GetSigningAlgorithm(string(c2pa.ES256K))
+	bs, err := io.ReadAll(input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get signing algorithm: %w", err)
+		return nil, fmt.Errorf("failed to read input: %w", err)
 	}
-	span.End()
-
-	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_NewBuilder")
-	b, err := c2pa.NewBuilder(&manifest, &c2pa.BuilderParams{
-		Cert:      ms.Cert,
-		Signer:    ms.Signer,
-		Algorithm: alg,
-		TAURL:     ms.TAURL,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create C2PA builder: %w", err)
-	}
-	span.End()
-
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_Sign")
-	output := &aqio.ReadWriteSeeker{}
-	err = b.Sign(input, output, "video/mp4")
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign MP4: %w", err)
+	rustCallbackSigner := &RustCallbackSigner{
+		Signer: ms.Signer,
+	}
+	bs, rustErr := iroh_streamplace.Sign(string(manifestBs), bs, ms.Cert, rustCallbackSigner)
+	if rustErr.AsError() != nil {
+		return nil, rustErr.AsError()
 	}
 	span.End()
 
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_OutputBytes")
 	defer ctx.Done()
-	bs, err := output.Bytes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get output bytes: %w", err)
 	}
@@ -184,4 +147,17 @@ func (ms *MediaSignerLocal) Pub() aqpub.Pub {
 
 func (ms *MediaSignerLocal) DID() string {
 	return ms.did
+}
+
+type RustCallbackSigner struct {
+	Signer crypto.Signer
+}
+
+func (rcs *RustCallbackSigner) Sign(data []byte) ([]byte, *iroh_streamplace.SpError) {
+	digest := sha256.Sum256(data)
+	sig, err := rcs.Signer.Sign(rand.Reader, digest[:], nil)
+	if err != nil {
+		return nil, iroh_streamplace.NewSpErrorNoCertificateChainFound()
+	}
+	return sig, nil
 }

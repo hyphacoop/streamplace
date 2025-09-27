@@ -313,11 +313,13 @@ check: install
 	$(MAKE) golangci-lint
 	pnpm run check
 	if [ "`gofmt -l . | wc -l`" -gt 0 ]; then echo 'gofmt failed, run make fix'; exit 1; fi
+	RUSTFLAGS="-D warnings" cargo check
 
 .PHONY: fix
 fix:
 	pnpm run fix
 	gofmt -w .
+	cargo fix --allow-dirty
 
 .PHONY: golangci-lint
 golangci-lint:
@@ -609,7 +611,7 @@ darwin-amd64:
 	&& tar -czvf ../bin/streamplace-$(VERSION)-darwin-amd64.tar.gz ./streamplace \
 	&& cd -
 
-.PHONY: darwin-arm64
+.PHONY: darwin-arm64gofmt -w .
 darwin-arm64:
 	export CC=aarch64-apple-darwin24.4-clang \
 	&& export CC_AARCH64_APPLE_DARWIN=aarch64-apple-darwin24.4-clang \
@@ -657,12 +659,6 @@ desktop-darwin:
 link-mist:
 	rm -rf subprojects/mistserver
 	ln -s $$(realpath ../mistserver) ./subprojects/mistserver
-
-# link your local version of c2pa-go for dev
-.PHONY: link-c2pa-go
-link-c2pa-go:
-	rm -rf subprojects/c2pa_go
-	ln -s $$(realpath ../c2pa-go) ./subprojects/c2pa_go
 
 # link your local version of gstreamer
 .PHONY: link-gstreamer
@@ -973,3 +969,10 @@ ci-download-file:
 		--header "JOB-TOKEN: $$CI_JOB_TOKEN" \
 		-o bin/$(download_file) \
 		"$$CI_API_V4_URL/projects/$$CI_PROJECT_ID/packages/generic/$(BRANCH)/$(VERSION)/$(download_file)";
+
+.PHONY: c2pa-types
+c2pa-types:
+	$(MAKE) dev-rust
+	./target/debug/export_c2pa_schema
+	npx quicktype --lang go --src-lang schema --package c2patypes --out pkg/c2patypes/c2patypes.go ./target/schema/C2PA.schema.json
+	gofmt -w pkg/c2patypes/c2patypes.go

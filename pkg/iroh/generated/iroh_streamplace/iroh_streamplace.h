@@ -392,12 +392,34 @@ static void call_UniffiCallbackInterfaceDataHandlerMethod0(
 
 
 #endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_GO_SIGNER_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_GO_SIGNER_METHOD0
+typedef void (*UniffiCallbackInterfaceGoSignerMethod0)(uint64_t uniffi_handle, RustBuffer data, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceGoSignerMethod0(
+				UniffiCallbackInterfaceGoSignerMethod0 cb, uint64_t uniffi_handle, RustBuffer data, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, data, uniffi_out_return, callStatus );
+}
+
+
+#endif
 #ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_DATA_HANDLER
 #define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_DATA_HANDLER
 typedef struct UniffiVTableCallbackInterfaceDataHandler {
     UniffiCallbackInterfaceDataHandlerMethod0 handleData;
     UniffiCallbackInterfaceFree uniffiFree;
 } UniffiVTableCallbackInterfaceDataHandler;
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_GO_SIGNER
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_GO_SIGNER
+typedef struct UniffiVTableCallbackInterfaceGoSigner {
+    UniffiCallbackInterfaceGoSignerMethod0 sign;
+    UniffiCallbackInterfaceFree uniffiFree;
+} UniffiVTableCallbackInterfaceGoSigner;
 
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_DATAHANDLER
@@ -439,6 +461,26 @@ uint64_t uniffi_iroh_streamplace_fn_constructor_endpoint_new(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_ENDPOINT_NODE_ADDR
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_ENDPOINT_NODE_ADDR
 uint64_t uniffi_iroh_streamplace_fn_method_endpoint_node_addr(void* ptr
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_GOSIGNER
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_GOSIGNER
+void* uniffi_iroh_streamplace_fn_clone_gosigner(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_GOSIGNER
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_GOSIGNER
+void uniffi_iroh_streamplace_fn_free_gosigner(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_GOSIGNER
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_GOSIGNER
+void uniffi_iroh_streamplace_fn_init_callback_vtable_gosigner(UniffiVTableCallbackInterfaceGoSigner* vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_GOSIGNER_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_GOSIGNER_SIGN
+RustBuffer uniffi_iroh_streamplace_fn_method_gosigner_sign(void* ptr, RustBuffer data, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_NODEADDR
@@ -569,6 +611,16 @@ uint64_t uniffi_iroh_streamplace_fn_method_sender_node_addr(void* ptr
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SENDER_SEND
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SENDER_SEND
 uint64_t uniffi_iroh_streamplace_fn_method_sender_send(void* ptr, RustBuffer key, RustBuffer data
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST_AND_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST_AND_CERT
+RustBuffer uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(RustBuffer data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
+RustBuffer uniffi_iroh_streamplace_fn_func_sign(RustBuffer manifest, RustBuffer data, RustBuffer certs, void* gosigner, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_RUSTBUFFER_ALLOC
@@ -851,6 +903,18 @@ void ffi_iroh_streamplace_rust_future_free_void(uint64_t handle
 void ffi_iroh_streamplace_rust_future_complete_void(uint64_t handle, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST_AND_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST_AND_CERT
+uint16_t uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_SIGN
+uint16_t uniffi_iroh_streamplace_checksum_func_sign(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DATAHANDLER_HANDLE_DATA
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DATAHANDLER_HANDLE_DATA
 uint16_t uniffi_iroh_streamplace_checksum_method_datahandler_handle_data(void
@@ -860,6 +924,12 @@ uint16_t uniffi_iroh_streamplace_checksum_method_datahandler_handle_data(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_ENDPOINT_NODE_ADDR
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_ENDPOINT_NODE_ADDR
 uint16_t uniffi_iroh_streamplace_checksum_method_endpoint_node_addr(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_GOSIGNER_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_GOSIGNER_SIGN
+uint16_t uniffi_iroh_streamplace_checksum_method_gosigner_sign(void
     
 );
 #endif
@@ -980,6 +1050,8 @@ uint32_t ffi_iroh_streamplace_uniffi_contract_version(void
 
  void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerMethod0(uint64_t uniffi_handle, RustBuffer topic, RustBuffer data, UniffiForeignFutureCompleteVoid uniffi_future_callback, uint64_t uniffi_callback_data, UniffiForeignFuture* uniffi_out_return);
  void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerFree(uint64_t handle);
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerMethod0(uint64_t uniffi_handle, RustBuffer data, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerFree(uint64_t handle);
 
 void iroh_streamplace_uniffiFutureContinuationCallback(uint64_t, int8_t);
 void iroh_streamplace_uniffiFreeGorutine(uint64_t);

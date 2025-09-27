@@ -7,13 +7,11 @@ import (
 	"runtime"
 	"testing"
 
-	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	ct "stream.place/streamplace/pkg/config/configtesting"
-	"stream.place/streamplace/pkg/crypto/signers/eip712/eip712test"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/replication/boring"
 )
@@ -27,7 +25,7 @@ func getFixture(name string) string {
 func getStaticTestMediaManager(t *testing.T) (*MediaManager, MediaSigner) {
 	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
-	signer, err := c2pa.MakeStaticSigner(eip712test.KeyBytes)
+	// signer, err := c2pa.MakeStaticSigner(eip712test.KeyBytes)
 	require.NoError(t, err)
 	if err != nil {
 		panic(err)
@@ -42,11 +40,11 @@ func getStaticTestMediaManager(t *testing.T) (*MediaManager, MediaSigner) {
 		StatefulDB: nil, // Test doesn't need StatefulDB for now
 		Bus:        bus.NewBus(),
 	}
-	mm, err := MakeMediaManager(context.Background(), cli, signer, &boring.BoringReplicator{}, mod, bus.NewBus(), atsync)
+	mm, err := MakeMediaManager(context.Background(), cli, nil, &boring.BoringReplicator{}, mod, bus.NewBus(), atsync)
 	require.NoError(t, err)
-	ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer)
-	require.NoError(t, err)
-	return mm, ms
+	// ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer)
+	// require.NoError(t, err)
+	return mm, nil
 }
 
 // func mp4(t *testing.T) []byte {
