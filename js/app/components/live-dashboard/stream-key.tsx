@@ -1,11 +1,19 @@
-import { Body, Button, Code, Row, View, useTheme } from "@streamplace/components";
+import {
+  Body,
+  Button,
+  Code,
+  Row,
+  View,
+  useTheme,
+  useToast,
+} from "@streamplace/components";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
 import {
-    clearStreamKeyRecord,
-    createStreamKeyRecord,
-    selectIsReady,
-    selectUserProfile,
+  clearStreamKeyRecord,
+  createStreamKeyRecord,
+  selectIsReady,
+  selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { Clipboard, ClipboardCheck } from "lucide-react-native";
 import { useEffect, useState } from "react";
@@ -59,12 +67,20 @@ export function StreamKeyScreen() {
             <Button
               variant={protocol !== "rtmp" ? "secondary" : "primary"}
               onPress={() => setProtocol("rtmp")}
+              style={{
+                borderTopRightRadius: "0px",
+                borderBottomRightRadius: "0px",
+              }}
             >
               RTMP
             </Button>
             <Button
               variant={protocol !== "whip" ? "secondary" : "primary"}
               onPress={() => setProtocol("whip")}
+              style={{
+                borderTopLeftRadius: "0px",
+                borderBottomLeftRadius: "0px",
+              }}
             >
               WHIP
             </Button>
@@ -172,6 +188,7 @@ export default StreamKeyScreen;
 
 export function StreamKey() {
   const theme = useTheme();
+  const toast = useToast();
 
   const dispatch = useAppDispatch();
   const [generating, setGenerating] = useState(false);
@@ -186,17 +203,6 @@ export function StreamKey() {
       return;
     }
 
-    (async () => {
-      try {
-        await navigator.clipboard.writeText(newKey.privateKey);
-        // TODO: Replace with custom toast implementation
-        console.log("Bearer token copied to clipboard");
-      } catch (e) {
-        // not allowed. oh well.
-        console.log("Could not copy to clipboard");
-      }
-    })();
-
     return () => {
       dispatch(clearStreamKeyRecord());
     };
@@ -209,12 +215,12 @@ export function StreamKey() {
 
     try {
       await navigator.clipboard.writeText(newKey.privateKey);
-      // TODO: Replace with custom toast implementation
-      console.log("Bearer token copied to clipboard");
       setDidcopy(true);
+
+      toast.show('Stream Key', 'Stream Key was copied to your clipboard', { duration: 4 });
     } catch (e) {
       // not allowed. oh well.
-      console.log("Could not copy to clipboard");
+      toast.show('Stream Key', 'Failed to copy the Stream Key to your clipboard', { duration: 4 });
     }
   };
 
