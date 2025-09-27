@@ -1,4 +1,4 @@
-import { Body, Button, Code, Row, View } from "@streamplace/components";
+import { Body, Button, Code, Row, View, useTheme } from "@streamplace/components";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
 import {
@@ -7,6 +7,7 @@ import {
     selectIsReady,
     selectUserProfile,
 } from "features/bluesky/blueskySlice";
+import { Clipboard, ClipboardCheck } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { ScrollView, TextInput } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
@@ -170,11 +171,15 @@ export function RTMPDescription({ url }: { url: string }) {
 export default StreamKeyScreen;
 
 export function StreamKey() {
+  const theme = useTheme();
+
   const dispatch = useAppDispatch();
   const [generating, setGenerating] = useState(false);
   const [hidekey, setHidekey] = useState(true);
   const [didcopy, setDidcopy] = useState(false);
   const newKey = useAppSelector((state) => state.bluesky.newKey);
+
+  let foregroundColor = theme.theme.colors.text || "#fff";
 
   useEffect(() => {
     if (!newKey) {
@@ -255,28 +260,9 @@ export function StreamKey() {
           ]}
         >
           {didcopy ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path d="M9.5 0a.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5.5.5 0 0 1 .5.5V2a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 2v-.5a.5.5 0 0 1 .5-.5.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5z" />
-              <path d="M3 2.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 0 0-1h-.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1H12a.5.5 0 0 0 0 1h.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5z" />
-              <path d="M10.854 7.854a.5.5 0 0 0-.708-.708L7.5 9.793 6.354 8.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z" />
-            </svg>
+            <ClipboardCheck color={foregroundColor} size={24} />
           ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z" />
-              <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z" />
-            </svg>
+            <Clipboard color={foregroundColor} size={24} />
           )}
         </Button>
       </Row>
