@@ -217,10 +217,16 @@ export function StreamKey() {
       await navigator.clipboard.writeText(newKey.privateKey);
       setDidcopy(true);
 
-      toast.show('Stream Key', 'Stream Key was copied to your clipboard', { duration: 4 });
+      toast.show("Stream Key", "Stream Key was copied to your clipboard", {
+        duration: 4,
+      });
     } catch (e) {
       // not allowed. oh well.
-      toast.show('Stream Key', 'Failed to copy the Stream Key to your clipboard', { duration: 4 });
+      toast.show(
+        "Stream Key",
+        "Failed to copy the Stream Key to your clipboard",
+        { duration: 4 },
+      );
     }
   };
 
