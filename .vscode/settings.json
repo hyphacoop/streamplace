@@ -20,5 +20,6 @@
   "editor.codeActionsOnSave": {
     "source.addMissingImports": "explicit",
     "source.organizeImports": "explicit"
-  }
+  },
+  "editor.tabSize": 2
 }
