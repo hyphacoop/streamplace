@@ -1,7 +1,9 @@
 package spxrpc
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,6 +39,8 @@ func resolveRepoService(ctx context.Context, repo string) (string, string, strin
 	return did, service, handle, nil
 }
 
+var maxBlobSize int64 = 1024 * 1024 * 10 // 10MB
+
 func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context, r io.Reader, contentType string) (*comatprototypes.RepoUploadBlob_Output, error) {
 	ctx, span := otel.Tracer("server").Start(ctx, "handleComAtprotoRepoUploadBlob")
 	defer span.End()
@@ -46,12 +50,20 @@ func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context, r io.Reader
 		return nil, echo.NewHTTPError(http.StatusUnauthorized, "oauth session not found")
 	}
 
+	// we need to buffer the blob so we can successfully retry upon dpop nonce changes
+	var err error
+	buf := bytes.Buffer{}
+	_, err = io.CopyN(&buf, r, maxBlobSize+1)
+	if err == nil {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "blob size exceeds max size")
+	}
+	if !errors.Is(err, io.EOF) {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "failed to copy reader to buffer")
+	}
+
 	var out comatprototypes.RepoUploadBlob_Output
 
-	var xrpcType string
-	var err error
-	xrpcType = xrpc.Procedure
-	err = client.Do(ctx, xrpcType, contentType, "com.atproto.repo.uploadBlob", nil, r, &out)
+	err = client.Do(ctx, xrpc.Procedure, contentType, "com.atproto.repo.uploadBlob", nil, bytes.NewReader(buf.Bytes()), &out)
 
 	if err != nil {
 		log.Error(ctx, "upstream xrpc error", "error", err)
