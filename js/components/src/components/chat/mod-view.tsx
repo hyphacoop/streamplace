@@ -49,6 +49,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   const setReportModalOpen = usePlayerStore((x) => x.setReportModalOpen);
   const setReportSubject = usePlayerStore((x) => x.setReportSubject);
   const setModMessage = usePlayerStore((x) => x.setModMessage);
+  const deleteChatMessage = useDeleteChatMessage();
 
   // get the channel did
   const channelId = usePlayerStore((state) => state.src);
@@ -174,7 +175,10 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
                 <Text color="primary">View user on {BSKY_FRONTEND_DOMAIN}</Text>
               </DropdownMenuItem>
               {message.author.did === agent?.did && (
-                <DeleteButton message={message} />
+                <DeleteButton
+                  message={message}
+                  deleteChatMessage={deleteChatMessage}
+                />
               )}
               {message.author.did !== agent?.did && (
                 <ReportButton
@@ -191,29 +195,45 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   );
 });
 
+enum DeleteState {
+  None,
+  Confirmed,
+  Deleting,
+}
+
 export function DeleteButton({
   message,
+  deleteChatMessage,
 }: {
   message: ChatMessageViewHydrated;
+  deleteChatMessage: (uri: string) => Promise<any>;
 }) {
-  const deleteChatMessage = useDeleteChatMessage();
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useState<DeleteState>(DeleteState.None);
   const { onOpenChange } = useRootContext();
   return (
     <DropdownMenuItem
       onPress={() => {
         if (!message) return;
         if (!confirming) {
-          setConfirming(true);
+          setConfirming(DeleteState.Confirmed);
           return;
         }
+        if (confirming === DeleteState.Confirmed) {
+          setConfirming(DeleteState.Deleting);
+        }
         deleteChatMessage(message.uri).then(() => {
+          // wait ~a second before resetting state to allow deletion to take effect
+          setTimeout(() => setConfirming(DeleteState.None), 1000);
           onOpenChange?.(false);
         });
       }}
     >
       <Text color="destructive">
-        {confirming ? "Are you sure?" : "Delete message"}
+        {confirming === DeleteState.Confirmed
+          ? "Are you sure? Click again to confirm."
+          : confirming === DeleteState.Deleting
+            ? "Deleting..."
+            : "Delete message"}
       </Text>
     </DropdownMenuItem>
   );
