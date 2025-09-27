@@ -8,7 +8,7 @@ import {
     selectUserProfile,
 } from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
-import { TextInput } from "react-native";
+import { ScrollView, TextInput } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 
 const FormRow = ({ children }: { children: React.ReactNode }) => {
@@ -51,38 +51,40 @@ export function StreamKeyScreen() {
   const url = useAppSelector((state) => state.streamplace.url);
 
   return (
-    <View flex={1} centered fullWidth padding="lg">
-      <View fullWidth style={{ maxWidth: 600 }}>
-        <FormRow>
-          <Button
-            variant={protocol !== "rtmp" ? "secondary" : "primary"}
-            onPress={() => setProtocol("rtmp")}
-          >
-            RTMP
-          </Button>
-          <Button
-            variant={protocol !== "whip" ? "secondary" : "primary"}
-            onPress={() => setProtocol("whip")}
-          >
-            WHIP
-          </Button>
-        </FormRow>
-        {protocol === "whip" && <WHIPDescription url={url} />}
-        {protocol === "rtmp" && <RTMPDescription url={url} />}
-        <FormRow>
-          <Label>Output Settings</Label>
-          <Content>
-            <Body>
-              Output mode: Advanced
-              <br />
-              Keyframe Interval: <Code>1s</Code>
-              <br />
-              x264 Options: <Code>bframes=0</Code>
-            </Body>
-          </Content>
-        </FormRow>
+    <ScrollView>
+      <View flex={1} align="center" justify="start" padding="md" fullWidth>
+        <View fullWidth style={{ maxWidth: 600 }}>
+          <FormRow>
+            <Button
+              variant={protocol !== "rtmp" ? "secondary" : "primary"}
+              onPress={() => setProtocol("rtmp")}
+            >
+              RTMP
+            </Button>
+            <Button
+              variant={protocol !== "whip" ? "secondary" : "primary"}
+              onPress={() => setProtocol("whip")}
+            >
+              WHIP
+            </Button>
+          </FormRow>
+          {protocol === "whip" && <WHIPDescription url={url} />}
+          {protocol === "rtmp" && <RTMPDescription url={url} />}
+          <FormRow>
+            <Label>Output Settings</Label>
+            <Content>
+              <Body>
+                Output mode: Advanced
+                <br />
+                Keyframe Interval: <Code>1s</Code>
+                <br />
+                x264 Options: <Code>bframes=0</Code>
+              </Body>
+            </Content>
+          </FormRow>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -216,13 +218,8 @@ export function StreamKey() {
   }
 
   if (newKey) {
-
     return (
-      <Row
-        fullWidth
-        flex={1}
-        align="start"
-      >
+      <Row fullWidth flex={1} align="start">
         <TextInput
           value={newKey.privateKey}
           secureTextEntry={hidekey}
