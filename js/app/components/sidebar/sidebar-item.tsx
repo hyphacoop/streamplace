@@ -105,9 +105,7 @@ export default function SidebarItem({
               },
             ]}
           >
-            <Text style={[{ fontSize: 24, textAlign: "left", color: "#fff" }]}>
-              {label}
-            </Text>
+            <Text>{label}</Text>
           </View>
         )}
       </View>
