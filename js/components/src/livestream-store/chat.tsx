@@ -135,14 +135,14 @@ export const useCreateChatMessage = () => {
 
 export const useDeleteChatMessage = () => {
   const pdsAgent = usePDSAgent();
-  if (!pdsAgent) {
-    throw new Error("No PDS agent found");
-  }
   const userDID = useDID();
-  if (!userDID) {
-    throw new Error("No user DID found");
-  }
   return async (uri: string) => {
+    if (!pdsAgent) {
+      throw new Error("No PDS agent found");
+    }
+    if (!userDID) {
+      throw new Error("No user DID found");
+    }
     const rkey = uri.split("/").pop();
     if (!rkey) {
       throw new Error("No rkey found");

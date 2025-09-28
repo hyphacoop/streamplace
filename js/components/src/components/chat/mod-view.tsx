@@ -21,6 +21,7 @@ import {
   layout,
   ResponsiveDropdownMenuContent,
   Text,
+  useToast,
   View,
 } from "../ui";
 
@@ -210,6 +211,7 @@ export function DeleteButton({
 }) {
   const [confirming, setConfirming] = useState<DeleteState>(DeleteState.None);
   const { onOpenChange } = useRootContext();
+  const toast = useToast();
   return (
     <DropdownMenuItem
       onPress={() => {
@@ -221,11 +223,16 @@ export function DeleteButton({
         if (confirming === DeleteState.Confirmed) {
           setConfirming(DeleteState.Deleting);
         }
-        deleteChatMessage(message.uri).then(() => {
-          // wait ~a second before resetting state to allow deletion to take effect
-          setTimeout(() => setConfirming(DeleteState.None), 1000);
-          onOpenChange?.(false);
-        });
+        deleteChatMessage(message.uri)
+          .then(() => {
+            // wait ~a second before resetting state to allow deletion to take effect
+            setTimeout(() => setConfirming(DeleteState.None), 1000);
+            onOpenChange?.(false);
+          })
+          .catch((e) => {
+            toast.show("Couldn't delete the message", e);
+            setConfirming(DeleteState.None);
+          });
       }}
     >
       <Text color="destructive">
