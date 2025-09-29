@@ -1,5 +1,4 @@
-import * as ScreenOrientation from "expo-screen-orientation";
-import { Orientation, OrientationLock } from "expo-screen-orientation";
+import type { Orientation } from "expo-screen-orientation";
 import React, {
   createContext,
   useContext,
@@ -8,6 +7,10 @@ import React, {
   useRef,
   useState,
 } from "react";
+import {
+  isRotationAvailable,
+  ScreenOrientation,
+} from "./rotation-async.native";
 
 export interface RotationContextValue {
   currentOrientation: Orientation;
@@ -31,20 +34,44 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
   enabled = true,
 }) => {
   const [isLocked, setIsLocked] = useState(false);
-  const [canRotate, setCanRotate] = useState(true);
-  const currentOrientation = useRef<Orientation>(Orientation.PORTRAIT_UP);
+  const [canRotate, setCanRotate] = useState(isRotationAvailable);
+  const currentOrientation = useRef<Orientation>(
+    ScreenOrientation?.Orientation.PORTRAIT_UP ?? 1,
+  );
+
+  // If module not available, provide disabled context
+  if (!isRotationAvailable || !ScreenOrientation) {
+    const disabledContextValue: RotationContextValue = {
+      currentOrientation: 1, // Orientation.PORTRAIT_UP
+      isLocked: false,
+      isActive: false,
+      rotateToLandscape: async () => {},
+      rotateToPortrait: async () => {},
+      toggleRotation: async () => {},
+      canRotate: false,
+    };
+
+    return (
+      <RotationContext.Provider value={disabledContextValue}>
+        {children}
+      </RotationContext.Provider>
+    );
+  }
 
   // Manual rotation functions
   const rotateToLandscape = async () => {
-    if (!enabled || !canRotate) return;
+    if (!enabled || !canRotate || !ScreenOrientation) return;
 
     try {
       await ScreenOrientation.unlockAsync();
-      await ScreenOrientation.lockAsync(OrientationLock.LANDSCAPE_RIGHT);
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
+      );
       setIsLocked(true);
 
       // set current orientation to landscape left for consistency
-      currentOrientation.current = Orientation.LANDSCAPE_RIGHT;
+      currentOrientation.current =
+        ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
       if (__DEV__) {
         console.log("📲 Manual landscape");
@@ -55,13 +82,15 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
   };
 
   const rotateToPortrait = async () => {
-    if (!enabled || !canRotate) return;
+    if (!enabled || !canRotate || !ScreenOrientation) return;
 
     try {
-      await ScreenOrientation.lockAsync(OrientationLock.PORTRAIT_UP);
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      );
       setIsLocked(true);
 
-      currentOrientation.current = Orientation.PORTRAIT_UP;
+      currentOrientation.current = ScreenOrientation.Orientation.PORTRAIT_UP;
 
       if (__DEV__) {
         console.log("📲 Manual portrait");
@@ -72,9 +101,13 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
   };
 
   const toggleRotation = async () => {
+    if (!ScreenOrientation) return;
+
     const isLandscape =
-      currentOrientation.current === Orientation.LANDSCAPE_LEFT ||
-      currentOrientation.current === Orientation.LANDSCAPE_RIGHT;
+      currentOrientation.current ===
+        ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+      currentOrientation.current ===
+        ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
     if (__DEV__) {
       console.log(
@@ -94,6 +127,7 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
     if (!enabled) return;
 
     const getCurrentOrientation = async () => {
+      if (!ScreenOrientation) return;
       try {
         const orient = await ScreenOrientation.getOrientationAsync();
         currentOrientation.current = orient;
@@ -107,6 +141,8 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
     };
 
     getCurrentOrientation();
+
+    if (!ScreenOrientation) return;
 
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
@@ -128,10 +164,12 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
 
     return () => {
       subscription?.remove();
-      ScreenOrientation.removeOrientationChangeListeners();
-      ScreenOrientation.unlockAsync().catch(() => {});
+      if (ScreenOrientation) {
+        ScreenOrientation.removeOrientationChangeListeners();
+        ScreenOrientation.unlockAsync().catch(() => {});
+      }
     };
-  }, [enabled]);
+  }, [enabled, isLocked]);
 
   const contextValue = useMemo(
     () => ({
