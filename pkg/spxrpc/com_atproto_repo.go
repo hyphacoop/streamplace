@@ -74,13 +74,11 @@ func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context, r io.Reader
 }
 
 func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context, repo string) (*comatprototypes.RepoDescribeRepo_Output, error) {
-	did, svc, handle, err := resolveRepoService(ctx, repo)
+	isLocal, svc, err := s.isLocalPDS(ctx, repo)
 	if err != nil {
-		return nil, fmt.Errorf("handleComAtprotoRepoDescribeRepo: %w", err)
+		return nil, fmt.Errorf("error checking for local PDS: %w", err)
 	}
-
-	// if the service isn't the current host, we proxy the request
-	if svc != s.cli.PublicHost {
+	if !isLocal {
 		var out comatprototypes.RepoDescribeRepo_Output
 		params := make(map[string]interface{})
 		params["repo"] = repo
@@ -95,8 +93,8 @@ func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context, repo stri
 	}
 
 	return &comatprototypes.RepoDescribeRepo_Output{
-		Handle: handle,
-		Did:    did,
+		Handle: s.cli.MyDID(),
+		Did:    s.cli.MyDID(),
 		DidDoc: atproto.DIDDoc(s.cli.PublicHost),
 		Collections: []string{
 			"com.atproto.lexicon.schema",
@@ -106,12 +104,11 @@ func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context, repo stri
 }
 
 func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context, collection string, cursor string, limit int, repo string, reverse *bool) (*comatprototypes.RepoListRecords_Output, error) {
-	_, svc, _, err := resolveRepoService(ctx, repo)
+	isLocal, svc, err := s.isLocalPDS(ctx, repo)
 	if err != nil {
-		return nil, fmt.Errorf("handleComAtprotoRepoListRecords: %w", err)
+		return nil, fmt.Errorf("error checking for local PDS: %w", err)
 	}
-	// if the service isn't the current host, we proxy the request
-	if svc != s.cli.PublicHost {
+	if !isLocal {
 		var out comatprototypes.RepoListRecords_Output
 		params := make(map[string]interface{})
 		params["collection"] = collection
@@ -161,13 +158,11 @@ func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context, collection
 }
 
 func (s *Server) handleComAtprotoRepoGetRecord(ctx context.Context, c string, collection string, repo string, rkey string) (*comatprototypes.RepoGetRecord_Output, error) {
-	_, svc, _, err := resolveRepoService(ctx, repo)
+	isLocal, svc, err := s.isLocalPDS(ctx, repo)
 	if err != nil {
-		return nil, fmt.Errorf("handleComAtprotoRepoGetRecord: %w", err)
+		return nil, fmt.Errorf("error checking for local PDS: %w", err)
 	}
-
-	// if the service isn't the current host, we proxy the request
-	if svc != s.cli.PublicHost {
+	if !isLocal {
 		var out comatprototypes.RepoGetRecord_Output
 		params := make(map[string]interface{})
 		params["repo"] = repo

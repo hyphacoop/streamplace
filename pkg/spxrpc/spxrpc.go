@@ -66,7 +66,20 @@ func NewServer(ctx context.Context, cli *config.CLI, model model.Model, stateful
 	return s, nil
 }
 
+func (s *Server) isLocalPDS(ctx context.Context, repo string) (bool, string, error) {
+	did, svc, _, err := resolveRepoService(ctx, repo)
+	if err != nil {
+		return false, "", fmt.Errorf("resolveRepoService: %w", err)
+	}
+	if did == s.cli.MyDID() {
+		return true, svc, nil
+	}
+	return false, svc, nil
+}
+
 func makeUnauthenticatedRequest(ctx context.Context, service, method string, params map[string]interface{}, out interface{}) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	u, err := url.Parse(fmt.Sprintf("%s/xrpc/%s", service, method))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
