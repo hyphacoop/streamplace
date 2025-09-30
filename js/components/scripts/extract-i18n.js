@@ -166,7 +166,9 @@ function migrateKeysToFtl() {
     const messagesJsonPath = path.join(localeJsonDir, "messages.json");
 
     if (!fs.existsSync(messagesJsonPath)) {
-      console.log(`⚠️  No messages.json found for ${locale}, skipping...`);
+      console.log(
+        `⚠️  No messages.json found for ${locale}! You may need to run pnpm i18n:compile first!`,
+      );
       continue;
     }
 

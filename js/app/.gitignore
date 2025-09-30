@@ -61,4 +61,4 @@ generated
 
 .env.local
 
-./public/locales/**/*.json
+public/locales/*

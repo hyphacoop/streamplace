@@ -1,6 +1,6 @@
-# Ignore compiled translation files in source directory
+# Ignore compiled translation files in source directory if they exist
 locales/**/messages.json
-public/locales/**/*.ftl
+public/locales/*
 
 # Ignore extracted i18n keys (they're just for reference)
 locales/*/*.json
