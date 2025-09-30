@@ -62,9 +62,9 @@ export const DanmuMessage = memo(
         blue: number;
       } = { red: 123, green: 123, blue: 123 },
     ) => {
-      const red = mapRange(color.red, 0, 255, 160, 230);
-      const green = mapRange(color.green, 0, 255, 160, 230);
-      const blue = mapRange(color.blue, 0, 255, 160, 230);
+      const red = mapRange(color.red, 0, 255, 100, 230);
+      const green = mapRange(color.green, 0, 255, 100, 230);
+      const blue = mapRange(color.blue, 0, 255, 100, 230);
 
       return `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
     };
