@@ -1,8 +1,9 @@
 # Ignore compiled translation files in source directory
 locales/**/messages.json
+public/locales/**/*.ftl
 
 # Ignore extracted i18n keys (they're just for reference)
-locales/**/*.json
+locales/*/*.json
 
 # TypeScript build output
 dist/

@@ -15,7 +15,8 @@ const path = require("path");
 const COMPONENTS_ROOT = path.join(__dirname, "..");
 const APP_ROOT = path.join(__dirname, "..", "..", "app");
 const MANIFEST_PATH = path.join(COMPONENTS_ROOT, "locales/manifest.json");
-const LOCALES_DIR = path.join(COMPONENTS_ROOT, "locales");
+const LOCALES_FTL_DIR = path.join(COMPONENTS_ROOT, "locales");
+const LOCALES_JSON_DIR = path.join(COMPONENTS_ROOT, "public/locales");
 
 // Load manifest
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
@@ -43,7 +44,7 @@ const parserConfig = {
   },
 
   locales: manifest.supportedLocales,
-  output: path.join(LOCALES_DIR, "$LOCALE/$NAMESPACE.json"),
+  output: path.join(LOCALES_JSON_DIR, "$LOCALE/$NAMESPACE.json"),
   input: [
     path.join(COMPONENTS_ROOT, "src/**/*.{js,jsx,ts,tsx}"),
     path.join(APP_ROOT, "src/**/*.{js,jsx,ts,tsx}"),
@@ -160,8 +161,9 @@ function migrateKeysToFtl() {
   const processedFiles = [];
 
   for (const locale of manifest.supportedLocales) {
-    const localeDir = path.join(LOCALES_DIR, locale);
-    const messagesJsonPath = path.join(localeDir, "messages.json");
+    const localeJsonDir = path.join(LOCALES_JSON_DIR, locale);
+    const localeFtlDir = path.join(LOCALES_FTL_DIR, locale);
+    const messagesJsonPath = path.join(localeJsonDir, "messages.json");
 
     if (!fs.existsSync(messagesJsonPath)) {
       console.log(`⚠️  No messages.json found for ${locale}, skipping...`);
@@ -173,7 +175,7 @@ function migrateKeysToFtl() {
     const extractedKeys = Object.keys(messagesJson);
 
     // Get existing keys from .ftl files
-    const existingKeys = getExistingFtlKeys(localeDir);
+    const existingKeys = getExistingFtlKeys(localeFtlDir);
 
     // Find new keys
     const newKeys = extractedKeys.filter((key) => !existingKeys.has(key));
@@ -187,7 +189,7 @@ function migrateKeysToFtl() {
     newKeys.forEach((key) => console.log(`   - ${key}`));
 
     // Add to .ftl file
-    const targetFile = addKeysToFtlFile(localeDir, newKeys, locale);
+    const targetFile = addKeysToFtlFile(localeFtlDir, newKeys, locale);
     processedFiles.push(path.relative(process.cwd(), targetFile));
     totalNewKeys += newKeys.length;
   }

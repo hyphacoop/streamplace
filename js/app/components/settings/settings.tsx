@@ -21,7 +21,7 @@ import {
 } from "features/bluesky/blueskySlice";
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { ChevronDown, Search } from "lucide-react-native";
+import { Check, ChevronDown } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
@@ -203,6 +203,7 @@ export function Settings() {
                 <ScrollView
                   stickyHeaderIndices={[0]}
                   showsVerticalScrollIndicator={false}
+                  style={{ maxHeight: "60vh" } as any}
                 >
                   <View
                     style={{
@@ -215,8 +216,6 @@ export function Settings() {
                       value={languageSearchQuery}
                       onChangeText={setLanguageSearchQuery}
                       size="sm"
-                      containerStyle={{ paddingHorizontal: 0 }}
-                      leftAddon={<Search />}
                     />
                   </View>
 
@@ -282,7 +281,7 @@ export function Settings() {
                                   fontWeight: "bold",
                                 }}
                               >
-                                ✓
+                                <Check />
                               </Text>
                             )}
                           </View>

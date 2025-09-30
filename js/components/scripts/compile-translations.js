@@ -4,13 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Load language manifest
-const MANIFEST_PATH = path.join(
-  __dirname,
-  "..",
-  "src",
-  "i18n",
-  "manifest.json",
-);
+const MANIFEST_PATH = path.join(__dirname, "..", "locales", "manifest.json");
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf-8"));
 
 // Configuration

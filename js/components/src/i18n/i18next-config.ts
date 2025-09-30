@@ -98,6 +98,10 @@ export function getCurrentLocale(): string {
 function getFallbackChain(code: string): string[] {
   const fallbacks: string[] = [];
 
+  console.log("Determining fallback lang to be", code);
+
+  if (!code) return manifest.fallbackChain;
+
   // Regional fallbacks
   if (code.match(/^es-/)) {
     fallbacks.push("es-ES"); // Spanish fallback
@@ -106,7 +110,7 @@ function getFallbackChain(code: string): string[] {
   } else if (code.match(/^pt-/)) {
     fallbacks.push("pt-BR"); // Portuguese fallback
   } else if (code.match(/^zh-/)) {
-    fallbacks.push("zh-TW"); // Chinese fallback
+    fallbacks.push("zh-Hant"); // Chinese fallback
   }
 
   // Add manifest fallback chain
@@ -138,7 +142,15 @@ export const I18NEXT_CONFIG = {
     },
   },
   fallbackLng: getFallbackChain,
-  supportedLngs: manifest.supportedLocales,
+  supportedLngs: [
+    ...manifest.supportedLocales,
+    // Include base language codes for i18next fallback matching
+    "en",
+    "pt",
+    "es",
+    "zh",
+    "fr",
+  ],
   debug: process.env.NODE_ENV === "development",
 };
 
@@ -171,8 +183,8 @@ async function loadTranslationData(locale: string): Promise<any> {
           case "es-ES":
             translations = require("../../public/locales/es-ES/messages.json");
             break;
-          case "zh-TW":
-            translations = require("../../public/locales/zh-TW/messages.json");
+          case "zh-Hant":
+            translations = require("../../public/locales/zh-Hant/messages.json");
             break;
           case "fr-FR":
             translations = require("../../public/locales/fr-FR/messages.json");
