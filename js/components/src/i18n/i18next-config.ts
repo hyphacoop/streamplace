@@ -7,13 +7,17 @@ import resourcesToBackend from "i18next-resources-to-backend";
 import "intl-pluralrules";
 import { initReactI18next } from "react-i18next";
 
-// Import our manifest and loader
-import { manifest } from "./index";
+// Import our manifest directly to avoid circular dependency
+import manifest from "../../locales/manifest.json";
 
 // Try to import expo-localization, but make it optional
 let Localization: typeof import("expo-localization") | null = null;
 try {
-  Localization = require("expo-localization");
+  const localizationModule = require("expo-localization");
+  // Handle both default and named exports
+  Localization = localizationModule.default
+    ? localizationModule.default
+    : localizationModule;
 } catch {
   // expo-localization not available, will use browser/fallback detection
 }
@@ -21,14 +25,22 @@ try {
 // Mock storage for now - replace with actual zustand storage
 const storage = {
   getItem: (key: string): string | null => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(key);
+    try {
+      if (typeof window !== "undefined" && localStorage) {
+        return localStorage.getItem(key);
+      }
+    } catch {
+      // localStorage not available (e.g. in some test environments)
     }
     return null;
   },
   setItem: (key: string, value: string): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(key, value);
+    try {
+      if (typeof window !== "undefined" && localStorage) {
+        localStorage.setItem(key, value);
+      }
+    } catch {
+      // localStorage not available (e.g. in some test environments)
     }
   },
 };
@@ -41,8 +53,13 @@ export function getLocaleFromSystemLocale(): string {
   let systemLocale = "en";
 
   // Try to get locale from expo-localization if available
-  if (Localization) {
-    systemLocale = Localization.getLocales()[0]?.languageTag || "en";
+  if (Localization && typeof Localization.getLocales === "function") {
+    try {
+      const locales = Localization.getLocales();
+      systemLocale = locales?.[0]?.languageTag || "en";
+    } catch (error) {
+      console.warn("Failed to get locales from expo-localization:", error);
+    }
   } else if (typeof navigator !== "undefined" && navigator.language) {
     // Fallback to browser navigator.language
     systemLocale = navigator.language;

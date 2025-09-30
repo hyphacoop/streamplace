@@ -43,6 +43,7 @@
     "i18next-fluent": "^2.0.0",
     "i18next-http-backend": "^3.0.2",
     "i18next-resources-to-backend": "^1.2.1",
+    "intl-pluralrules": "^2.0.1",
     "lucide-react-native": "^0.514.0",
     "react-i18next": "^15.7.3",
     "react-native": "^0.79.0",
@@ -58,8 +59,8 @@
     "zustand": "^5.0.5"
   },
   "peerDependencies": {
-    "react": "*",
-    "expo-localization": "*"
+    "expo-localization": "*",
+    "react": "*"
   },
   "peerDependenciesMeta": {
     "expo-localization": {
