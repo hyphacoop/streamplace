@@ -4,6 +4,7 @@ import { ChatMessageViewHydrated } from "streamplace";
 import { useChat, useLivestreamStore } from "../../livestream-store";
 import { View } from "../ui";
 import { DanmuMessage } from "./danmu-message";
+import { baseDuration, MAX_DURATION, MIN_DURATION } from "./math";
 import { useDanmuLanes } from "./use-danmu-lanes";
 
 interface DanmuOverlayProps {
@@ -117,11 +118,12 @@ export function DanmuOverlay({
         toRemove.forEach((uri) => processedMessages.current.delete(uri));
       }
 
-      const baseDuration = (12000 * message.record.text.length) / 10;
-      const duration = Math.max(
-        12000 / speed,
-        Math.min(baseDuration / speed, 12000 / speed),
-      );
+      const duration = baseDuration(message, MAX_DURATION, MIN_DURATION);
+      if (__DEV__)
+        console.log("[danmu] message", message.record.text, {
+          duration,
+          speed,
+        });
       const lane = assignLane(message.uri, duration);
 
       if (lane !== null) {

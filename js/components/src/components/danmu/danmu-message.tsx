@@ -9,6 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { ChatMessageViewHydrated } from "streamplace";
 import { Text } from "../ui";
+import { baseDuration, mapRange, MAX_DURATION, MIN_DURATION } from "./math";
 
 interface DanmuMessageProps {
   message: ChatMessageViewHydrated;
@@ -23,10 +24,6 @@ interface DanmuMessageProps {
   onComplete: (messageId: string) => void;
   onWidthMeasured?: (messageId: string, width: number) => void;
 }
-
-const BASE_DURATION = 8000;
-const MIN_DURATION = 6000;
-const MAX_DURATION = 12000;
 
 export const DanmuMessage = memo(
   ({
@@ -48,16 +45,6 @@ export const DanmuMessage = memo(
       null,
     );
     const [totalDuration, setTotalDuration] = useState(0);
-
-    const mapRange = (
-      num: number,
-      inMin: number,
-      inMax: number,
-      outMin: number,
-      outMax: number,
-    ) => {
-      return ((num - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
-    };
 
     const getRgbColor = (
       color: {
@@ -108,13 +95,12 @@ export const DanmuMessage = memo(
           `[danmu] animation started: "${message.record.text}" (duration: ${duration.toFixed(0)}ms, remaining: ${remainingDuration.toFixed(0)}ms, speed: ${speed}x)`,
         );
 
-      // Start from right edge + message width so entire message is off-screen
-      translateX.value = containerWidth;
+      translateX.value = startPosition;
 
       translateX.value = withTiming(
         -messageWidth,
         {
-          duration,
+          duration: remainingDuration,
           easing: Easing.linear,
         },
         (finished) => {
