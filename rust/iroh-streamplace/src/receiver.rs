@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use iroh::protocol::Router;
 
-use crate::api::Api;
-use crate::endpoint::Endpoint;
-use crate::error::Error;
-use crate::key::PublicKey;
-use crate::utils::NodeAddr;
+use crate::{api::Api, endpoint::Endpoint, error::Error, key::PublicKeyOld, utils::NodeAddr};
 
 #[derive(uniffi::Object)]
 pub struct Receiver {
@@ -21,7 +17,7 @@ impl Receiver {
     #[uniffi::constructor(async_runtime = "tokio")]
     pub async fn new(
         endpoint: &Endpoint,
-        handler: Arc<dyn DataHandler>,
+        handler: Arc<dyn DataHandlerOld>,
     ) -> Result<Receiver, Error> {
         let api = Api::spawn_with_handler(&endpoint.endpoint, move |id, data| {
             let handler = handler.clone();
@@ -42,7 +38,7 @@ impl Receiver {
 
     /// Subscribe to the given topic on the remote.
     #[uniffi::method(async_runtime = "tokio")]
-    pub async fn subscribe(&self, remote_id: Arc<PublicKey>, topic: &str) -> Result<(), Error> {
+    pub async fn subscribe(&self, remote_id: Arc<PublicKeyOld>, topic: &str) -> Result<(), Error> {
         let remote_id: iroh::NodeId = remote_id.as_ref().into();
         let api = Api::connect(self.endpoint.endpoint.clone(), remote_id);
         api.subscribe(topic.to_string(), self.endpoint.endpoint.node_id())
@@ -52,7 +48,11 @@ impl Receiver {
 
     /// Unsubscribe from this topic on the remote.
     #[uniffi::method(async_runtime = "tokio")]
-    pub async fn unsubscribe(&self, remote_id: Arc<PublicKey>, topic: &str) -> Result<(), Error> {
+    pub async fn unsubscribe(
+        &self,
+        remote_id: Arc<PublicKeyOld>,
+        topic: &str,
+    ) -> Result<(), Error> {
         let remote_id: iroh::NodeId = remote_id.as_ref().into();
         let api = Api::connect(self.endpoint.endpoint.clone(), remote_id);
         api.unsubscribe(topic.to_string(), self.endpoint.endpoint.node_id())
@@ -68,16 +68,15 @@ impl Receiver {
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
-pub trait DataHandler: Send + Sync {
+pub trait DataHandlerOld: Send + Sync {
     async fn handle_data(&self, topic: String, data: Vec<u8>);
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::sender::Sender;
-
     use super::*;
+    use crate::sender::Sender;
 
     #[tokio::test]
     async fn test_roundtrip() {
@@ -96,7 +95,7 @@ mod tests {
         }
 
         #[async_trait::async_trait]
-        impl DataHandler for TestHandler {
+        impl DataHandlerOld for TestHandler {
             async fn handle_data(&self, topic: String, data: Vec<u8>) {
                 self.messages.send((topic, data)).await.unwrap();
             }
@@ -109,10 +108,10 @@ mod tests {
             .unwrap();
 
         let sender_addr = sender.node_addr().await;
-        println!("sender addr: {:?}", sender_addr);
+        println!("sender addr: {sender_addr:?}");
 
         let receiver_addr = receiver.node_addr().await;
-        println!("recv addr: {:?}", receiver_addr);
+        println!("recv addr: {receiver_addr:?}");
 
         // subscribe
         receiver

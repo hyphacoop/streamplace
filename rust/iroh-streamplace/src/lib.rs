@@ -4,6 +4,7 @@ pub mod c2pa;
 pub mod endpoint;
 pub mod error;
 pub mod key;
+pub mod node;
 pub mod receiver;
 pub mod sender;
 pub mod utils;

@@ -8,27 +8,27 @@ use crate::error::{Error, InvalidPublicKeySnafu};
 /// information that is cached for performance reasons.
 #[derive(Debug, Clone, Eq, uniffi::Object)]
 #[uniffi::export(Display)]
-pub struct PublicKey {
+pub struct PublicKeyOld {
     pub(crate) key: [u8; 32],
 }
 
-impl From<iroh::PublicKey> for PublicKey {
+impl From<iroh::PublicKey> for PublicKeyOld {
     fn from(key: iroh::PublicKey) -> Self {
-        PublicKey {
+        PublicKeyOld {
             key: *key.as_bytes(),
         }
     }
 }
-impl From<&PublicKey> for iroh::PublicKey {
-    fn from(key: &PublicKey) -> Self {
+impl From<&PublicKeyOld> for iroh::PublicKey {
+    fn from(key: &PublicKeyOld) -> Self {
         iroh::PublicKey::from_bytes(&key.key).unwrap()
     }
 }
 
 #[uniffi::export]
-impl PublicKey {
+impl PublicKeyOld {
     /// Returns true if the PublicKeys are equal
-    pub fn equal(&self, other: &PublicKey) -> bool {
+    pub fn equal(&self, other: &PublicKeyOld) -> bool {
         *self == *other
     }
 
@@ -62,13 +62,13 @@ impl PublicKey {
     }
 }
 
-impl PartialEq for PublicKey {
-    fn eq(&self, other: &PublicKey) -> bool {
+impl PartialEq for PublicKeyOld {
+    fn eq(&self, other: &PublicKeyOld) -> bool {
         self.key == other.key
     }
 }
 
-impl std::fmt::Display for PublicKey {
+impl std::fmt::Display for PublicKeyOld {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         iroh::PublicKey::from(self).fmt(f)
     }
@@ -86,7 +86,7 @@ mod tests {
         let bytes = b"\x52\x3c\x79\x96\xba\xd7\x74\x24\xe9\x67\x86\xcf\x7a\x72\x05\x11\x53\x37\xa5\xb4\x56\x5c\xd2\x55\x06\xa0\xf2\x97\xb1\x91\xa5\xea";
         //
         // create key from string
-        let key = PublicKey::from_string(key_str.clone()).unwrap();
+        let key = PublicKeyOld::from_string(key_str.clone()).unwrap();
         //
         // test methods are as expected
         assert_eq!(key_str, key.to_string());
@@ -94,7 +94,7 @@ mod tests {
         assert_eq!(fmt_str, key.fmt_short());
         //
         // create key from bytes
-        let key_0 = PublicKey::from_bytes(bytes.to_vec()).unwrap();
+        let key_0 = PublicKeyOld::from_bytes(bytes.to_vec()).unwrap();
         //
         // test methods are as expected
         assert_eq!(key_str, key_0.to_string());

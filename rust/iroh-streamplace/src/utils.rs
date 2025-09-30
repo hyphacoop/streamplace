@@ -1,13 +1,11 @@
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
-use crate::error::Error;
-use crate::key::PublicKey;
+use crate::{error::Error, key::PublicKeyOld};
 
 /// A peer and it's addressing information.
 #[derive(Debug, Clone, PartialEq, Eq, uniffi::Object)]
 pub struct NodeAddr {
-    node_id: Arc<PublicKey>,
+    node_id: Arc<PublicKeyOld>,
     relay_url: Option<String>,
     addresses: Vec<String>,
 }
@@ -16,7 +14,7 @@ pub struct NodeAddr {
 impl NodeAddr {
     /// Create a new [`NodeAddr`] with empty [`AddrInfo`].
     #[uniffi::constructor]
-    pub fn new(node_id: &PublicKey, derp_url: Option<String>, addresses: Vec<String>) -> Self {
+    pub fn new(node_id: &PublicKeyOld, derp_url: Option<String>, addresses: Vec<String>) -> Self {
         Self {
             node_id: Arc::new(node_id.clone()),
             relay_url: derp_url,
@@ -24,7 +22,7 @@ impl NodeAddr {
         }
     }
 
-    pub fn node_id(&self) -> PublicKey {
+    pub fn node_id(&self) -> PublicKeyOld {
         self.node_id.as_ref().clone()
     }
 

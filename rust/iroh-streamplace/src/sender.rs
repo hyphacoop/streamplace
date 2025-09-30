@@ -1,10 +1,7 @@
 use bytes::Bytes;
 use iroh::protocol::Router;
 
-use crate::api::Api;
-use crate::endpoint::Endpoint;
-use crate::error::Error;
-use crate::utils::NodeAddr;
+use crate::{api::Api, endpoint::Endpoint, error::Error, utils::NodeAddr};
 
 #[derive(uniffi::Object)]
 pub struct Sender {

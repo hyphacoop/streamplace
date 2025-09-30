@@ -2,8 +2,7 @@ use std::{fs, path::Path};
 
 use anyhow::Result;
 use c2pa::{Builder, ManifestDefinition, Reader};
-use schemars::JsonSchema;
-use schemars::{schema::RootSchema, schema_for};
+use schemars::{schema::RootSchema, schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
