@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use iroh::protocol::Router;
 
-use crate::{api::Api, endpoint::Endpoint, error::Error, key::PublicKeyOld, utils::NodeAddr};
+use crate::{api::Api, endpoint::Endpoint, error::Error, public_key::PublicKey, node_addr::NodeAddr};
 
 #[derive(uniffi::Object)]
 pub struct Receiver {
@@ -38,7 +38,7 @@ impl Receiver {
 
     /// Subscribe to the given topic on the remote.
     #[uniffi::method(async_runtime = "tokio")]
-    pub async fn subscribe(&self, remote_id: Arc<PublicKeyOld>, topic: &str) -> Result<(), Error> {
+    pub async fn subscribe(&self, remote_id: Arc<PublicKey>, topic: &str) -> Result<(), Error> {
         let remote_id: iroh::NodeId = remote_id.as_ref().into();
         let api = Api::connect(self.endpoint.endpoint.clone(), remote_id);
         api.subscribe(topic.to_string(), self.endpoint.endpoint.node_id())
@@ -50,7 +50,7 @@ impl Receiver {
     #[uniffi::method(async_runtime = "tokio")]
     pub async fn unsubscribe(
         &self,
-        remote_id: Arc<PublicKeyOld>,
+        remote_id: Arc<PublicKey>,
         topic: &str,
     ) -> Result<(), Error> {
         let remote_id: iroh::NodeId = remote_id.as_ref().into();

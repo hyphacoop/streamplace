@@ -1,6 +1,6 @@
 use iroh::Watcher;
 
-use crate::{error::Error, utils::NodeAddr};
+use crate::{error::Error, node_addr::NodeAddr};
 
 #[derive(uniffi::Object, Debug, Clone)]
 pub struct Endpoint {

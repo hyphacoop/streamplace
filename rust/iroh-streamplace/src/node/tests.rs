@@ -8,7 +8,7 @@ use super::{streams::HandlerMode, *};
 
 struct TestNode {
     node: Arc<Node>,
-    public: Arc<PublicKey>,
+    public: Arc<crate::public_key::PublicKey>,
     ticket: String,
     #[allow(dead_code)]
     private: Vec<u8>,

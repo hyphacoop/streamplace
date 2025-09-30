@@ -644,7 +644,7 @@ impl Node {
     pub async fn subscribe(
         &self,
         key: String,
-        remote_id: Arc<super::PublicKey>,
+        remote_id: Arc<crate::public_key::PublicKey>,
     ) -> Result<(), PutError> {
         self.api
             .rpc(api::Subscribe {
@@ -661,7 +661,7 @@ impl Node {
     pub async fn unsubscribe(
         &self,
         key: String,
-        remote_id: Arc<super::PublicKey>,
+        remote_id: Arc<crate::public_key::PublicKey>,
     ) -> Result<(), PutError> {
         self.api
             .rpc(api::Unsubscribe {
@@ -721,7 +721,7 @@ impl Node {
     }
 
     /// Get this node's node ID.
-    pub async fn node_id(&self) -> Result<Arc<super::PublicKey>, PutError> {
+    pub async fn node_id(&self) -> Result<Arc<crate::public_key::PublicKey>, PutError> {
         let addr = self
             .api
             .rpc(api::GetNodeAddr)

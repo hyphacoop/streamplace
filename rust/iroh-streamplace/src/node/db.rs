@@ -12,19 +12,19 @@ use ref_cast::RefCast;
 use snafu::Snafu;
 use tokio::sync::Mutex;
 
+use crate::public_key::PublicKey;
+
 use super::db;
 
 // the files here are just copied from iroh-smol-kv-uniffi/src/code
 mod kv {
-    mod public_key;
-    pub use public_key::PublicKey;
     mod time_bound;
     pub use time_bound::TimeBound;
     mod subscribe_mode;
     pub use subscribe_mode::SubscribeMode;
 }
 use db::util::format_bytes;
-pub use kv::{PublicKey, SubscribeMode, TimeBound};
+pub use kv::{SubscribeMode, TimeBound};
 
 /// Error creating a new database node.
 #[derive(Debug, Snafu, uniffi::Error)]
