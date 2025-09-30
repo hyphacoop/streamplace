@@ -26,6 +26,11 @@ const DEFAULT_MAX_MESSAGES = 50;
 const FONT_SIZE_PERCENTAGE = 0.7;
 const MAX_PROCESSED_MESSAGES = 10;
 
+// px from top of video where danmu won't appear (avoid overlapping with title)
+const TOP_GAP = 20;
+// px from bottom of video (avoid overlapping with controls)
+const BOTTOM_GAP = 20;
+
 export function DanmuOverlay({
   enabled = true,
   opacity = DEFAULT_OPACITY,
@@ -133,7 +138,7 @@ export function DanmuOverlay({
         return next;
       });
     }
-  }, [chat, enabled, containerWidth, speed, maxMessages]);
+  }, [chat, enabled, speed, maxMessages]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -170,6 +175,9 @@ export function DanmuOverlay({
     videoWidth = videoHeight * videoAspectRatio;
     videoTop = 0;
     videoLeft = (containerWidth - videoWidth) / 2;
+    // Adjust for top/bottom gaps iff we don't have top letterboxing
+    videoTop += TOP_GAP;
+    videoHeight -= TOP_GAP + BOTTOM_GAP;
   } else {
     // Container is taller than video - letterbox on top/bottom
     videoWidth = containerWidth;
