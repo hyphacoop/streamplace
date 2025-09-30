@@ -35,10 +35,6 @@ export function DanmuOverlay({
   const chat = useChat();
   const segment = useLivestreamStore((x) => x.segment);
 
-  console.log(
-    `[danmu] overlay render - enabled: ${enabled}, chat messages: ${chat?.length || 0}`,
-  );
-
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [activeDanmu, setActiveDanmu] = useState<
@@ -175,17 +171,6 @@ export function DanmuOverlay({
 
   const laneHeight = videoHeight / laneCount;
   const fontSize = laneHeight * FONT_SIZE_PERCENTAGE;
-
-  console.log("[danmu] dimensions:", {
-    segmentVideoWidth,
-    segmentVideoHeight,
-    containerWidth,
-    containerHeight,
-    videoHeight,
-    laneCount,
-    laneHeight,
-    fontSize,
-  });
 
   return (
     <View style={styles.container} onLayout={handleLayout} pointerEvents="none">

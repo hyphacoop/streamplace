@@ -88,9 +88,10 @@ export const DanmuMessage = memo(
         Math.min(baseDuration / speed, MAX_DURATION / speed),
       );
 
-      console.log(
-        `[danmu] animation started: "${message.record.text}" (duration: ${duration.toFixed(0)}ms, speed: ${speed}x)`,
-      );
+      if (__DEV__)
+        console.log(
+          `[danmu] animation started: "${message.record.text}" (duration: ${duration.toFixed(0)}ms, speed: ${speed}x)`,
+        );
 
       // Start from right edge + message width so entire message is off-screen
       translateX.value = containerWidth;
