@@ -6,6 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Input,
+  manifest,
   ResponsiveDropdownMenuContent,
   Text,
   View,
@@ -25,7 +26,6 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import manifest from "../../src/i18n/manifest.json";
 import { Updates } from "./updates";
 import WebhookManager from "./webhook-manager";
 

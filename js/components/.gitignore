@@ -1,0 +1,9 @@
+# Ignore compiled translation files in source directory
+locales/**/messages.json
+
+# Ignore extracted i18n keys (they're just for reference)
+locales/**/*.json
+
+# TypeScript build output
+dist/
+*.tsbuildinfo

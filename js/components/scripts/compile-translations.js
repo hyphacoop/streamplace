@@ -14,15 +14,8 @@ const MANIFEST_PATH = path.join(
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf-8"));
 
 // Configuration
-const LOCALES_DIR = path.join(
-  __dirname,
-  "..",
-  "src",
-  "i18n",
-  "locales",
-  "data",
-);
-const LOCALES_BASE_DIR = path.join(__dirname, "..", "src", "i18n", "locales");
+const LOCALES_SOURCE_DIR = path.join(__dirname, "..", "locales");
+const LOCALES_OUTPUT_DIR = path.join(__dirname, "..", "public", "locales");
 const OUTPUT_FILENAME = "messages.json";
 
 /**
@@ -158,20 +151,25 @@ function generateJsonFromFtl(content) {
 function compileTranslations() {
   console.log("🌍 Compiling translation files...");
 
-  if (!fs.existsSync(LOCALES_DIR)) {
-    console.error(`❌ Locales directory not found: ${LOCALES_DIR}`);
+  if (!fs.existsSync(LOCALES_SOURCE_DIR)) {
+    console.error(`❌ Locales directory not found: ${LOCALES_SOURCE_DIR}`);
     process.exit(1);
+  }
+
+  // Create output directory if it doesn't exist
+  if (!fs.existsSync(LOCALES_OUTPUT_DIR)) {
+    fs.mkdirSync(LOCALES_OUTPUT_DIR, { recursive: true });
   }
 
   // Get supported locales from manifest, but only include those with actual data directories
   const manifestLocales = manifest.supportedLocales;
   const locales = manifestLocales.filter((locale) => {
-    const localeDir = path.join(LOCALES_DIR, locale);
+    const localeDir = path.join(LOCALES_SOURCE_DIR, locale);
     return fs.existsSync(localeDir) && fs.statSync(localeDir).isDirectory();
   });
 
   if (locales.length === 0) {
-    console.error(`❌ No locale directories found in ${LOCALES_DIR}`);
+    console.error(`❌ No locale directories found in ${LOCALES_SOURCE_DIR}`);
     process.exit(1);
   }
 
@@ -179,13 +177,19 @@ function compileTranslations() {
 
   // Process each locale
   for (const locale of locales) {
-    const localeDir = path.join(LOCALES_DIR, locale);
-    const outputPath = path.join(localeDir, OUTPUT_FILENAME);
+    const localeSourceDir = path.join(LOCALES_SOURCE_DIR, locale);
+    const localeOutputDir = path.join(LOCALES_OUTPUT_DIR, locale);
+    const outputPath = path.join(localeOutputDir, OUTPUT_FILENAME);
 
     console.log(`📦 Processing locale: ${locale}`);
 
+    // Create locale output directory
+    if (!fs.existsSync(localeOutputDir)) {
+      fs.mkdirSync(localeOutputDir, { recursive: true });
+    }
+
     // Combine all .ftl files for this locale
-    const combinedContent = combineLocaleFiles(localeDir);
+    const combinedContent = combineLocaleFiles(localeSourceDir);
 
     if (!combinedContent.trim()) {
       console.warn(`⚠️  Skipping ${locale} - no content found`);

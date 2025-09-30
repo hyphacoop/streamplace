@@ -92,21 +92,76 @@ function HelpText() {
 <p>{t('message-count', { count: 5 })}</p>
 ```
 
-2. Add English translations (or others if you're proficient) to the .ftl files.
+2. Add English translations (or others if you're proficient) to the .ftl files
+   in `js/components/locales/`:
 
-````fluent
-# Edit: js/app/src/i18n/locales/data/en-US/settings.ftl
+```fluent
+# Edit: js/components/locales/en-US/settings.ftl
 settings-title = Settings
 message-count = { $count ->
     [0] No messages
     [1] You have one new message
    *[other] You have { $count } new messages
-}```
+}
+```
 
-3. Compile and build the i18n files:
+3. Compile the translations to JSON:
+
 ```bash
-pnpm run i18n:build
-````
+cd js/components
+pnpm i18n:compile
+```
+
+This reads the `.ftl` files and outputs compiled JSON to
+`js/components/public/locales/{locale}/messages.json`.
+
+4. For web: the compiled files in `public/locales/` are served as static assets
+   and loaded on demand.
+
+For native: the compiled files are bundled with the app via static `require()`
+calls in the components package.
+
+## Project structure
+
+The i18n system is centralized in `@streamplace/components`:
+
+```
+js/components/
+├── locales/                   # Source .ftl files
+│   ├── en-US/
+│   │   └── settings.ftl
+│   ├── pt-BR/
+│   ├── es-ES/
+│   ├── zh-TW/
+│   └── fr-FR/
+├── src/i18n/
+│   ├── manifest.json          # Supported locales and metadata
+│   ├── i18next-config.ts      # Bootstrap configuration
+│   ├── provider.tsx           # React provider components
+│   └── index.ts               # Public exports
+├── public/locales/            # Compiled JSON output
+│   ├── en-US/
+│   │   └── messages.json
+│   └── ...
+└── scripts/
+    ├── compile-translations.js
+    └── extract-i18n.js
+```
+
+The app imports i18n from `@streamplace/components`:
+
+```ts
+import { i18next, useTranslation } from "@streamplace/components";
+```
+
+## Available scripts
+
+In `js/components`:
+
+- `pnpm i18n:compile` - Compile .ftl files to JSON
+- `pnpm i18n:watch` - Watch .ftl files and recompile on changes
+- `pnpm i18n:extract` - Extract translation keys from source code (TODO: needs
+  path updates)
 
 ## Keep in mind...
 
@@ -122,6 +177,54 @@ error-network-connection = Connection failed
 button-save-changes = Save Changes
 form-validation-email-invalid = Please enter a valid email address
 ```
+
+### Platform differences
+
+The system handles both web and React Native:
+
+- **Web**: loads translations via HTTP from `/locales/{locale}/messages.json`
+- **React Native**: bundles translations via static `require()` calls
+
+The bootstrap code in `@streamplace/components/i18n` automatically detects the
+platform and uses the appropriate loading strategy.
+
+### Adding new locales
+
+1. Add the locale to `js/components/src/i18n/manifest.json`:
+
+```json
+{
+  "supportedLocales": [
+    "en-US",
+    "pt-BR",
+    "es-ES",
+    "zh-TW",
+    "fr-FR",
+    "new-LOCALE"
+  ],
+  "languages": {
+    "new-LOCALE": {
+      "code": "new-LOCALE",
+      "name": "Language Name",
+      "nativeName": "Native Name",
+      "flag": "🏁"
+    }
+  }
+}
+```
+
+2. Create the locale directory and .ftl files in
+   `js/components/locales/new-LOCALE/`
+
+3. Add a static `require()` case in `js/components/src/i18n/i18next-config.ts`:
+
+```ts
+case "new-LOCALE":
+  translations = require("../../public/locales/new-LOCALE/messages.json");
+  break;
+```
+
+4. Run `pnpm i18n:compile` to generate the JSON file
 
 You can also
 [view the official Fluent docs](https://github.com/projectfluent/fluent/wiki/Good-Practices-for-Developers)

@@ -21,12 +21,12 @@ import { store } from "store/store";
 
 export default Sentry.wrap(ProviderInner);
 
+import { i18n } from "@streamplace/components";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
 import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import i18n from "../../src/i18n";
 Sentry.setExtras({
   manifest: Updates.manifest,
   linkingUri: Constants.linkingUri,

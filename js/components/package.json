@@ -58,13 +58,20 @@
     "zustand": "^5.0.5"
   },
   "peerDependencies": {
-    "react": "*"
+    "react": "*",
+    "expo-localization": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo-localization": {
+      "optional": true
+    }
   },
   "scripts": {
     "build": "tsc",
     "start": "tsc --watch --preserveWatchOutput",
     "prepare": "tsc",
     "i18n:compile": "node scripts/compile-translations.js",
-    "i18n:watch": "nodemon scripts/compile-translations.js --watch src/i18n/locales/data/**/*.ftl"
+    "i18n:watch": "nodemon scripts/compile-translations.js --watch locales/**/*.ftl",
+    "i18n:extract": "node scripts/extract-i18n.js"
   }
 }

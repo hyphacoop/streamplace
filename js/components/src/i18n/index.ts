@@ -21,7 +21,24 @@ export { default as resourcesToBackend } from "i18next-resources-to-backend";
 export { default as Fluent } from "i18next-fluent";
 
 // Basic provider components for consistent setup
-export { I18nProvider, LanguageSelector } from "./provider";
+export { I18nProvider } from "./provider";
+
+// Bootstrap configuration and utilities
+export {
+  I18NEXT_CONFIG,
+  changeLanguage,
+  getCurrentLanguage,
+  getCurrentLocale,
+  getLanguageInfo,
+  getLocaleFromSystemLocale,
+  getSupportedLocales,
+  i18next,
+  default as initI18next,
+  isLocaleSupported,
+} from "./i18next-config";
+
+// Manifest data
+export { default as manifest } from "../../locales/manifest.json";
 
 // TypeScript types
 export type {
