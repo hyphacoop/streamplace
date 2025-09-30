@@ -44,6 +44,10 @@ export const DanmuMessage = memo(
   }: DanmuMessageProps) => {
     const translateX = useSharedValue(containerWidth);
     const [messageWidth, setMessageWidth] = useState(0);
+    const [animationStartTime, setAnimationStartTime] = useState<number | null>(
+      null,
+    );
+    const [totalDuration, setTotalDuration] = useState(0);
 
     const mapRange = (
       num: number,
@@ -82,15 +86,26 @@ export const DanmuMessage = memo(
     useEffect(() => {
       if (messageWidth === 0) return; // Wait for layout measurement
 
-      const baseDuration = (BASE_DURATION * message.record.text.length) / 10;
-      const duration = Math.max(
-        MIN_DURATION / speed,
-        Math.min(baseDuration / speed, MAX_DURATION / speed),
-      );
+      const duration = baseDuration(message, MAX_DURATION, MIN_DURATION);
+
+      // Calculate how much time has elapsed if animation already started
+      let remainingDuration = duration;
+      let startPosition = containerWidth;
+
+      if (animationStartTime !== null) {
+        const elapsed = Date.now() - animationStartTime;
+        const progress = Math.min(elapsed / totalDuration, 1);
+        remainingDuration = duration * (1 - progress);
+        startPosition =
+          containerWidth + progress * (-messageWidth - containerWidth);
+      } else {
+        setAnimationStartTime(Date.now());
+        setTotalDuration(duration);
+      }
 
       if (__DEV__)
         console.log(
-          `[danmu] animation started: "${message.record.text}" (duration: ${duration.toFixed(0)}ms, speed: ${speed}x)`,
+          `[danmu] animation started: "${message.record.text}" (duration: ${duration.toFixed(0)}ms, remaining: ${remainingDuration.toFixed(0)}ms, speed: ${speed}x)`,
         );
 
       // Start from right edge + message width so entire message is off-screen
@@ -175,7 +190,7 @@ const styles = StyleSheet.create({
     color: "white",
     textShadowColor: "rgba(0, 0, 0, 0.8)",
     textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 8,
+    textShadowRadius: 64,
     fontWeight: "600",
   },
 });
