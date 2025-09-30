@@ -15,10 +15,7 @@ type IrohReplicator struct {
 }
 
 func NewIrohReplicator(ctx context.Context, ep *irohStreamplace.Endpoint, topic string) (*IrohReplicator, error) {
-	sender, err := irohStreamplace.NewSender(ep)
-	if err.AsError() != nil {
-		return nil, err.AsError()
-	}
+	sender := irohStreamplace.NewSender(ep)
 
 	return &IrohReplicator{
 		topic:  topic,
@@ -36,5 +33,5 @@ func (rep *IrohReplicator) NewSegment(ctx context.Context, bs []byte) {
 }
 
 func sendSegment(endpoint *irohStreamplace.Sender, topic string, bs []byte) error {
-	return endpoint.Send(topic, bs).AsError()
+	return endpoint.Send(topic, bs)
 }

@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use iroh::protocol::Router;
 
-use crate::{api::Api, endpoint::Endpoint, error::Error, node_addr::NodeAddr};
+use crate::{api::Api, c2pa::SPError, endpoint::Endpoint, error::Error, node_addr::NodeAddr};
 
 #[derive(uniffi::Object)]
 pub struct Sender {
@@ -14,17 +14,17 @@ pub struct Sender {
 impl Sender {
     /// Create a new sender.
     #[uniffi::constructor(async_runtime = "tokio")]
-    pub async fn new(endpoint: &Endpoint) -> Result<Sender, Error> {
+    pub async fn new(endpoint: &Endpoint) -> Sender {
         let api = Api::spawn(&endpoint.endpoint);
         let router = Router::builder(endpoint.endpoint.clone())
             .accept(Api::ALPN, api.expose())
             .spawn();
 
-        Ok(Sender {
+        Sender {
             endpoint: endpoint.clone(),
             api,
             _router: router,
-        })
+        }
     }
 
     /// Sends the given data to all subscribers that have subscribed to this `key`.

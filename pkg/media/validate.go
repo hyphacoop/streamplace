@@ -31,9 +31,9 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		return err
 	}
 	var maniCert ManifestAndCert
-	maniStr, rustErr := iroh_streamplace.GetManifestAndCert(buf)
-	if rustErr.AsError() != nil {
-		return rustErr.AsError()
+	maniStr, err := iroh_streamplace.GetManifestAndCert(buf)
+	if err != nil {
+		return err
 	}
 	err = json.Unmarshal([]byte(maniStr), &maniCert)
 	if err != nil {

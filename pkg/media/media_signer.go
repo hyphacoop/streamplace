@@ -125,9 +125,9 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	rustCallbackSigner := &RustCallbackSigner{
 		Signer: ms.Signer,
 	}
-	bs, rustErr := iroh_streamplace.Sign(string(manifestBs), bs, ms.Cert, rustCallbackSigner)
-	if rustErr.AsError() != nil {
-		return nil, rustErr.AsError()
+	bs, err = iroh_streamplace.Sign(string(manifestBs), bs, ms.Cert, rustCallbackSigner)
+	if err != nil {
+		return nil, err
 	}
 	span.End()
 
@@ -153,11 +153,11 @@ type RustCallbackSigner struct {
 	Signer crypto.Signer
 }
 
-func (rcs *RustCallbackSigner) Sign(data []byte) ([]byte, *iroh_streamplace.SpError) {
+func (rcs *RustCallbackSigner) Sign(data []byte) ([]byte, error) {
 	digest := sha256.Sum256(data)
 	sig, err := rcs.Signer.Sign(rand.Reader, digest[:], nil)
 	if err != nil {
-		return nil, iroh_streamplace.NewSpErrorNoCertificateChainFound()
+		return nil, fmt.Errorf("failed to sign data: %w", err)
 	}
 	return sig, nil
 }

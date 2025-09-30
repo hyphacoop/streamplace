@@ -281,7 +281,9 @@ dev-setup-meson:
 
 .PHONY: dev-setup-meson-configure
 dev-setup-meson-configure:
-	if ! which uniffi-bindgen-go; then cargo install uniffi-bindgen-go --git https://github.com/NordSecurity/uniffi-bindgen-go --tag v0.3.0+v0.28.3; fi
+	if ! which uniffi-bindgen-go >/dev/null 2>&1 || [ "$$(uniffi-bindgen-go --version 2>/dev/null)" != "uniffi-bindgen 0.4.0+v0.28.3" ]; then \
+		cargo install uniffi-bindgen-go --git https://github.com/NordSecurity/uniffi-bindgen-go --tag v0.4.0+v0.28.3; \
+	fi
 	meson setup --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 	meson configure --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 
