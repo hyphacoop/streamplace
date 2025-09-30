@@ -24,6 +24,7 @@ const DEFAULT_OPACITY = 80;
 const DEFAULT_SPEED = 1;
 const DEFAULT_MAX_MESSAGES = 50;
 const FONT_SIZE_PERCENTAGE = 0.7;
+const MAX_PROCESSED_MESSAGES = 10;
 
 export function DanmuOverlay({
   enabled = true,
@@ -102,6 +103,14 @@ export function DanmuOverlay({
         continue;
       }
       processedMessages.current.add(message.uri);
+
+      if (processedMessages.current.size > MAX_PROCESSED_MESSAGES) {
+        const toRemove = Array.from(processedMessages.current).slice(
+          0,
+          processedMessages.current.size - MAX_PROCESSED_MESSAGES,
+        );
+        toRemove.forEach((uri) => processedMessages.current.delete(uri));
+      }
 
       const baseDuration = (12000 * message.record.text.length) / 10;
       const duration = Math.max(
