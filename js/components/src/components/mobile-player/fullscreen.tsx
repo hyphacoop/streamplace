@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { View as RNView } from "react-native";
-import { getFirstPlayerID, usePlayerStore } from "../..";
+import { DanmuOverlay, getFirstPlayerID, usePlayerStore } from "../..";
 import { View } from "../../components/ui";
 import Video from "./video";
 import VideoRetry from "./video-retry";
@@ -17,6 +17,10 @@ export function Fullscreen(props: {
   const setFullscreen = usePlayerStore((x) => x.setFullscreen, playerId);
   const setSrc = usePlayerStore((x) => x.setSrc);
   const setAutoplayFailed = usePlayerStore((x) => x.setAutoplayFailed);
+
+  const danmuEnabled = usePlayerStore((x) => x.danmuEnabled);
+  const danmuOpacity = usePlayerStore((x) => x.danmuOpacity);
+  const danmuSpeed = usePlayerStore((x) => x.danmuSpeed);
 
   const divRef = useRef<RNView>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -90,6 +94,11 @@ export function Fullscreen(props: {
           pictureInPictureEnabled={props.pictureInPictureEnabled}
         />
       </VideoRetry>
+      <DanmuOverlay
+        enabled={danmuEnabled}
+        opacity={danmuOpacity}
+        speed={danmuSpeed}
+      />
       {props.children}
     </View>
   );

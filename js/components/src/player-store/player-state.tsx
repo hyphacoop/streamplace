@@ -191,6 +191,16 @@ export interface PlayerState {
   setReportSubject: (
     subject: ComAtprotoModerationCreateReport.InputSchema["subject"] | null,
   ) => void;
+
+  /** Danmu (bullet comments) settings */
+  danmuEnabled: boolean;
+  setDanmuEnabled: (enabled: boolean) => void;
+
+  danmuOpacity: number;
+  setDanmuOpacity: (opacity: number) => void;
+
+  danmuSpeed: number;
+  setDanmuSpeed: (speed: number) => void;
 }
 
 export type PlayerEvent = {

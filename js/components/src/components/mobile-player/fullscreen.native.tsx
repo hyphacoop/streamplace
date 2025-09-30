@@ -4,6 +4,7 @@ import { BackHandler, Dimensions, StyleSheet, View } from "react-native";
 import { SystemBars } from "react-native-edge-to-edge";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  DanmuOverlay,
   PlayerProtocol,
   useLivestreamStore,
   usePlayerStore,
@@ -29,6 +30,10 @@ export function Fullscreen(props: {
   const fullscreen = usePlayerStore((x) => x.fullscreen);
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
   const handle = useLivestreamStore((x) => x.profile?.handle);
+
+  const danmuEnabled = usePlayerStore((x) => x.danmuEnabled);
+  const danmuOpacity = usePlayerStore((x) => x.danmuOpacity);
+  const danmuSpeed = usePlayerStore((x) => x.danmuSpeed);
 
   const setSrc = usePlayerStore((x) => x.setSrc);
 
@@ -154,6 +159,11 @@ export function Fullscreen(props: {
             objectFit={props.objectFit}
             pictureInPictureEnabled={props.pictureInPictureEnabled}
           />
+          <DanmuOverlay
+            enabled={danmuEnabled}
+            opacity={danmuOpacity}
+            speed={danmuSpeed}
+          />
           {props.children}
         </View>
       </View>
@@ -169,6 +179,11 @@ export function Fullscreen(props: {
           pictureInPictureEnabled={props.pictureInPictureEnabled}
         />
       </VideoRetry>
+      <DanmuOverlay
+        enabled={danmuEnabled}
+        opacity={danmuOpacity}
+        speed={danmuSpeed}
+      />
       {props.children}
     </>
   );
