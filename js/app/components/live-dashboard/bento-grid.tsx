@@ -69,7 +69,6 @@ export default function BentoGrid({
 
   // Calculate derived values
   const isConnected = ingestConnectionState === "connected";
-  const canModerate = isLive && isConnected;
 
   // Calculate uptime
   const getUptime = useCallback((): string => {
@@ -179,7 +178,6 @@ export default function BentoGrid({
               isLive={isLive}
               isConnected={isConnected}
               messagesPerMinute={messagesPerMinute}
-              canModerate={canModerate}
             />
           </View>
           <View

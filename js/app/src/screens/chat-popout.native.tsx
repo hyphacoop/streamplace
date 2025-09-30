@@ -171,7 +171,7 @@ export function PopoutChatInner({ user }: { user: string }) {
           </View>
         </View>
         <View style={[zero.flex.values[1], zero.p[4]]}>
-          <Chat canModerate={profile?.handle === user} />
+          <Chat />
           {profile && <ChatBox emojiData={emojiData} isPopout={true} />}
         </View>
       </View>

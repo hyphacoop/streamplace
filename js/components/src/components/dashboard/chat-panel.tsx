@@ -10,7 +10,6 @@ interface ChatPanelProps {
   isLive: boolean;
   isConnected: boolean;
   messagesPerMinute?: number;
-  canModerate?: boolean;
   shownMessages?: number;
 }
 
@@ -18,7 +17,6 @@ export default function ChatPanel({
   isLive,
   isConnected,
   messagesPerMinute = 0,
-  canModerate = false,
   shownMessages = 50,
 }: ChatPanelProps) {
   return (
@@ -59,7 +57,7 @@ export default function ChatPanel({
       </View>
       <View style={[flex.values[1], px[2], { minHeight: 0 }]}>
         <View style={[flex.values[1], { minHeight: 0 }]}>
-          <Chat canModerate={canModerate} shownMessages={shownMessages} />
+          <Chat shownMessages={shownMessages} />
         </View>
         <View style={[{ flexShrink: 0 }]}>
           <ChatBox

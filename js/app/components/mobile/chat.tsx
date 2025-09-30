@@ -105,7 +105,6 @@ function ChatPanel() {
   let agent = usePDSAgent();
 
   const navigation = useNavigation();
-  let canModerate = profile?.handle === handle;
 
   return (
     <View
@@ -117,7 +116,7 @@ function ChatPanel() {
       ]}
     >
       <View style={[flex.values[1]]}>
-        <Chat canModerate={canModerate} />
+        <Chat />
       </View>
       <View style={[layout.flex.column, gap.all[2]]}>
         {agent?.did ? (
