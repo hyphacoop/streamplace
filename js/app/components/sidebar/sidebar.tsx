@@ -99,7 +99,6 @@ export default function Sidebar({
           | React.ComponentType<any>
           | undefined;
 
-        console.log("router", route);
         return (
           <SidebarItem
             key={route.key}

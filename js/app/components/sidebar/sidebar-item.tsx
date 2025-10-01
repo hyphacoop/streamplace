@@ -73,7 +73,13 @@ export default function SidebarItem({
     }
 
     // Fallback
-    console.log("tried to render item, but couldn't", (icon as any).$$typeof);
+    console.log(
+      "tried to render item for route",
+      label,
+      href,
+      ", but couldn't",
+      (icon as any).$$typeof,
+    );
 
     return <Text>📄</Text>;
   };
