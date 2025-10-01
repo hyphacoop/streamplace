@@ -1,7 +1,7 @@
 import { TriggerRef, useRootContext } from "@rn-primitives/dropdown-menu";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { gap, mr, w } from "../../lib/theme/atoms";
-import { usePlayerStore } from "../../player-store";
+import { useIsMyStream, usePlayerStore } from "../../player-store";
 import {
   useCreateBlockRecord,
   useCreateHideChatRecord,
@@ -51,6 +51,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
   const setReportSubject = usePlayerStore((x) => x.setReportSubject);
   const setModMessage = usePlayerStore((x) => x.setModMessage);
   const deleteChatMessage = useDeleteChatMessage();
+  const isMyStream = useIsMyStream();
 
   // get the channel did
   const channelId = usePlayerStore((state) => state.src);
@@ -119,7 +120,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
             </DropdownMenuGroup>
 
             {/* TODO: Checking for non-owner moderators */}
-            {channelId === handle && (
+            {isMyStream() && (
               <DropdownMenuGroup title={`Moderation actions`}>
                 <DropdownMenuItem
                   disabled={isHideLoading || messageRemoved}
