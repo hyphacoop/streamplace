@@ -125,7 +125,7 @@ export function useGraphManager(
       }
     } catch (err) {
       setError(
-        `Could not determine follow state: ${err instanceof Error ? err.message : "Unknown error"}`,
+        `Could not determine follow state: ${err instanceof Error ? err.message : `Unknown error: ${err}`}`,
       );
       setIsFollowing(null);
     } finally {
