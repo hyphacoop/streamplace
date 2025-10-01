@@ -1440,6 +1440,10 @@ func (_self *Db) IterWithOpts(filter *Filter) ([]Entry, error) {
 		},
 	)
 
+	if err == nil {
+		return res, nil
+	}
+
 	return res, err
 }
 
@@ -1555,6 +1559,10 @@ func NewEndpoint() (*Endpoint, error) {
 			C.ffi_iroh_streamplace_rust_future_free_pointer(handle)
 		},
 	)
+
+	if err == nil {
+		return res, nil
+	}
 
 	return res, err
 }
@@ -1961,6 +1969,10 @@ func NodeForwarder(config Config) (*Node, error) {
 		},
 	)
 
+	if err == nil {
+		return res, nil
+	}
+
 	return res, err
 }
 
@@ -1986,6 +1998,10 @@ func NodeReceiver(config Config, handler DataHandler) (*Node, error) {
 			C.ffi_iroh_streamplace_rust_future_free_pointer(handle)
 		},
 	)
+
+	if err == nil {
+		return res, nil
+	}
 
 	return res, err
 }
@@ -2013,6 +2029,10 @@ func NodeSender(config Config) (*Node, error) {
 			C.ffi_iroh_streamplace_rust_future_free_pointer(handle)
 		},
 	)
+
+	if err == nil {
+		return res, nil
+	}
 
 	return res, err
 }
@@ -2052,6 +2072,10 @@ func (_self *Node) JoinPeers(peers []string) error {
 		},
 	)
 
+	if err == nil {
+		return nil
+	}
+
 	return err
 }
 
@@ -2081,6 +2105,10 @@ func (_self *Node) NodeId() (*PublicKey, error) {
 			C.ffi_iroh_streamplace_rust_future_free_pointer(handle)
 		},
 	)
+
+	if err == nil {
+		return res, nil
+	}
 
 	return res, err
 }
@@ -2122,6 +2150,10 @@ func (_self *Node) SendSegment(key string, data []byte) error {
 		},
 	)
 
+	if err == nil {
+		return nil
+	}
+
 	return err
 }
 
@@ -2149,6 +2181,10 @@ func (_self *Node) Subscribe(key string, remoteId *PublicKey) error {
 			C.ffi_iroh_streamplace_rust_future_free_void(handle)
 		},
 	)
+
+	if err == nil {
+		return nil
+	}
 
 	return err
 }
@@ -2182,6 +2218,10 @@ func (_self *Node) Ticket() (string, error) {
 		},
 	)
 
+	if err == nil {
+		return res, nil
+	}
+
 	return res, err
 }
 
@@ -2209,6 +2249,10 @@ func (_self *Node) Unsubscribe(key string, remoteId *PublicKey) error {
 			C.ffi_iroh_streamplace_rust_future_free_void(handle)
 		},
 	)
+
+	if err == nil {
+		return nil
+	}
 
 	return err
 }
@@ -2553,6 +2597,10 @@ func NewReceiver(endpoint *Endpoint, handler DataHandlerOld) (*Receiver, error) 
 		},
 	)
 
+	if err == nil {
+		return res, nil
+	}
+
 	return res, err
 }
 
@@ -2610,6 +2658,10 @@ func (_self *Receiver) Subscribe(remoteId *PublicKey, topic string) error {
 		},
 	)
 
+	if err == nil {
+		return nil
+	}
+
 	return err
 }
 
@@ -2637,6 +2689,10 @@ func (_self *Receiver) Unsubscribe(remoteId *PublicKey, topic string) error {
 			C.ffi_iroh_streamplace_rust_future_free_void(handle)
 		},
 	)
+
+	if err == nil {
+		return nil
+	}
 
 	return err
 }
@@ -2779,6 +2835,10 @@ func (_self *Sender) Send(key string, data []byte) error {
 		},
 	)
 
+	if err == nil {
+		return nil
+	}
+
 	return err
 }
 func (object *Sender) Destroy() {
@@ -2871,6 +2931,10 @@ func (_self *SubscribeResponse) NextRaw() (*SubscribeItem, error) {
 			C.ffi_iroh_streamplace_rust_future_free_rust_buffer(handle)
 		},
 	)
+
+	if err == nil {
+		return res, nil
+	}
 
 	return res, err
 }
@@ -2972,6 +3036,10 @@ func (_self *WriteScope) Put(stream *[]byte, key []byte, value []byte) error {
 			C.ffi_iroh_streamplace_rust_future_free_void(handle)
 		},
 	)
+
+	if err == nil {
+		return nil
+	}
 
 	return err
 }

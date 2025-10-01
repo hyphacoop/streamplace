@@ -118,6 +118,7 @@ type CLI struct {
 	SQLLogging             bool
 	SentryDSN              string
 	LivepeerDebug          bool
+	Tickets                []string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -184,6 +185,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
 	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
+	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", "[]", "tickets to join the swarm with")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)

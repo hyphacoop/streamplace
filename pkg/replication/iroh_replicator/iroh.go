@@ -1,4 +1,4 @@
-package iroh
+package iroh_replicator
 
 import (
 	"context"

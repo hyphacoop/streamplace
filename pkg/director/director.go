@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bluesky-social/indigo/util"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/bus"
@@ -12,6 +13,7 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/statedb"
 )
 
@@ -30,9 +32,10 @@ type Director struct {
 	streamSessionsMu sync.Mutex
 	op               *oatproxy.OATProxy
 	statefulDB       *statedb.StatefulDB
+	swarm            *iroh_replicator.SwarmKV
 }
 
-func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *bus.Bus, op *oatproxy.OATProxy, statefulDB *statedb.StatefulDB) *Director {
+func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *bus.Bus, op *oatproxy.OATProxy, statefulDB *statedb.StatefulDB, swarm *iroh_replicator.SwarmKV) *Director {
 	return &Director{
 		mm:               mm,
 		mod:              mod,
@@ -42,6 +45,7 @@ func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *
 		streamSessionsMu: sync.Mutex{},
 		op:               op,
 		statefulDB:       statefulDB,
+		swarm:            swarm,
 	}
 }
 
@@ -86,6 +90,12 @@ func (d *Director) Start(ctx context.Context) error {
 				})
 			}
 			d.streamSessionsMu.Unlock()
+			go func() {
+				err := d.swarm.Put(ctx, not.Segment.RepoDID, not.Segment.StartTime.Format(util.ISO8601))
+				if err != nil {
+					log.Error(ctx, "could not put segment to swarm", "error", err)
+				}
+			}()
 			err := ss.NewSegment(ctx, not)
 			if err != nil {
 				log.Error(ctx, "could not add segment to stream session", "error", err)

@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"crypto"
+	"crypto/rand"
 	"errors"
 	"flag"
 	"fmt"
@@ -32,6 +34,7 @@ import (
 	"stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/replication/boring"
+	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -379,6 +382,32 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		},
 	}
 
+	exists, err := cli.DataFileExists([]string{"iroh-kv-secret"})
+	if err != nil {
+		return err
+	}
+	if !exists {
+		secret := make([]byte, 32)
+		_, err := rand.Read(secret)
+		if err != nil {
+			return fmt.Errorf("failed to generate random secret: %w", err)
+		}
+		err = cli.DataFileWrite([]string{"iroh-kv-secret"}, bytes.NewReader(secret), true)
+		if err != nil {
+			return err
+		}
+	}
+	buf := bytes.Buffer{}
+	err = cli.DataFileRead([]string{"iroh-kv-secret"}, &buf)
+	if err != nil {
+		return err
+	}
+	secret := buf.Bytes()
+	swarm, err := iroh_replicator.StartKV(ctx, cli.Tickets, secret)
+	if err != nil {
+		return err
+	}
+
 	op := oatproxy.New(&oatproxy.Config{
 		Host:               cli.PublicHost,
 		CreateOAuthSession: state.CreateOAuthSession,
@@ -390,7 +419,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op, state)
+	d := director.NewDirector(mm, mod, &cli, b, op, state, swarm)
 	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err
@@ -451,6 +480,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	group.Go(func() error {
 		return mod.StartSegmentCleaner(ctx)
+	})
+
+	group.Go(func() error {
+		return swarm.Start(ctx, cli.Tickets)
 	})
 
 	if cli.LivepeerGateway {
