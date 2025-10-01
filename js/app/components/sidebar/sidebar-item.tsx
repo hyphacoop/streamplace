@@ -91,7 +91,7 @@ export default function SidebarItem({
       onHoverIn={() => setHover(true)}
       onHoverOut={() => setHover(false)}
       role="link"
-      accessibilityLabel={typeof label === "string" ? label : "Sidebar Item"}
+      accessibilityLabel={typeof label === "string" ? label : "Link to " + href}
       // @ts-ignore This makes it render as <a> on web!
       href={href}
     >
