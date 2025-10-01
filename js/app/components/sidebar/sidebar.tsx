@@ -99,6 +99,21 @@ export default function Sidebar({
           | React.ComponentType<any>
           | undefined;
 
+        // if we have style display: none on the drawer item, completely skip rendering it
+        const drawerItemStyle = options.drawerItemStyle;
+        let isHidden = false;
+        if (
+          drawerItemStyle &&
+          typeof drawerItemStyle === "object" &&
+          "display" in drawerItemStyle &&
+          (drawerItemStyle as any).display === "none"
+        ) {
+          isHidden = true;
+        }
+        if (isHidden) {
+          return null;
+        }
+
         return (
           <SidebarItem
             key={route.key}
