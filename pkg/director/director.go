@@ -2,6 +2,7 @@ package director
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -50,6 +51,11 @@ func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *
 }
 
 func (d *Director) Start(ctx context.Context) error {
+	nodeId, err := d.swarm.Node.NodeId()
+	if err != nil {
+		return fmt.Errorf("failed to get node id: %w", err)
+	}
+
 	newSeg := d.mm.NewSegment()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -91,9 +97,24 @@ func (d *Director) Start(ctx context.Context) error {
 			}
 			d.streamSessionsMu.Unlock()
 			go func() {
-				err := d.swarm.Put(ctx, not.Segment.RepoDID, not.Segment.StartTime.Format(util.ISO8601))
+				originInfo := iroh_replicator.OriginInfo{
+					NodeID: nodeId.String(),
+					Time:   not.Segment.StartTime.Format(util.ISO8601),
+				}
+				bs, err := json.Marshal(originInfo)
+				if err != nil {
+					log.Error(ctx, "could not marshal origin info", "error", err)
+					return
+				}
+				err = d.swarm.Put(ctx, not.Segment.RepoDID, bs)
 				if err != nil {
 					log.Error(ctx, "could not put segment to swarm", "error", err)
+					return
+				}
+				err = d.swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
+				if err != nil {
+					log.Error(ctx, "could not send segment to swarm", "error", err)
+					return
 				}
 			}()
 			err := ss.NewSegment(ctx, not)

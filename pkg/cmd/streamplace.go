@@ -32,8 +32,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
-	"stream.place/streamplace/pkg/replication"
-	"stream.place/streamplace/pkg/replication/boring"
 	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
@@ -307,7 +305,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		log.Log(ctx, "successfully initialized hardware signer", "address", addr)
 		signer = hwsigner
 	}
-	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
+	// var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 
 	mod, err := model.MakeDB(cli.DataFilePath([]string{"index"}))
 	if err != nil {

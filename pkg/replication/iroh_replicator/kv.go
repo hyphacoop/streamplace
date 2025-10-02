@@ -2,6 +2,7 @@ package iroh_replicator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,12 +11,25 @@ import (
 )
 
 type SwarmKV struct {
-	node *iroh_streamplace.Node
-	db   *iroh_streamplace.Db
+	Node *iroh_streamplace.Node
+	DB   *iroh_streamplace.Db
 	w    *iroh_streamplace.WriteScope
 }
 
+// A message saying "hey I ingested node data at this time"
+type OriginInfo struct {
+	NodeID string `json:"node_id"`
+	Time   string `json:"time"`
+}
+
+type DataHandler struct{}
+
+func (handler *DataHandler) HandleData(topic string, data []byte) {
+	log.Log(context.Background(), "HandleData", "topic", topic, "data", len(data))
+}
+
 func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, error) {
+	handler := &DataHandler{}
 	ctx = log.WithLogValues(ctx, "func", "StartKV")
 
 	log.Log(ctx, "Starting with tickets", "tickets", tickets)
@@ -25,7 +39,7 @@ func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, er
 		MaxSendDuration: 1000_000_000,     // 1s
 	}
 	log.Log(ctx, "Config created", "config", config)
-	node, err := iroh_streamplace.NodeSender(config)
+	node, err := iroh_streamplace.NodeReceiver(config, handler)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create NodeSender: %w", err)
 	}
@@ -46,22 +60,31 @@ func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, er
 	log.Log(ctx, "Ticket:", "ticket", ticket)
 
 	swarm := SwarmKV{
-		node: node,
-		db:   db,
+		Node: node,
+		DB:   db,
 		w:    w,
 	}
 	return &swarm, nil
 }
 
+var activeSubs = make(map[string]bool)
+
 func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
 	if len(tickets) > 0 {
-		err := swarm.node.JoinPeers(tickets)
+		err := swarm.Node.JoinPeers(tickets)
 		if err != nil {
 			return fmt.Errorf("failed to join peers: %w", err)
 		}
 	}
 
-	sub := swarm.db.Subscribe(iroh_streamplace.NewFilter())
+	nodeId, err := swarm.Node.NodeId()
+	if err != nil {
+		return fmt.Errorf("failed to get node id: %w", err)
+	}
+	nodeIdStr := nodeId.String()
+	log.Log(ctx, "Node ID:", "node_id", nodeIdStr)
+
+	sub := swarm.DB.Subscribe(iroh_streamplace.NewFilter())
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -80,6 +103,29 @@ func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
 			keyStr := string(item.Key)
 			valueStr := string(item.Value)
 			log.Log(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
+			var info OriginInfo
+			err := json.Unmarshal(item.Value, &info)
+			if err != nil {
+				log.Error(ctx, "could not unmarshal origin info", "error", err)
+				continue
+			}
+			if !activeSubs[keyStr] {
+				if info.NodeID == nodeIdStr {
+					activeSubs[keyStr] = true
+					continue
+				}
+				pubKey, err := iroh_streamplace.PublicKeyFromString(info.NodeID)
+				if err != nil {
+					log.Error(ctx, "could not create public key", "error", err)
+					continue
+				}
+				activeSubs[keyStr] = true
+				err = swarm.Node.Subscribe(keyStr, pubKey)
+				if err != nil {
+					log.Error(ctx, "could not subscribe to key", "error", err)
+					continue
+				}
+			}
 
 		case iroh_streamplace.SubscribeItemCurrentDone:
 			log.Log(ctx, "SubscribeItemCurrentDone", "currentDone", item)
@@ -91,9 +137,8 @@ func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
 	}
 }
 
-func (swarm *SwarmKV) Put(ctx context.Context, key, value string) error {
+func (swarm *SwarmKV) Put(ctx context.Context, key string, value []byte) error {
 	// streamerBs := []byte(streamer)
 	keyBs := []byte(key)
-	valueBs := []byte(value)
-	return swarm.w.Put(nil, keyBs, valueBs)
+	return swarm.w.Put(nil, keyBs, value)
 }
