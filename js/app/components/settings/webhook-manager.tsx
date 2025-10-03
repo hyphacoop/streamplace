@@ -50,6 +50,7 @@ interface Webhook {
   prefix?: string;
   suffix?: string;
   rewrite?: Array<{ from: string; to: string }>;
+  muteWords?: string[];
   description?: string;
   createdAt: string;
   updatedAt?: string;
@@ -65,6 +66,7 @@ interface WebhookFormData {
   prefix: string;
   suffix: string;
   rewrite: Array<{ from: string; to: string }>;
+  muteWords: string[];
   description: string;
 }
 
@@ -247,6 +249,7 @@ function WebhookForm({
     prefix: webhook?.prefix || "",
     suffix: webhook?.suffix || "",
     rewrite: webhook?.rewrite || [{ from: "", to: "" }],
+    muteWords: webhook?.muteWords || [],
     description: webhook?.description || "",
   });
 
@@ -263,6 +266,7 @@ function WebhookForm({
         prefix: webhook.prefix || "",
         suffix: webhook.suffix || "",
         rewrite: webhook.rewrite || [{ from: "", to: "" }],
+        muteWords: webhook.muteWords || [],
         description: webhook.description || "",
       });
     } else {
@@ -275,6 +279,7 @@ function WebhookForm({
         prefix: "",
         suffix: "",
         rewrite: [{ from: "", to: "" }],
+        muteWords: [],
         description: "",
       });
     }
@@ -546,6 +551,33 @@ function WebhookForm({
           ))}
         </View>
 
+        {/* Mute Words */}
+        <View style={[mb[4]]}>
+          <Text
+            style={[text.gray[400], mb[2], { fontSize: 14, fontWeight: "500" }]}
+          >
+            Mute Words (Chat Only)
+          </Text>
+          <Text style={[text.gray[400], mb[3], { fontSize: 12 }]}>
+            Chat messages containing any of these words will not be forwarded.
+            Useful for avoiding reforwarding of forwarded messages.
+          </Text>
+          <Input
+            value={formData.muteWords.join(", ")}
+            onChangeText={(text) =>
+              setFormData((prev) => ({
+                ...prev,
+                muteWords: text
+                  .split(",")
+                  .map((w) => w.trim())
+                  .filter((w) => w),
+              }))
+            }
+            placeholder="word1, word2, word3"
+            multiline
+          />
+        </View>
+
         {/* Example message text */}
         <View style={[mb[4]]}>
           <Text
@@ -663,6 +695,7 @@ export default function WebhookManager() {
         prefix: data.prefix || undefined,
         suffix: data.suffix || undefined,
         rewrite: rewriteRules.length > 0 ? rewriteRules : undefined,
+        muteWords: data.muteWords.length > 0 ? data.muteWords : undefined,
         description: data.description || undefined,
       });
       setShowForm(false);
@@ -699,6 +732,7 @@ export default function WebhookManager() {
         prefix: data.prefix || undefined,
         suffix: data.suffix || undefined,
         rewrite: rewriteRules.length > 0 ? rewriteRules : undefined,
+        muteWords: data.muteWords.length > 0 ? data.muteWords : undefined,
         description: data.description || undefined,
       });
       setShowForm(false);
