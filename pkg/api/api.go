@@ -497,7 +497,7 @@ func (a *StreamplaceAPI) HandleNotification(ctx context.Context) http.HandlerFun
 
 func (a *StreamplaceAPI) HandleSegment(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		err := a.MediaManager.ValidateMP4(ctx, req.Body)
+		err := a.MediaManager.ValidateMP4(ctx, req.Body, false)
 		if err != nil {
 			apierrors.WriteHTTPBadRequest(w, "could not ingest segment", err)
 			return

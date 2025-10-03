@@ -1,19 +1,26 @@
 package iroh_replicator
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bluesky-social/indigo/util"
+	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/media"
 )
 
-type SwarmKV struct {
-	Node *iroh_streamplace.Node
-	DB   *iroh_streamplace.Db
-	w    *iroh_streamplace.WriteScope
+type IrohSwarm struct {
+	Node    *iroh_streamplace.Node
+	DB      *iroh_streamplace.Db
+	w       *iroh_streamplace.WriteScope
+	mm      *media.MediaManager
+	segChan chan *media.NewSegmentNotification
+	nodeId  string
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -22,14 +29,7 @@ type OriginInfo struct {
 	Time   string `json:"time"`
 }
 
-type DataHandler struct{}
-
-func (handler *DataHandler) HandleData(topic string, data []byte) {
-	log.Log(context.Background(), "HandleData", "topic", topic, "data", len(data))
-}
-
-func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, error) {
-	handler := &DataHandler{}
+func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.MediaManager) (*IrohSwarm, error) {
 	ctx = log.WithLogValues(ctx, "func", "StartKV")
 
 	log.Log(ctx, "Starting with tickets", "tickets", tickets)
@@ -39,7 +39,12 @@ func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, er
 		MaxSendDuration: 1000_000_000,     // 1s
 	}
 	log.Log(ctx, "Config created", "config", config)
-	node, err := iroh_streamplace.NodeReceiver(config, handler)
+
+	swarm := IrohSwarm{
+		mm: mm,
+	}
+
+	node, err := iroh_streamplace.NodeReceiver(config, &swarm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create NodeSender: %w", err)
 	}
@@ -47,11 +52,16 @@ func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, er
 	db := node.Db()
 	w := node.NodeScope()
 
-	node_id, err := node.NodeId()
+	swarm.DB = db
+	swarm.w = w
+	swarm.Node = node
+
+	nodeId, err := node.NodeId()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get NodeId: %w", err)
 	}
-	log.Log(ctx, "Node ID:", "node_id", node_id)
+	log.Log(ctx, "Node ID:", "node_id", nodeId)
+	swarm.nodeId = nodeId.String()
 
 	ticket, err := node.Ticket()
 	if err != nil {
@@ -59,17 +69,12 @@ func StartKV(ctx context.Context, tickets []string, secret []byte) (*SwarmKV, er
 	}
 	log.Log(ctx, "Ticket:", "ticket", ticket)
 
-	swarm := SwarmKV{
-		Node: node,
-		DB:   db,
-		w:    w,
-	}
 	return &swarm, nil
 }
 
 var activeSubs = make(map[string]bool)
 
-func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
+func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
 	if len(tickets) > 0 {
 		err := swarm.Node.JoinPeers(tickets)
 		if err != nil {
@@ -84,6 +89,17 @@ func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
 	nodeIdStr := nodeId.String()
 	log.Log(ctx, "Node ID:", "node_id", nodeIdStr)
 
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return swarm.startKV(ctx)
+	})
+	g.Go(func() error {
+		return swarm.startSegmentSender(ctx)
+	})
+	return g.Wait()
+}
+
+func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 	sub := swarm.DB.Subscribe(iroh_streamplace.NewFilter())
 	for {
 		if ctx.Err() != nil {
@@ -110,7 +126,7 @@ func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
 				continue
 			}
 			if !activeSubs[keyStr] {
-				if info.NodeID == nodeIdStr {
+				if info.NodeID == swarm.nodeId {
 					activeSubs[keyStr] = true
 					continue
 				}
@@ -137,8 +153,52 @@ func (swarm *SwarmKV) Start(ctx context.Context, tickets []string) error {
 	}
 }
 
-func (swarm *SwarmKV) Put(ctx context.Context, key string, value []byte) error {
-	// streamerBs := []byte(streamer)
-	keyBs := []byte(key)
-	return swarm.w.Put(nil, keyBs, value)
+func (swarm *IrohSwarm) startSegmentSender(ctx context.Context) error {
+	ch := swarm.mm.NewSegment()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case not := <-ch:
+			err := swarm.SendSegment(ctx, not)
+			if err != nil {
+				log.Error(ctx, "could not send segment to swarm", "error", err)
+			}
+			continue
+		}
+	}
+}
+
+func (swarm *IrohSwarm) HandleData(topic string, data []byte) {
+	err := swarm.mm.ValidateMP4(context.Background(), bytes.NewReader(data), false)
+	if err != nil {
+		log.Error(context.Background(), "could not validate segment", "error", err)
+	}
+}
+
+func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNotification) error {
+	if !not.Local {
+		return nil
+	}
+	originInfo := OriginInfo{
+		NodeID: swarm.nodeId,
+		Time:   not.Segment.StartTime.Format(util.ISO8601),
+	}
+	bs, err := json.Marshal(originInfo)
+	if err != nil {
+		log.Error(ctx, "could not marshal origin info", "error", err)
+		return err
+	}
+	keyBs := []byte(not.Segment.RepoDID)
+	err = swarm.w.Put(nil, keyBs, bs)
+	if err != nil {
+		log.Error(ctx, "could not put segment to swarm", "error", err)
+		return err
+	}
+	err = swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
+	if err != nil {
+		log.Error(ctx, "could not send segment to swarm", "error", err)
+		return err
+	}
+	return nil
 }

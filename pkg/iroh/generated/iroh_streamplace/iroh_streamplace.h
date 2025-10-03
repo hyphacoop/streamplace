@@ -392,20 +392,6 @@ static void call_UniffiCallbackInterfaceDataHandlerMethod0(
 
 
 #endif
-#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_DATA_HANDLER_OLD_METHOD0
-#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_DATA_HANDLER_OLD_METHOD0
-typedef void (*UniffiCallbackInterfaceDataHandlerOldMethod0)(uint64_t uniffi_handle, RustBuffer topic, RustBuffer data, UniffiForeignFutureCompleteVoid uniffi_future_callback, uint64_t uniffi_callback_data, UniffiForeignFuture* uniffi_out_return);
-
-// Making function static works arround:
-// https://github.com/golang/go/issues/11263
-static void call_UniffiCallbackInterfaceDataHandlerOldMethod0(
-				UniffiCallbackInterfaceDataHandlerOldMethod0 cb, uint64_t uniffi_handle, RustBuffer topic, RustBuffer data, UniffiForeignFutureCompleteVoid uniffi_future_callback, uint64_t uniffi_callback_data, UniffiForeignFuture* uniffi_out_return)
-{
-	return cb(uniffi_handle, topic, data, uniffi_future_callback, uniffi_callback_data, uniffi_out_return);
-}
-
-
-#endif
 #ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_GO_SIGNER_METHOD0
 #define UNIFFI_FFIDEF_CALLBACK_INTERFACE_GO_SIGNER_METHOD0
 typedef void (*UniffiCallbackInterfaceGoSignerMethod0)(uint64_t uniffi_handle, RustBuffer data, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
@@ -426,14 +412,6 @@ typedef struct UniffiVTableCallbackInterfaceDataHandler {
     UniffiCallbackInterfaceDataHandlerMethod0 handleData;
     UniffiCallbackInterfaceFree uniffiFree;
 } UniffiVTableCallbackInterfaceDataHandler;
-
-#endif
-#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_DATA_HANDLER_OLD
-#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_DATA_HANDLER_OLD
-typedef struct UniffiVTableCallbackInterfaceDataHandlerOld {
-    UniffiCallbackInterfaceDataHandlerOldMethod0 handleData;
-    UniffiCallbackInterfaceFree uniffiFree;
-} UniffiVTableCallbackInterfaceDataHandlerOld;
 
 #endif
 #ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_GO_SIGNER
@@ -464,26 +442,6 @@ void uniffi_iroh_streamplace_fn_init_callback_vtable_datahandler(UniffiVTableCal
 uint64_t uniffi_iroh_streamplace_fn_method_datahandler_handle_data(void* ptr, RustBuffer topic, RustBuffer data
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_DATAHANDLEROLD
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_DATAHANDLEROLD
-void* uniffi_iroh_streamplace_fn_clone_datahandlerold(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_DATAHANDLEROLD
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_DATAHANDLEROLD
-void uniffi_iroh_streamplace_fn_free_datahandlerold(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_DATAHANDLEROLD
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_DATAHANDLEROLD
-void uniffi_iroh_streamplace_fn_init_callback_vtable_datahandlerold(UniffiVTableCallbackInterfaceDataHandlerOld* vtable
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DATAHANDLEROLD_HANDLE_DATA
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DATAHANDLEROLD_HANDLE_DATA
-uint64_t uniffi_iroh_streamplace_fn_method_datahandlerold_handle_data(void* ptr, RustBuffer topic, RustBuffer data
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_DB
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_DB
 void* uniffi_iroh_streamplace_fn_clone_db(void* ptr, RustCallStatus *out_status
@@ -512,27 +470,6 @@ void* uniffi_iroh_streamplace_fn_method_db_subscribe_with_opts(void* ptr, RustBu
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DB_WRITE
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DB_WRITE
 void* uniffi_iroh_streamplace_fn_method_db_write(void* ptr, RustBuffer secret, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_ENDPOINT
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_ENDPOINT
-void* uniffi_iroh_streamplace_fn_clone_endpoint(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_ENDPOINT
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_ENDPOINT
-void uniffi_iroh_streamplace_fn_free_endpoint(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CONSTRUCTOR_ENDPOINT_NEW
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CONSTRUCTOR_ENDPOINT_NEW
-uint64_t uniffi_iroh_streamplace_fn_constructor_endpoint_new(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_ENDPOINT_NODE_ADDR
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_ENDPOINT_NODE_ADDR
-uint64_t uniffi_iroh_streamplace_fn_method_endpoint_node_addr(void* ptr
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_FILTER
@@ -744,61 +681,6 @@ RustBuffer uniffi_iroh_streamplace_fn_method_publickey_fmt_short(void* ptr, Rust
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_PUBLICKEY_UNIFFI_TRAIT_DISPLAY
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_PUBLICKEY_UNIFFI_TRAIT_DISPLAY
 RustBuffer uniffi_iroh_streamplace_fn_method_publickey_uniffi_trait_display(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_RECEIVER
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_RECEIVER
-void* uniffi_iroh_streamplace_fn_clone_receiver(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_RECEIVER
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_RECEIVER
-void uniffi_iroh_streamplace_fn_free_receiver(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CONSTRUCTOR_RECEIVER_NEW
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CONSTRUCTOR_RECEIVER_NEW
-uint64_t uniffi_iroh_streamplace_fn_constructor_receiver_new(void* endpoint, void* handler
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_RECEIVER_NODE_ADDR
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_RECEIVER_NODE_ADDR
-uint64_t uniffi_iroh_streamplace_fn_method_receiver_node_addr(void* ptr
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_RECEIVER_SUBSCRIBE
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_RECEIVER_SUBSCRIBE
-uint64_t uniffi_iroh_streamplace_fn_method_receiver_subscribe(void* ptr, void* remote_id, RustBuffer topic
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_RECEIVER_UNSUBSCRIBE
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_RECEIVER_UNSUBSCRIBE
-uint64_t uniffi_iroh_streamplace_fn_method_receiver_unsubscribe(void* ptr, void* remote_id, RustBuffer topic
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SENDER
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SENDER
-void* uniffi_iroh_streamplace_fn_clone_sender(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_SENDER
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_SENDER
-void uniffi_iroh_streamplace_fn_free_sender(void* ptr, RustCallStatus *out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CONSTRUCTOR_SENDER_NEW
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CONSTRUCTOR_SENDER_NEW
-uint64_t uniffi_iroh_streamplace_fn_constructor_sender_new(void* endpoint
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SENDER_NODE_ADDR
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SENDER_NODE_ADDR
-uint64_t uniffi_iroh_streamplace_fn_method_sender_node_addr(void* ptr
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SENDER_SEND
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SENDER_SEND
-uint64_t uniffi_iroh_streamplace_fn_method_sender_send(void* ptr, RustBuffer key, RustBuffer data
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SUBSCRIBERESPONSE
@@ -1155,12 +1037,6 @@ uint16_t uniffi_iroh_streamplace_checksum_method_datahandler_handle_data(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DATAHANDLEROLD_HANDLE_DATA
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DATAHANDLEROLD_HANDLE_DATA
-uint16_t uniffi_iroh_streamplace_checksum_method_datahandlerold_handle_data(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_ITER_WITH_OPTS
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_ITER_WITH_OPTS
 uint16_t uniffi_iroh_streamplace_checksum_method_db_iter_with_opts(void
@@ -1182,12 +1058,6 @@ uint16_t uniffi_iroh_streamplace_checksum_method_db_subscribe_with_opts(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_WRITE
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_WRITE
 uint16_t uniffi_iroh_streamplace_checksum_method_db_write(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_ENDPOINT_NODE_ADDR
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_ENDPOINT_NODE_ADDR
-uint16_t uniffi_iroh_streamplace_checksum_method_endpoint_node_addr(void
     
 );
 #endif
@@ -1329,36 +1199,6 @@ uint16_t uniffi_iroh_streamplace_checksum_method_publickey_fmt_short(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_RECEIVER_NODE_ADDR
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_RECEIVER_NODE_ADDR
-uint16_t uniffi_iroh_streamplace_checksum_method_receiver_node_addr(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_RECEIVER_SUBSCRIBE
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_RECEIVER_SUBSCRIBE
-uint16_t uniffi_iroh_streamplace_checksum_method_receiver_subscribe(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_RECEIVER_UNSUBSCRIBE
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_RECEIVER_UNSUBSCRIBE
-uint16_t uniffi_iroh_streamplace_checksum_method_receiver_unsubscribe(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SENDER_NODE_ADDR
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SENDER_NODE_ADDR
-uint16_t uniffi_iroh_streamplace_checksum_method_sender_node_addr(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SENDER_SEND
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SENDER_SEND
-uint16_t uniffi_iroh_streamplace_checksum_method_sender_send(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SUBSCRIBERESPONSE_NEXT_RAW
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SUBSCRIBERESPONSE_NEXT_RAW
 uint16_t uniffi_iroh_streamplace_checksum_method_subscriberesponse_next_raw(void
@@ -1368,12 +1208,6 @@ uint16_t uniffi_iroh_streamplace_checksum_method_subscriberesponse_next_raw(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_WRITESCOPE_PUT
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_WRITESCOPE_PUT
 uint16_t uniffi_iroh_streamplace_checksum_method_writescope_put(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_CONSTRUCTOR_ENDPOINT_NEW
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_CONSTRUCTOR_ENDPOINT_NEW
-uint16_t uniffi_iroh_streamplace_checksum_constructor_endpoint_new(void
     
 );
 #endif
@@ -1419,18 +1253,6 @@ uint16_t uniffi_iroh_streamplace_checksum_constructor_publickey_from_string(void
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_CONSTRUCTOR_RECEIVER_NEW
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_CONSTRUCTOR_RECEIVER_NEW
-uint16_t uniffi_iroh_streamplace_checksum_constructor_receiver_new(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_CONSTRUCTOR_SENDER_NEW
-#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_CONSTRUCTOR_SENDER_NEW
-uint16_t uniffi_iroh_streamplace_checksum_constructor_sender_new(void
-    
-);
-#endif
 #ifndef UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_UNIFFI_CONTRACT_VERSION
 #define UNIFFI_FFIDEF_FFI_IROH_STREAMPLACE_UNIFFI_CONTRACT_VERSION
 uint32_t ffi_iroh_streamplace_uniffi_contract_version(void
@@ -1440,8 +1262,6 @@ uint32_t ffi_iroh_streamplace_uniffi_contract_version(void
 
  void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerMethod0(uint64_t uniffi_handle, RustBuffer topic, RustBuffer data, UniffiForeignFutureCompleteVoid uniffi_future_callback, uint64_t uniffi_callback_data, UniffiForeignFuture* uniffi_out_return);
  void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerFree(uint64_t handle);
- void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerOldMethod0(uint64_t uniffi_handle, RustBuffer topic, RustBuffer data, UniffiForeignFutureCompleteVoid uniffi_future_callback, uint64_t uniffi_callback_data, UniffiForeignFuture* uniffi_out_return);
- void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerOldFree(uint64_t handle);
  void iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerMethod0(uint64_t uniffi_handle, RustBuffer data, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
  void iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerFree(uint64_t handle);
 

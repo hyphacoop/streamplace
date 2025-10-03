@@ -32,8 +32,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
-	"stream.place/streamplace/pkg/replication"
-	"stream.place/streamplace/pkg/replication/boring"
 	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
@@ -307,7 +305,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		log.Log(ctx, "successfully initialized hardware signer", "address", addr)
 		signer = hwsigner
 	}
-	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 
 	mod, err := model.MakeDB(cli.DataFilePath([]string{"index"}))
 	if err != nil {
@@ -363,7 +360,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return fmt.Errorf("failed to migrate: %w", err)
 	}
 
-	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod, b, atsync)
+	mm, err := media.MakeMediaManager(ctx, &cli, signer, mod, b, atsync)
 	if err != nil {
 		return err
 	}
@@ -403,7 +400,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 	secret := buf.Bytes()
-	swarm, err := iroh_replicator.StartKV(ctx, cli.Tickets, secret)
+	swarm, err := iroh_replicator.NewSwarm(ctx, cli.Tickets, secret, mm)
 	if err != nil {
 		return err
 	}
@@ -419,7 +416,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op, state, swarm)
+	d := director.NewDirector(mm, mod, &cli, b, op, state)
 	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err

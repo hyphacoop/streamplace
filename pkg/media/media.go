@@ -58,6 +58,7 @@ type NewSegmentNotification struct {
 	Segment  *model.Segment
 	Data     []byte
 	Metadata *SegmentMetadata
+	Local    bool
 }
 
 func RunSelfTest(ctx context.Context) error {
@@ -65,7 +66,7 @@ func RunSelfTest(ctx context.Context) error {
 	return SelfTest(ctx)
 }
 
-func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer, rep replication.Replicator, mod model.Model, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer) (*MediaManager, error) {
+func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer, mod model.Model, bus *bus.Bus, atsync *atproto.ATProtoSynchronizer) (*MediaManager, error) {
 	gstinit.InitGST()
 	err := SelfTest(ctx)
 	if err != nil {
@@ -121,7 +122,6 @@ func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer
 
 	return &MediaManager{
 		cli:          cli,
-		replicator:   rep,
 		hlsRunning:   map[string]*M3U8{},
 		httpPipes:    map[string]io.Writer{},
 		model:        mod,
@@ -135,7 +135,7 @@ func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer
 func (mm *MediaManager) HandleData(node *irohStreamplace.PublicKey, data []byte) {
 	r := bytes.NewReader(data)
 	ctx := context.Background()
-	err := mm.ValidateMP4(ctx, r)
+	err := mm.ValidateMP4(ctx, r, true)
 	if err != nil {
 		log.Log(ctx, "invalid incoming segment", "error", err)
 	}

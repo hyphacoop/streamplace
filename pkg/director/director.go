@@ -2,11 +2,9 @@ package director
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 
-	"github.com/bluesky-social/indigo/util"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/bus"
@@ -14,7 +12,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/model"
-	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/statedb"
 )
 
@@ -33,10 +30,9 @@ type Director struct {
 	streamSessionsMu sync.Mutex
 	op               *oatproxy.OATProxy
 	statefulDB       *statedb.StatefulDB
-	swarm            *iroh_replicator.SwarmKV
 }
 
-func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *bus.Bus, op *oatproxy.OATProxy, statefulDB *statedb.StatefulDB, swarm *iroh_replicator.SwarmKV) *Director {
+func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *bus.Bus, op *oatproxy.OATProxy, statefulDB *statedb.StatefulDB) *Director {
 	return &Director{
 		mm:               mm,
 		mod:              mod,
@@ -46,16 +42,10 @@ func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *
 		streamSessionsMu: sync.Mutex{},
 		op:               op,
 		statefulDB:       statefulDB,
-		swarm:            swarm,
 	}
 }
 
 func (d *Director) Start(ctx context.Context) error {
-	nodeId, err := d.swarm.Node.NodeId()
-	if err != nil {
-		return fmt.Errorf("failed to get node id: %w", err)
-	}
-
 	newSeg := d.mm.NewSegment()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -96,27 +86,7 @@ func (d *Director) Start(ctx context.Context) error {
 				})
 			}
 			d.streamSessionsMu.Unlock()
-			go func() {
-				originInfo := iroh_replicator.OriginInfo{
-					NodeID: nodeId.String(),
-					Time:   not.Segment.StartTime.Format(util.ISO8601),
-				}
-				bs, err := json.Marshal(originInfo)
-				if err != nil {
-					log.Error(ctx, "could not marshal origin info", "error", err)
-					return
-				}
-				err = d.swarm.Put(ctx, not.Segment.RepoDID, bs)
-				if err != nil {
-					log.Error(ctx, "could not put segment to swarm", "error", err)
-					return
-				}
-				err = d.swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
-				if err != nil {
-					log.Error(ctx, "could not send segment to swarm", "error", err)
-					return
-				}
-			}()
+
 			err := ss.NewSegment(ctx, not)
 			if err != nil {
 				log.Error(ctx, "could not add segment to stream session", "error", err)

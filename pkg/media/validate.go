@@ -23,7 +23,7 @@ type ManifestAndCert struct {
 	Cert     string             `json:"cert"`
 }
 
-func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error {
+func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local bool) error {
 	ctx, span := otel.Tracer("signer").Start(ctx, "ValidateMP4")
 	defer span.End()
 	buf, err := io.ReadAll(input)
@@ -82,7 +82,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		return err
 	}
 	defer fd.Close()
-	go mm.replicator.NewSegment(ctx, buf)
+
 	r := bytes.NewReader(buf)
 	if _, err := io.Copy(fd, r); err != nil {
 		return err
@@ -102,6 +102,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		Segment:  seg,
 		Data:     buf,
 		Metadata: meta,
+		Local:    local,
 	}
 	for _, ch := range mm.newSegmentSubs {
 		go func() { ch <- not }()
