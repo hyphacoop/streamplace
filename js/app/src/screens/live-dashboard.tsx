@@ -45,11 +45,7 @@ export default function LiveDashboard() {
       <VideoElementProvider videoElement={videoElement}>
         <PlayerProvider>
           <View style={[flex.values[1], bg.gray[900]]}>
-            <BentoGrid
-              userProfile={userProfile}
-              isLive={isLive}
-              videoRef={videoRef}
-            />
+            <BentoGrid isLive={isLive} videoRef={videoRef} />
           </View>
         </PlayerProvider>
       </VideoElementProvider>
