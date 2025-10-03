@@ -11,8 +11,6 @@ import {
   ViewStyle,
 } from "react-native";
 
-import {} from "src/router";
-
 export default function SidebarItem({
   icon,
   label,
