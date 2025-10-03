@@ -292,8 +292,10 @@ dev-rust: .build/bin/uniffi-bindgen-go-forked
 	.build/bin/uniffi-bindgen-go-forked --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT \
 	&& mkdir -p $(BUILDDIR)/rust/iroh-streamplace/ \
 	&& mkdir -p $(BUILDDIR)/lib/ \
-	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/rust/iroh-streamplace/ \
-	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/lib/
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT.tmp \
+	&& mv $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT.tmp $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT \
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/lib/libiroh_streamplace.$$EXT.tmp \
+	&& mv $(BUILDDIR)/lib/libiroh_streamplace.$$EXT.tmp $(BUILDDIR)/lib/libiroh_streamplace.$$EXT
 
 .PHONY: dev-test
 dev-test:
