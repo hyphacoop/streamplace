@@ -5,7 +5,7 @@ import {
   Info,
   Sparkle,
 } from "lucide-react-native";
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { Linking, Pressable, View } from "react-native";
 import { useLivestreamStore } from "../../livestream-store";
 import { LivestreamProblem } from "../../livestream-store/livestream-state";
@@ -104,13 +104,22 @@ const Problems = ({
   );
 };
 
-export const ProblemsWrapper = ({
-  children,
-}: {
-  children: React.ReactElement;
-}) => {
+export interface ProblemsWrapperRef {
+  setDismiss: (value: boolean) => void;
+}
+
+export const ProblemsWrapper = forwardRef<
+  ProblemsWrapperRef,
+  {
+    children: React.ReactElement;
+  }
+>(({ children }, ref) => {
   const problems = useLivestreamStore((x) => x.problems);
   const [dismiss, setDismiss] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    setDismiss,
+  }));
 
   return (
     <>
@@ -148,6 +157,6 @@ export const ProblemsWrapper = ({
       )}
     </>
   );
-};
+});
 
 export default Problems;

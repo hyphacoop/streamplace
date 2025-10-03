@@ -9,8 +9,11 @@ import {
   useSegmentTiming,
   zero,
 } from "@streamplace/components";
-import { ProblemsWrapper } from "@streamplace/components/src/components/dashboard/problems";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ProblemsWrapper,
+  ProblemsWrapperRef,
+} from "@streamplace/components/src/components/dashboard/problems";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, Platform, ScrollView, View } from "react-native";
 import LivestreamPanel from "./livestream-panel";
 import StreamMonitor from "./stream-monitor";
@@ -18,18 +21,18 @@ import StreamMonitor from "./stream-monitor";
 const { flex, p, gap, layout, bg } = zero;
 
 interface BentoGridProps {
-  userProfile: any;
   isLive: boolean;
   videoRef: any;
 }
 
-export default function BentoGrid({
-  userProfile,
-  isLive,
-  videoRef,
-}: BentoGridProps) {
+export default function BentoGrid({ isLive, videoRef }: BentoGridProps) {
   const navigation = useNavigation();
   const isWeb = Platform.OS === "web";
+  const problemsRef = useRef<ProblemsWrapperRef>(null);
+
+  const handleProblemsPress = useCallback(() => {
+    problemsRef.current?.setDismiss(false);
+  }, []);
 
   // Screen width state for responsive design
   const [screenWidth, setScreenWidth] = useState(
@@ -63,6 +66,7 @@ export default function BentoGrid({
   const profile = useProfile();
   const viewers = useLivestreamStore((x) => x.viewers);
   const chat = useLivestreamStore((x) => x.chat);
+  const problems = useLivestreamStore((x) => x.problems);
   const segmentTiming = useSegmentTiming();
   const seg = useSegment();
   const ingestConnectionState = usePlayerStore((x) => x.ingestConnectionState);
@@ -131,7 +135,7 @@ export default function BentoGrid({
   if (isDesktop) {
     // Desktop layout (>= 1200px) - Original bento grid
     return (
-      <ProblemsWrapper>
+      <ProblemsWrapper ref={problemsRef}>
         <View style={[flex.values[1], gap.all[4], p[4], bg.black]}>
           <View
             style={[layout.flex.column, { minWidth: isWeb ? 400 : "100%" }]}
@@ -146,6 +150,8 @@ export default function BentoGrid({
               bitrate={getBitrate()}
               timeBetweenSegments={segmentTiming.timeBetweenSegments || 0}
               connectionStatus={getConnectionStatus}
+              problemsCount={problems.length}
+              onProblemsPress={handleProblemsPress}
             />
           </View>
           <View style={[flex.values[1], layout.flex.row, gap.all[4]]}>
@@ -201,7 +207,7 @@ export default function BentoGrid({
   }
 
   return (
-    <ProblemsWrapper>
+    <ProblemsWrapper ref={problemsRef}>
       <ScrollView style={[flex.values[1], bg.black]}>
         {/* Header always at top */}
         <View style={[p[4]]}>
@@ -215,6 +221,8 @@ export default function BentoGrid({
             bitrate={getBitrate()}
             timeBetweenSegments={segmentTiming.timeBetweenSegments || 0}
             connectionStatus={getConnectionStatus}
+            problemsCount={problems.length}
+            onProblemsPress={handleProblemsPress}
           />
         </View>
 
