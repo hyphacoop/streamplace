@@ -5,12 +5,14 @@ import {
   ShareSheet,
   Text,
   useAvatars,
+  useDID,
   useLivestreamInfo,
   useLivestreamStore,
   zero,
 } from "@streamplace/components";
+import FollowButton from "components/follow-button";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { Image, View } from "react-native";
+import { Image, Linking, Pressable, View } from "react-native";
 const { gap, px, py, colors } = zero;
 
 export function BottomMetadata({
@@ -23,6 +25,8 @@ export function BottomMetadata({
   const { profile } = useLivestreamInfo();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
   const ls = useLivestreamStore((x) => x.livestream);
+
+  const did = useDID();
 
   return (
     <View
@@ -68,9 +72,25 @@ export function BottomMetadata({
             />
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: "white", fontWeight: "600" }}>
-              @{profile?.handle || "user"}
-            </Text>
+            <View
+              style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}
+            >
+              <Pressable
+                onPress={() => {
+                  if (profile?.handle) {
+                    const url = `https://bsky.app/profile/${profile.handle}`;
+                    Linking.openURL(url);
+                  }
+                }}
+              >
+                <Text style={{ color: "white", fontWeight: "600" }}>
+                  @{profile?.handle || "user"}
+                </Text>
+              </Pressable>
+              {did && profile && (
+                <FollowButton streamerDID={profile?.did} currentUserDID={did} />
+              )}
+            </View>
             <Text
               style={{ color: colors.gray[400] }}
               numberOfLines={3}
