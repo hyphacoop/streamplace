@@ -55,15 +55,34 @@ function MyComponent() {
 
 ```tsx
 import { Trans as T } from "react-i18next";
+import { Text, Linking } from "react-native";
 
 function HelpText() {
+  const handleEmailPress = () => {
+    Linking.openURL("mailto:support@stream.place");
+  };
+
+  const handleDocsPress = () => {
+    Linking.openURL("/docs"); // Or use your navigation method
+  };
+
   return (
     <T
       i18nKey="help-message"
       components={{
-        supportLink: <a href="mailto:support@stream.place" />,
-        docsLink: <a href="/docs" />,
-        bold: <strong />,
+        supportLink: (
+          <Text
+            style={{ color: "#007AFF", textDecorationLine: "underline" }}
+            onPress={handleEmailPress}
+          />
+        ),
+        docsLink: (
+          <Text
+            style={{ color: "#007AFF", textDecorationLine: "underline" }}
+            onPress={handleDocsPress}
+          />
+        ),
+        bold: <Text style={{ fontWeight: "bold" }} />,
       }}
       values={{
         username: "Alice",
@@ -84,12 +103,12 @@ function HelpText() {
 
 ```ts
 // ❌ Don't hardcode text
-<h1>Settings</h1>
-<p>You have 5 new messages</p>
+<Text>Settings</Text>
+<Text>You have 5 new messages</Text>
 
 // ✅ Use translation keys
-<h1>{t('settings-title')}</h1>
-<p>{t('message-count', { count: 5 })}</p>
+<Text>{t('settings-title')}</Text>
+<Text>{t('message-count', { count: 5 })}</Text>
 ```
 
 2. Add English translations (or others if you're proficient) to the .ftl files
@@ -129,7 +148,7 @@ The i18n system is centralized in `@streamplace/components`:
 js/components/
 ├── locales/                   # Source .ftl files
 │   ├── en-US/
-│   │   └── settings.ftl
+│   │   └── *.ftl
 │   ├── pt-BR/
 │   ├── es-ES/
 │   ├── zh-TW/
