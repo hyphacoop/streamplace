@@ -21,6 +21,7 @@ import (
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/renditions"
+	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/statedb"
 	"stream.place/streamplace/pkg/streamplace"
@@ -44,6 +45,7 @@ type StreamSession struct {
 	ctx            context.Context
 	packets        []bus.PacketizedSegment
 	statefulDB     *statedb.StatefulDB
+	swarm          *iroh_replicator.IrohSwarm
 }
 
 func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
@@ -302,7 +304,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		return fmt.Errorf("livestream is not a streamplace livestream")
 	}
 
-	canonicalUrl := fmt.Sprintf("https://%s/%s", ss.cli.PublicHost, repo.Handle)
+	canonicalUrl := fmt.Sprintf("https://%s/%s", ss.cli.BroadcasterHost, repo.Handle)
 
 	if lsr.CanonicalUrl != nil {
 		canonicalUrl = *lsr.CanonicalUrl
@@ -313,7 +315,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 			External: &bsky.EmbedExternal_External{
 				Title:       lsr.Title,
 				Uri:         canonicalUrl,
-				Description: fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.PublicHost),
+				Description: fmt.Sprintf("@%s is 🔴LIVE on %s", repo.Handle, ss.cli.BroadcasterHost),
 				Thumb:       thumb,
 			},
 		},

@@ -374,8 +374,8 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		Scope:      "atproto transition:generic",
 		ClientName: "Streamplace",
 		RedirectURIs: []string{
-			fmt.Sprintf("https://%s/login", cli.PublicHost),
-			fmt.Sprintf("https://%s/api/app-return", cli.PublicHost),
+			fmt.Sprintf("https://%s/login", cli.BroadcasterHost),
+			fmt.Sprintf("https://%s/api/app-return", cli.BroadcasterHost),
 		},
 	}
 
@@ -406,7 +406,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	op := oatproxy.New(&oatproxy.Config{
-		Host:               cli.PublicHost,
+		Host:               cli.BroadcasterHost,
 		CreateOAuthSession: state.CreateOAuthSession,
 		UpdateOAuthSession: state.UpdateOAuthSession,
 		GetOAuthSession:    state.LoadOAuthSession,
@@ -416,7 +416,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op, state)
+	d := director.NewDirector(mm, mod, &cli, b, op, state, swarm)
 	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err

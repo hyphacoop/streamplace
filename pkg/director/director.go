@@ -12,6 +12,7 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/statedb"
 )
 
@@ -30,9 +31,10 @@ type Director struct {
 	streamSessionsMu sync.Mutex
 	op               *oatproxy.OATProxy
 	statefulDB       *statedb.StatefulDB
+	swarm            *iroh_replicator.IrohSwarm
 }
 
-func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *bus.Bus, op *oatproxy.OATProxy, statefulDB *statedb.StatefulDB) *Director {
+func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *bus.Bus, op *oatproxy.OATProxy, statefulDB *statedb.StatefulDB, swarm *iroh_replicator.IrohSwarm) *Director {
 	return &Director{
 		mm:               mm,
 		mod:              mod,
@@ -42,6 +44,7 @@ func NewDirector(mm *media.MediaManager, mod model.Model, cli *config.CLI, bus *
 		streamSessionsMu: sync.Mutex{},
 		op:               op,
 		statefulDB:       statefulDB,
+		swarm:            swarm,
 	}
 }
 
@@ -72,6 +75,7 @@ func (d *Director) Start(ctx context.Context) error {
 					packets:     make([]bus.PacketizedSegment, 0),
 					started:     make(chan struct{}),
 					statefulDB:  d.statefulDB,
+					swarm:       d.swarm,
 				}
 				d.streamSessions[not.Segment.RepoDID] = ss
 				g.Go(func() error {

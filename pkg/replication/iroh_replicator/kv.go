@@ -20,7 +20,8 @@ type IrohSwarm struct {
 	w                *iroh_streamplace.WriteScope
 	mm               *media.MediaManager
 	segChan          chan *media.NewSegmentNotification
-	nodeId           string
+	NodeID           string
+	NodeTicket       string
 	activeSubs       map[string]*OriginInfo
 	handleDataScoped func(topic string, data []byte)
 }
@@ -75,13 +76,13 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.Me
 		return nil, fmt.Errorf("failed to get NodeId: %w", err)
 	}
 	log.Log(ctx, "Node ID:", "node_id", nodeId)
-	swarm.nodeId = nodeId.String()
+	swarm.NodeID = nodeId.String()
 
 	ticket, err := node.Ticket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Ticket: %w", err)
 	}
-	log.Log(ctx, "Ticket:", "ticket", ticket)
+	swarm.NodeTicket = ticket
 
 	return &swarm, nil
 }
@@ -161,7 +162,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 				}
 				delete(swarm.activeSubs, keyStr)
 			}
-			if info.NodeID == swarm.nodeId {
+			if info.NodeID == swarm.NodeID {
 				// oh, i have this stream. cool. do nothing.
 				continue
 			}
@@ -213,7 +214,7 @@ func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNo
 		return nil
 	}
 	originInfo := OriginInfo{
-		NodeID: swarm.nodeId,
+		NodeID: swarm.NodeID,
 		Time:   not.Segment.StartTime.Format(util.ISO8601),
 	}
 	bs, err := json.Marshal(originInfo)

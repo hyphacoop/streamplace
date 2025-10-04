@@ -9,7 +9,7 @@ import (
 
 func (mm *MediaManager) NewPeerConnection(ctx context.Context, user string) (rtcrec.PeerConnection, error) {
 	shouldRecord := false
-	settings, err := mm.model.GetServerSettings(ctx, mm.cli.PublicHost, user)
+	settings, err := mm.model.GetServerSettings(ctx, mm.cli.BroadcasterHost, user)
 	if err != nil {
 		return nil, err
 	}
