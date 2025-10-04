@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogFooter,
   Input,
+  ResponsiveDialog,
   Text,
   zero,
 } from "@streamplace/components";
@@ -340,7 +341,7 @@ function WebhookForm({
   };
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open={isVisible}
       onOpenChange={(open) => !open && onClose()}
       title={webhook ? "Edit Webhook" : "Create Webhook"}
@@ -598,7 +599,7 @@ function WebhookForm({
           <Text>{isLoading ? "Saving..." : webhook ? "Update" : "Create"}</Text>
         </Button>
       </DialogFooter>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }
 
