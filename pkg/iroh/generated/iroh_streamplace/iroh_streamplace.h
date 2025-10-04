@@ -568,6 +568,11 @@ uint64_t uniffi_iroh_streamplace_fn_constructor_node_receiver(RustBuffer config,
 uint64_t uniffi_iroh_streamplace_fn_constructor_node_sender(RustBuffer config
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_ADD_TICKETS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_ADD_TICKETS
+uint64_t uniffi_iroh_streamplace_fn_method_node_add_tickets(void* ptr, RustBuffer peers
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_DB
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_DB
 void* uniffi_iroh_streamplace_fn_method_node_db(void* ptr, RustCallStatus *out_status
@@ -1106,6 +1111,12 @@ uint16_t uniffi_iroh_streamplace_checksum_method_filter_timestamps(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_GOSIGNER_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_GOSIGNER_SIGN
 uint16_t uniffi_iroh_streamplace_checksum_method_gosigner_sign(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_NODE_ADD_TICKETS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_NODE_ADD_TICKETS
+uint16_t uniffi_iroh_streamplace_checksum_method_node_add_tickets(void
     
 );
 #endif

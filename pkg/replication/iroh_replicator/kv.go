@@ -15,13 +15,14 @@ import (
 )
 
 type IrohSwarm struct {
-	Node       *iroh_streamplace.Node
-	DB         *iroh_streamplace.Db
-	w          *iroh_streamplace.WriteScope
-	mm         *media.MediaManager
-	segChan    chan *media.NewSegmentNotification
-	nodeId     string
-	activeSubs map[string]*OriginInfo
+	Node             *iroh_streamplace.Node
+	DB               *iroh_streamplace.Db
+	w                *iroh_streamplace.WriteScope
+	mm               *media.MediaManager
+	segChan          chan *media.NewSegmentNotification
+	nodeId           string
+	activeSubs       map[string]*OriginInfo
+	handleDataScoped func(topic string, data []byte)
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -44,6 +45,17 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.Me
 	swarm := IrohSwarm{
 		mm:         mm,
 		activeSubs: make(map[string]*OriginInfo),
+	}
+
+	// workaround to get context into the HandleData callback
+	swarm.handleDataScoped = func(topic string, data []byte) {
+		if ctx.Err() != nil {
+			return
+		}
+		err := swarm.mm.ValidateMP4(context.Background(), bytes.NewReader(data), false)
+		if err != nil {
+			log.Error(ctx, "could not validate segment", "error", err, "topic", topic, "data", len(data))
+		}
 	}
 
 	node, err := iroh_streamplace.NodeReceiver(config, &swarm)
@@ -193,10 +205,7 @@ func (swarm *IrohSwarm) startSegmentSender(ctx context.Context) error {
 }
 
 func (swarm *IrohSwarm) HandleData(topic string, data []byte) {
-	err := swarm.mm.ValidateMP4(context.Background(), bytes.NewReader(data), false)
-	if err != nil {
-		log.Error(context.Background(), "could not validate segment", "error", err, "topic", topic, "data", len(data))
-	}
+	swarm.handleDataScoped(topic, data)
 }
 
 func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNotification) error {

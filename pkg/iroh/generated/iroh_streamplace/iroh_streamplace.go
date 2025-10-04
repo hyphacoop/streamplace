@@ -498,6 +498,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_node_add_tickets()
+		})
+		if checksum != 8701 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_node_add_tickets: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_method_node_db()
 		})
 		if checksum != 39096 {
@@ -1568,6 +1577,8 @@ func (c FfiConverterGoSigner) register() {
 
 // Iroh-streamplace node that can send, forward or receive stream segments.
 type NodeInterface interface {
+	// Add tickets for remote peers
+	AddTickets(peers []string) error
 	// Get a handle to the db to watch for changes locally or globally.
 	Db() *Db
 	// Join peers by their node tickets.
@@ -1682,6 +1693,38 @@ func NodeSender(config Config) (*Node, error) {
 	}
 
 	return res, err
+}
+
+// Add tickets for remote peers
+func (_self *Node) AddTickets(peers []string) error {
+	_pointer := _self.ffiObject.incrementPointer("*Node")
+	defer _self.ffiObject.decrementPointer()
+	_, err := uniffiRustCallAsync[JoinPeersError](
+		FfiConverterJoinPeersErrorINSTANCE,
+		// completeFn
+		func(handle C.uint64_t, status *C.RustCallStatus) struct{} {
+			C.ffi_iroh_streamplace_rust_future_complete_void(handle, status)
+			return struct{}{}
+		},
+		// liftFn
+		func(_ struct{}) struct{} { return struct{}{} },
+		C.uniffi_iroh_streamplace_fn_method_node_add_tickets(
+			_pointer, FfiConverterSequenceStringINSTANCE.Lower(peers)),
+		// pollFn
+		func(handle C.uint64_t, continuation C.UniffiRustFutureContinuationCallback, data C.uint64_t) {
+			C.ffi_iroh_streamplace_rust_future_poll_void(handle, continuation, data)
+		},
+		// freeFn
+		func(handle C.uint64_t) {
+			C.ffi_iroh_streamplace_rust_future_free_void(handle)
+		},
+	)
+
+	if err == nil {
+		return nil
+	}
+
+	return err
 }
 
 // Get a handle to the db to watch for changes locally or globally.

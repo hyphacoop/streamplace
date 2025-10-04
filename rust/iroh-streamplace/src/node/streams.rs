@@ -98,6 +98,11 @@ mod api {
     }
 
     #[derive(Debug, Serialize, Deserialize)]
+    pub struct AddTickets {
+        pub peers: Vec<NodeAddr>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct GetNodeAddr;
 
     // Use the macro to generate both the Protocol and Message enums
@@ -113,6 +118,8 @@ mod api {
         SendSegment(SendSegment),
         #[rpc(tx=oneshot::Sender<()>)]
         JoinPeers(JoinPeers),
+        #[rpc(tx=oneshot::Sender<()>)]
+        AddTickets(AddTickets),
         #[rpc(tx=oneshot::Sender<NodeAddr>)]
         GetNodeAddr(GetNodeAddr),
     }
@@ -477,6 +484,19 @@ impl Actor {
                 self.subscriptions.remove(&key);
                 tx.send(()).await.ok();
             }
+            ApiMessage::AddTickets(msg) => {
+                trace!("{:?}", msg.inner);
+                let WithChannels {
+                    tx,
+                    inner: api::AddTickets { peers },
+                    ..
+                } = msg;
+                for addr in &peers {
+                    self.router.endpoint().add_node_addr(addr.clone()).ok();
+                }
+                // self.client.inner().join_peers(ids).await.ok();
+                tx.send(()).await.ok();
+            }
             ApiMessage::JoinPeers(msg) => {
                 trace!("{:?}", msg.inner);
                 let WithChannels {
@@ -702,6 +722,27 @@ impl Node {
             .collect::<Vec<_>>();
         self.api
             .rpc(api::JoinPeers { peers: addrs })
+            .await
+            .map_err(|e| JoinPeersError::Irpc {
+                message: e.to_string(),
+            })
+    }
+
+    /// Add tickets for remote peers
+    pub async fn add_tickets(&self, peers: Vec<String>) -> Result<(), JoinPeersError> {
+        let peers = peers
+            .iter()
+            .map(|p| NodeTicket::from_str(p))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| JoinPeersError::Ticket {
+                message: e.to_string(),
+            })?;
+        let addrs = peers
+            .iter()
+            .map(|t| t.node_addr().clone())
+            .collect::<Vec<_>>();
+        self.api
+            .rpc(api::AddTickets { peers: addrs })
             .await
             .map_err(|e| JoinPeersError::Irpc {
                 message: e.to_string(),
