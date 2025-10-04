@@ -107,7 +107,7 @@ const DialogBottomSheet = forwardRef<
         index={open ? 0 : -1}
         enablePanDownToClose
         enableDynamicSizing={true}
-        maxDynamicContentSize={dims.height - top - 100}
+        maxDynamicContentSize={dims.height - top}
         keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
         enableContentPanningGesture={false}
