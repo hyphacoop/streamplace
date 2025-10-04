@@ -40,6 +40,8 @@ type StreamSession struct {
 	segmentChan    chan struct{}
 	lastStatus     time.Time
 	lastStatusLock sync.Mutex
+	lastOriginTime time.Time
+	lastOriginLock sync.Mutex
 	g              *errgroup.Group
 	started        chan struct{}
 	ctx            context.Context
@@ -48,7 +50,7 @@ type StreamSession struct {
 	swarm          *iroh_replicator.IrohSwarm
 }
 
-func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotification) error {
+func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotification) error {
 	ctx, cancel := context.WithCancel(ctx)
 	ss.g, ctx = errgroup.WithContext(ctx)
 	sid := livepeer.RandomTrailer(8)
@@ -56,7 +58,7 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 	ss.ctx = ctx
 	log.Log(ctx, "starting stream session")
 	defer cancel()
-	spseg, err := not.Segment.ToStreamplaceSegment()
+	spseg, err := notif.Segment.ToStreamplaceSegment()
 	if err != nil {
 		return fmt.Errorf("could not convert segment to streamplace segment: %w", err)
 	}
@@ -74,7 +76,7 @@ func (ss *StreamSession) Start(ctx context.Context, not *media.NewSegmentNotific
 		return fmt.Errorf("segment duration is required to calculate bitrate")
 	}
 	dur := time.Duration(*spseg.Duration)
-	byteLen := len(not.Data)
+	byteLen := len(notif.Data)
 	bitrate := int(float64(byteLen) / dur.Seconds() * 8)
 	sourceRendition := renditions.Rendition{
 		Name:    "source",
@@ -134,7 +136,7 @@ func (ss *StreamSession) Go(ctx context.Context, f func() error) {
 	})
 }
 
-func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNotification) error {
+func (ss *StreamSession) NewSegment(ctx context.Context, notif *media.NewSegmentNotification) error {
 	<-ss.started
 	go func() {
 		select {
@@ -143,14 +145,14 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 		case ss.segmentChan <- struct{}{}:
 		}
 	}()
-	aqt := aqtime.FromTime(not.Segment.StartTime)
-	ctx = log.WithLogValues(ctx, "segID", not.Segment.ID, "repoDID", not.Segment.RepoDID, "timestamp", aqt.FileSafeString())
-	not.Segment.MediaData.Size = len(not.Data)
-	err := ss.mod.CreateSegment(not.Segment)
+	aqt := aqtime.FromTime(notif.Segment.StartTime)
+	ctx = log.WithLogValues(ctx, "segID", notif.Segment.ID, "repoDID", notif.Segment.RepoDID, "timestamp", aqt.FileSafeString())
+	notif.Segment.MediaData.Size = len(notif.Data)
+	err := ss.mod.CreateSegment(notif.Segment)
 	if err != nil {
 		return fmt.Errorf("could not add segment to database: %w", err)
 	}
-	spseg, err := not.Segment.ToStreamplaceSegment()
+	spseg, err := notif.Segment.ToStreamplaceSegment()
 	if err != nil {
 		return fmt.Errorf("could not convert segment to streamplace segment: %w", err)
 	}
@@ -158,14 +160,14 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 	ss.bus.Publish(spseg.Creator, spseg)
 	ss.Go(ctx, func() error {
 		return ss.AddPlaybackSegment(ctx, spseg, "source", &bus.Seg{
-			Filepath: not.Segment.ID,
-			Data:     not.Data,
+			Filepath: notif.Segment.ID,
+			Data:     notif.Data,
 		})
 	})
 
 	if ss.cli.Thumbnail {
 		ss.Go(ctx, func() error {
-			return ss.Thumbnail(ctx, spseg.Creator, not)
+			return ss.Thumbnail(ctx, spseg.Creator, notif)
 		})
 	}
 
@@ -173,10 +175,16 @@ func (ss *StreamSession) NewSegment(ctx context.Context, not *media.NewSegmentNo
 		return ss.UpdateStatus(ctx, spseg.Creator)
 	})
 
+	if notif.Local {
+		ss.Go(ctx, func() error {
+			return ss.UpdateBroadcastOrigin(ctx)
+		})
+	}
+
 	if ss.cli.LivepeerGatewayURL != "" {
 		ss.Go(ctx, func() error {
 			start := time.Now()
-			err := ss.Transcode(ctx, spseg, not.Data)
+			err := ss.Transcode(ctx, spseg, notif.Data)
 			took := time.Since(start)
 			spmetrics.QueuedTranscodeDuration.WithLabelValues(spseg.Creator).Set(float64(took.Milliseconds()))
 			return err
@@ -372,6 +380,82 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 
 	ss.lastStatus = time.Now()
 
+	return nil
+}
+
+var originUpdateInterval = time.Second * 30
+
+func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
+	ctx = log.WithLogValues(ctx, "func", "UpdateStatus")
+	ss.lastOriginLock.Lock()
+	defer ss.lastOriginLock.Unlock()
+	if time.Since(ss.lastOriginTime) < originUpdateInterval {
+		log.Debug(ctx, "not updating origin, last origin was less than 30 seconds ago")
+		return nil
+	}
+	origin := streamplace.BroadcastOrigin{
+		Streamer:   ss.repoDID,
+		Server:     fmt.Sprintf("did:web:%s", ss.cli.BroadcasterHost),
+		UpdatedAt:  time.Now().Format(time.RFC3339),
+		IrohTicket: &ss.swarm.NodeTicket,
+	}
+
+	session, err := ss.statefulDB.GetSessionByDID(ss.repoDID)
+	if err != nil {
+		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
+	}
+	if session == nil {
+		return fmt.Errorf("no session found for repoDID: %s", ss.repoDID)
+	}
+
+	session, err = ss.op.RefreshIfNeeded(session)
+	if err != nil {
+		return fmt.Errorf("could not refresh session for repoDID: %w", err)
+	}
+
+	client, err := ss.op.GetXrpcClient(session)
+	if err != nil {
+		return fmt.Errorf("could not get xrpc client: %w", err)
+	}
+
+	rkey := fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.BroadcasterHost)
+
+	var swapRecord *string
+	getOutput := atproto.RepoGetRecord_Output{}
+	err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", map[string]any{
+		"repo":       ss.repoDID,
+		"collection": "place.stream.broadcast.origin",
+		"rkey":       rkey,
+	}, nil, &getOutput)
+	if err != nil {
+		xErr, ok := err.(*xrpc.Error)
+		if !ok {
+			return fmt.Errorf("could not get record: %w", err)
+		}
+		if xErr.StatusCode != 400 { // yes, they return "400" for "not found"
+			return fmt.Errorf("could not get record: %w", err)
+		}
+		log.Debug(ctx, "record not found, creating", "repoDID", ss.repoDID)
+	} else {
+		log.Debug(ctx, "got record", "record", getOutput)
+		swapRecord = getOutput.Cid
+	}
+
+	inp := atproto.RepoPutRecord_Input{
+		Collection: "place.stream.broadcast.origin",
+		Record:     &util.LexiconTypeDecoder{Val: &origin},
+		Rkey:       fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.BroadcasterHost),
+		Repo:       ss.repoDID,
+		SwapRecord: swapRecord,
+	}
+	out := atproto.RepoPutRecord_Output{}
+
+	err = client.Do(ctx, xrpc.Procedure, "application/json", "com.atproto.repo.putRecord", map[string]any{}, inp, &out)
+	if err != nil {
+		return fmt.Errorf("could not create record: %w", err)
+	}
+
+	ss.lastOriginTime = time.Now()
 	return nil
 }
 

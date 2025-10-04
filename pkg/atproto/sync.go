@@ -389,6 +389,21 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			log.Error(ctx, "failed to create signing key", "err", err)
 		}
 
+	case *streamplace.BroadcastOrigin:
+		log.Warn(ctx, "creating broadcast origin", "origin", rec)
+		_, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync broadcast origin creator bluesky repo: %w", err)
+		}
+		_, err = atsync.SyncBlueskyRepoCached(ctx, rec.Streamer, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync broadcast origin streamer bluesky repo: %w", err)
+		}
+		err = atsync.Model.UpdateBroadcastOrigin(ctx, rec, aturi)
+		if err != nil {
+			log.Error(ctx, "failed to update broadcast origin", "err", err)
+		}
+
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))
 	}
