@@ -15,12 +15,13 @@ import (
 )
 
 type IrohSwarm struct {
-	Node    *iroh_streamplace.Node
-	DB      *iroh_streamplace.Db
-	w       *iroh_streamplace.WriteScope
-	mm      *media.MediaManager
-	segChan chan *media.NewSegmentNotification
-	nodeId  string
+	Node       *iroh_streamplace.Node
+	DB         *iroh_streamplace.Db
+	w          *iroh_streamplace.WriteScope
+	mm         *media.MediaManager
+	segChan    chan *media.NewSegmentNotification
+	nodeId     string
+	activeSubs map[string]*OriginInfo
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -41,7 +42,8 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.Me
 	log.Log(ctx, "Config created", "config", config)
 
 	swarm := IrohSwarm{
-		mm: mm,
+		mm:         mm,
+		activeSubs: make(map[string]*OriginInfo),
 	}
 
 	node, err := iroh_streamplace.NodeReceiver(config, &swarm)
@@ -71,8 +73,6 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.Me
 
 	return &swarm, nil
 }
-
-var activeSubs = make(map[string]bool)
 
 func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
 	if len(tickets) > 0 {
@@ -110,7 +110,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			return fmt.Errorf("failed to get next subscription event: %w", err)
 		}
 		if ev == nil {
-			log.Log(ctx, "Got empty event from sub.NextRaw(), pausing for a second")
+			log.Debug(ctx, "Got empty event from sub.NextRaw(), pausing for a second")
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -118,37 +118,60 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 		case iroh_streamplace.SubscribeItemEntry:
 			keyStr := string(item.Key)
 			valueStr := string(item.Value)
-			log.Log(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
+			log.Debug(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
+			if len(keyStr) > 0 && keyStr[0] != '{' {
+				// not JSON, it's one of the rust messages
+				continue
+			}
 			var info OriginInfo
 			err := json.Unmarshal(item.Value, &info)
 			if err != nil {
 				log.Error(ctx, "could not unmarshal origin info", "error", err)
 				continue
 			}
-			if !activeSubs[keyStr] {
-				if info.NodeID == swarm.nodeId {
-					activeSubs[keyStr] = true
+			oldSub, ok := swarm.activeSubs[keyStr]
+			if ok {
+				if oldSub.NodeID == info.NodeID {
+					// mmyep. same node still has the stream. great news.
 					continue
 				}
-				pubKey, err := iroh_streamplace.PublicKeyFromString(info.NodeID)
+				log.Log(ctx, "Stream origin changed, swapping to new node", "old_node", oldSub.NodeID, "new_node", info.NodeID, "streamer", keyStr)
+				pubKey, err := iroh_streamplace.PublicKeyFromString(oldSub.NodeID)
 				if err != nil {
 					log.Error(ctx, "could not create public key", "error", err)
 					continue
 				}
-				activeSubs[keyStr] = true
-				err = swarm.Node.Subscribe(keyStr, pubKey)
+				// different node has the stream. we need to unsubscribe from the old node.
+				err = swarm.Node.Unsubscribe(keyStr, pubKey)
 				if err != nil {
-					log.Error(ctx, "could not subscribe to key", "error", err)
+					log.Error(ctx, "could not unsubscribe from key", "error", err)
 					continue
 				}
+				delete(swarm.activeSubs, keyStr)
 			}
+			if info.NodeID == swarm.nodeId {
+				// oh, i have this stream. cool. do nothing.
+				continue
+			}
+			log.Log(ctx, "Subscribing to stream", "new_node", info.NodeID, "streamer", keyStr)
+			pubKey, err := iroh_streamplace.PublicKeyFromString(info.NodeID)
+			if err != nil {
+				log.Error(ctx, "could not create public key", "error", err)
+				continue
+			}
+			err = swarm.Node.Subscribe(keyStr, pubKey)
+			if err != nil {
+				log.Error(ctx, "could not subscribe to key", "error", err)
+				continue
+			}
+			swarm.activeSubs[keyStr] = &info
 
 		case iroh_streamplace.SubscribeItemCurrentDone:
-			log.Log(ctx, "SubscribeItemCurrentDone", "currentDone", item)
+			log.Debug(ctx, "SubscribeItemCurrentDone", "currentDone", item)
 		case iroh_streamplace.SubscribeItemExpired:
-			log.Log(ctx, "SubscribeItemExpired", "expired", item)
+			log.Debug(ctx, "SubscribeItemExpired", "expired", item)
 		case iroh_streamplace.SubscribeItemOther:
-			log.Log(ctx, "SubscribeItemOther", "other", item)
+			log.Debug(ctx, "SubscribeItemOther", "other", item)
 		}
 	}
 }
@@ -172,7 +195,7 @@ func (swarm *IrohSwarm) startSegmentSender(ctx context.Context) error {
 func (swarm *IrohSwarm) HandleData(topic string, data []byte) {
 	err := swarm.mm.ValidateMP4(context.Background(), bytes.NewReader(data), false)
 	if err != nil {
-		log.Error(context.Background(), "could not validate segment", "error", err)
+		log.Error(context.Background(), "could not validate segment", "error", err, "topic", topic, "data", len(data))
 	}
 }
 
