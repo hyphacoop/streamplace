@@ -72,7 +72,7 @@ func SetColorLogger(color string) {
 	))
 }
 
-func init() {
+func MonkeypatchStderr() {
 	r, w, err := os.Pipe()
 	if err != nil {
 		panic(err)
