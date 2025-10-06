@@ -386,22 +386,25 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	// clientMetadata := &oatproxy.OAuthClientMetadata{
-	// 	Scope:      "atproto transition:generic",
-	// 	ClientName: "Streamplace",
-	// 	RedirectURIs: []string{
-	// 		fmt.Sprintf("https://%s/login", cli.PublicHost),
-	// 		fmt.Sprintf("https://%s/api/app-return", cli.PublicHost),
-	// 	},
-	// }
-
-	clientMetadata := &oatproxy.OAuthClientMetadata{
-		Scope:      "atproto transition:generic",
-		ClientName: "Streamplace",
-		RedirectURIs: []string{
-			fmt.Sprintf("%s/login", cli.OwnPublicURL()),
-			fmt.Sprintf("%s/api/app-return", cli.OwnPublicURL()),
-		},
+	var clientMetadata *oatproxy.OAuthClientMetadata
+	if cli.PublicOAuth {
+		clientMetadata = &oatproxy.OAuthClientMetadata{
+			Scope:      "atproto transition:generic",
+			ClientName: "Streamplace",
+			RedirectURIs: []string{
+				fmt.Sprintf("%s/login", cli.OwnPublicURL()),
+				fmt.Sprintf("%s/api/app-return", cli.OwnPublicURL()),
+			},
+		}
+	} else {
+		clientMetadata = &oatproxy.OAuthClientMetadata{
+			Scope:      "atproto transition:generic",
+			ClientName: "Streamplace",
+			RedirectURIs: []string{
+				fmt.Sprintf("https://%s/login", cli.PublicHost),
+				fmt.Sprintf("https://%s/api/app-return", cli.PublicHost),
+			},
+		}
 	}
 
 	op := oatproxy.New(&oatproxy.Config{
