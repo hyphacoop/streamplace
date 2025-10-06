@@ -1,5 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
-import { Button, Input, Text, View, zero } from "@streamplace/components";
+import {
+  Button,
+  Input,
+  Text,
+  useToast,
+  View,
+  zero,
+} from "@streamplace/components";
 import AQLink from "components/aqlink";
 import {
   createServerSettingsRecord,
@@ -21,6 +28,7 @@ export function Settings() {
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const t = useToast();
 
   // are we logged in?
   const loggedIn = useAppSelector(
@@ -164,6 +172,7 @@ export function Settings() {
             </>
           )}
         </View>
+        <Button onPress={() => t.show("toast")}>tost</Button>
       </View>
     </ScrollView>
   );

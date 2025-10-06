@@ -84,6 +84,10 @@ export interface Theme {
     warning: string;
     warningForeground: string;
 
+    // Info colors
+    info: string;
+    infoForeground: string;
+
     // Border and input colors
     border: string;
     input: string;
@@ -355,6 +359,9 @@ function generateThemeColorsFromPalette(
     warning:
       Platform.OS === "ios" ? colors.ios.systemOrange : colors.warning[500],
     warningForeground: colors.white,
+
+    info: Platform.OS === "ios" ? colors.ios.systemTeal : colors.teal[500],
+    infoForeground: isDark ? palette[50] : palette[900],
 
     border: isDark ? palette[500] + "30" : palette[200] + "30",
     input: isDark ? palette[800] : palette[200],
