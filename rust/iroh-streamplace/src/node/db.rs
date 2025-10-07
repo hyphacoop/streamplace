@@ -492,7 +492,7 @@ mod util {
         let mut result = Vec::new();
         if let Some(s) = stream {
             result.push(b's');
-            escape_into([s], &mut result);
+            postcard::to_io(s, &mut result).unwrap();
         } else {
             result.push(b'g');
         }
@@ -503,81 +503,12 @@ mod util {
     pub fn decode_stream_and_key(encoded: &[u8]) -> Option<(Option<Vec<u8>>, Vec<u8>)> {
         match encoded.split_first() {
             Some((b's', mut rest)) => {
-                let stream = unescape_one(&mut rest)?;
+                let (stream, rest) = postcard::take_from_bytes(&mut rest).ok()?;
                 Some((Some(stream), rest.to_vec()))
             }
             Some((b'g', rest)) => Some((None, rest.to_vec())),
             _ => None,
         }
-    }
-
-    // these values are needed to keep the order preserved
-    const ESCAPE: u8 = 1;
-    const SEPARATOR: u8 = 0;
-
-    /// Escape into an existing vec.
-    fn escape_into<I, C>(components: I, result: &mut Vec<u8>)
-    where
-        I: IntoIterator<Item = C>,
-        C: AsRef<[u8]>,
-    {
-        for segment in components.into_iter() {
-            for &byte in segment.as_ref() {
-                match byte {
-                    ESCAPE => result.extend([ESCAPE, ESCAPE]),
-                    SEPARATOR => result.extend([ESCAPE, SEPARATOR]),
-                    _ => result.push(byte),
-                }
-            }
-            result.push(SEPARATOR);
-        }
-        // you might think that the trailing separator is unnecessary, but it is needed
-        // to distinguish between the empty path and the path with one empty component
-    }
-
-    fn unescape_one(path: &mut &[u8]) -> Option<Vec<u8>> {
-        let mut segment = Vec::new();
-        let mut escape = false;
-        for (i, &byte) in path.iter().enumerate() {
-            if escape {
-                segment.push(byte);
-                escape = false;
-            } else {
-                match byte {
-                    ESCAPE => escape = true,
-                    SEPARATOR => {
-                        *path = &path[i + 1..];
-                        return Some(segment);
-                    }
-                    _ => segment.push(byte),
-                }
-            }
-        }
-        None
-    }
-
-    /// A simple version of unescape.
-    #[allow(dead_code)]
-    fn unescape(path: &[u8]) -> Vec<Vec<u8>> {
-        let mut components = Vec::new();
-        let mut segment = Vec::new();
-        let mut escape = false;
-        for &byte in path {
-            if escape {
-                segment.push(byte);
-                escape = false;
-            } else {
-                match byte {
-                    ESCAPE => escape = true,
-                    SEPARATOR => {
-                        components.push(segment);
-                        segment = Vec::new();
-                    }
-                    _ => segment.push(byte),
-                }
-            }
-        }
-        components
     }
 
     pub fn format_bytes(bytes: &[u8]) -> String {

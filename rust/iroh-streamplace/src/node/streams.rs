@@ -320,7 +320,7 @@ impl Actor {
                         break;
                     };
                     if let Some(shutdown) = self.handle_api(msg).instrument(trace_span!("api")).await {
-                        shutdown.send(()).ok();
+                        shutdown.send(()).await.ok();
                         break;
                     }
                 }
