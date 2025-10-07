@@ -25,25 +25,33 @@ import { useTheme } from "../../ui";
 import { Text } from "./text";
 
 type ToastConfig = {
-  title: string;
+  title?: string;
   description?: string;
   duration?: number;
   actionLabel?: string;
   onAction?: () => void;
   onClose?: () => void;
   variant?: "default" | "success" | "error" | "info";
+  render?: (props: {
+    close: () => void;
+    action?: () => void;
+  }) => React.ReactNode;
 };
 
 type ToastState = {
   id: string;
   open: boolean;
-  title: string;
+  title?: string;
   description?: string;
   duration: number;
   actionLabel?: string;
   onAction?: () => void;
   onClose?: () => void;
   variant?: "default" | "success" | "error" | "info";
+  render?: (props: {
+    close: () => void;
+    action?: () => void;
+  }) => React.ReactNode;
 };
 
 class ToastManager {
@@ -64,6 +72,7 @@ class ToastManager {
       onAction: config.onAction,
       onClose: config.onClose,
       variant: config.variant ?? "default",
+      render: config.render,
     };
 
     this.toasts = [...this.toasts, toast];
@@ -148,6 +157,24 @@ export const toast = {
       }
     }
   },
+  showManual: (
+    render: (props: {
+      close: () => void;
+      action?: () => void;
+    }) => React.ReactNode,
+    options?: {
+      duration?: number;
+      actionLabel?: string;
+      onAction?: () => void;
+      onClose?: () => void;
+      variant?: "default" | "success" | "error" | "info";
+    },
+  ) => {
+    toastManager.show({
+      render,
+      ...options,
+    });
+  },
 };
 
 export function useToast() {
@@ -231,6 +258,7 @@ export function ToastProvider() {
                 isLatest={index === 0}
                 totalToasts={toasts.length}
                 variant={toastState.variant}
+                render={toastState.render}
               />
             ))}
         </View>
@@ -251,6 +279,10 @@ type ToastProps = {
   isLatest?: boolean;
   totalToasts?: number;
   variant?: "default" | "success" | "error" | "info";
+  render?: (props: {
+    close: () => void;
+    action?: () => void;
+  }) => React.ReactNode;
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -267,6 +299,7 @@ export function Toast({
   isLatest = true,
   totalToasts = 0,
   variant = "default",
+  render,
 }: ToastProps) {
   const [isHovered, setIsHovered] = useState(false);
   const progress = useSharedValue(1);
@@ -416,133 +449,141 @@ export function Toast({
           variantStyles[variant],
         ]}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            width: "100%",
-            gap: theme.spacing[4],
-          }}
-        >
-          <View style={{ flex: 1, gap: theme.spacing[1] }}>
-            <Text
+        {render ? (
+          render({ close: () => onOpenChange(false), action: onAction })
+        ) : (
+          <>
+            <View
               style={{
-                color: theme.colors.foreground,
-                fontSize: 16,
-                fontWeight: "500",
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                width: "100%",
+                gap: theme.spacing[4],
               }}
             >
-              {title}
-            </Text>
-            {description ? (
-              <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>
-                {description}
-              </Text>
-            ) : null}
-          </View>
-          {isLatest && duration > 0 ? (
-            <Pressable
-              onPress={() => onOpenChange(false)}
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Svg width="24" height="24" viewBox="0 0 24 24">
-                <AnimatedCircle
-                  stroke={theme.colors.border}
-                  fill="transparent"
-                  strokeWidth="2"
-                  r={RADIUS}
-                  cx="12"
-                  cy="12"
-                />
-                <AnimatedCircle
-                  animatedProps={animatedCircleProps}
-                  stroke={theme.colors.primary}
-                  fill="transparent"
-                  strokeWidth="2"
-                  strokeDasharray={CIRCUMFERENCE}
-                  r={RADIUS}
-                  cx="12"
-                  cy="12"
-                  rotation="-90"
-                  originX="12"
-                  originY="12"
-                  strokeLinecap="round"
-                />
-              </Svg>
-              {!onAction && (
-                <View style={{ position: "absolute" }}>
-                  <X color={theme.colors.foreground} size={12} />
-                </View>
+              <View style={{ flex: 1, gap: theme.spacing[1] }}>
+                <Text
+                  style={{
+                    color: theme.colors.foreground,
+                    fontSize: 16,
+                    fontWeight: "500",
+                  }}
+                >
+                  {title}
+                </Text>
+                {description ? (
+                  <Text
+                    style={{ color: theme.colors.foreground, fontSize: 14 }}
+                  >
+                    {description}
+                  </Text>
+                ) : null}
+              </View>
+              {isLatest && duration > 0 ? (
+                <Pressable
+                  onPress={() => onOpenChange(false)}
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Svg width="24" height="24" viewBox="0 0 24 24">
+                    <AnimatedCircle
+                      stroke={theme.colors.border}
+                      fill="transparent"
+                      strokeWidth="2"
+                      r={RADIUS}
+                      cx="12"
+                      cy="12"
+                    />
+                    <AnimatedCircle
+                      animatedProps={animatedCircleProps}
+                      stroke={theme.colors.primary}
+                      fill="transparent"
+                      strokeWidth="2"
+                      strokeDasharray={CIRCUMFERENCE}
+                      r={RADIUS}
+                      cx="12"
+                      cy="12"
+                      rotation="-90"
+                      originX="12"
+                      originY="12"
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                  {!onAction && (
+                    <View style={{ position: "absolute" }}>
+                      <X color={theme.colors.foreground} size={12} />
+                    </View>
+                  )}
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => onOpenChange(false)}
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Svg width="24" height="24" viewBox="0 0 24 24">
+                    <AnimatedCircle
+                      stroke={theme.colors.border}
+                      fill={theme.colors.muted}
+                      strokeWidth="2"
+                      r={RADIUS}
+                      cx="12"
+                      cy="12"
+                    />
+                  </Svg>
+                  {!onAction && (
+                    <View style={{ position: "absolute" }}>
+                      <X color={theme.colors.foreground} size={12} />
+                    </View>
+                  )}
+                </Pressable>
               )}
-            </Pressable>
-          ) : (
-            <Pressable
-              onPress={() => onOpenChange(false)}
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Svg width="24" height="24" viewBox="0 0 24 24">
-                <AnimatedCircle
-                  stroke={theme.colors.border}
-                  fill={theme.colors.muted}
-                  strokeWidth="2"
-                  r={RADIUS}
-                  cx="12"
-                  cy="12"
-                />
-              </Svg>
-              {!onAction && (
-                <View style={{ position: "absolute" }}>
-                  <X color={theme.colors.foreground} size={12} />
-                </View>
-              )}
-            </Pressable>
-          )}
-        </View>
-        {onAction && (
-          <View
-            style={{
-              gap: theme.spacing[1],
-              flexDirection: "row",
-              justifyContent: "flex-end",
-              width: "100%",
-            }}
-          >
-            <Pressable
-              style={[
-                styles.button,
-                {
-                  borderColor: theme.colors.primary,
-                  paddingHorizontal: theme.spacing[4],
-                  paddingVertical: theme.spacing[2],
-                },
-              ]}
-              onPress={onAction}
-            >
-              <Text style={{ color: theme.colors.foreground }}>
-                {actionLabel}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.button,
-                {
-                  borderColor: theme.colors.primary,
-                  paddingHorizontal: theme.spacing[4],
-                  paddingVertical: theme.spacing[2],
-                },
-              ]}
-              onPress={() => onOpenChange(false)}
-            >
-              <Text style={{ color: theme.colors.foreground }}>Close</Text>
-            </Pressable>
-          </View>
+            </View>
+            {onAction && (
+              <View
+                style={{
+                  gap: theme.spacing[1],
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  width: "100%",
+                }}
+              >
+                <Pressable
+                  style={[
+                    styles.button,
+                    {
+                      borderColor: theme.colors.primary,
+                      paddingHorizontal: theme.spacing[4],
+                      paddingVertical: theme.spacing[2],
+                    },
+                  ]}
+                  onPress={onAction}
+                >
+                  <Text style={{ color: theme.colors.foreground }}>
+                    {actionLabel}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.button,
+                    {
+                      borderColor: theme.colors.primary,
+                      paddingHorizontal: theme.spacing[4],
+                      paddingVertical: theme.spacing[2],
+                    },
+                  ]}
+                  onPress={() => onOpenChange(false)}
+                >
+                  <Text style={{ color: theme.colors.foreground }}>Close</Text>
+                </Pressable>
+              </View>
+            )}
+          </>
         )}
       </View>
     </Animated.View>
