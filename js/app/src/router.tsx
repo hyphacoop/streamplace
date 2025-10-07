@@ -15,11 +15,10 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Text, useTheme } from "@streamplace/components";
+import { Text, useTheme, useToast } from "@streamplace/components";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
 import Login from "components/login/login";
-import Popup from "components/popup";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 import * as ExpoLinking from "expo-linking";
 import { hydrate, selectHydrated } from "features/base/baseSlice";
@@ -337,6 +336,8 @@ export function StreamplaceDrawer() {
 
   const sidebar = useSidebarControl();
 
+  const toast = useToast();
+
   SystemBars.setStyle("dark");
 
   // Top-level stuff to handle push notification registration
@@ -397,6 +398,19 @@ export function StreamplaceDrawer() {
   if (!hydrated) {
     return <View />;
   }
+
+  if (isWeb && livePopup) {
+    toast.show("You are live!", "Do you want to go to the Live Dashboard?", {
+      actionLabel: "Go",
+      onAction: () => {
+        navigation.navigate("LiveDashboard");
+        setLivePopup(false);
+      },
+      onClose: () => setLivePopup(false),
+      variant: "error",
+    });
+  }
+
   return (
     <>
       <StatusBar barStyle="light-content" />
@@ -589,35 +603,6 @@ export function StreamplaceDrawer() {
           }}
         />
       </Drawer.Navigator>
-      {isWeb && livePopup && (
-        <Popup
-          onPress={() => {
-            navigation.navigate("LiveDashboard");
-            setLivePopup(false);
-          }}
-          onClose={() => {
-            setLivePopup(false);
-          }}
-          containerProps={{
-            style: { bottom: 32 },
-          }}
-          bubbleProps={{
-            style: { backgroundColor: "#cc0000" },
-          }}
-        >
-          <Text
-            style={[
-              { textAlign: "center" },
-              { fontSize: 24, fontWeight: "bold" },
-            ]}
-          >
-            ✨YOU ARE LIVE!!!✨
-          </Text>
-          <Text>
-            {isNative ? "Tap" : "Click"} here to go to the live dashboard
-          </Text>
-        </Popup>
-      )}
     </>
   );
 }

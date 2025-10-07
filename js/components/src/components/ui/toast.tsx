@@ -30,6 +30,7 @@ type ToastConfig = {
   duration?: number;
   actionLabel?: string;
   onAction?: () => void;
+  onClose?: () => void;
   variant?: "default" | "success" | "error" | "info";
 };
 
@@ -41,6 +42,7 @@ type ToastState = {
   duration: number;
   actionLabel?: string;
   onAction?: () => void;
+  onClose?: () => void;
   variant?: "default" | "success" | "error" | "info";
 };
 
@@ -60,6 +62,7 @@ class ToastManager {
       duration: config.duration ?? 3,
       actionLabel: config.actionLabel,
       onAction: config.onAction,
+      onClose: config.onClose,
       variant: config.variant ?? "default",
     };
 
@@ -72,6 +75,10 @@ class ToastManager {
   }
 
   hide(id: string) {
+    const toast = this.toasts.find((t) => t.id === id);
+    if (toast?.onClose) {
+      toast.onClose();
+    }
     this.toasts = this.toasts.map((toast) =>
       toast.id === id ? { ...toast, open: false } : toast,
     );
@@ -121,6 +128,7 @@ export const toast = {
       duration?: number;
       actionLabel?: string;
       onAction?: () => void;
+      onClose?: () => void;
       variant?: "default" | "success" | "error" | "info";
     },
   ) => {
