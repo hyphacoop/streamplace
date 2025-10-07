@@ -351,9 +351,16 @@ function ToastContainer({
     const styles: ViewStyle = {
       position: "absolute",
       zIndex: 1000,
-      width: isDesktop ? 400 : "100%",
       paddingHorizontal: isDesktop ? 0 : theme.spacing[4],
     };
+
+    // Set width/maxWidth
+    if (isDesktop) {
+      styles.width = 400;
+    } else {
+      styles.width = "100%";
+      styles.maxWidth = 400;
+    }
 
     if (resolvedPosition.includes("top")) {
       styles.top = insets.top + theme.spacing[4];
@@ -370,9 +377,15 @@ function ToastContainer({
       styles.alignItems = "flex-end";
     }
     if (resolvedPosition.includes("center")) {
-      styles.left = 0;
-      styles.right = 0;
       styles.alignItems = "center";
+      // Center the container itself when it has maxWidth
+      if (!isDesktop) {
+        styles.left = "50%";
+        styles.transform = [{ translateX: "-50%" }];
+      } else {
+        styles.left = 0;
+        styles.right = 0;
+      }
     }
 
     return styles;
@@ -790,7 +803,7 @@ export function Toast({
               justifyContent: "space-between",
               alignItems: "center",
               padding: theme.spacing[4],
-              width: isDesktop ? "100%" : "95%",
+              width: "100%",
             },
             variantStyles[variant],
           ]}
