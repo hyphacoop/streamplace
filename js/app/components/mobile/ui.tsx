@@ -1,5 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import {
+  ContentRights,
+  ContentWarnings,
   PlayerUI,
   Slider,
   Text,
@@ -7,6 +9,7 @@ import {
   useAvatars,
   useCameraToggle,
   useLivestreamInfo,
+  useLivestreamStore,
   useMuted,
   usePlayerDimensions,
   usePlayerStore,
@@ -67,6 +70,12 @@ export function MobileUi({
   const { isPlayerRatioGreater } = useSegmentDimensions();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
+  const segment = useLivestreamStore((x) => x.segment);
+
+  // Get content warnings and rights directly from the latest segment
+  const contentWarnings =
+    (segment?.contentWarnings?.warnings as string[]) || [];
+  const contentRights = segment?.contentRights;
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
@@ -166,50 +175,86 @@ export function MobileUi({
               {/* Top Left - Back Button and Profile */}
               <View
                 style={[
-                  {
-                    padding: 3,
-                    paddingRight: 8,
-                    backgroundColor: "rgba(90,90,90, 0.25)",
-                    borderRadius: 12,
-                  },
-                  r[2],
                   layout.position.absolute,
                   position.left[2],
                   { top: safeAreaInsets.top + 12 },
+                  { maxWidth: "70%" },
                 ]}
               >
-                <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
-                  <Pressable
-                    onPress={() => {
-                      navigation.canGoBack()
-                        ? navigation.goBack()
-                        : navigation.navigate("Home", { screen: "StreamList" });
-                    }}
+                <View
+                  style={[
+                    {
+                      padding: 3,
+                      paddingRight: 8,
+                      backgroundColor: "rgba(90,90,90, 0.25)",
+                      borderRadius: 12,
+                    },
+                    r[2],
+                  ]}
+                >
+                  <View
+                    style={[layout.flex.row, layout.flex.center, gap.all[2]]}
                   >
-                    <ChevronLeft color="white" />
-                  </Pressable>
-                  <Image
-                    source={
-                      profile?.did
-                        ? { url: avatars[profile?.did]?.avatar }
-                        : require("assets/images/goose.png")
-                    }
-                    width={32}
-                    height={32}
-                    style={[
-                      {
-                        width: 36,
-                        height: 36,
-                        backgroundColor: "green",
-                      },
-                      { borderRadius: 999 },
-                      borders.width.thin,
-                      borders.color.gray[700],
-                    ]}
-                  />
-                  <Text>{profile?.handle}</Text>
+                    <Pressable
+                      onPress={() => {
+                        navigation.canGoBack()
+                          ? navigation.goBack()
+                          : navigation.navigate("Home", {
+                              screen: "StreamList",
+                            });
+                      }}
+                    >
+                      <ChevronLeft color="white" />
+                    </Pressable>
+                    <Image
+                      source={
+                        profile?.did
+                          ? { url: avatars[profile?.did]?.avatar }
+                          : require("assets/images/goose.png")
+                      }
+                      width={32}
+                      height={32}
+                      style={[
+                        {
+                          width: 36,
+                          height: 36,
+                          backgroundColor: "green",
+                        },
+                        { borderRadius: 999 },
+                        borders.width.thin,
+                        borders.color.gray[700],
+                      ]}
+                    />
+                    <Text>{profile?.handle}</Text>
+                  </View>
                 </View>
               </View>
+
+              {/* Content Metadata - Below mute button */}
+              {(contentWarnings.length > 0 ||
+                (contentRights && Object.keys(contentRights).length > 0)) && (
+                <View
+                  style={[
+                    layout.position.absolute,
+                    position.left[2],
+                    { top: safeAreaInsets.top + 100 },
+                    { maxWidth: "70%" },
+                    {
+                      backgroundColor: "rgba(0, 0, 0, 0.75)",
+                      borderRadius: 8,
+                      padding: 8,
+                    },
+                  ]}
+                >
+                  <ContentWarnings warnings={contentWarnings} compact={true} />
+                  {contentRights && (
+                    <ContentRights
+                      contentRights={contentRights}
+                      compact={true}
+                    />
+                  )}
+                </View>
+              )}
 
               {/* Right Controls Column */}
               <View

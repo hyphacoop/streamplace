@@ -118,7 +118,6 @@ func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer
 			},
 		},
 	}
-
 	return &MediaManager{
 		cli:          cli,
 		replicator:   rep,
@@ -188,9 +187,12 @@ type ExpandedSchemaOrg []struct {
 }
 
 type SegmentMetadata struct {
-	StartTime aqtime.AQTime
-	Title     string
-	Creator   string
+	StartTime          aqtime.AQTime
+	Title              string
+	Creator            string
+	ContentWarnings    []string
+	ContentRights      *model.ContentRights
+	DistributionPolicy *model.DistributionPolicy
 }
 
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
@@ -240,10 +242,168 @@ func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*Seg
 	if err != nil {
 		return nil, err
 	}
+
+	contentWarnings := extractContentWarnings(mani)
+	contentRights := extractContentRights(mani)
+	distributionPolicy := extractDistributionPolicy(mani, start)
+
 	out := SegmentMetadata{
-		StartTime: start,
-		Title:     meta.Title[0].Value,
-		Creator:   meta.Creator[0].Value,
+		StartTime:          start,
+		Title:              meta.Title[0].Value,
+		Creator:            meta.Creator[0].Value,
+		ContentWarnings:    contentWarnings,
+		ContentRights:      contentRights,
+		DistributionPolicy: distributionPolicy,
 	}
 	return &out, nil
+}
+
+// findAssertion finds an assertion by label
+func findAssertion(mani *c2patypes.Manifest, label string) *c2patypes.ManifestAssertion {
+	for _, a := range mani.Assertions {
+		if a.Label == label {
+			return &a
+		}
+	}
+	return nil
+}
+
+// extractContentWarnings extracts content warnings from the C2PA manifest
+func extractContentWarnings(mani *c2patypes.Manifest) []string {
+	ass := findAssertion(mani, StreamplaceMetadata)
+	if ass == nil {
+		return nil
+	}
+
+	data, ok := ass.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	warnings, ok := data["Iptc4xmpExt:ContentWarning"]
+	if !ok {
+		return nil
+	}
+
+	warningList, ok := warnings.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	result := make([]string, 0, len(warningList))
+	for _, warning := range warningList {
+		if warningStr, ok := warning.(string); ok {
+			result = append(result, warningStr)
+		}
+	}
+
+	return result
+}
+
+// extractContentRights extracts content rights from the C2PA manifest
+func extractContentRights(mani *c2patypes.Manifest) *model.ContentRights {
+	ass := findAssertion(mani, StreamplaceMetadata)
+	if ass == nil {
+		return nil
+	}
+
+	data, ok := ass.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	rights := &model.ContentRights{}
+
+	// Extract copyright notice
+	if notice, ok := data["dc:rights"]; ok {
+		if noticeStr, ok := notice.(string); ok {
+			rights.CopyrightNotice = &noticeStr
+		}
+	}
+
+	// Extract copyright year
+	if year, ok := data["Iptc4xmpExt:CopyrightYear"]; ok {
+		if yearNum, ok := year.(float64); ok {
+			yearInt := int64(yearNum)
+			rights.CopyrightYear = &yearInt
+		}
+	}
+
+	// Extract creator
+	if creator, ok := data["dc:creator"]; ok {
+		if creatorStr, ok := creator.(string); ok {
+			rights.Creator = &creatorStr
+		}
+	}
+
+	// Extract credit line
+	if credit, ok := data["photoshop:Credit"]; ok {
+		if creditStr, ok := credit.(string); ok {
+			rights.CreditLine = &creditStr
+		}
+	}
+
+	// Extract license information
+	if license, ok := data["Iptc4xmpExt:LinkedEncRightsExpr"]; ok {
+		if licenseStr, ok := license.(string); ok {
+			rights.License = &licenseStr
+		}
+	} else if usageTerms, ok := data["xmpRights:UsageTerms"]; ok {
+		if usageStr, ok := usageTerms.(string); ok {
+			rights.License = &usageStr
+		}
+	}
+
+	// Return nil if no rights information was found
+	if rights.CopyrightNotice == nil && rights.CopyrightYear == nil &&
+		rights.Creator == nil && rights.CreditLine == nil && rights.License == nil {
+		return nil
+	}
+
+	return rights
+}
+
+// extractDistributionPolicy extracts distribution policy from the C2PA manifest
+func extractDistributionPolicy(mani *c2patypes.Manifest, segmentStart aqtime.AQTime) *model.DistributionPolicy {
+	ass := findAssertion(mani, StreamplaceMetadata)
+	if ass == nil {
+		return nil
+	}
+
+	data, ok := ass.Data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	policy, ok := data["distributionPolicy"]
+	if !ok {
+		return nil
+	}
+
+	policyMap, ok := policy.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	deleteAfter, ok := policyMap["deleteAfter"]
+	if !ok {
+		return nil
+	}
+
+	// deleteAfter is an integer (duration in seconds)
+	var durationSecs int64
+	switch v := deleteAfter.(type) {
+	case float64:
+		durationSecs = int64(v)
+	case int64:
+		durationSecs = v
+	case int:
+		durationSecs = int64(v)
+	default:
+		return nil
+	}
+
+	return &model.DistributionPolicy{
+		DurationSeconds: &durationSecs,
+	}
 }

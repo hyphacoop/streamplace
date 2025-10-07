@@ -166,6 +166,7 @@ var CollectionFilter = []string{
 	constants.APP_BSKY_GRAPH_BLOCK,
 	constants.PLACE_STREAM_SERVER_SETTINGS,
 	constants.PLACE_STREAM_CHAT_GATE,
+	constants.PLACE_STREAM_DEFAULT_METADATA,
 }
 
 func (atsync *ATProtoSynchronizer) handleCommitEventOps(ctx context.Context, evt *comatproto.SyncSubscribeRepos_Commit) {

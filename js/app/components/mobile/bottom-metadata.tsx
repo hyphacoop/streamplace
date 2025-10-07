@@ -1,5 +1,7 @@
 import {
   Button,
+  ContentRights,
+  ContentWarnings,
   layout,
   PlayerUI,
   ShareSheet,
@@ -25,8 +27,14 @@ export function BottomMetadata({
   const { profile } = useLivestreamInfo();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
   const ls = useLivestreamStore((x) => x.livestream);
+  const segment = useLivestreamStore((x) => x.segment);
 
   const did = useDID();
+
+  // Get content warnings and rights directly from the latest segment
+  const contentWarnings =
+    (segment?.contentWarnings?.warnings as string[]) || [];
+  const contentRights = segment?.contentRights;
 
   return (
     <View
@@ -120,6 +128,17 @@ export function BottomMetadata({
           </Button>
         </View>
       </View>
+
+      {/* Content Metadata - Below the main profile/controls bar */}
+      {(contentWarnings.length > 0 ||
+        (contentRights && Object.keys(contentRights).length > 0)) && (
+        <View style={[py[2]]}>
+          <ContentWarnings warnings={contentWarnings} compact={true} />
+          {contentRights && (
+            <ContentRights contentRights={contentRights} compact={true} />
+          )}
+        </View>
+      )}
     </View>
   );
 }

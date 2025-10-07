@@ -115,9 +115,21 @@ type CLI struct {
 	AtprotoDID             string
 	LivepeerHelp           bool
 	PLCURL                 string
+	ContentFilters         *ContentFilters
 	SQLLogging             bool
 	SentryDSN              string
 	LivepeerDebug          bool
+}
+
+// ContentFilters represents the content filtering configuration
+type ContentFilters struct {
+	ContentWarnings struct {
+		Enabled         bool     `json:"enabled"`
+		BlockedWarnings []string `json:"blocked_warnings"`
+	} `json:"content_warnings"`
+	DistributionPolicy struct {
+		Enabled bool `json:"enabled"`
+	} `json:"distribution_policy"`
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -179,6 +191,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.AndroidCertFingerprint, "android-cert-fingerprint", "", "android cert fingerprint for deep linking")
 	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
+	cli.JSONFlag(fs, &cli.ContentFilters, "content-filters", "{}", "JSON content filtering rules")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
 	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
