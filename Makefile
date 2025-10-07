@@ -304,6 +304,13 @@ dev-test:
 	LD_LIBRARY_PATH=$(shell realpath $(BUILDDIR))/lib \
 	bash -euo pipefail -c "go test -p 1 -timeout 300s ./pkg/... -v | tee /dev/stderr | go-junit-report -out test.xml"
 
+.PHONY: iroh-test
+iroh-test:
+	$(MAKE) dev-rust
+	PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
+	LD_LIBRARY_PATH=$(shell realpath $(BUILDDIR))/lib \
+	go build -o $(BUILDDIR)/iroh-test ./pkg/iroh/iroh_test/...
+
 #   _      _____ _   _ _______ _____ _   _  _____
 #  | |    |_   _| \ | |__   __|_   _| \ | |/ ____|
 #  | |      | | |  \| |  | |    | | |  \| | |  __
