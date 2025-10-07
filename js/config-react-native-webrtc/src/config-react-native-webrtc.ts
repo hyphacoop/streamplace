@@ -115,6 +115,8 @@ const iosDelegateReplacements = [
   WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
   options.loggingSeverity = RTCLoggingSeverityWarning;
   options.audioDevice = device;
+  // Enable stereo audio
+  options.enableStereoOutput = YES;
   ////END RTC PATCH////
     `,
   },
