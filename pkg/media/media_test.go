@@ -13,7 +13,6 @@ import (
 	"stream.place/streamplace/pkg/config"
 	ct "stream.place/streamplace/pkg/config/configtesting"
 	"stream.place/streamplace/pkg/model"
-	"stream.place/streamplace/pkg/replication/boring"
 )
 
 func getFixture(name string) string {
@@ -40,7 +39,7 @@ func getStaticTestMediaManager(t *testing.T) (*MediaManager, MediaSigner) {
 		StatefulDB: nil, // Test doesn't need StatefulDB for now
 		Bus:        bus.NewBus(),
 	}
-	mm, err := MakeMediaManager(context.Background(), cli, nil, &boring.BoringReplicator{}, mod, bus.NewBus(), atsync)
+	mm, err := MakeMediaManager(context.Background(), cli, nil, mod, bus.NewBus(), atsync)
 	require.NoError(t, err)
 	// ms, err := MakeMediaSigner(context.Background(), cli, "test-person", signer)
 	// require.NoError(t, err)
@@ -126,6 +125,6 @@ func TestVerifyMP4(t *testing.T) {
 	f, err := os.Open(getFixture("sample-segment.mp4"))
 	require.NoError(t, err)
 	mm, _ := getStaticTestMediaManager(t)
-	err = mm.ValidateMP4(context.Background(), f)
+	err = mm.ValidateMP4(context.Background(), f, true)
 	require.NoError(t, err)
 }

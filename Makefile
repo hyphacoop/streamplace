@@ -281,20 +281,21 @@ dev-setup-meson:
 
 .PHONY: dev-setup-meson-configure
 dev-setup-meson-configure:
-	if ! which uniffi-bindgen-go; then cargo install uniffi-bindgen-go --git https://github.com/NordSecurity/uniffi-bindgen-go --tag v0.3.0+v0.28.3; fi
 	meson setup --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 	meson configure --default-library=shared $(BUILDDIR) $(SHARED_OPTS)
 
 .PHONY: dev-rust
-dev-rust:
+dev-rust: .build/bin/uniffi-bindgen-go-forked
 	cargo build
 	EXT=so; \
 	if [ "$(BUILDOS)" = "darwin" ]; then EXT=dylib; fi; \
-	uniffi-bindgen-go --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT \
+	.build/bin/uniffi-bindgen-go-forked --out-dir pkg/iroh/generated --library ./target/debug/libiroh_streamplace.$$EXT \
 	&& mkdir -p $(BUILDDIR)/rust/iroh-streamplace/ \
 	&& mkdir -p $(BUILDDIR)/lib/ \
-	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/rust/iroh-streamplace/ \
-	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/lib/
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT.tmp \
+	&& mv $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT.tmp $(BUILDDIR)/rust/iroh-streamplace/libiroh_streamplace.$$EXT \
+	&& cp ./target/debug/libiroh_streamplace.$$EXT $(BUILDDIR)/lib/libiroh_streamplace.$$EXT.tmp \
+	&& mv $(BUILDDIR)/lib/libiroh_streamplace.$$EXT.tmp $(BUILDDIR)/lib/libiroh_streamplace.$$EXT
 
 .PHONY: dev-test
 dev-test:
@@ -491,6 +492,11 @@ ci-test: app
 ci-npm-release: install
 	echo //registry.npmjs.org/:_authToken=$$NPM_TOKEN > ~/.npmrc \
 	&& npx lerna publish from-package --yes
+
+.build/bin/uniffi-bindgen-go-forked:
+	mkdir -p .build \
+	&& cargo install uniffi-bindgen-go --git https://github.com/kegsay/uniffi-bindgen-go --rev f1f1064871faf05377c75e098d525d530d402d38 --root .build \
+	&& mv .build/bin/uniffi-bindgen-go .build/bin/uniffi-bindgen-go-forked
 
 .build/bundletool.jar:
 	mkdir -p .build \

@@ -9,6 +9,7 @@ import (
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
@@ -96,6 +97,8 @@ type Model interface {
 
 	CreateLabel(label *Label) error
 	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
+
+	UpdateBroadcastOrigin(ctx context.Context, origin *streamplace.BroadcastOrigin, aturi syntax.ATURI) error
 }
 
 var DBRevision = 2
@@ -152,6 +155,7 @@ func MakeDB(dbURL string) (Model, error) {
 		ServerSettings{},
 		Labeler{},
 		Label{},
+		BroadcastOrigin{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -28,6 +29,7 @@ import (
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/integrations/discord/discordtypes"
+	"stream.place/streamplace/pkg/log"
 )
 
 const SPDataDir = "$SP_DATA_DIR"
@@ -100,7 +102,9 @@ type CLI struct {
 	ExternalSigning        bool
 	RTMPServerAddon        string
 	TracingEndpoint        string
-	PublicHost             string
+	BroadcasterHost        string
+	XXDeprecatedPublicHost string
+	ServerHost             string
 	RateLimitPerSecond     int
 	RateLimitBurst         int
 	RateLimitWebsocket     int
@@ -118,6 +122,7 @@ type CLI struct {
 	SQLLogging             bool
 	SentryDSN              string
 	LivepeerDebug          bool
+	Tickets                []string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -163,10 +168,12 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
 	fs.StringVar(&cli.Color, "color", "", "'true' to enable colorized logging, 'false' to disable")
-	fs.StringVar(&cli.PublicHost, "public-host", "", "public host for this streamplace node (excluding https:// e.g. stream.place)")
+	fs.StringVar(&cli.BroadcasterHost, "broadcaster-host", "", "public host for the broadcaster group that this node is a part of (excluding https:// e.g. stream.place)")
+	fs.StringVar(&cli.XXDeprecatedPublicHost, "public-host", "", "deprecated, use broadcaster-host or server-host instead as appropriate")
+	fs.StringVar(&cli.ServerHost, "server-host", "", "public host for this particular physical streamplace node. defaults to broadcaster-host and only must be set for multi-node broadcasters")
 	fs.BoolVar(&cli.Thumbnail, "thumbnail", true, "enable thumbnail generation")
 	fs.BoolVar(&cli.SmearAudio, "smear-audio", false, "enable audio smearing to create 'perfect' segment timestamps")
-	fs.BoolVar(&cli.ExternalSigning, "external-signing", true, "enable external signing via exec (prevents potential memory leak)")
+	fs.BoolVar(&cli.ExternalSigning, "external-signing", false, "enable external signing via exec (prevents potential memory leak)")
 	fs.StringVar(&cli.TracingEndpoint, "tracing-endpoint", "", "gRPC endpoint to send traces to")
 	fs.IntVar(&cli.RateLimitPerSecond, "rate-limit-per-second", 0, "rate limit for requests per second per ip")
 	fs.IntVar(&cli.RateLimitBurst, "rate-limit-burst", 0, "rate limit burst for requests per ip")
@@ -184,6 +191,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
 	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
+	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", "[]", "tickets to join the swarm with")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -308,6 +316,13 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 				TimeFormat: time.RFC3339,
 			})),
 		)
+	}
+	if cli.XXDeprecatedPublicHost != "" && cli.BroadcasterHost == "" {
+		log.Warn(context.Background(), "public-host is deprecated, use broadcaster-host or server-host instead as appropriate")
+		cli.BroadcasterHost = cli.XXDeprecatedPublicHost
+	}
+	if cli.ServerHost == "" && cli.BroadcasterHost != "" {
+		cli.ServerHost = cli.BroadcasterHost
 	}
 	return nil
 }
@@ -526,5 +541,5 @@ func (cli *CLI) StreamIsAllowed(did string) error {
 }
 
 func (cli *CLI) MyDID() string {
-	return fmt.Sprintf("did:web:%s", cli.PublicHost)
+	return fmt.Sprintf("did:web:%s", cli.BroadcasterHost)
 }

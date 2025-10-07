@@ -129,7 +129,7 @@ jobs:
         run: |
           npm install -g corepack@latest \
           && corepack enable \
-          && export GOTOOLCHAIN=go1.24.2 \
+          && export GOTOOLCHAIN=go1.25.1 \
           && brew install go \
           && python -m pip install virtualenv \
           && python -m virtualenv ~/venv \

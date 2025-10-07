@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"crypto"
+	"crypto/rand"
 	"errors"
 	"flag"
 	"fmt"
@@ -30,8 +32,7 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
-	"stream.place/streamplace/pkg/replication"
-	"stream.place/streamplace/pkg/replication/boring"
+	"stream.place/streamplace/pkg/replication/iroh_replicator"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -50,22 +51,6 @@ type jobFunc func(ctx context.Context, cli *config.CLI) error
 
 // parse the CLI and fire up an streamplace node!
 func start(build *config.BuildFlags, platformJobs []jobFunc) error {
-	// builder := c2patypes.Builder{}
-	// bs, err := os.ReadFile("/home/iameli/.streamplace/segments/did-plc-dkh4rwafdcda4ko7lewe43ml/2025/09/18/20/54/2025-09-18T20-54-31-693Z.mp4")
-	// if err != nil {
-	// 	return err
-	// }
-	// manifest, rustErr := iroh_streamplace.GetManifest(bs)
-	// if rustErr.AsError() != nil {
-	// 	return rustErr.AsError()
-	// }
-	// var mani c2patypes.Manifest
-	// err = json.Unmarshal([]byte(manifest), &mani)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(mani)
-	// os.Exit(0)
 	selfTest := len(os.Args) > 1 && os.Args[1] == "self-test"
 	err := media.RunSelfTest(context.Background())
 	if err != nil {
@@ -320,7 +305,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		log.Log(ctx, "successfully initialized hardware signer", "address", addr)
 		signer = hwsigner
 	}
-	var rep replication.Replicator = &boring.BoringReplicator{Peers: cli.Peers}
 
 	mod, err := model.MakeDB(cli.DataFilePath([]string{"index"}))
 	if err != nil {
@@ -376,7 +360,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return fmt.Errorf("failed to migrate: %w", err)
 	}
 
-	mm, err := media.MakeMediaManager(ctx, &cli, signer, rep, mod, b, atsync)
+	mm, err := media.MakeMediaManager(ctx, &cli, signer, mod, b, atsync)
 	if err != nil {
 		return err
 	}
@@ -390,13 +374,39 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		Scope:      "atproto transition:generic",
 		ClientName: "Streamplace",
 		RedirectURIs: []string{
-			fmt.Sprintf("https://%s/login", cli.PublicHost),
-			fmt.Sprintf("https://%s/api/app-return", cli.PublicHost),
+			fmt.Sprintf("https://%s/login", cli.BroadcasterHost),
+			fmt.Sprintf("https://%s/api/app-return", cli.BroadcasterHost),
 		},
 	}
 
+	exists, err := cli.DataFileExists([]string{"iroh-kv-secret"})
+	if err != nil {
+		return err
+	}
+	if !exists {
+		secret := make([]byte, 32)
+		_, err := rand.Read(secret)
+		if err != nil {
+			return fmt.Errorf("failed to generate random secret: %w", err)
+		}
+		err = cli.DataFileWrite([]string{"iroh-kv-secret"}, bytes.NewReader(secret), true)
+		if err != nil {
+			return err
+		}
+	}
+	buf := bytes.Buffer{}
+	err = cli.DataFileRead([]string{"iroh-kv-secret"}, &buf)
+	if err != nil {
+		return err
+	}
+	secret := buf.Bytes()
+	swarm, err := iroh_replicator.NewSwarm(ctx, cli.Tickets, secret, mm)
+	if err != nil {
+		return err
+	}
+
 	op := oatproxy.New(&oatproxy.Config{
-		Host:               cli.PublicHost,
+		Host:               cli.BroadcasterHost,
 		CreateOAuthSession: state.CreateOAuthSession,
 		UpdateOAuthSession: state.UpdateOAuthSession,
 		GetOAuthSession:    state.LoadOAuthSession,
@@ -406,7 +416,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
 	})
-	d := director.NewDirector(mm, mod, &cli, b, op, state)
+	d := director.NewDirector(mm, mod, &cli, b, op, state, swarm)
 	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
 	if err != nil {
 		return err
@@ -467,6 +477,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	group.Go(func() error {
 		return mod.StartSegmentCleaner(ctx)
+	})
+
+	group.Go(func() error {
+		return swarm.Start(ctx, cli.Tickets)
 	})
 
 	if cli.LivepeerGateway {
