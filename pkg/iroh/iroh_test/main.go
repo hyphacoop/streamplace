@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
+	"time"
 
 	iroh "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	_ "stream.place/streamplace/pkg/streamplacedeps"
@@ -69,10 +70,19 @@ func main() {
 	panicIfErr(err)
 	fmt.Printf("Iter items: %+v\n", items3)
 
+	go func() {
+    time.Sleep(5 * time.Second)
+    node.Shutdown() // or whatever your shutdown method is
+	}()
+
 	sub := db.Subscribe(iroh.NewFilter())
 	for {
 		ev, err := sub.NextRaw()
 		panicIfErr(err)
+		if ev == nil {
+			fmt.Println("Subscription closed")
+			break
+		}
 		switch (*ev).(type) {
 		case iroh.SubscribeItemEntry:
 			fmt.Printf("%+v\n", (*ev).(iroh.SubscribeItemEntry))
