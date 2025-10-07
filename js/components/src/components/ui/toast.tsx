@@ -1,4 +1,5 @@
 import { Portal } from "@rn-primitives/portal";
+import { X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   Platform,
@@ -8,14 +9,18 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+  cancelAnimation,
   Easing,
   runOnJS,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Circle, Svg } from "react-native-svg";
 import { useTheme } from "../../ui";
 import { Text } from "./text";
 
@@ -42,7 +47,7 @@ type ToastState = {
 class ToastManager {
   private listeners: Set<(state: ToastState[]) => void> = new Set();
   private toasts: ToastState[] = [];
-  private timeoutIds: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
   private hoverListeners: Set<(isHovered: boolean) => void> = new Set();
   private isHovered: boolean = false;
 
@@ -60,13 +65,6 @@ class ToastManager {
 
     this.toasts = [...this.toasts, toast];
     this.notifyListeners();
-
-    if (toast.duration > 0) {
-      const timeoutId = setTimeout(() => {
-        this.hide(toast.id);
-      }, toast.duration * 1000);
-      this.timeoutIds.set(toast.id, timeoutId);
-    }
   }
 
   getToasts() {
@@ -78,12 +76,6 @@ class ToastManager {
       toast.id === id ? { ...toast, open: false } : toast,
     );
     this.notifyListeners();
-
-    const timeoutId = this.timeoutIds.get(id);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      this.timeoutIds.delete(id);
-    }
 
     setTimeout(() => {
       this.toasts = this.toasts.filter((toast) => toast.id !== id);
@@ -165,123 +157,32 @@ export function useToast() {
 
 export function ToastProvider() {
   const [toasts, setToasts] = useState<ToastState[]>([]);
-
-  useEffect(() => {
-    return toastManager.subscribe(setToasts);
-  }, []);
-
-  return (
-    <>
-      {toasts
-        .slice(-4)
-        .reverse()
-        .map((toastState, index) => (
-          <Toast
-            key={toastState.id}
-            open={toastState.open}
-            onOpenChange={(open) => {
-              if (!open) toastManager.hide(toastState.id);
-            }}
-            title={toastState.title}
-            description={toastState.description}
-            actionLabel={toastState.actionLabel}
-            onAction={toastState.onAction}
-            duration={toastState.duration}
-            index={index}
-            isLatest={index === 0}
-            totalToasts={toasts.length}
-            variant={toastState.variant}
-          />
-        ))}
-    </>
-  );
-}
-
-type ToastProps = {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  title?: string;
-  description?: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  duration?: number;
-  index?: number;
-  isLatest?: boolean;
-  totalToasts?: number;
-  variant?: "default" | "success" | "error" | "info";
-};
-
-export function Toast({
-  open = false,
-  onOpenChange = () => {},
-  title = "",
-  description,
-  actionLabel = "Action",
-  onAction,
-  duration = 60,
-  index = 0,
-  isLatest = true,
-  totalToasts = 0,
-  variant = "default",
-}: ToastProps) {
-  const [seconds, setSeconds] = useState(duration);
-  const [isHovered, setIsHovered] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [height, setHeight] = useState(100);
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const isWeb = Platform.OS === "web";
   const { width } = useWindowDimensions();
   const isDesktop = isWeb && width >= 768;
 
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(100);
-  const scale = useSharedValue(1 - index * 0.05);
-
   useEffect(() => {
-    return toastManager.subscribeHover(setIsHovered);
+    return toastManager.subscribe(setToasts);
   }, []);
 
-  useEffect(() => {
-    if (isHovered) {
-      // Stack vertically with proper spacing when hovered
-      const spacing = height + 20; // Height of each toast + gap
-      translateY.value = withTiming(-index * spacing, {
-        duration: 300,
-        easing: Easing.out(Easing.exp),
-      });
-      scale.value = withTiming(1, {
-        duration: 300,
-        easing: Easing.out(Easing.exp),
-      });
-      opacity.value = withTiming(1, {
-        duration: 300,
-        easing: Easing.out(Easing.exp),
-      });
-    } else {
-      // Compact stacked view when not hovered
-      translateY.value = withTiming(index * 10, {
-        duration: 300,
-        easing: Easing.out(Easing.exp),
-      });
-      scale.value = withTiming(1 - index * 0.05, {
-        duration: 300,
-        easing: Easing.out(Easing.exp),
-      });
-      opacity.value = withTiming(isLatest ? 1 : 0.8, {
-        duration: 300,
-        easing: Easing.out(Easing.exp),
-      });
-    }
-  }, [isHovered, index, isLatest]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-      transform: [{ translateY: translateY.value }, { scale: scale.value }],
-      zIndex: 1000 - index,
-    };
-  });
+  const gesture =
+    Platform.OS === "web"
+      ? Gesture.Hover()
+          .onStart(() => {
+            runOnJS(toastManager.setHovered)(true);
+          })
+          .onEnd(() => {
+            runOnJS(toastManager.setHovered)(false);
+          })
+      : Gesture.LongPress()
+          .onStart(() => {
+            runOnJS(toastManager.setHovered)(true);
+          })
+          .onEnd(() => {
+            runOnJS(toastManager.setHovered)(false);
+          });
 
   const containerPosition: ViewStyle = isDesktop
     ? {
@@ -299,58 +200,175 @@ export function Toast({
         width: "100%",
       };
 
+  return (
+    <Portal name="toasties">
+      <GestureDetector gesture={gesture}>
+        <View style={[styles.providerContainer, containerPosition]}>
+          {toasts
+            .slice(-4)
+            .reverse()
+            .map((toastState, index) => (
+              <Toast
+                key={toastState.id}
+                open={toastState.open}
+                onOpenChange={(open) => {
+                  if (!open) toastManager.hide(toastState.id);
+                }}
+                title={toastState.title}
+                description={toastState.description}
+                actionLabel={toastState.actionLabel}
+                onAction={toastState.onAction}
+                duration={toastState.duration}
+                index={index}
+                isLatest={index === 0}
+                totalToasts={toasts.length}
+                variant={toastState.variant}
+              />
+            ))}
+        </View>
+      </GestureDetector>
+    </Portal>
+  );
+}
+
+type ToastProps = {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  title?: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  duration?: number;
+  index?: number;
+  isLatest?: boolean;
+  totalToasts?: number;
+  variant?: "default" | "success" | "error" | "info";
+};
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+export function Toast({
+  open = false,
+  onOpenChange = () => {},
+  title = "",
+  description,
+  actionLabel = "Action",
+  onAction,
+  duration = 60,
+  index = 0,
+  isLatest = true,
+  totalToasts = 0,
+  variant = "default",
+}: ToastProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const progress = useSharedValue(1);
+  const remainingTime = useSharedValue(duration * 1000);
+  const wasOpen = useRef(open);
+  const [height, setHeight] = useState(100);
+  const { theme } = useTheme();
+  const isWeb = Platform.OS === "web";
+  const { width } = useWindowDimensions();
+  const isDesktop = isWeb && width >= 768;
+
+  const RADIUS = 8;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+  const animatedCircleProps = useAnimatedProps(() => {
+    return {
+      strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
+    };
+  });
+
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(100);
+  const scale = useSharedValue(1 - index * 0.05);
+
   useEffect(() => {
-    if (open && !isHovered) {
-      // Start or resume the timer
-      intervalRef.current = setInterval(() => {
-        setSeconds((prev) => {
-          if (prev <= 1) {
-            runOnJS(onOpenChange)(false);
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            return duration;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      // Pause timer when hovered or not open
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    return toastManager.subscribeHover(setIsHovered);
+  }, []);
+
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      // Toast just opened
+      progress.value = 1;
+      remainingTime.value = duration * 1000;
     }
+    wasOpen.current = open;
 
     if (!open) {
-      opacity.value = withTiming(0, { duration: 150 });
-      translateY.value = withTiming(100, { duration: 150 });
+      // Close animation
+      opacity.value = withTiming(0, { duration: 250 });
+      translateY.value = withTiming(100, { duration: 250 });
+      return;
+    }
+
+    if (isHovered) {
+      // Stack vertically with proper spacing when hovered
+      const spacing = height + 20; // Height of each toast + gap
+      translateY.value = withTiming(-index * spacing, {
+        duration: 750,
+        easing: Easing.out(Easing.exp),
+      });
+      scale.value = withTiming(1, {
+        duration: 750,
+        easing: Easing.out(Easing.exp),
+      });
+      opacity.value = withTiming(1, {
+        duration: 750,
+        easing: Easing.out(Easing.exp),
+      });
+    } else {
+      // Compact stacked view when not hovered
+      translateY.value = withTiming(-index * 15, {
+        duration: 750,
+        easing: Easing.out(Easing.exp),
+      });
+      scale.value = withTiming(1 - index * 0.1, {
+        duration: 750,
+        easing: Easing.out(Easing.exp),
+      });
+      opacity.value = withTiming(isLatest ? 1 : 0.8, {
+        duration: 750,
+        easing: Easing.out(Easing.exp),
+      });
+    }
+  }, [open, isHovered, index, isLatest, height, duration]);
+
+  useEffect(() => {
+    if (open && isLatest && duration > 0) {
+      if (isHovered) {
+        cancelAnimation(progress);
+        remainingTime.value = progress.value * duration * 1000;
+      } else {
+        progress.value = withTiming(
+          0,
+          {
+            duration: remainingTime.value,
+            easing: Easing.linear,
+          },
+          (finished) => {
+            if (finished) {
+              runOnJS(onOpenChange)(false);
+            }
+          },
+        );
+      }
+    } else {
+      cancelAnimation(progress);
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      cancelAnimation(progress);
     };
-  }, [open, isHovered]);
+  }, [open, isLatest, isHovered, duration]);
 
-  useEffect(() => {
-    if (open) {
-      setSeconds(duration);
-
-      opacity.value = withTiming(isLatest ? 1 : 0.8, {
-        duration: 200,
-        easing: Easing.out(Easing.exp),
-      });
-      translateY.value = withTiming(index * 10, {
-        duration: 200,
-        easing: Easing.out(Easing.exp),
-      });
-      scale.value = withTiming(1 - index * 0.05, {
-        duration: 250,
-        easing: Easing.out(Easing.exp),
-      });
-    }
-  }, [open, duration, index]);
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+      transform: [{ translateY: translateY.value }, { scale: scale.value }],
+      zIndex: 1000 - index,
+    };
+  });
 
   const variantStyles = {
     default: {
@@ -372,28 +390,34 @@ export function Toast({
   };
 
   return (
-    <Portal name={`toast-${index}`}>
-      <Animated.View
-        onLayout={(l) => setHeight(l.nativeEvent.layout.height)}
-        style={[styles.container, containerPosition, animatedStyle]}
+    <Animated.View
+      onLayout={(l) => setHeight(l.nativeEvent.layout.height)}
+      style={[styles.container, animatedStyle]}
+    >
+      <View
+        style={[
+          styles.toast,
+          {
+            borderRadius: theme.borderRadius.xl,
+            flexDirection: "column",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: theme.spacing[4],
+            width: isDesktop ? "100%" : "95%",
+          },
+          variantStyles[variant],
+        ]}
       >
-        <Pressable
-          onHoverIn={() => isWeb && toastManager.setHovered(true)}
-          onHoverOut={() => isWeb && toastManager.setHovered(false)}
-          style={[
-            styles.toast,
-            {
-              borderRadius: theme.borderRadius.xl,
-              flexDirection: "column",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: theme.spacing[4],
-              width: isDesktop ? "100%" : "95%",
-            },
-            variantStyles[variant],
-          ]}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            width: "100%",
+            gap: theme.spacing[4],
+          }}
         >
-          <View style={{ gap: theme.spacing[1], width: "100%" }}>
+          <View style={{ flex: 1, gap: theme.spacing[1] }}>
             <Text
               style={{
                 color: theme.colors.foreground,
@@ -409,7 +433,71 @@ export function Toast({
               </Text>
             ) : null}
           </View>
-
+          {isLatest && duration > 0 ? (
+            <Pressable
+              onPress={() => onOpenChange(false)}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Svg width="24" height="24" viewBox="0 0 24 24">
+                <AnimatedCircle
+                  stroke={theme.colors.border}
+                  fill="transparent"
+                  strokeWidth="2"
+                  r={RADIUS}
+                  cx="12"
+                  cy="12"
+                />
+                <AnimatedCircle
+                  animatedProps={animatedCircleProps}
+                  stroke={theme.colors.primary}
+                  fill="transparent"
+                  strokeWidth="2"
+                  strokeDasharray={CIRCUMFERENCE}
+                  r={RADIUS}
+                  cx="12"
+                  cy="12"
+                  rotation="-90"
+                  originX="12"
+                  originY="12"
+                  strokeLinecap="round"
+                />
+              </Svg>
+              {!onAction && (
+                <View style={{ position: "absolute" }}>
+                  <X color={theme.colors.foreground} size={12} />
+                </View>
+              )}
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => onOpenChange(false)}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Svg width="24" height="24" viewBox="0 0 24 24">
+                <AnimatedCircle
+                  stroke={theme.colors.border}
+                  fill={theme.colors.muted}
+                  strokeWidth="2"
+                  r={RADIUS}
+                  cx="12"
+                  cy="12"
+                />
+              </Svg>
+              {!onAction && (
+                <View style={{ position: "absolute" }}>
+                  <X color={theme.colors.foreground} size={12} />
+                </View>
+              )}
+            </Pressable>
+          )}
+        </View>
+        {onAction && (
           <View
             style={{
               gap: theme.spacing[1],
@@ -418,23 +506,21 @@ export function Toast({
               width: "100%",
             }}
           >
-            {onAction && (
-              <Pressable
-                style={[
-                  styles.button,
-                  {
-                    borderColor: theme.colors.primary,
-                    paddingHorizontal: theme.spacing[4],
-                    paddingVertical: theme.spacing[2],
-                  },
-                ]}
-                onPress={onAction}
-              >
-                <Text style={{ color: theme.colors.foreground }}>
-                  {actionLabel}
-                </Text>
-              </Pressable>
-            )}
+            <Pressable
+              style={[
+                styles.button,
+                {
+                  borderColor: theme.colors.primary,
+                  paddingHorizontal: theme.spacing[4],
+                  paddingVertical: theme.spacing[2],
+                },
+              ]}
+              onPress={onAction}
+            >
+              <Text style={{ color: theme.colors.foreground }}>
+                {actionLabel}
+              </Text>
+            </Pressable>
             <Pressable
               style={[
                 styles.button,
@@ -449,17 +535,23 @@ export function Toast({
               <Text style={{ color: theme.colors.foreground }}>Close</Text>
             </Pressable>
           </View>
-        </Pressable>
-      </Animated.View>
-    </Portal>
+        )}
+      </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  providerContainer: {
     position: "absolute",
     zIndex: 1000,
-    paddingHorizontal: 16,
+  },
+  container: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
   toast: {
     opacity: 0.95,
