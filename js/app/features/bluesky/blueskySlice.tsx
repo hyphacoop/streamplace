@@ -847,7 +847,13 @@ export const blueskySlice = createAppSlice({
 
     createLivestreamRecord: create.asyncThunk(
       async (
-        { title, customThumbnail }: { title: string; customThumbnail?: Blob },
+        {
+          title,
+          customThumbnail,
+        }: {
+          title: string;
+          customThumbnail?: Blob;
+        },
         thunkAPI,
       ) => {
         const now = new Date();
@@ -960,11 +966,13 @@ export const blueskySlice = createAppSlice({
           thumb: thumbnail,
         };
 
-        await bluesky.pdsAgent.com.atproto.repo.createRecord({
-          repo: did,
-          collection: "place.stream.livestream",
-          record,
-        });
+        const livestreamResult =
+          await bluesky.pdsAgent.com.atproto.repo.createRecord({
+            repo: did,
+            collection: "place.stream.livestream",
+            record,
+          });
+
         return record;
       },
       {

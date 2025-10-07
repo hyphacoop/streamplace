@@ -266,6 +266,7 @@ export function useCreateStreamRecord() {
       collection: "place.stream.livestream",
       record,
     });
+
     return record;
   };
 }

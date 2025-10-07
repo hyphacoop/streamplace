@@ -96,6 +96,10 @@ type Model interface {
 
 	CreateLabel(label *Label) error
 	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
+
+	CreateMetadataConfiguration(ctx context.Context, metadata *MetadataConfiguration) error
+	GetMetadataConfiguration(ctx context.Context, repoDID string) (*MetadataConfiguration, error)
+	DeleteMetadataConfiguration(ctx context.Context, repoDID string) error
 }
 
 var DBRevision = 2
@@ -152,6 +156,7 @@ func MakeDB(dbURL string) (Model, error) {
 		ServerSettings{},
 		Labeler{},
 		Label{},
+		MetadataConfiguration{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

@@ -51,6 +51,19 @@ app: install
 app-cached:
 	if [ ! -f js/app/dist/index.html ]; then $(MAKE) app; else echo "js/app/dist/index.html exists, not rebuilding, run make app to rebuild"; fi
 
+.PHONY: node
+node: schema
+	$(MAKE) meson-setup
+	meson compile -C $(BUILDDIR) streamplace
+
+js/app/dist/index.html: install
+	pnpm run build
+
+.PHONY: schema
+schema:
+	mkdir -p js/app/generated \
+	&& go run pkg/crypto/signers/eip712/export-schema/export-schema.go > js/app/generated/eip712-schema.json
+
 .PHONY: ci-ios
 ci-ios: version install app
 	$(MAKE) ios

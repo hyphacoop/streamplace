@@ -52,16 +52,102 @@ func (j SegmentMediaData) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
+// ContentRights represents content rights and attribution information
+type ContentRights struct {
+	CopyrightNotice *string `json:"copyrightNotice,omitempty"`
+	CopyrightYear   *int64  `json:"copyrightYear,omitempty"`
+	Creator         *string `json:"creator,omitempty"`
+	CreditLine      *string `json:"creditLine,omitempty"`
+	License         *string `json:"license,omitempty"`
+}
+
+// Scan scan value into ContentRights, implements sql.Scanner interface
+func (c *ContentRights) Scan(value any) error {
+	if value == nil {
+		*c = ContentRights{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal ContentRights value:", value))
+	}
+
+	result := ContentRights{}
+	err := json.Unmarshal(bytes, &result)
+	*c = ContentRights(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (c ContentRights) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+// DistributionPolicy represents distribution policy information
+type DistributionPolicy struct {
+	DurationSeconds *int64 `json:"durationSeconds,omitempty"`
+}
+
+// Scan scan value into DistributionPolicy, implements sql.Scanner interface
+func (d *DistributionPolicy) Scan(value any) error {
+	if value == nil {
+		*d = DistributionPolicy{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal DistributionPolicy value:", value))
+	}
+
+	result := DistributionPolicy{}
+	err := json.Unmarshal(bytes, &result)
+	*d = DistributionPolicy(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (d DistributionPolicy) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+// ContentWarningsSlice is a custom type for storing content warnings as JSON in the database
+type ContentWarningsSlice []string
+
+// Scan scan value into ContentWarningsSlice, implements sql.Scanner interface
+func (c *ContentWarningsSlice) Scan(value any) error {
+	if value == nil {
+		*c = ContentWarningsSlice{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal ContentWarningsSlice value:", value))
+	}
+
+	result := ContentWarningsSlice{}
+	err := json.Unmarshal(bytes, &result)
+	*c = ContentWarningsSlice(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (c ContentWarningsSlice) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
 type Segment struct {
-	ID            string            `json:"id"                   gorm:"primaryKey"`
-	SigningKeyDID string            `json:"signingKeyDID"        gorm:"column:signing_key_did"`
-	SigningKey    *SigningKey       `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
-	StartTime     time.Time         `json:"startTime"            gorm:"index:latest_segments"`
-	RepoDID       string            `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
-	Repo          *Repo             `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
-	Title         string            `json:"title"`
-	Size          int               `json:"size"                gorm:"column:size"`
-	MediaData     *SegmentMediaData `json:"mediaData,omitempty"`
+	ID                 string               `json:"id"                   gorm:"primaryKey"`
+	SigningKeyDID      string               `json:"signingKeyDID"        gorm:"column:signing_key_did"`
+	SigningKey         *SigningKey          `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
+	StartTime          time.Time            `json:"startTime"            gorm:"index:latest_segments"`
+	RepoDID            string               `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
+	Repo               *Repo                `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
+	Title              string               `json:"title"`
+	Size               int                  `json:"size"                gorm:"column:size"`
+	MediaData          *SegmentMediaData    `json:"mediaData,omitempty"`
+	ContentWarnings    ContentWarningsSlice `json:"contentWarnings,omitempty"`
+	ContentRights      *ContentRights       `json:"contentRights,omitempty"`
+	DistributionPolicy *DistributionPolicy  `json:"distributionPolicy,omitempty"`
 }
 
 func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
@@ -77,14 +163,44 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	}
 	duration := s.MediaData.Duration
 	sizei64 := int64(s.Size)
+
+	// Convert model metadata to streamplace metadata
+	var contentRights *streamplace.MetadataContentRights
+	if s.ContentRights != nil {
+		contentRights = &streamplace.MetadataContentRights{
+			CopyrightNotice: s.ContentRights.CopyrightNotice,
+			CopyrightYear:   s.ContentRights.CopyrightYear,
+			Creator:         s.ContentRights.Creator,
+			CreditLine:      s.ContentRights.CreditLine,
+			License:         s.ContentRights.License,
+		}
+	}
+
+	var contentWarnings *streamplace.MetadataContentWarnings
+	if len(s.ContentWarnings) > 0 {
+		contentWarnings = &streamplace.MetadataContentWarnings{
+			Warnings: []string(s.ContentWarnings),
+		}
+	}
+
+	var distributionPolicy *streamplace.MetadataDistributionPolicy
+	if s.DistributionPolicy != nil && s.DistributionPolicy.DurationSeconds != nil {
+		distributionPolicy = &streamplace.MetadataDistributionPolicy{
+			DeleteAfter: s.DistributionPolicy.DurationSeconds,
+		}
+	}
+
 	return &streamplace.Segment{
-		LexiconTypeID: "place.stream.segment",
-		Creator:       s.RepoDID,
-		Id:            s.ID,
-		SigningKey:    s.SigningKeyDID,
-		StartTime:     string(aqt),
-		Duration:      &duration,
-		Size:          &sizei64,
+		LexiconTypeID:      "place.stream.segment",
+		Creator:            s.RepoDID,
+		Id:                 s.ID,
+		SigningKey:         s.SigningKeyDID,
+		StartTime:          string(aqt),
+		Duration:           &duration,
+		Size:               &sizei64,
+		ContentRights:      contentRights,
+		ContentWarnings:    contentWarnings,
+		DistributionPolicy: distributionPolicy,
 		Video: []*streamplace.Segment_Video{
 			{
 				Codec:  "h264",

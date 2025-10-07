@@ -98,6 +98,7 @@ function HomeScreenItem({
   horizontal?: boolean;
 }) {
   const user = item.author.handle || item.author.did;
+
   return (
     <AQLink
       to={{

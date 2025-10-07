@@ -5,6 +5,13 @@ import { createStore, StoreApi, useStore } from "zustand";
 import storage from "../storage";
 import { StreamplaceContext } from "../streamplace-provider/context";
 
+export interface ContentMetadataResult {
+  record: any;
+  uri: string;
+  cid: string;
+  rkey?: string;
+}
+
 // there are three categories of XRPC that we need to handle:
 // 1. Public (probably) OAuth XRPC to the users' PDS for apps that use this API.
 // 2. Confidental OAuth to the Streamplace server for doing things that require
@@ -32,6 +39,10 @@ export interface StreamplaceState {
   oauthSession: SessionManager | null | undefined;
   handle: string | null;
   chatProfile: PlaceStreamChatProfile.Record | null;
+
+  // Content metadata state
+  contentMetadata: ContentMetadataResult | null;
+  setContentMetadata: (metadata: ContentMetadataResult | null) => void;
 
   // Volume state
   volume: number;
@@ -69,6 +80,10 @@ export const makeStreamplaceStore = ({
     oauthSession: null,
     handle: null,
     chatProfile: null,
+
+    // Content metadata
+    contentMetadata: null,
+    setContentMetadata: (metadata) => set({ contentMetadata: metadata }),
 
     // Volume state - start with defaults
     volume: 1.0,
@@ -125,13 +140,12 @@ export const makeStreamplaceStore = ({
         initialMuted = storedMuted === "true";
       }
 
-      // Update the store with loaded values
       store.setState({
         volume: initialVolume,
         muted: initialMuted,
       });
-    } catch (e) {
-      console.warn("Failed to load volume settings from storage:", e);
+    } catch (error) {
+      console.error("Failed to load volume state from storage:", error);
     }
   })();
 
@@ -164,7 +178,17 @@ export const useSetHandle = (): ((handle: string) => void) => {
   return (handle: string) => store.setState({ handle });
 };
 
-// Volume convenience hooks
+// Content metadata hooks
+export const useContentMetadata = () =>
+  useStreamplaceStore((x) => x.contentMetadata);
+
+export const useSetContentMetadata = () => {
+  const store = getStreamplaceStoreFromContext();
+  return (metadata: ContentMetadataResult | null) =>
+    store.setState({ contentMetadata: metadata });
+};
+
+// Volume/muted hooks
 export const useVolume = () => useStreamplaceStore((x) => x.volume);
 export const useMuted = () => useStreamplaceStore((x) => x.muted);
 export const useSetVolume = () => useStreamplaceStore((x) => x.setVolume);
@@ -177,3 +201,5 @@ export const useEffectiveVolume = () =>
     // Ensure we always return a finite number for HTMLMediaElement.volume
     return Number.isFinite(effectiveVolume) ? effectiveVolume : 1.0;
   });
+
+export { useCreateStreamRecord, useUpdateStreamRecord } from "./stream";

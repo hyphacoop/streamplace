@@ -35,7 +35,8 @@ func TestChatMessage(t *testing.T) {
 	cli.DataDir = t.TempDir()
 	mod, err := model.MakeDB(":memory:")
 	require.NoError(t, err)
-	state, err := statedb.MakeDB(context.Background(), &cli, nil, mod)
+	ctx := context.Background()
+	state, err := statedb.MakeDB(ctx, &cli, nil, mod)
 	require.NoError(t, err)
 	atsync := &ATProtoSynchronizer{
 		CLI:        &cli,
@@ -171,7 +172,7 @@ func TestChatMessage(t *testing.T) {
 }
 
 func untilNoErrors(t *testing.T, f func() error) error {
-	ticker := backoff.NewTicker(devenv.NewExponentialBackOff())
+	ticker := backoff.NewTicker(NewExponentialBackOff())
 	defer ticker.Stop()
 	var err error
 	for i := 0; i < 10; i++ {
@@ -184,4 +185,18 @@ func untilNoErrors(t *testing.T, f func() error) error {
 		}
 	}
 	return err
+}
+
+// More aggressive backoff for tests
+func NewExponentialBackOff() *backoff.ExponentialBackOff {
+	b := &backoff.ExponentialBackOff{
+		InitialInterval:     100 * time.Millisecond,
+		RandomizationFactor: backoff.DefaultRandomizationFactor,
+		Multiplier:          backoff.DefaultMultiplier,
+		MaxInterval:         2 * time.Second,
+		MaxElapsedTime:      10 * time.Second,
+		Clock:               backoff.SystemClock,
+	}
+	b.Reset()
+	return b
 }
