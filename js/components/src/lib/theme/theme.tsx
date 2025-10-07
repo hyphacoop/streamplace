@@ -348,19 +348,16 @@ function generateThemeColorsFromPalette(
     accent: isDark ? palette[800] : palette[100],
     accentForeground: isDark ? palette[50] : palette[900],
 
-    destructive:
-      Platform.OS === "ios" ? colors.ios.systemRed : colors.destructive[500],
+    destructive: colors.destructive[800],
     destructiveForeground: colors.white,
 
-    success:
-      Platform.OS === "ios" ? colors.ios.systemGreen : colors.success[500],
+    success: colors.success[800],
     successForeground: colors.white,
 
-    warning:
-      Platform.OS === "ios" ? colors.ios.systemOrange : colors.warning[500],
+    warning: colors.warning[800],
     warningForeground: colors.white,
 
-    info: Platform.OS === "ios" ? colors.ios.systemTeal : colors.teal[500],
+    info: colors.blue[800],
     infoForeground: isDark ? palette[50] : palette[900],
 
     border: isDark ? palette[500] + "30" : palette[200] + "30",

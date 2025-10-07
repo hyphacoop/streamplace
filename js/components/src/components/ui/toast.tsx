@@ -22,7 +22,17 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Circle, Svg } from "react-native-svg";
 import { useTheme } from "../../ui";
+import { Button } from "./button";
 import { Text } from "./text";
+
+type Position =
+  | "auto"
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 type ToastConfig = {
   title?: string;
@@ -36,6 +46,7 @@ type ToastConfig = {
     close: () => void;
     action?: () => void;
   }) => React.ReactNode;
+  position?: Position;
 };
 
 type ToastState = {
@@ -52,6 +63,7 @@ type ToastState = {
     close: () => void;
     action?: () => void;
   }) => React.ReactNode;
+  position: Position;
 };
 
 class ToastManager {
@@ -73,6 +85,7 @@ class ToastManager {
       onClose: config.onClose,
       variant: config.variant ?? "default",
       render: config.render,
+      position: config.position ?? "auto",
     };
 
     this.toasts = [...this.toasts, toast];
@@ -139,6 +152,7 @@ export const toast = {
       onAction?: () => void;
       onClose?: () => void;
       variant?: "default" | "success" | "error" | "info";
+      position?: Position;
     },
   ) => {
     toastManager.show({
@@ -168,6 +182,7 @@ export const toast = {
       onAction?: () => void;
       onClose?: () => void;
       variant?: "default" | "success" | "error" | "info";
+      position?: Position;
     },
   ) => {
     toastManager.show({
@@ -192,97 +207,211 @@ export function useToast() {
 
 export function ToastProvider() {
   const [toasts, setToasts] = useState<ToastState[]>([]);
-  const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
-  const isWeb = Platform.OS === "web";
-  const { width } = useWindowDimensions();
-  const isDesktop = isWeb && width >= 768;
 
   useEffect(() => {
     return toastManager.subscribe(setToasts);
   }, []);
 
+  const toastsByPosition = toasts.reduce(
+    (acc, toast) => {
+      const { position } = toast;
+      if (!acc[position]) {
+        acc[position] = [];
+      }
+      acc[position].push(toast);
+      return acc;
+    },
+    {} as Record<Position, ToastState[]>,
+  );
+
+  return (
+    <>
+      {Object.entries(toastsByPosition).map(([position, toasts]) => (
+        <ToastContainer
+          key={position}
+          position={position as Position}
+          toasts={toasts}
+        />
+      ))}
+    </>
+  );
+}
+
+function ToastContainer({
+  position = "auto",
+  toasts,
+}: {
+  position?: Position;
+  toasts: ToastState[];
+}) {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const isWeb = Platform.OS === "web";
+  const { width } = useWindowDimensions();
+  const isDesktop = isWeb && width >= 768;
+  const isTop = position.includes("top");
+  const visibleToasts = toasts.slice(-4);
+  const prevToastIds = useRef<string[]>(visibleToasts.map((t) => t.id));
+  const allKnownToastIds = useRef<Set<string>>(
+    new Set(toasts.map((t) => t.id)),
+  );
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    return toastManager.subscribeHover(setIsHovered);
+  }, []);
+
+  useEffect(() => {
+    const currentIds = visibleToasts.map((t) => t.id);
+    const hasNewToast = currentIds.some(
+      (id) => !allKnownToastIds.current.has(id),
+    );
+
+    if (hasNewToast && isHovered) {
+      // Brand new toast arrived while expanded - collapse momentarily
+      toastManager.setHovered(false);
+      setTimeout(() => {
+        toastManager.setHovered(true);
+      }, 700);
+    } else if (isHovered) {
+      toastManager.setHovered(true);
+      setTimeout(() => {
+        toastManager.setHovered(true);
+      }, 700);
+    }
+
+    // Update known toast IDs
+    toasts.forEach((t) => allKnownToastIds.current.add(t.id));
+    prevToastIds.current = currentIds;
+  }, [visibleToasts, isHovered, toasts]);
+
+  const setHovered = (value: boolean) => toastManager.setHovered(value);
+
+  const pan = Gesture.Pan()
+    .onUpdate((event) => {
+      const velocity = isTop ? -event.velocityY : event.velocityY;
+      if (velocity > 500) {
+        runOnJS(setHovered)(true);
+      } else if (velocity < -500) {
+        runOnJS(setHovered)(false);
+      }
+    })
+    .onEnd((event) => {
+      const translationY = isTop ? -event.translationY : event.translationY;
+      if (translationY > 50) {
+        runOnJS(setHovered)(true);
+      } else if (translationY < -50) {
+        runOnJS(setHovered)(false);
+      }
+    });
+
   const gesture =
     Platform.OS === "web"
       ? Gesture.Hover()
           .onStart(() => {
-            runOnJS(toastManager.setHovered)(true);
+            runOnJS(setHovered)(true);
           })
           .onEnd(() => {
-            runOnJS(toastManager.setHovered)(false);
+            runOnJS(setHovered)(false);
           })
-      : Gesture.LongPress()
-          .onStart(() => {
-            runOnJS(toastManager.setHovered)(true);
-          })
-          .onEnd(() => {
-            runOnJS(toastManager.setHovered)(false);
-          });
+      : pan;
 
-  const containerPosition: ViewStyle = isDesktop
-    ? {
-        bottom: theme.spacing[4],
-        right: theme.spacing[4],
-        alignItems: "flex-end",
-        minWidth: 400,
-        width: 400,
-      }
-    : {
-        bottom: insets.bottom + theme.spacing[1],
-        left: 0,
-        right: 0,
-        alignItems: "center",
-        width: "100%",
-      };
+  const getPositionStyle = (): ViewStyle => {
+    const resolvedPosition =
+      position === "auto"
+        ? isDesktop
+          ? "bottom-right"
+          : "top-center"
+        : position;
+
+    const styles: ViewStyle = {
+      position: "absolute",
+      zIndex: 1000,
+      width: isDesktop ? 400 : "100%",
+      paddingHorizontal: isDesktop ? 0 : theme.spacing[4],
+    };
+
+    if (resolvedPosition.includes("top")) {
+      styles.top = insets.top + theme.spacing[4];
+    }
+    if (resolvedPosition.includes("bottom")) {
+      styles.bottom = insets.bottom + theme.spacing[4];
+    }
+    if (resolvedPosition.includes("left")) {
+      styles.left = insets.left + theme.spacing[4];
+      styles.alignItems = "flex-start";
+    }
+    if (resolvedPosition.includes("right")) {
+      styles.right = insets.right + theme.spacing[4];
+      styles.alignItems = "flex-end";
+    }
+    if (resolvedPosition.includes("center")) {
+      styles.left = 0;
+      styles.right = 0;
+      styles.alignItems = "center";
+    }
+
+    return styles;
+  };
 
   return (
     <Portal name="toasties">
       <GestureDetector gesture={gesture}>
-        <View style={[styles.providerContainer, containerPosition]}>
-          {toasts
-            .slice(-4)
-            .reverse()
-            .map((toastState, index) => (
-              <Toast
-                key={toastState.id}
-                open={toastState.open}
-                onOpenChange={(open) => {
-                  if (!open) toastManager.hide(toastState.id);
-                }}
-                title={toastState.title}
-                description={toastState.description}
-                actionLabel={toastState.actionLabel}
-                onAction={toastState.onAction}
-                duration={toastState.duration}
-                index={index}
-                isLatest={index === 0}
-                totalToasts={toasts.length}
-                variant={toastState.variant}
-                render={toastState.render}
-              />
-            ))}
+        <View style={getPositionStyle()}>
+          {visibleToasts.reverse().map((toastState, index) => (
+            <Toast
+              key={toastState.id}
+              {...toastState}
+              onOpenChange={(open) => {
+                if (!open) toastManager.hide(toastState.id);
+              }}
+              index={index}
+              isLatest={index === 0}
+              totalToasts={toasts.length}
+              position={
+                position === "auto"
+                  ? isDesktop
+                    ? "bottom-right"
+                    : "top-center"
+                  : position
+              }
+            />
+          ))}
         </View>
       </GestureDetector>
     </Portal>
   );
 }
 
-type ToastProps = {
+export function AndMore({ more }: { more: number }) {
+  const { theme } = useTheme();
+  return (
+    <View
+      style={{
+        padding: theme.spacing[2],
+        paddingHorizontal: theme.spacing[4],
+        backgroundColor: theme.colors.muted,
+        borderRadius: theme.borderRadius.xl,
+        marginTop: theme.spacing[2],
+        alignSelf: "center",
+      }}
+    >
+      <Text size="sm" style={{ color: theme.colors.mutedForeground }}>
+        and {more} more notification
+        {more === 1 ? "" : "s"}
+      </Text>
+    </View>
+  );
+}
+
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+type ToastProps = PartialBy<Omit<ToastState, "id" | "open">, "position"> & {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  title?: string;
-  description?: string;
-  actionLabel?: string;
-  onAction?: () => void;
-  duration?: number;
   index?: number;
   isLatest?: boolean;
   totalToasts?: number;
-  variant?: "default" | "success" | "error" | "info";
-  render?: (props: {
-    close: () => void;
-    action?: () => void;
-  }) => React.ReactNode;
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -300,6 +429,7 @@ export function Toast({
   totalToasts = 0,
   variant = "default",
   render,
+  position = "auto",
 }: ToastProps) {
   const [isHovered, setIsHovered] = useState(false);
   const progress = useSharedValue(1);
@@ -311,7 +441,11 @@ export function Toast({
   const { width } = useWindowDimensions();
   const isDesktop = isWeb && width >= 768;
 
-  const RADIUS = 8;
+  const { top, bottom } = useSafeAreaInsets();
+
+  const isTop = position.includes("top");
+
+  const RADIUS = 12;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
   const animatedCircleProps = useAnimatedProps(() => {
@@ -321,7 +455,7 @@ export function Toast({
   });
 
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(100);
+  const translateY = useSharedValue(isTop ? -100 : 100);
   const scale = useSharedValue(1 - index * 0.05);
 
   useEffect(() => {
@@ -339,14 +473,14 @@ export function Toast({
     if (!open) {
       // Close animation
       opacity.value = withTiming(0, { duration: 250 });
-      translateY.value = withTiming(100, { duration: 250 });
+      translateY.value = withTiming(isTop ? -100 : 100, { duration: 250 });
       return;
     }
 
     if (isHovered) {
       // Stack vertically with proper spacing when hovered
-      const spacing = height + 20; // Height of each toast + gap
-      translateY.value = withTiming(-index * spacing, {
+      const spacing = height + 8; // Height of each toast + gap
+      translateY.value = withTiming((isTop ? index : -index) * spacing, {
         duration: 750,
         easing: Easing.out(Easing.exp),
       });
@@ -360,7 +494,7 @@ export function Toast({
       });
     } else {
       // Compact stacked view when not hovered
-      translateY.value = withTiming(-index * 15, {
+      translateY.value = withTiming((isTop ? index : -index) * 15, {
         duration: 750,
         easing: Easing.out(Easing.exp),
       });
@@ -368,7 +502,7 @@ export function Toast({
         duration: 750,
         easing: Easing.out(Easing.exp),
       });
-      opacity.value = withTiming(isLatest ? 1 : 0.8, {
+      opacity.value = withTiming(isLatest ? 1 : 0.95, {
         duration: 750,
         easing: Easing.out(Easing.exp),
       });
@@ -406,7 +540,11 @@ export function Toast({
   const animatedStyle = useAnimatedStyle(() => {
     return {
       opacity: opacity.value,
-      transform: [{ translateY: translateY.value }, { scale: scale.value }],
+      transform: [
+        // +22 is to get it just below the header
+        { translateY: translateY.value + (isTop ? top / 2 : -bottom) },
+        { scale: scale.value },
+      ],
       zIndex: 1000 - index,
     };
   });
@@ -430,10 +568,20 @@ export function Toast({
     },
   };
 
+  const buttonTypeMap = {
+    default: "primary",
+    success: "success",
+    error: "primary",
+    info: "secondary",
+  } as const;
+
   return (
     <Animated.View
       onLayout={(l) => setHeight(l.nativeEvent.layout.height)}
-      style={[styles.container, animatedStyle]}
+      style={[
+        isTop ? styles.containerTop : styles.containerBottom,
+        animatedStyle,
+      ]}
     >
       <View
         style={[
@@ -462,23 +610,9 @@ export function Toast({
                 gap: theme.spacing[4],
               }}
             >
-              <View style={{ flex: 1, gap: theme.spacing[1] }}>
-                <Text
-                  style={{
-                    color: theme.colors.foreground,
-                    fontSize: 16,
-                    fontWeight: "500",
-                  }}
-                >
-                  {title}
-                </Text>
-                {description ? (
-                  <Text
-                    style={{ color: theme.colors.foreground, fontSize: 14 }}
-                  >
-                    {description}
-                  </Text>
-                ) : null}
+              <View>
+                <Text size="lg">{title}</Text>
+                {description ? <Text>{description}</Text> : null}
               </View>
               {isLatest && duration > 0 ? (
                 <Pressable
@@ -488,14 +622,18 @@ export function Toast({
                     justifyContent: "center",
                   }}
                 >
-                  <Svg width="24" height="24" viewBox="0 0 24 24">
+                  <Svg
+                    width={RADIUS * 2}
+                    height={RADIUS * 2}
+                    viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
+                  >
                     <AnimatedCircle
                       stroke={theme.colors.border}
                       fill="transparent"
                       strokeWidth="2"
                       r={RADIUS}
-                      cx="12"
-                      cy="12"
+                      cx={RADIUS + 1}
+                      cy={RADIUS + 1}
                     />
                     <AnimatedCircle
                       animatedProps={animatedCircleProps}
@@ -504,11 +642,11 @@ export function Toast({
                       strokeWidth="2"
                       strokeDasharray={CIRCUMFERENCE}
                       r={RADIUS}
-                      cx="12"
-                      cy="12"
+                      cx={RADIUS + 1}
+                      cy={RADIUS + 1}
                       rotation="-90"
-                      originX="12"
-                      originY="12"
+                      originX={RADIUS + 1}
+                      originY={RADIUS + 1}
                       strokeLinecap="round"
                     />
                   </Svg>
@@ -538,7 +676,7 @@ export function Toast({
                   </Svg>
                   {!onAction && (
                     <View style={{ position: "absolute" }}>
-                      <X color={theme.colors.foreground} size={12} />
+                      <X color="white" size={12} />
                     </View>
                   )}
                 </Pressable>
@@ -553,34 +691,14 @@ export function Toast({
                   width: "100%",
                 }}
               >
-                <Pressable
-                  style={[
-                    styles.button,
-                    {
-                      borderColor: theme.colors.primary,
-                      paddingHorizontal: theme.spacing[4],
-                      paddingVertical: theme.spacing[2],
-                    },
-                  ]}
-                  onPress={onAction}
-                >
+                <Button variant={buttonTypeMap[variant]} onPress={onAction}>
                   <Text style={{ color: theme.colors.foreground }}>
                     {actionLabel}
                   </Text>
-                </Pressable>
-                <Pressable
-                  style={[
-                    styles.button,
-                    {
-                      borderColor: theme.colors.primary,
-                      paddingHorizontal: theme.spacing[4],
-                      paddingVertical: theme.spacing[2],
-                    },
-                  ]}
-                  onPress={() => onOpenChange(false)}
-                >
+                </Button>
+                <Button variant="secondary" onPress={() => onOpenChange(false)}>
                   <Text style={{ color: theme.colors.foreground }}>Close</Text>
-                </Pressable>
+                </Button>
               </View>
             )}
           </>
@@ -595,15 +713,22 @@ const styles = StyleSheet.create({
     position: "absolute",
     zIndex: 1000,
   },
-  container: {
+  containerBottom: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     alignItems: "center",
   },
+  containerTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   toast: {
-    opacity: 0.95,
+    opacity: 0.99,
     borderWidth: 1,
     gap: 8,
   },
