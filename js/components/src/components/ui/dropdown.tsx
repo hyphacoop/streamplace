@@ -13,15 +13,12 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import {
   a,
-  bg,
   borderRadius,
-  colors,
   fontSize,
   gap,
   layout,
@@ -35,12 +32,13 @@ import {
   px,
   py,
   right,
-  textColors,
 } from "../../lib/theme/atoms";
+import { useTheme } from "../../ui";
 import {
   objectFromObjects,
   TextContext as TextClassContext,
 } from "./primitives/text";
+import { Text } from "./text";
 
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -60,6 +58,7 @@ export const DropdownMenuBottomSheet = forwardRef<
 ) {
   // Use the primitives' context to know if open
   const { open, onOpenChange } = DropdownMenuPrimitive.useRootContext();
+  const { zero: zt } = useTheme();
   const snapPoints = useMemo(() => ["25%", "50%", "80%"], []);
   const sheetRef = useRef<BottomSheet>(null);
 
@@ -81,14 +80,14 @@ export const DropdownMenuBottomSheet = forwardRef<
         )}
         onClose={() => onOpenChange?.(false)}
         style={[overlayStyle]}
-        backgroundStyle={[bg.black, a.radius.all.md, a.shadows.md, p[1]]}
+        backgroundStyle={[zt.bg.popover, a.radius.all.md, a.shadows.md, p[1]]}
         handleIndicatorStyle={[
           a.sizes.width[12],
           a.sizes.height[1],
-          bg.gray[500],
+          zt.bg.mutedForeground,
         ]}
       >
-        <BottomSheetView style={[px[2]]}>
+        <BottomSheetView style={[px[4]]}>
           {typeof children === "function"
             ? children({ pressed: true })
             : children}
@@ -108,6 +107,7 @@ export const DropdownMenuSubTrigger = forwardRef<
   }
 >(({ inset, children, ...props }, ref) => {
   const { open } = DropdownMenuPrimitive.useSubContext();
+  const { icons } = useTheme();
   const Icon =
     Platform.OS === "web" ? ChevronRight : open ? ChevronUp : ChevronDown;
   return (
@@ -130,7 +130,7 @@ export const DropdownMenuSubTrigger = forwardRef<
         >
           {children}
           <View style={[a.layout.position.absolute, a.position.right[1]]}>
-            <Icon size={18} color={colors.gray[200]} />
+            <Icon size={18} color={icons.color.muted} />
           </View>
         </View>
       </DropdownMenuPrimitive.SubTrigger>
@@ -142,6 +142,7 @@ export const DropdownMenuSubContent = forwardRef<
   any,
   DropdownMenuPrimitive.SubContentProps
 >((props, ref) => {
+  const { zero: zt } = useTheme();
   return (
     <DropdownMenuPrimitive.SubContent
       ref={ref}
@@ -151,9 +152,9 @@ export const DropdownMenuSubContent = forwardRef<
         a.overflow.hidden,
         a.radius.all.md,
         a.borders.width.thin,
-        a.borders.color.gray[600],
+        zt.border.default,
         mt[1],
-        bg.black,
+        zt.bg.popover,
         p[1],
         a.shadows.md,
       ]}
@@ -169,6 +170,7 @@ export const DropdownMenuContent = forwardRef<
     portalHost?: string;
   }
 >(({ overlayStyle, portalHost, ...props }, ref) => {
+  const { zero: zt } = useTheme();
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
       <DropdownMenuPrimitive.Overlay
@@ -187,8 +189,8 @@ export const DropdownMenuContent = forwardRef<
               a.overflow.hidden,
               a.radius.all.md,
               a.borders.width.thin,
-              a.borders.color.gray[800],
-              bg.gray[950],
+              zt.border.default,
+              zt.bg.popover,
               p[2],
               a.shadows.md,
             ] as any
@@ -206,6 +208,7 @@ export const DropdownMenuContentWithoutPortal = forwardRef<
     overlayStyle?: any;
   }
 >(({ overlayStyle, ...props }, ref) => {
+  const { theme } = useTheme();
   return (
     <DropdownMenuPrimitive.Overlay
       style={[
@@ -223,8 +226,8 @@ export const DropdownMenuContentWithoutPortal = forwardRef<
             a.overflow.hidden,
             a.radius.all.md,
             a.borders.width.thin,
-            a.borders.color.gray[800],
-            bg.gray[950],
+            { borderColor: theme.colors.border },
+            { backgroundColor: theme.colors.popover },
             p[2],
             a.shadows.md,
           ] as any
@@ -263,10 +266,14 @@ export const DropdownMenuItem = forwardRef<
   any,
   DropdownMenuPrimitive.ItemProps & { inset?: boolean; disabled?: boolean }
 >(({ inset, disabled, style, children, ...props }, ref) => {
+  const { theme } = useTheme();
   return (
     <Pressable {...props}>
       <TextClassContext.Provider
-        value={objectFromObjects([a.textColors.gray[900], a.fontSize.base])}
+        value={objectFromObjects([
+          { color: theme.colors.popoverForeground },
+          a.fontSize.base,
+        ])}
       >
         <View
           style={[
@@ -278,9 +285,15 @@ export const DropdownMenuItem = forwardRef<
             pr[2],
           ]}
         >
-          {typeof children === "function"
-            ? children({ pressed: true })
-            : children}
+          {typeof children === "function" ? (
+            children({ pressed: true })
+          ) : typeof children === "string" ? (
+            <Text style={[inset && gap[2], disabled && { opacity: 0.5 }]}>
+              {children}
+            </Text>
+          ) : (
+            children
+          )}
         </View>
       </TextClassContext.Provider>
     </Pressable>
@@ -294,6 +307,7 @@ export const DropdownMenuCheckboxItem = forwardRef<
     children?: React.ReactNode;
   }
 >(({ children, checked, ...props }, ref) => {
+  const { theme } = useTheme();
   return (
     <DropdownMenuPrimitive.CheckboxItem
       ref={ref}
@@ -315,9 +329,17 @@ export const DropdownMenuCheckboxItem = forwardRef<
         {children}
         <View style={[pl[1], layout.position.absolute, right[1]]}>
           {checked ? (
-            <CheckCircle size={14} strokeWidth={3} color="white" />
+            <CheckCircle
+              size={14}
+              strokeWidth={3}
+              color={theme.colors.foreground}
+            />
           ) : (
-            <Circle size={14} strokeWidth={3} color={a.colors.gray[400]} />
+            <Circle
+              size={14}
+              strokeWidth={3}
+              color={theme.colors.mutedForeground}
+            />
           )}
         </View>
       </View>
@@ -332,6 +354,7 @@ export const DropdownMenuRadioItem = forwardRef<
     children?: React.ReactNode;
   }
 >(({ children, ...props }, ref) => {
+  const { theme } = useTheme();
   return (
     <DropdownMenuPrimitive.RadioItem
       ref={ref}
@@ -350,7 +373,7 @@ export const DropdownMenuRadioItem = forwardRef<
       >
         <View style={[pl[1], layout.position.absolute, right[1]]}>
           <DropdownMenuPrimitive.ItemIndicator>
-            <Check size={14} strokeWidth={3} color="white" />
+            <Check size={14} strokeWidth={3} color={theme.colors.foreground} />
           </DropdownMenuPrimitive.ItemIndicator>
         </View>
         {children}
@@ -363,16 +386,19 @@ export const DropdownMenuLabel = forwardRef<
   any,
   DropdownMenuPrimitive.LabelProps & { inset?: boolean }
 >(({ inset, ...props }, ref) => {
+  const { theme } = useTheme();
   return (
     <Text
       ref={ref}
-      style={[
-        px[2],
-        py[2],
-        a.textColors.gray[200],
-        a.fontSize.base,
-        inset && gap[2],
-      ]}
+      style={
+        [
+          px[2],
+          py[2],
+          { color: theme.colors.textMuted },
+          a.fontSize.base,
+          (inset && gap[2]) as any,
+        ] as any
+      }
       {...props}
     />
   );
@@ -382,15 +408,29 @@ export const DropdownMenuSeparator = forwardRef<
   any,
   DropdownMenuPrimitive.SeparatorProps
 >((props, ref) => {
-  return <View ref={ref} style={[{ height: 0.5 }, bg.gray[800]]} {...props} />;
+  const { theme } = useTheme();
+  return (
+    <View
+      ref={ref}
+      style={[
+        {
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+          marginVertical: -0.5,
+        },
+      ]}
+      {...props}
+    />
+  );
 });
 
 export function DropdownMenuShortcut(props: any) {
+  const { theme } = useTheme();
   return (
     <Text
       style={[
         ml.auto,
-        a.textColors.gray[500],
+        { color: theme.colors.textMuted },
         a.fontSize.sm,
         a.letterSpacing.widest,
       ]}
@@ -403,15 +443,18 @@ export const DropdownMenuGroup = forwardRef<
   any,
   { inset?: boolean; title?: string; children: ReactNode }
 >((props, ref) => {
+  const { theme } = useTheme();
   const { inset, title, children, ...rest } = props;
   return (
     <View style={[pt[2], inset && gap[2]]} ref={ref} {...rest}>
       {title && (
-        <Text style={[textColors.gray[400], pb[1], pl[2]]}>{title}</Text>
+        <Text style={[{ color: theme.colors.textMuted }, pb[1], pl[2]]}>
+          {title}
+        </Text>
       )}
       <View
         style={[
-          bg.gray[900],
+          { backgroundColor: theme.colors.muted },
           Platform.OS === "web" ? [px[2], py[1]] : p[2],
           gap.all[1],
           { borderRadius: borderRadius.lg },
@@ -425,8 +468,17 @@ export const DropdownMenuGroup = forwardRef<
 
 export const DropdownMenuInfo = forwardRef<any, any>(
   ({ description, ...props }, ref) => {
+    const { theme } = useTheme();
     return (
-      <Text style={[textColors.gray[400], pt[1], pl[2], pb[2], fontSize.sm]}>
+      <Text
+        style={[
+          { color: theme.colors.textMuted },
+          pt[1],
+          pl[2],
+          pb[2],
+          fontSize.sm,
+        ]}
+      >
         {description}
       </Text>
     );

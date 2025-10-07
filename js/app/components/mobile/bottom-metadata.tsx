@@ -7,6 +7,7 @@ import {
   ShareSheet,
   Text,
   useAvatars,
+  useDID,
   useLivestreamInfo,
   useLivestreamStore,
   zero,
@@ -78,12 +79,28 @@ export function BottomMetadata({
             />
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: "white", fontWeight: "600" }}>
-              @{profile?.handle || "user"}
-            </Text>
+            <View
+              style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}
+            >
+              <Pressable
+                onPress={() => {
+                  if (profile?.handle) {
+                    const url = `https://bsky.app/profile/${profile.handle}`;
+                    Linking.openURL(url);
+                  }
+                }}
+              >
+                <Text style={{ color: "white", fontWeight: "600" }}>
+                  @{profile?.handle || "user"}
+                </Text>
+              </Pressable>
+              {did && profile && (
+                <FollowButton streamerDID={profile?.did} currentUserDID={did} />
+              )}
+            </View>
             <Text
               style={{ color: colors.gray[400] }}
-              numberOfLines={1}
+              numberOfLines={3}
               ellipsizeMode="tail"
             >
               {ls?.record.title || "Stream Title"}

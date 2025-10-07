@@ -3,6 +3,7 @@ package media
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -10,13 +11,18 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqtime"
+	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/signers"
+	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
-
-	"git.stream.place/streamplace/c2pa-go/pkg/c2pa"
 )
+
+type ManifestAndCert struct {
+	Manifest c2patypes.Manifest `json:"manifest"`
+	Cert     string             `json:"cert"`
+}
 
 func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error {
 	ctx, span := otel.Tracer("signer").Start(ctx, "ValidateMP4")
@@ -25,18 +31,20 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return err
 	}
-	r := bytes.NewReader(buf)
-	reader, err := c2pa.FromStream(r, "video/mp4")
+	var maniCert ManifestAndCert
+	maniStr, rustErr := iroh_streamplace.GetManifestAndCert(buf)
+	if rustErr.AsError() != nil {
+		return rustErr.AsError()
+	}
+	err = json.Unmarshal([]byte(maniStr), &maniCert)
 	if err != nil {
 		return err
 	}
-	mani := reader.GetActiveManifest()
-	certs := reader.GetProvenanceCertChain()
-	pub, err := signers.ParseES256KCert([]byte(certs))
+	pub, err := signers.ParseES256KCert([]byte(maniCert.Cert))
 	if err != nil {
 		return err
 	}
-	meta, err := ParseSegmentAssertions(ctx, mani)
+	meta, err := ParseSegmentAssertions(ctx, &maniCert.Manifest)
 	if err != nil {
 		return err
 	}
@@ -78,13 +86,21 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 	if err != nil {
 		return fmt.Errorf("got valid segment, but user %s is not allowed: %w", repoDID, err)
 	}
+
+	// Apply content filtering after metadata is parsed
+	if mm.cli.ContentFilters != nil {
+		if err := mm.applyContentFilters(ctx, meta); err != nil {
+			return err
+		}
+	}
+
 	fd, err := mm.cli.SegmentFileCreate(repoDID, meta.StartTime, "mp4")
 	if err != nil {
 		return err
 	}
 	defer fd.Close()
 	go mm.replicator.NewSegment(ctx, buf)
-	r = bytes.NewReader(buf)
+	r := bytes.NewReader(buf)
 	if _, err := io.Copy(fd, r); err != nil {
 		return err
 	}
@@ -111,7 +127,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader) error 
 		go func() { ch <- not }()
 	}
 	aqt := aqtime.FromTime(meta.StartTime.Time())
-	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *mani.Label)
+	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *maniCert.Manifest.Label)
 	return nil
 }
 

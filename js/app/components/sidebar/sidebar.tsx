@@ -4,20 +4,23 @@ import {
   CommonActions,
   DrawerNavigationState,
   ParamListBase,
+  useNavigation,
 } from "@react-navigation/native";
-import { FileQuestion } from "@tamagui/lucide-icons";
-import { Platform } from "react-native";
-import { SharedValue, useAnimatedStyle } from "react-native-reanimated";
-import { Image, styled, Text, View, YStack } from "tamagui";
+import { Text, zero } from "@streamplace/components";
+import React from "react";
+import { Image, Platform, View } from "react-native";
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import SidebarItem from "./sidebar-item";
 
-const AnimatedYStack = styled(YStack, {
-  name: "AnimatedYStack",
-});
-
 export interface ExternalDrawerItem {
-  item: React.NamedExoticComponent<any>;
-  label: React.ComponentType<any> | string;
+  item:
+    | React.ComponentType<any>
+    | React.ReactElement
+    | (() => React.ReactElement);
+  label: React.ComponentType<any> | React.ReactElement | string;
   onPress: () => void;
 }
 
@@ -41,7 +44,7 @@ export default function Sidebar({
   widthAnim,
   externalItems = [],
 }: SidebarProps) {
-  // Apply the defined type to the component props
+  const navigation = useNavigation();
   const animatedSidebarStyle = useAnimatedStyle(() => {
     return {
       minWidth: widthAnim.value,
@@ -54,30 +57,33 @@ export default function Sidebar({
   }
 
   return (
-    <AnimatedYStack
-      style={animatedSidebarStyle} // Apply the animated style
-      padding="$2"
-      gap="$2"
+    <Animated.View
+      style={[
+        animatedSidebarStyle,
+        zero.p[2],
+        zero.gap.all[2],
+        zero.layout.flex.column,
+      ]}
     >
       <View
-        marginTop={Platform.OS === "ios" ? 29 : 12}
-        marginBottom="$5"
-        paddingLeft="$2.5"
-        gap="$3"
-        flexDirection="row"
-        justifyContent="flex-start"
-        alignItems="center"
+        style={[
+          zero.layout.flex.row,
+          zero.layout.flex.alignCenter,
+          zero.gap.all[3],
+          {
+            marginTop: Platform.OS === "ios" ? 29 : 8,
+            marginBottom: 20,
+            paddingLeft: 11,
+          },
+        ]}
       >
         <Image
           source={require("../../assets/images/cube.png")}
-          height="$2"
-          width="$2"
+          height={30}
+          width={28}
+          style={{ width: 28, height: 30, resizeMode: "contain" }}
         />
-        {!collapsed && (
-          <Text fontSize="$7" minWidth={200} numberOfLines={1}>
-            Streamplace
-          </Text>
-        )}
+        {!collapsed && <Text size="2xl">Streamplace</Text>}
       </View>
 
       {state.routes.map((route) => {
@@ -93,17 +99,34 @@ export default function Sidebar({
           | React.ComponentType<any>
           | undefined;
 
+        // if we have style display: none on the drawer item, completely skip rendering it
+        const drawerItemStyle = options.drawerItemStyle;
+        let isHidden = false;
+        if (
+          drawerItemStyle &&
+          typeof drawerItemStyle === "object" &&
+          "display" in drawerItemStyle &&
+          (drawerItemStyle as any).display === "none"
+        ) {
+          isHidden = true;
+        }
+        if (isHidden) {
+          return null;
+        }
+
         return (
           <SidebarItem
             key={route.key}
-            icon={IconComponent ? IconComponent : FileQuestion}
+            icon={IconComponent ? IconComponent : () => <Text>📄</Text>}
             label={label}
             active={descriptor.navigation.isFocused()}
             collapsed={collapsed}
-            onPress={() => {
+            route={route}
+            onPress={(ev) => {
+              ev.preventDefault();
               if (route.name === "Home") {
-                // copy logic for 'Home' to reset the stack
-                descriptor.navigation.dispatch(
+                // reset the stack (b/c streamlist is in the same stack as home)
+                navigation.dispatch(
                   CommonActions.reset({
                     index: 0,
                     routes: [
@@ -117,20 +140,41 @@ export default function Sidebar({
                   }),
                 );
               } else {
-                descriptor.navigation.navigate(route.name);
+                navigation.navigate(route.name as any);
               }
             }}
             style={options.drawerItemStyle}
-            tint={options.drawerActiveTintColor as string} // Assuming tint is a string color or undefined
+            tint={options.drawerActiveTintColor as string}
           />
         );
       })}
       {externalItems.map((i, num) => {
+        // Handle different label types - string, JSX element, or component
+        const renderLabel = () => {
+          if (typeof i.label === "string") {
+            return i.label;
+          }
+
+          // If it's already a JSX element, return it directly
+          if (React.isValidElement(i.label)) {
+            return i.label;
+          }
+
+          // If it's a function (component), call it
+          if (typeof i.label === "function") {
+            const LabelComponent = i.label;
+            return <LabelComponent />;
+          }
+
+          // Fallback
+          return "Item";
+        };
+
         return (
           <SidebarItem
             key={num}
             icon={i.item}
-            label={i.label || "Fix this label!"}
+            label={renderLabel()}
             active={false}
             collapsed={collapsed}
             onPress={() => i.onPress()}
@@ -138,6 +182,6 @@ export default function Sidebar({
           />
         );
       })}
-    </AnimatedYStack>
+    </Animated.View>
   );
 }

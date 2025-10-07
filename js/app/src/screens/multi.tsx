@@ -4,6 +4,7 @@ import {
   Player,
   PlayerProps,
   PlayerProvider,
+  Text,
   ThemeProvider,
   usePlayerStore,
   zero,
@@ -11,12 +12,12 @@ import {
 import { DesktopUi } from "components/mobile/desktop-ui";
 import { FullscreenProvider } from "contexts/FullscreenContext";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
 const { layout, flex } = zero;
 
 function IdViewer({ reqid }) {
-  const id = usePlayerStore((p) => p.id);
+  const id = usePlayerStore((p) => p.id, reqid);
   return (
     <View style={[layout.flex.center, layout.flex.row]}>
       <Text>

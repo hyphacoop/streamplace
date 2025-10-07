@@ -5,8 +5,8 @@ import {
   ViewProps as RNViewProps,
   ViewStyle,
 } from "react-native";
-import { borderRadius as radius, spacing } from "../../lib/theme/atoms";
 import { useTheme } from "../../lib/theme/theme";
+import * as zero from "../../ui";
 
 // View variants using class-variance-authority pattern
 const viewVariants = cva("", {
@@ -121,72 +121,64 @@ export const View = forwardRef<RNView, ViewProps>(
     },
     ref,
   ) => {
-    const { theme } = useTheme();
+    const { zero: zt } = useTheme();
 
-    // Map variant to styles
+    // Map variant to styles using theme.zero
     const variantStyles: ViewStyle = (() => {
       switch (variant) {
         case "card":
           return {
-            backgroundColor: theme.colors.card,
-            borderRadius: radius.lg,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
+            ...zt.bg.card,
+            borderRadius: zero.borderRadius.lg,
+            ...zero.shadows.md,
           };
         case "overlay":
-          return {
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          };
+          return zt.bg.overlay;
         case "surface":
-          return {
-            backgroundColor: theme.colors.background,
-          };
+          return zt.bg.background;
         case "container":
           return {
-            backgroundColor: theme.colors.background,
-            padding: spacing[4],
+            ...zt.bg.background,
+            ...zero.p[8],
           };
         default:
           return {};
       }
     })();
 
-    // Map padding to numeric values
+    // Map padding to zero tokens
     const paddingValue = (() => {
       switch (padding) {
         case "xs":
-          return spacing[1];
+          return zero.p[1];
         case "sm":
-          return spacing[2];
+          return zero.p[2];
         case "md":
-          return spacing[3];
+          return zero.p[4];
         case "lg":
-          return spacing[4];
+          return zero.p[6];
         case "xl":
-          return spacing[5];
+          return zero.p[8];
         default:
-          return undefined;
+          return {};
       }
     })();
 
-    // Map margin to numeric values
+    // Map margin to zero tokens
     const marginValue = (() => {
       switch (margin) {
         case "xs":
-          return spacing[1];
+          return zero.m[1];
         case "sm":
-          return spacing[2];
+          return zero.m[2];
         case "md":
-          return spacing[3];
+          return zero.m[4];
         case "lg":
-          return spacing[4];
+          return zero.m[6];
         case "xl":
-          return spacing[5];
+          return zero.m[8];
         default:
-          return undefined;
+          return {};
       }
     })();
 
@@ -262,8 +254,8 @@ export const View = forwardRef<RNView, ViewProps>(
 
     const computedStyle: ViewStyle = {
       ...variantStyles,
-      ...(paddingValue !== undefined && { padding: paddingValue }),
-      ...(marginValue !== undefined && { margin: marginValue }),
+      ...paddingValue,
+      ...marginValue,
       flexDirection,
       alignItems,
       justifyContent,
@@ -278,13 +270,7 @@ export const View = forwardRef<RNView, ViewProps>(
       ...(borderColor && { borderColor }),
       ...(borderWidth !== undefined && { borderWidth }),
       ...(borderRadius !== undefined && { borderRadius }),
-      ...(shadow && {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      }),
+      ...(shadow && zero.shadows.md),
     };
 
     const finalStyle = Array.isArray(style)

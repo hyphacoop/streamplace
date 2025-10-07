@@ -91,6 +91,8 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 				if err != nil {
 					log.Error(ctx, "error validating segment", "error", err)
 					globalerror.GlobalError(err)
+					// Stop the pipeline to end the stream (removes from feed)
+					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, err.Error(), fmt.Sprintf("Segment validation failed: %s", err.Error()))
 					return
 				}
 			},

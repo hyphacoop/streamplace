@@ -271,11 +271,11 @@ func (a *StreamplaceAPI) Handler(ctx context.Context) (http.Handler, error) {
 
 	return handler, nil
 }
-func (a *StreamplaceAPI) ContextMiddleware(ctx context.Context) func(next http.Handler) http.Handler {
+func (a *StreamplaceAPI) ContextMiddleware(parentContext context.Context) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			uuid := uuid.New().String()
-			ctx = log.WithLogValues(ctx, "requestID", uuid, "method", r.Method, "path", r.URL.Path)
+			ctx := log.WithLogValues(parentContext, "requestID", uuid, "method", r.Method, "path", r.URL.Path)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
@@ -314,7 +314,7 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 			return
 		}
 		if errors.Is(err, ErrorIndex) || f == "" {
-			bs, err := linker.GenerateDefaultCard(ctx, req.URL)
+			bs, err := linker.GenerateDefaultCard(ctx, req.URL, a.CLI.SentryDSN)
 			if err != nil {
 				log.Error(ctx, "error generating default card", "error", err)
 			}
@@ -357,7 +357,7 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 			defaultHandler.ServeHTTP(w, req)
 			return
 		}
-		bs, err := linker.GenerateStreamerCard(ctx, req.URL, lsv)
+		bs, err := linker.GenerateStreamerCard(ctx, req.URL, lsv, a.CLI.SentryDSN)
 		if err != nil {
 			log.Error(ctx, "error generating html", "error", err)
 			defaultHandler.ServeHTTP(w, req)

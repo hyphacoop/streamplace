@@ -3,7 +3,6 @@ import {
   Player,
   PlayerProps,
   PlayerProvider,
-  ThemeProvider,
 } from "@streamplace/components";
 import { DesktopUi } from "components/mobile/desktop-ui";
 import {
@@ -11,9 +10,11 @@ import {
   setSidebarUnhidden,
 } from "features/base/sidebarSlice";
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import { useAppDispatch } from "store/hooks";
-import { isWeb } from "tamagui";
 import { queryToProps } from "./util";
+
+const isWeb = Platform.OS === "web";
 
 export default function EmbedScreen({ route }) {
   const { user, protocol, url } = route.params;
@@ -34,14 +35,12 @@ export default function EmbedScreen({ route }) {
     src = url;
   }
   return (
-    <ThemeProvider>
-      <LivestreamProvider src={src}>
-        <PlayerProvider {...extraProps}>
-          <Player src={src} {...extraProps}>
-            <DesktopUi />
-          </Player>
-        </PlayerProvider>
-      </LivestreamProvider>
-    </ThemeProvider>
+    <LivestreamProvider src={src}>
+      <PlayerProvider {...extraProps}>
+        <Player src={src} {...extraProps}>
+          <DesktopUi />
+        </Player>
+      </PlayerProvider>
+    </LivestreamProvider>
   );
 }

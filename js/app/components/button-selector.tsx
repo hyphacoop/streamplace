@@ -1,52 +1,73 @@
-import { Button, Text, XStack, YStack, YStackProps } from "tamagui";
+import { Text, zero } from "@streamplace/components";
+import { Pressable, View, ViewStyle } from "react-native";
+
+interface ButtonSelectorProps {
+  text?: string;
+  values: { label: string; value: string }[];
+  selectedValue: string;
+  setSelectedValue: (value: any) => void;
+  style?: ViewStyle;
+}
 
 export default function ButtonSelector({
   text,
   values,
   selectedValue,
   setSelectedValue,
+  style,
   ...props
-}: {
-  text?: string;
-  values: { label: string; value: string }[];
-  selectedValue: string;
-  setSelectedValue: (value: any) => void;
-} & YStackProps) {
+}: ButtonSelectorProps) {
   return (
-    <YStack ai="flex-start" gap="$2" pt="$2" {...props}>
+    <View
+      style={[{ alignItems: "flex-start" }, zero.gap.all[2], zero.pt[2], style]}
+      {...props}
+    >
       {text && (
-        <Text fontSize="$base" fontWeight="semibold">
-          {text}
-        </Text>
+        <Text style={[{ fontSize: 16 }, { fontWeight: "600" }]}>{text}</Text>
       )}
-      <XStack
-        ai="center"
-        jc="space-around"
-        gap="$1"
-        w="100%"
-        bg="$background"
-        borderRadius="$xl"
+      <View
+        style={[
+          zero.layout.flex.row,
+          zero.layout.flex.alignCenter,
+          zero.layout.flex.spaceAround,
+          zero.gap.all[1],
+          zero.w.percent[100],
+          zero.bg.gray[100],
+          zero.r.xl,
+        ]}
       >
         {values.map(({ label, value }) => (
-          <Button
+          <Pressable
             key={value}
             onPress={() => setSelectedValue(value)}
-            f={1}
-            height="$2"
-            variant={selectedValue === value ? "outlined" : undefined}
+            style={[
+              zero.flex.values[1],
+              zero.h[32], // height equivalent to "$2"
+              selectedValue === value
+                ? [
+                    zero.borders.width.medium,
+                    zero.borders.color.gray[300],
+                    zero.r.lg,
+                  ]
+                : [],
+              zero.layout.flex.center,
+            ]}
           >
             <Text
-              color={
-                selectedValue === value
-                  ? "$color.foreground"
-                  : "$color.mutedForeground"
-              }
+              style={[
+                {
+                  color:
+                    selectedValue === value
+                      ? zero.colors.gray[900]
+                      : zero.colors.gray[500],
+                },
+              ]}
             >
               {label}
             </Text>
-          </Button>
+          </Pressable>
         ))}
-      </XStack>
-    </YStack>
+      </View>
+    </View>
   );
 }

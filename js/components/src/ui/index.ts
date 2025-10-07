@@ -68,7 +68,6 @@ export {
   ThemeProvider,
   createThemeColors,
   createThemeIcons,
-  createThemeStyles,
   createThemedStyles,
   darkTheme,
   lightTheme,
@@ -76,7 +75,6 @@ export {
   useTheme,
   type Theme,
   type ThemeIcons,
-  type ThemeStyles,
 } from "../lib/theme/theme";
 
 // Namespace exports for power users

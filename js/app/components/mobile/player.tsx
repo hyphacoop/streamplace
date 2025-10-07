@@ -10,15 +10,16 @@ import {
   Text,
   usePlayerDimensions,
   usePlayerStore,
+  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
-import { ArrowLeft, ArrowRight } from "@tamagui/lucide-icons";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
+import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
-import { Animated, ScrollView } from "react-native";
+import { Animated, ScrollView, StatusBar } from "react-native";
 import { useAppSelector } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
@@ -53,6 +54,12 @@ export function Player(
   }, [userIsLive]);
 
   const navigation = useNavigation();
+
+  useEffect(() => {
+    return () => {
+      StatusBar.setHidden(false, "slide");
+    };
+  }, []);
 
   if (isStreamingElsewhere) {
     return (
@@ -115,6 +122,7 @@ export function Player(
 
   return (
     <LivestreamProvider src={props.src ?? ""}>
+      <StatusBar hidden={true} />
       <PlayerProvider defaultId={props.playerId || undefined}>
         <View
           style={{
@@ -161,6 +169,7 @@ export function PlayerInner(
     screenWidth,
     contentWidth,
     availableHeight,
+    safeAreaInsets,
   } = useResponsiveLayout({
     sidebarWidth: sb.animatedWidth,
     sidebarHidden: !sb.isActive,
@@ -170,9 +179,12 @@ export function PlayerInner(
   // content info
   const { width, height } = usePlayerDimensions();
 
+  const { isPlayerRatioGreater } = useSegmentDimensions();
+
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
-  const isDesktopMode = shouldShowChatSidePanel || screenWidth > 768;
+  // should cover full width on mobile?
+  const isDesktopMode = shouldShowChatSidePanel || screenWidth > 1200;
 
   // Calculate optimal height for desktop mode (90% of available height)
   const maxDesktopHeight = availableHeight * 0.8;
@@ -186,45 +198,57 @@ export function PlayerInner(
     ? Math.min(calculatedWidth / aspectRatio, maxDesktopHeight)
     : height;
 
-  const showBottomMetaPanel = aspectRatio > 1 && screenWidth > 980;
+  const showFullDesktopMode = aspectRatio > 1 && screenWidth > 1200;
+  const isLandscape = aspectRatio > 1;
 
-  // i don't really like this, but it's the only way to ensure the
-  // player is sized correctly on both desktop and mobile views
-  const ContainerElement = showBottomMetaPanel ? ScrollView : View;
   return (
-    <ContainerElement
-      style={
-        shouldShowChatSidePanel
+    <ScrollView
+      style={{
+        height: showFullDesktopMode ? "100%" : undefined,
+        flex: showFullDesktopMode ? 1 : undefined,
+        maxWidth: calculatedWidth,
+      }}
+      contentContainerStyle={
+        showFullDesktopMode
           ? {
-              height: "100%",
-              width: calculatedWidth, // Add explicit width
+              flexGrow: 1, // This makes content expand to fill available space
+              minHeight: "100%", // Ensures minimum height
             }
           : {
-              height: "100%",
               flex: 1,
             }
       }
-      contentContainerStyle={{
-        width: calculatedWidth,
-      }}
-      showsVerticalScrollIndicator={false}
+      scrollEnabled={showFullDesktopMode}
       bounces={false}
+      showsVerticalScrollIndicator={false}
     >
       <Animated.View
         style={[
-          showBottomMetaPanel
+          showFullDesktopMode
             ? {
                 width: calculatedWidth,
                 height: calculatedHeight,
               }
             : {
                 flex: 1,
+                maxHeight: "auto",
               },
+          {
+            paddingTop:
+              isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
+          },
         ]}
       >
         <PlayerInnerInner {...props}>
-          {(showBottomMetaPanel || fullscreen) && (
+          {showFullDesktopMode || fullscreen ? (
             <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
+          ) : (
+            isLandscape && (
+              <MobileUi
+                setShowChat={props.setShowChat}
+                showChat={props.showChat}
+              />
+            )
           )}
           <PlayerUI.ViewerLoadingOverlay />
           <OfflineCounter isMobile={true} />
@@ -241,12 +265,12 @@ export function PlayerInner(
           />
         </PlayerInnerInner>
       </Animated.View>
-      {showBottomMetaPanel && (
+      {showFullDesktopMode && (
         <BottomMetadata
           setShowChat={props.setShowChat}
           showChat={props.showChat}
         />
       )}
-    </ContainerElement>
+    </ScrollView>
   );
 }

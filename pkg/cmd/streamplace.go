@@ -50,6 +50,22 @@ type jobFunc func(ctx context.Context, cli *config.CLI) error
 
 // parse the CLI and fire up an streamplace node!
 func start(build *config.BuildFlags, platformJobs []jobFunc) error {
+	// builder := c2patypes.Builder{}
+	// bs, err := os.ReadFile("/home/iameli/.streamplace/segments/did-plc-dkh4rwafdcda4ko7lewe43ml/2025/09/18/20/54/2025-09-18T20-54-31-693Z.mp4")
+	// if err != nil {
+	// 	return err
+	// }
+	// manifest, rustErr := iroh_streamplace.GetManifest(bs)
+	// if rustErr.AsError() != nil {
+	// 	return rustErr.AsError()
+	// }
+	// var mani c2patypes.Manifest
+	// err = json.Unmarshal([]byte(manifest), &mani)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(mani)
+	// os.Exit(0)
 	selfTest := len(os.Args) > 1 && os.Args[1] == "self-test"
 	err := media.RunSelfTest(context.Background())
 	if err != nil {
@@ -319,12 +335,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		}
 	}
 
+	group, ctx := TimeoutGroupWithContext(ctx)
+
 	out := carstore.SQLiteStore{}
 	err = out.Open(":memory:")
 	if err != nil {
 		return err
 	}
-	state, err := statedb.MakeDB(&cli, noter, mod)
+	state, err := statedb.MakeDB(ctx, &cli, noter, mod)
 	if err != nil {
 		return err
 	}
@@ -395,7 +413,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	group, ctx := TimeoutGroupWithContext(ctx)
 	ctx = log.WithLogValues(ctx, "version", build.Version)
 
 	group.Go(func() error {

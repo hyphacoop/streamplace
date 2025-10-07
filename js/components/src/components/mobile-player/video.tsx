@@ -4,7 +4,10 @@ import {
   IngestMediaSource,
   PlayerProtocol,
   PlayerStatus,
+  useEffectiveVolume,
+  useMuted,
   usePlayerStore,
+  useSetMuted,
   useStreamplaceStore,
 } from "../..";
 import { borderRadius, colors, mt } from "../../lib/theme/atoms";
@@ -135,11 +138,11 @@ const VideoElement = forwardRef<
   const x = usePlayerStore((x) => x);
   const url = useStreamplaceStore((x) => x.url);
   const playerEvent = usePlayerStore((x) => x.playerEvent);
-  const setMuted = usePlayerStore((x) => x.setMuted);
   const setMuteWasForced = usePlayerStore((x) => x.setMuteWasForced);
-  const muted = usePlayerStore((x) => x.muted);
   const ingest = usePlayerStore((x) => x.ingestConnectionState !== null);
-  const volume = usePlayerStore((x) => x.volume);
+  const volume = useEffectiveVolume();
+  const muted = useMuted();
+  const setMuted = useSetMuted();
   const setStatus = usePlayerStore((x) => x.setStatus);
   const setUserInteraction = usePlayerStore((x) => x.setUserInteraction);
   const setVideoRef = usePlayerStore((x) => x.setVideoRef);

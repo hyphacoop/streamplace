@@ -1,8 +1,8 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import React, { forwardRef, useMemo } from "react";
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { useTheme } from "../../lib/theme/theme";
-import * as tokens from "../../lib/theme/tokens";
+import * as zero from "../../ui";
 import { ButtonPrimitive, ButtonPrimitiveProps } from "./primitives/button";
 import { TextPrimitive } from "./primitives/text";
 
@@ -57,44 +57,117 @@ export const Button = forwardRef<any, ButtonProps>(
     },
     ref,
   ) => {
-    const { theme } = useTheme();
+    const { zero: zt, icons } = useTheme();
 
-    // Create dynamic styles based on theme
-    const styles = useMemo(() => createStyles(theme), [theme]);
-
-    // Get variant styles
+    // Get variant styles using theme.zero
     const buttonStyle = useMemo(() => {
-      const variantStyle = styles[`${variant}Button` as keyof typeof styles];
-      const sizeStyle = styles[`${size}Button` as keyof typeof styles];
-      return [variantStyle, sizeStyle];
-    }, [variant, size, styles]);
+      switch (variant) {
+        case "primary":
+          return zt.button.primary;
+        case "secondary":
+          return zt.button.secondary;
+        case "outline":
+          return zt.button.outline;
+        case "ghost":
+          return zt.button.ghost;
+        case "destructive":
+          return [zt.bg.destructive, zero.shadows.sm];
+        case "success":
+          return [zt.bg.success, zero.shadows.sm];
+        default:
+          return zt.button.primary;
+      }
+    }, [variant, zt]);
 
-    // Get inner styles for button content
-    const buttonInnerStyle = useMemo(() => {
-      const sizeInnerStyle =
-        styles[`${size}ButtonInner` as keyof typeof styles];
-      return sizeInnerStyle;
-    }, [size, styles]);
+    // Get text styles using theme.zero
+    const textStyle = useMemo(() => {
+      switch (variant) {
+        case "primary":
+          return [zt.text.primaryForeground, { fontWeight: "600" }];
+        case "secondary":
+          return [zt.text.secondaryForeground, { fontWeight: "500" }];
+        case "outline":
+        case "ghost":
+          return [zt.text.foreground, { fontWeight: "500" }];
+        case "destructive":
+          return [zt.text.destructiveForeground, { fontWeight: "600" }];
+        case "success":
+          return [zt.text.successForeground, { fontWeight: "600" }];
+        default:
+          return [zt.text.primaryForeground, { fontWeight: "600" }];
+      }
+    }, [variant, zt]);
 
-    const textStyle = React.useMemo(() => {
-      const variantTextStyle = styles[`${variant}Text` as keyof typeof styles];
-      const sizeTextStyle = styles[`${size}Text` as keyof typeof styles];
-      return [variantTextStyle, sizeTextStyle];
-    }, [variant, size, styles]);
+    // Size styles using theme.zero
+    const sizeStyles = useMemo(() => {
+      switch (size) {
+        case "sm":
+          return {
+            button: [
+              zero.px[3],
+              zero.py[2],
+              { borderRadius: zero.borderRadius.md },
+            ],
+            inner: { gap: 4 },
+            text: zero.typography.universal.sm,
+          };
+        case "lg":
+          return {
+            button: [
+              zero.px[6],
+              zero.py[3],
+              { borderRadius: zero.borderRadius.md },
+            ],
+            inner: { gap: 12 },
+            text: zero.typography.universal.lg,
+          };
+        case "xl":
+          return {
+            button: [
+              zero.px[8],
+              zero.py[4],
+              { borderRadius: zero.borderRadius.lg },
+            ],
+            inner: { gap: 12 },
+            text: zero.typography.universal.xl,
+          };
+        case "pill":
+          return {
+            button: [
+              zero.px[2],
+              zero.py[1],
+              { borderRadius: zero.borderRadius.full },
+            ],
+            inner: { gap: 4 },
+            text: zero.typography.universal.xs,
+          };
+        case "md":
+        default:
+          return {
+            button: [
+              zero.px[4],
+              zero.py[2],
+              { borderRadius: zero.borderRadius.md },
+            ],
+            inner: { gap: 6 },
+            text: zero.typography.universal.sm,
+          };
+      }
+    }, [size, zt]);
 
     const iconSize = React.useMemo(() => {
       switch (size) {
         case "sm":
-          return 16;
+          return icons.size.sm;
         case "lg":
-          return 20;
+          return icons.size.lg;
         case "xl":
-          return 24;
+          return icons.size.xl;
         case "md":
         default:
-          return 18;
+          return icons.size.md;
       }
-    }, [size]);
+    }, [size, icons]);
 
     const spinnerSize = useMemo(() => {
       switch (size) {
@@ -113,38 +186,37 @@ export const Button = forwardRef<any, ButtonProps>(
       switch (variant) {
         case "outline":
         case "ghost":
-          return theme.colors.primary;
+          return icons.color.primary;
         case "secondary":
-          return theme.colors.secondaryForeground;
+          return icons.color.secondary;
         case "destructive":
-          return theme.colors.destructiveForeground;
+          return icons.color.destructive;
+        case "success":
+          return icons.color.success;
         default:
-          return theme.colors.primaryForeground;
+          return icons.color.default;
       }
-    }, [variant, theme.colors]);
+    }, [variant, icons]);
 
     return (
       <ButtonPrimitive.Root
         ref={ref}
         disabled={disabled || loading}
-        style={[buttonStyle, style]}
+        style={[buttonStyle, sizeStyles.button, style]}
         {...props}
       >
-        <ButtonPrimitive.Content style={buttonInnerStyle}>
+        <ButtonPrimitive.Content style={sizeStyles.inner}>
           {loading && !leftIcon ? (
             <ButtonPrimitive.Icon position="left">
               <ActivityIndicator size={spinnerSize} color={spinnerColor} />
             </ButtonPrimitive.Icon>
           ) : leftIcon ? (
-            <ButtonPrimitive.Icon
-              position="left"
-              style={{ width: iconSize, height: iconSize }}
-            >
+            <ButtonPrimitive.Icon position="left">
               {leftIcon}
             </ButtonPrimitive.Icon>
           ) : null}
 
-          <TextPrimitive.Root style={textStyle}>
+          <TextPrimitive.Root style={[textStyle as any, sizeStyles.text]}>
             {loading && loadingText ? loadingText : children}
           </TextPrimitive.Root>
 
@@ -167,143 +239,6 @@ export const Button = forwardRef<any, ButtonProps>(
 );
 
 Button.displayName = "Button";
-
-// Create theme-based styles
-function createStyles(theme: any) {
-  return StyleSheet.create({
-    // Variant styles
-    primaryButton: {
-      backgroundColor: theme.colors.primary,
-      borderWidth: 0,
-      ...theme.shadows.sm,
-    },
-    primaryText: {
-      color: theme.colors.primaryForeground,
-      fontWeight: "600",
-    },
-
-    secondaryButton: {
-      backgroundColor: theme.colors.secondary,
-      borderWidth: 0,
-    },
-    secondaryText: {
-      color: theme.colors.secondaryForeground,
-      fontWeight: "500",
-    },
-
-    outlineButton: {
-      backgroundColor: "transparent",
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    outlineText: {
-      color: theme.colors.foreground,
-      fontWeight: "500",
-    },
-
-    ghostButton: {
-      backgroundColor: "transparent",
-      borderWidth: 0,
-    },
-    ghostText: {
-      color: theme.colors.foreground,
-      fontWeight: "500",
-    },
-
-    destructiveButton: {
-      backgroundColor: theme.colors.destructive,
-      borderWidth: 0,
-      ...theme.shadows.sm,
-    },
-    destructiveText: {
-      color: theme.colors.destructiveForeground,
-      fontWeight: "600",
-    },
-
-    successButton: {
-      backgroundColor: theme.colors.success,
-      borderWidth: 0,
-      ...theme.shadows.sm,
-    },
-    successText: {
-      color: theme.colors.successForeground,
-      fontWeight: "600",
-    },
-
-    pillButton: {
-      paddingHorizontal: theme.spacing[2],
-      paddingVertical: theme.spacing[1],
-      borderRadius: tokens.borderRadius.full,
-      minHeight: tokens.touchTargets.minimum / 2,
-    },
-
-    pillText: {
-      color: theme.colors.primaryForeground,
-      fontWeight: "400",
-    },
-
-    // Size styles
-    smButton: {
-      paddingHorizontal: theme.spacing[3],
-      paddingVertical: theme.spacing[2],
-      borderRadius: tokens.borderRadius.md,
-      minHeight: tokens.touchTargets.minimum,
-      gap: theme.spacing[1],
-    },
-    smButtonInner: {
-      gap: theme.spacing[1],
-    },
-    smText: {
-      fontSize: 14,
-      lineHeight: 16,
-    },
-
-    mdButton: {
-      paddingHorizontal: theme.spacing[4],
-      paddingVertical: theme.spacing[3],
-      borderRadius: tokens.borderRadius.md,
-      minHeight: tokens.touchTargets.minimum,
-      gap: theme.spacing[2],
-    },
-    mdButtonInner: {
-      gap: theme.spacing[2],
-    },
-    mdText: {
-      fontSize: 16,
-      lineHeight: 18,
-    },
-
-    lgButton: {
-      paddingHorizontal: theme.spacing[6],
-      paddingVertical: theme.spacing[4],
-      borderRadius: tokens.borderRadius.md,
-      minHeight: tokens.touchTargets.comfortable,
-      gap: theme.spacing[3],
-    },
-    lgButtonInner: {
-      gap: theme.spacing[3],
-    },
-    lgText: {
-      fontSize: 18,
-      lineHeight: 20,
-    },
-
-    xlButton: {
-      paddingHorizontal: theme.spacing[8],
-      paddingVertical: theme.spacing[5],
-      borderRadius: tokens.borderRadius.lg,
-      minHeight: tokens.touchTargets.large,
-      gap: theme.spacing[4],
-    },
-    xlButtonInner: {
-      gap: theme.spacing[4],
-    },
-    xlText: {
-      fontSize: 20,
-      lineHeight: 24,
-    },
-  });
-}
 
 // Export button variants for external use
 export { buttonVariants };

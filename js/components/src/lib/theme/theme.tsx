@@ -18,6 +18,28 @@ import {
 } from "./tokens";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ToastProvider } from "../../components/ui";
+
+// Import pairify function for generating theme tokens
+function pairify<T extends Record<string, any>>(
+  obj: T,
+  styleKeyPrefix: string,
+): Record<keyof T, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      // For nested objects (like color scales), create another level
+      result[key] = {};
+      for (const [nestedKey, nestedValue] of Object.entries(value)) {
+        result[key][nestedKey] = { [styleKeyPrefix]: nestedValue };
+      }
+    } else {
+      // For simple values, create the style object directly
+      result[key] = { [styleKeyPrefix]: value };
+    }
+  }
+  return result as Record<keyof T, any>;
+}
 
 // Theme interfaces
 export interface Theme {
@@ -80,30 +102,37 @@ export interface Theme {
   animations: typeof animations;
 }
 
-// Utility styles interface
-export interface ThemeStyles {
+// Theme-aware zero interface (like atoms but with theme colors)
+export interface ThemeZero {
+  // Colors using pairify
+  bg: Record<string, any>;
+  text: Record<string, any>;
+  border: Record<string, any>;
+
+  // Static design tokens (same as atoms)
   shadow: {
     sm: typeof shadows.sm;
     md: typeof shadows.md;
     lg: typeof shadows.lg;
     xl: typeof shadows.xl;
   };
+
+  // Common button styles
   button: {
     primary: object;
     secondary: object;
     outline: object;
     ghost: object;
   };
-  text: {
-    primary: object;
-    muted: object;
-    disabled: object;
-  };
+
+  // Input styles
   input: {
     base: object;
     focused: object;
     error: object;
   };
+
+  // Card styles
   card: {
     base: object;
   };
@@ -129,56 +158,56 @@ export interface ThemeIcons {
 }
 
 // Create theme colors based on dark mode
-const createThemeColors = (isDark: boolean): Theme["colors"] => ({
-  background: isDark ? colors.gray[950] : colors.white,
-  foreground: isDark ? colors.gray[50] : colors.gray[950],
+const createThemeColors = (
+  isDark: boolean,
+  lightTheme?: ColorPalette | Theme["colors"],
+  darkTheme?: ColorPalette | Theme["colors"],
+  colorTheme?: Partial<Theme["colors"]>,
+): Theme["colors"] => {
+  let baseColors: Theme["colors"];
 
-  card: isDark ? colors.gray[900] : colors.white,
-  cardForeground: isDark ? colors.gray[50] : colors.gray[950],
+  if (isDark && darkTheme) {
+    // Use dark theme
+    baseColors = isColorPalette(darkTheme)
+      ? generateThemeColorsFromPalette(darkTheme, true)
+      : darkTheme;
+  } else if (!isDark && lightTheme) {
+    // Use light theme
+    baseColors = isColorPalette(lightTheme)
+      ? generateThemeColorsFromPalette(lightTheme, false)
+      : lightTheme;
+  } else {
+    // Fall back to default gray theme
+    const defaultPalette = colors.neutral;
+    baseColors = generateThemeColorsFromPalette(defaultPalette, isDark);
+  }
 
-  popover: isDark ? colors.gray[900] : colors.white,
-  popoverForeground: isDark ? colors.gray[50] : colors.gray[950],
+  // Merge with custom color overrides if provided
+  return {
+    ...baseColors,
+    ...colorTheme,
+  };
+};
 
-  primary: Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
-  primaryForeground: colors.white,
+// Create theme-aware zero tokens using pairify
+const createThemeZero = (themeColors: Theme["colors"]): ThemeZero => ({
+  // Theme-aware colors using pairify
+  bg: pairify(themeColors, "backgroundColor"),
+  text: pairify(themeColors, "color"),
+  border: {
+    ...pairify(themeColors, "borderColor"),
+    default: { borderColor: themeColors.border },
+  },
 
-  secondary: isDark ? colors.gray[800] : colors.gray[100],
-  secondaryForeground: isDark ? colors.gray[50] : colors.gray[900],
-
-  muted: isDark ? colors.gray[800] : colors.gray[100],
-  mutedForeground: isDark ? colors.gray[400] : colors.gray[500],
-
-  accent: isDark ? colors.gray[800] : colors.gray[100],
-  accentForeground: isDark ? colors.gray[50] : colors.gray[900],
-
-  destructive:
-    Platform.OS === "ios" ? colors.ios.systemRed : colors.destructive[500],
-  destructiveForeground: colors.white,
-
-  success: Platform.OS === "ios" ? colors.ios.systemGreen : colors.success[500],
-  successForeground: colors.white,
-
-  warning:
-    Platform.OS === "ios" ? colors.ios.systemOrange : colors.warning[500],
-  warningForeground: colors.white,
-
-  border: isDark ? colors.gray[500] + "30" : colors.gray[200] + "30",
-  input: isDark ? colors.gray[800] : colors.gray[200],
-  ring: Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
-
-  text: isDark ? colors.gray[50] : colors.gray[950],
-  textMuted: isDark ? colors.gray[400] : colors.gray[500],
-  textDisabled: isDark ? colors.gray[600] : colors.gray[400],
-});
-
-// Create theme styles based on colors
-const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
+  // Static design tokens
   shadow: {
     sm: shadows.sm,
     md: shadows.md,
     lg: shadows.lg,
     xl: shadows.xl,
   },
+
+  // Common button styles
   button: {
     primary: {
       backgroundColor: themeColors.primary,
@@ -199,17 +228,8 @@ const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
       borderWidth: 0,
     },
   },
-  text: {
-    primary: {
-      color: themeColors.text,
-    },
-    muted: {
-      color: themeColors.textMuted,
-    },
-    disabled: {
-      color: themeColors.textDisabled,
-    },
-  },
+
+  // Input styles
   input: {
     base: {
       backgroundColor: themeColors.background,
@@ -229,6 +249,8 @@ const createThemeStyles = (themeColors: Theme["colors"]): ThemeStyles => ({
       borderWidth: 2,
     },
   },
+
+  // Card styles
   card: {
     base: {
       backgroundColor: themeColors.card,
@@ -260,7 +282,7 @@ const createThemeIcons = (themeColors: Theme["colors"]): ThemeIcons => ({
 // Theme context interface
 interface ThemeContextType {
   theme: Theme;
-  styles: ThemeStyles;
+  zero: ThemeZero;
   icons: ThemeIcons;
   isDark: boolean;
   currentTheme: "light" | "dark" | "system";
@@ -272,18 +294,97 @@ interface ThemeContextType {
 // Create the theme context
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
+// Color palette type
+type ColorPalette = {
+  50: string;
+  100: string;
+  200: string;
+  300: string;
+  400: string;
+  500: string;
+  600: string;
+  700: string;
+  800: string;
+  900: string;
+  950: string;
+};
+
+// Helper function to check if input is a ColorPalette or Theme["colors"]
+function isColorPalette(
+  input: ColorPalette | Theme["colors"],
+): input is ColorPalette {
+  return "50" in input && "100" in input && "950" in input;
+}
+
+// Helper function to generate Theme["colors"] from ColorPalette
+function generateThemeColorsFromPalette(
+  palette: ColorPalette,
+  isDark: boolean,
+): Theme["colors"] {
+  return {
+    background: isDark ? palette[950] : colors.white,
+    foreground: isDark ? palette[50] : palette[950],
+
+    card: isDark ? palette[900] : colors.white,
+    cardForeground: isDark ? palette[50] : palette[950],
+
+    popover: isDark ? palette[900] : colors.white,
+    popoverForeground: isDark ? palette[50] : palette[950],
+
+    primary:
+      Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
+    primaryForeground: colors.white,
+
+    secondary: isDark ? palette[800] : palette[100],
+    secondaryForeground: isDark ? palette[50] : palette[900],
+
+    muted: isDark ? palette[800] : palette[100],
+    mutedForeground: isDark ? palette[400] : palette[500],
+
+    accent: isDark ? palette[800] : palette[100],
+    accentForeground: isDark ? palette[50] : palette[900],
+
+    destructive:
+      Platform.OS === "ios" ? colors.ios.systemRed : colors.destructive[500],
+    destructiveForeground: colors.white,
+
+    success:
+      Platform.OS === "ios" ? colors.ios.systemGreen : colors.success[500],
+    successForeground: colors.white,
+
+    warning:
+      Platform.OS === "ios" ? colors.ios.systemOrange : colors.warning[500],
+    warningForeground: colors.white,
+
+    border: isDark ? palette[500] + "30" : palette[200] + "30",
+    input: isDark ? palette[800] : palette[200],
+    ring: Platform.OS === "ios" ? colors.ios.systemBlue : colors.primary[500],
+
+    text: isDark ? palette[50] : palette[950],
+    textMuted: isDark ? palette[400] : palette[500],
+    textDisabled: isDark ? palette[600] : palette[400],
+  };
+}
+
 // Theme provider props
 interface ThemeProviderProps {
   children: ReactNode;
   defaultTheme?: "light" | "dark" | "system";
   forcedTheme?: "light" | "dark";
+  colorTheme?: Partial<Theme["colors"]>;
+  lightTheme?: ColorPalette | Theme["colors"];
+  darkTheme?: ColorPalette | Theme["colors"];
 }
 
 // Theme provider component
+// Should be surrounded by SafeAreaProvider at the root
 export function ThemeProvider({
   children,
   defaultTheme = "system",
   forcedTheme,
+  colorTheme,
+  lightTheme,
+  darkTheme,
 }: ThemeProviderProps) {
   const systemColorScheme = useColorScheme();
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark" | "system">(
@@ -302,7 +403,12 @@ export function ThemeProvider({
 
   // Create theme based on dark mode
   const theme = useMemo<Theme>(() => {
-    const themeColors = createThemeColors(isDark);
+    const themeColors = createThemeColors(
+      isDark,
+      lightTheme,
+      darkTheme,
+      colorTheme,
+    );
     return {
       colors: themeColors,
       spacing,
@@ -312,11 +418,11 @@ export function ThemeProvider({
       touchTargets,
       animations,
     };
-  }, [isDark]);
+  }, [isDark, lightTheme, darkTheme, colorTheme]);
 
-  // Create utility styles
-  const styles = useMemo<ThemeStyles>(() => {
-    return createThemeStyles(theme.colors);
+  // Create theme-aware zero tokens
+  const zero = useMemo<ThemeZero>(() => {
+    return createThemeZero(theme.colors);
   }, [theme.colors]);
 
   // Create icon utilities
@@ -344,7 +450,7 @@ export function ThemeProvider({
   const value = useMemo<ThemeContextType>(
     () => ({
       theme,
-      styles,
+      zero,
       icons,
       isDark,
       currentTheme: forcedTheme || currentTheme,
@@ -354,7 +460,7 @@ export function ThemeProvider({
     }),
     [
       theme,
-      styles,
+      zero,
       icons,
       isDark,
       forcedTheme,
@@ -370,6 +476,7 @@ export function ThemeProvider({
       <GestureHandlerRootView>
         {children}
         <PortalHost />
+        <ToastProvider />
       </GestureHandlerRootView>
     </ThemeContext.Provider>
   );
@@ -400,13 +507,13 @@ export function usePlatformTypography() {
 
 // Utility function to create theme-aware styles
 export function createThemedStyles<T extends Record<string, any>>(
-  styleCreator: (theme: Theme, styles: ThemeStyles, icons: ThemeIcons) => T,
+  styleCreator: (theme: Theme, zero: ThemeZero, icons: ThemeIcons) => T,
 ) {
   return function useThemedStyles() {
-    const { theme, styles, icons } = useTheme();
+    const { theme, zero, icons } = useTheme();
     return useMemo(
-      () => styleCreator(theme, styles, icons),
-      [theme, styles, icons],
+      () => styleCreator(theme, zero, icons),
+      [theme, zero, icons],
     );
   };
 }
@@ -433,4 +540,4 @@ export const darkTheme: Theme = {
 };
 
 // Export individual theme utilities for convenience
-export { createThemeColors, createThemeIcons, createThemeStyles };
+export { createThemeColors, createThemeIcons, createThemeZero };

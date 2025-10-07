@@ -6,7 +6,15 @@ import {
   PlaceStreamMetadataConfiguration,
 } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
+import storage from "../storage";
 import { StreamplaceContext } from "../streamplace-provider/context";
+
+export interface ContentMetadataResult {
+  record: any;
+  uri: string;
+  cid: string;
+  rkey?: string;
+}
 
 // there are three categories of XRPC that we need to handle:
 // 1. Public (probably) OAuth XRPC to the users' PDS for apps that use this API.
@@ -39,7 +47,7 @@ export interface StreamplaceState {
   liveUsersRefresh: number;
   liveUsersLoading: boolean;
   liveUsersError: string | null;
-  oauthSession: SessionManager | null;
+  oauthSession: SessionManager | null | undefined;
   handle: string | null;
   chatProfile: PlaceStreamChatProfile.Record | null;
 
@@ -55,7 +63,10 @@ export const makeStreamplaceStore = ({
 }: {
   url: string;
 }): StoreApi<StreamplaceState> => {
-  return createStore<StreamplaceState>()((set) => ({
+  const VOLUME_STORAGE_KEY = "globalVolume";
+  const MUTED_STORAGE_KEY = "globalMuted";
+
+  const store = createStore<StreamplaceState>()((set) => ({
     url,
     liveUsers: null,
     setLiveUsers: (opts: {
@@ -79,6 +90,41 @@ export const makeStreamplaceStore = ({
     contentMetadata: null,
     setContentMetadata: (metadata) => set({ contentMetadata: metadata }),
   }));
+
+  // Load initial volume state from storage asynchronously
+  (async () => {
+    try {
+      const storedVolume = await storage.getItem(VOLUME_STORAGE_KEY);
+      const storedMuted = await storage.getItem(MUTED_STORAGE_KEY);
+
+      let initialVolume = 1.0;
+      let initialMuted = false;
+
+      if (storedVolume) {
+        const parsedVolume = parseFloat(storedVolume);
+        if (
+          Number.isFinite(parsedVolume) &&
+          parsedVolume >= 0 &&
+          parsedVolume <= 1
+        ) {
+          initialVolume = parsedVolume;
+        }
+      }
+
+      if (storedMuted) {
+        initialMuted = storedMuted === "true";
+      }
+
+      store.setState({
+        volume: initialVolume,
+        muted: initialMuted,
+      });
+    } catch (error) {
+      console.error("Failed to load volume state from storage:", error);
+    }
+  })();
+
+  return store;
 };
 
 export function getStreamplaceStoreFromContext(): StreamplaceStore {

@@ -9,8 +9,6 @@ import (
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
-	"github.com/lmittmann/tint"
-	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
@@ -124,17 +122,10 @@ func MakeDB(dbURL string) (Model, error) {
 	log.Log(context.Background(), "starting database", "dbURL", sqliteSuffix)
 	dial := sqlite.Open(sqliteSuffix)
 
-	gormLogger := slogGorm.New(
-		slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
-			TimeFormat: time.RFC3339,
-		})),
-		// slogGorm.WithTraceAll(),
-	)
-
 	db, err := gorm.Open(dial, &gorm.Config{
 		SkipDefaultTransaction: true,
 		TranslateError:         true,
-		Logger:                 gormLogger,
+		Logger:                 config.GormLogger,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error starting database: %w", err)
@@ -163,7 +154,6 @@ func MakeDB(dbURL string) (Model, error) {
 		ChatProfile{},
 		Gate{},
 		ServerSettings{},
-
 		Labeler{},
 		Label{},
 		MetadataConfiguration{},

@@ -2,6 +2,7 @@ import {
   Link,
   NavigationProp,
   ParamListBase,
+  useLinkBuilder,
   useNavigation,
 } from "@react-navigation/native";
 import usePlatform from "hooks/usePlatform";
@@ -53,4 +54,22 @@ export function Redirect({ to }: { to: LinkParams }) {
     navigation.navigate(to.screen, to.params);
   }, []);
   return <Loading />;
+}
+
+// generates the proper href for a given LinkParams object, for better web support
+export function useAQLinkHref(to: LinkParams): { href?: string } {
+  const { isWeb } = usePlatform();
+  const buildLink = useLinkBuilder();
+
+  if (!isWeb) {
+    return { href: undefined };
+  }
+
+  try {
+    const href = buildLink(to.screen, to.params);
+    return { href };
+  } catch (e) {
+    console.warn("Failed to build link for", to, e);
+    return { href: undefined };
+  }
 }

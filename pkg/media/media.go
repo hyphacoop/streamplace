@@ -1,6 +1,7 @@
 package media
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"encoding/json"
@@ -18,19 +19,22 @@ import (
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/atproto"
 	"stream.place/streamplace/pkg/bus"
+	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/model"
 
+	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/replication"
 
-	"git.stream.place/streamplace/c2pa-go/pkg/c2pa/generated/manifeststore"
 	"github.com/piprate/json-gold/ld"
 	"stream.place/streamplace/pkg/constants"
 )
 
-// #cgo pkg-config: streamplacedeps-uninstalled
-import "C"
+	irohStreamplace "stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
+
+	_ "stream.place/streamplace/pkg/streamplacedeps"
+)
 
 const CertFile = "cert.pem"
 const SegmentsDir = "segments"
@@ -130,6 +134,15 @@ func MakeMediaManager(ctx context.Context, cli *config.CLI, signer crypto.Signer
 	}, nil
 }
 
+func (mm *MediaManager) HandleData(node *irohStreamplace.PublicKey, data []byte) {
+	r := bytes.NewReader(data)
+	ctx := context.Background()
+	err := mm.ValidateMP4(ctx, r)
+	if err != nil {
+		log.Log(ctx, "invalid incoming segment", "error", err)
+	}
+}
+
 // replacement for os.Pipe that works on windows
 func (mm *MediaManager) HTTPPipe() (string, io.ReadCloser, func(), error) {
 	uu, err := uuid.NewV7()
@@ -187,10 +200,10 @@ type SegmentMetadata struct {
 
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
 
-func ParseSegmentAssertions(ctx context.Context, mani *manifeststore.Manifest) (*SegmentMetadata, error) {
+func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*SegmentMetadata, error) {
 	_, span := otel.Tracer("signer").Start(ctx, "ParseSegmentAssertions")
 	defer span.End()
-	var ass *manifeststore.ManifestAssertion
+	var ass *c2patypes.ManifestAssertion
 	for _, a := range mani.Assertions {
 		if a.Label == StreamplaceMetadata {
 			ass = &a

@@ -3,7 +3,6 @@ export {
   ThemeProvider,
   createThemeColors,
   createThemeIcons,
-  createThemeStyles,
   createThemedStyles,
   darkTheme,
   lightTheme,
@@ -11,7 +10,6 @@ export {
   useTheme,
   type Theme,
   type ThemeIcons,
-  type ThemeStyles,
 } from "./theme";
 
 // Design tokens

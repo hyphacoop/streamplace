@@ -42,10 +42,22 @@ func MakeMediaSignerExt(ctx context.Context, cli *config.CLI, streamer string, k
 		return nil, fmt.Errorf("invalid authorization key (not valid secp256k1)")
 	}
 	var signer crypto.Signer = key.ToECDSA()
-	_, certPath, err := prepareCert(ctx, cli, signer)
+	certBs, err := prepareCert(ctx, cli, signer)
 	if err != nil {
 		return nil, err
 	}
+	// Write certificate to a temporary file
+	certFile, err := os.CreateTemp("", "cert-*.pem")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp cert file: %w", err)
+	}
+	defer certFile.Close()
+
+	if _, err := certFile.Write(certBs); err != nil {
+		return nil, fmt.Errorf("failed to write cert to temp file: %w", err)
+	}
+
+	certPath := certFile.Name()
 	pub, err := aqpub.FromPublicKey(signer.Public().(*ecdsa.PublicKey))
 	if err != nil {
 		return nil, err

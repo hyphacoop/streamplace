@@ -3,14 +3,14 @@ import {
   ChatBox,
   LivestreamProvider,
   PlayerProvider,
-  ThemeProvider,
   usePlayerStore,
+  zero,
 } from "@streamplace/components";
 import emojiData from "assets/emoji-data.json";
 import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { useAppSelector } from "store/hooks";
-import { View } from "tamagui";
 
 export default function PopoutChat({ route }) {
   const user = route.params?.user;
@@ -19,13 +19,11 @@ export default function PopoutChat({ route }) {
   }
 
   return (
-    <ThemeProvider>
-      <LivestreamProvider src={user}>
-        <PlayerProvider>
-          <PopoutChatInner user={user} />
-        </PlayerProvider>
-      </LivestreamProvider>
-    </ThemeProvider>
+    <LivestreamProvider src={user}>
+      <PlayerProvider>
+        <PopoutChatInner user={user} />
+      </PlayerProvider>
+    </LivestreamProvider>
   );
 }
 
@@ -35,10 +33,16 @@ export function PopoutChatInner({ user }: { user: string }) {
   useEffect(() => {
     setSrc(user);
   }, [user]);
+
   return (
-    <View position="relative" f={1} margin="$2">
-      <View f={1} position="absolute" width="100%" minHeight="100%" bottom={0}>
-        <Chat canModerate={profile?.handle === user} />
+    <View style={[{ position: "relative" }, zero.flex.values[1], zero.m[2]]}>
+      <View
+        style={[
+          zero.flex.values[1],
+          { position: "absolute", width: "100%", minHeight: "100%", bottom: 0 },
+        ]}
+      >
+        <Chat />
         {profile && <ChatBox emojiData={emojiData} isPopout={true} />}
       </View>
     </View>

@@ -9,6 +9,7 @@ import {
 import { ProfileViewDetailed } from "@atproto/api/dist/client/types/app/bsky/actor/defs";
 import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { OAuthSession } from "@streamplace/atproto-oauth-client-react-native";
+import { storage } from "@streamplace/components";
 import { DID_KEY, hydrate, STORED_KEY_KEY } from "features/base/baseSlice";
 import { openLoginLink } from "features/platform/platformSlice";
 import {
@@ -16,7 +17,6 @@ import {
   StreamplaceState,
 } from "features/streamplace/streamplaceSlice";
 import { Platform } from "react-native";
-import Storage from "storage";
 import {
   LivestreamViewHydrated,
   PlaceStreamChatProfile,
@@ -25,7 +25,6 @@ import {
   PlaceStreamServerSettings,
   StreamplaceAgent,
 } from "streamplace";
-import { isWeb } from "tamagui";
 import { privateKeyToAccount } from "viem/accounts";
 import { createAppSlice } from "../../hooks/createSlice";
 import { BlueskyState } from "./blueskyTypes";
@@ -34,7 +33,7 @@ import createOAuthClient from "./oauthClient";
 const initialState: BlueskyState = {
   status: "start",
   oauthState: null,
-  oauthSession: null,
+  oauthSession: undefined,
   pdsAgent: null,
   anonPDSAgent: null,
   profiles: {},
@@ -108,7 +107,7 @@ const uploadThumbnail = async (
 
 // clear atproto login query params from url
 const clearQueryParams = () => {
-  if (!isWeb) {
+  if (Platform.OS !== "web") {
     return;
   }
   const u = new URL(document.location.href);
@@ -146,10 +145,10 @@ export const blueskySlice = createAppSlice({
         typeof err?.message === "string" &&
         err.message.includes("oauth session revoked")
       ) {
-        Storage.removeItem("did").catch((e) => {
+        storage.removeItem("did").catch((e) => {
           console.error("Error removing did", e);
         });
-        Storage.removeItem(STORED_KEY_KEY).catch((e) => {
+        storage.removeItem(STORED_KEY_KEY).catch((e) => {
           console.error("Error removing stored key", e);
         });
         const u = new URL(document.location.href);
@@ -170,9 +169,9 @@ export const blueskySlice = createAppSlice({
         const client = await createOAuthClient(streamplace.url);
         const anonPDSAgent = new StreamplaceAgent(streamplace.url);
         const maybeDIDs = await Promise.all([
-          Storage.getItem(DID_KEY),
-          Storage.getItem("@@atproto/oauth-client-browser(sub)"),
-          Storage.getItem("@@atproto/oauth-client-react-native:did:(sub)"),
+          storage.getItem(DID_KEY),
+          storage.getItem("@@atproto/oauth-client-browser(sub)"),
+          storage.getItem("@@atproto/oauth-client-react-native:did:(sub)"),
         ]);
         const did = maybeDIDs.find((d) => d !== null) || null;
         let session: OAuthSession | null = null;
@@ -197,7 +196,7 @@ export const blueskySlice = createAppSlice({
           const { client, session, anonPDSAgent } = action.payload;
           console.log("loadOAuthClient fulfilled", action.payload);
           if (session) {
-            Storage.setItem(DID_KEY, session.did).catch((e) => {
+            storage.setItem(DID_KEY, session.did).catch((e) => {
               console.error("Error setting did", e);
             });
             return {
@@ -211,6 +210,7 @@ export const blueskySlice = createAppSlice({
           }
           return {
             ...state,
+            oauthSession: session,
             status: "loggedOut",
             client: client,
             anonPDSAgent: anonPDSAgent,
@@ -224,7 +224,6 @@ export const blueskySlice = createAppSlice({
         },
       },
     ),
-
     oauthError: create.reducer(
       (
         state,
@@ -294,8 +293,8 @@ export const blueskySlice = createAppSlice({
 
     logout: create.asyncThunk(
       async (_, thunkAPI) => {
-        await Storage.removeItem("did");
-        await Storage.removeItem(STORED_KEY_KEY);
+        await storage.removeItem("did");
+        await storage.removeItem(STORED_KEY_KEY);
         const { bluesky } = thunkAPI.getState() as {
           bluesky: BlueskyState;
         };
@@ -311,7 +310,7 @@ export const blueskySlice = createAppSlice({
         fulfilled: (state, action) => {
           return {
             ...state,
-            oauthSession: null,
+            oauthSession: undefined,
             pdsAgent: null,
             status: "loggedOut",
           };
@@ -425,7 +424,7 @@ export const blueskySlice = createAppSlice({
         const client = await createOAuthClient(streamplace.url);
         try {
           const ret = await client.callback(params);
-          await Storage.setItem(DID_KEY, ret.session.did);
+          await storage.setItem(DID_KEY, ret.session.did);
           return { session: ret.session as any, client };
         } catch (e) {
           let message = e.message;
@@ -642,6 +641,7 @@ export const blueskySlice = createAppSlice({
         }
 
         const record: PlaceStreamKey.Record = {
+          $type: "place.stream.key",
           signingKey: keypair.did(),
           createdAt: new Date().toISOString(),
           createdBy: "Streamplace on " + platform,
@@ -652,7 +652,7 @@ export const blueskySlice = createAppSlice({
           record,
         });
         if (store) {
-          await Storage.setItem(STORED_KEY_KEY, JSON.stringify(newKey));
+          await storage.setItem(STORED_KEY_KEY, JSON.stringify(newKey));
         }
         return newKey;
       },
@@ -807,7 +807,7 @@ export const blueskySlice = createAppSlice({
 
     setPDS: create.asyncThunk(
       async (pds: string, thunkAPI) => {
-        await Storage.setItem("pdsURL", pds);
+        await storage.setItem("pdsURL", pds);
         return pds;
       },
       {
@@ -955,6 +955,7 @@ export const blueskySlice = createAppSlice({
         }
 
         const record: PlaceStreamLivestream.Record = {
+          $type: "place.stream.livestream",
           title: title,
           url: streamplace.url,
           createdAt: new Date().toISOString(),
@@ -1050,6 +1051,7 @@ export const blueskySlice = createAppSlice({
         console.log("Updating rkey", rkey);
 
         const record: PlaceStreamLivestream.Record = {
+          $type: "place.stream.livestream",
           title: title,
           url: streamplace.url,
           createdAt: new Date().toISOString(),
@@ -1180,6 +1182,7 @@ export const blueskySlice = createAppSlice({
         }
 
         const chatProfile: PlaceStreamChatProfile.Record = {
+          $type: "place.stream.chat.profile",
           color: {
             red: red,
             green: green,
@@ -1341,7 +1344,7 @@ export const blueskySlice = createAppSlice({
         }
 
         if (PlaceStreamServerSettings.isRecord(res.data.value)) {
-          return res.data.value;
+          return res.data.value as PlaceStreamServerSettings.Record;
         } else {
           console.log("not a record", res.data.value);
         }
@@ -1393,6 +1396,7 @@ export const blueskySlice = createAppSlice({
         }
         const u = new URL(streamplace.url);
         const serverSettings: PlaceStreamServerSettings.Record = {
+          $type: "place.stream.server.settings",
           debugRecording: debugRecording,
         };
 

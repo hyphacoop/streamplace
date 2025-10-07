@@ -1,7 +1,8 @@
+import { Text } from "@streamplace/components";
 import Loading from "components/loading/loading";
 import { createContext, useEffect } from "react";
+import { View } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Text, View } from "tamagui";
 import {
   DEFAULT_URL,
   initialize,
@@ -28,8 +29,8 @@ export default function StreamplaceProvider({
   }, [initialized]);
   if (!initialized) {
     return (
-      <View f={1}>
-        <Text>StreamplaceProvider loading...</Text>
+      <View style={[{ flex: 1 }]}>
+        <Text style={[{ color: "#fff" }]}>StreamplaceProvider loading...</Text>
         <Loading />
       </View>
     );

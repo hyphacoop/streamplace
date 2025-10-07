@@ -1,6 +1,7 @@
-import { Check, Plus } from "@tamagui/lucide-icons";
+import { Button, Icon, Text, zero } from "@streamplace/components";
+import { Plus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { Button, Text, View } from "tamagui";
+import { View } from "react-native";
 import { followUser, unfollowUser } from "../features/bluesky/blueskySlice";
 import { selectStreamplace } from "../features/streamplace/streamplaceSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -112,36 +113,28 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   };
 
   return (
-    <View flexDirection="row" alignItems="center" gap={8}>
-      {isFollowing === null ? (
-        // Skeleton loader to prevent layout shift
-        <Button backgroundColor="transparent" disabled>
-          &nbsp;
-        </Button>
-      ) : isFollowing ? (
-        <Button
-          backgroundColor="transparent"
-          onPress={handleUnfollow}
-          aria-label="Following"
-          icon={Check}
-        >
-          Following
-        </Button>
-      ) : (
-        <Button
-          backgroundColor="transparent"
-          onPress={handleFollow}
-          aria-label="Follow"
-          icon={Plus}
-        >
-          Follow
-        </Button>
-      )}
-      {error && (
-        <Text color="#c00" marginLeft={8}>
-          {error}
-        </Text>
-      )}
+    <View
+      style={[
+        { flexDirection: "row" },
+        { alignItems: "center" },
+        zero.gap.all[2],
+      ]}
+    >
+      <Button
+        onPress={isFollowing ? handleUnfollow : handleFollow}
+        variant={isFollowing ? "secondary" : "primary"}
+        size="pill"
+        disabled={isFollowing === null}
+        loading={isFollowing === null}
+        leftIcon={!isFollowing && <Icon icon={Plus} size="sm" />}
+      >
+        {isFollowing === null
+          ? "Loading..."
+          : isFollowing
+            ? "Unfollow"
+            : "Follow"}
+      </Button>
+      {error && <Text style={[{ color: "#c00" }, zero.ml[2]]}>{error}</Text>}
     </View>
   );
 };

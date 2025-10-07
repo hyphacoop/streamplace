@@ -1,3 +1,7 @@
+import {
+  BottomSheetTextInput,
+  useBottomSheetInternal,
+} from "@gorhom/bottom-sheet";
 import React, { forwardRef } from "react";
 import {
   NativeSyntheticEvent,
@@ -24,7 +28,7 @@ export interface InputPrimitiveProps extends Omit<TextInputProps, "onChange"> {
 }
 
 // Input root primitive - the main TextInput component
-export const InputRoot = forwardRef<TextInput, InputPrimitiveProps>(
+export const InputRoot = forwardRef<any, InputPrimitiveProps>(
   (
     {
       value,
@@ -43,6 +47,19 @@ export const InputRoot = forwardRef<TextInput, InputPrimitiveProps>(
     ref,
   ) => {
     const [isFocused, setIsFocused] = React.useState(false);
+
+    let isInBottomSheet = false;
+    try {
+      useBottomSheetInternal();
+      isInBottomSheet = true;
+    } catch {
+      isInBottomSheet = false;
+    }
+
+    const InputComponent =
+      isInBottomSheet && Platform.OS !== "web"
+        ? BottomSheetTextInput
+        : TextInput;
 
     const handleChangeText = React.useCallback(
       (text: string) => {
@@ -77,7 +94,7 @@ export const InputRoot = forwardRef<TextInput, InputPrimitiveProps>(
     );
 
     return (
-      <TextInput
+      <InputComponent
         ref={ref}
         value={value}
         onChangeText={handleChangeText}

@@ -1,6 +1,6 @@
-import { Paragraph } from "tamagui";
+import { Text } from "@streamplace/components";
 import { ThumbnailSelectorProps } from "./shared";
 
 export default function ThumbnailSelector(props: ThumbnailSelectorProps) {
-  return <Paragraph>NYI</Paragraph>;
+  return <Text style={[{ color: "#fff" }]}>NYI</Text>;
 }

@@ -1,4 +1,4 @@
-import { Anchor, Image, XStack } from "tamagui";
+import { Image, Linking, TouchableOpacity, View } from "react-native";
 
 const RATIO = 3.39741547176;
 const WIDTH = 200;
@@ -6,29 +6,31 @@ const HEIGHT = 200 / RATIO;
 
 export default function GetApps() {
   return (
-    <XStack justifyContent="center">
-      <Anchor
-        target="_blank"
-        href="https://apps.apple.com/us/app/streamplace/id6535653195"
+    <View style={[{ justifyContent: "center" }, { flexDirection: "row" }]}>
+      <TouchableOpacity
+        onPress={() =>
+          Linking.openURL(
+            "https://apps.apple.com/us/app/streamplace/id6535653195",
+          )
+        }
       >
         <Image
-          width={WIDTH}
-          height={HEIGHT}
-          mx="$2"
+          style={[{ width: WIDTH, height: HEIGHT, marginHorizontal: 8 }]}
           source={require("../assets/images/appstore.svg")}
         />
-      </Anchor>
-      <Anchor
-        target="_blank"
-        href="https://play.google.com/store/apps/details?id=tv.aquareum"
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() =>
+          Linking.openURL(
+            "https://play.google.com/store/apps/details?id=tv.aquareum",
+          )
+        }
       >
         <Image
-          width={WIDTH}
-          height={HEIGHT}
-          mx="$2"
+          style={[{ width: WIDTH, height: HEIGHT, marginHorizontal: 8 }]}
           source={require("../assets/images/playstore.svg")}
         />
-      </Anchor>
-    </XStack>
+      </TouchableOpacity>
+    </View>
   );
 }

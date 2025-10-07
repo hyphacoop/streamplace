@@ -1,23 +1,57 @@
-import { Anchor, Paragraph, H4 as TamaguiH4, View } from "tamagui";
+import { Text, zero } from "@streamplace/components";
+import { Linking, Pressable, View } from "react-native";
 import GetApps from "../../components/get-apps";
 
-const H4 = (props: any) => <TamaguiH4 fontWeight="100" {...props} />;
-const P = (props: any) => (
-  <Paragraph fontSize={13} marginBottom={20} {...props} />
+const H4 = ({ style, ...props }: any) => (
+  <Text style={[{ fontSize: 18, fontWeight: "100" }, style]} {...props} />
 );
+const P = (props: any) => (
+  <Text style={[{ fontSize: 13, marginBottom: 20 }, props.style]} {...props} />
+);
+
+const Anchor = ({
+  href,
+  children,
+  style,
+  ...props
+}: {
+  href: string;
+  children: React.ReactNode;
+  style?: any;
+}) => {
+  return (
+    <Pressable onPress={() => Linking.openURL(href)} {...props}>
+      <Text
+        style={[
+          {
+            color: zero.colors.blue[400],
+            textDecorationLine: "underline",
+            textAlign: "center",
+          },
+          zero.layout.flex.center,
+        ]}
+      >
+        {children}
+      </Text>
+    </Pressable>
+  );
+};
 
 export default function AboutScreen() {
   return (
-    <View maxWidth={500} marginHorizontal="auto" f={1} ai="center" jc="center">
+    <View
+      style={[
+        { maxWidth: 500, marginHorizontal: "auto" },
+        zero.flex.values[1],
+        zero.px[4],
+        zero.py[8],
+        zero.layout.flex.center,
+        zero.gap.all[6],
+      ]}
+    >
       <GetApps />
-      <H4 padding="$10" textAlign="center">
-        Or:
-      </H4>
-      <Anchor
-        fontSize={20}
-        textAlign="center"
-        href="https://git.stream.place/streamplace/streamplace/-/releases"
-      >
+      <Text>Or:</Text>
+      <Anchor href="https://git.stream.place/streamplace/streamplace/-/releases">
         Get the latest releases for Windows, Mac, and Linux from
         git.stream.place
       </Anchor>

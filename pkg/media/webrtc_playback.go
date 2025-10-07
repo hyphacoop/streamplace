@@ -29,7 +29,8 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 	}
 	ctx = log.WithLogValues(ctx, "webrtcID", uu.String())
 	ctx = log.WithLogValues(ctx, "mediafunc", "WebRTCPlayback")
-	ctx, cancel := context.WithCancel(ctx) //nolint:all
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	pipelineSlice := []string{
 		"h264parse name=videoparse ! video/x-h264,stream-format=byte-stream ! appsink name=videoappsink",
@@ -38,7 +39,7 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err) //nolint:all
+		return nil, fmt.Errorf("failed to create GStreamer pipeline: %w", err)
 	}
 
 	segBuffer := make(chan *bus.Seg, 1024)

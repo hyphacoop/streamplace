@@ -4,12 +4,12 @@ import {
   Textarea,
   useCreateStreamRecord,
   useLivestream,
+  useToast,
   useUpdateStreamRecord,
   zero,
 } from "@streamplace/components";
-import { useToast } from "@streamplace/components/src/components/ui/toast";
 import { ImagePlus, X } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Image,
   Platform,
@@ -158,7 +158,7 @@ const ImageUploadComponent = ({
 };
 
 function LivestreamPanel() {
-  const { toastController, ToastComponent } = useToast();
+  const toast = useToast();
   const userIsLive = useLiveUser();
   const captureFrame = useCaptureVideoFrame();
   const profile = useAppSelector(selectUserProfile);
@@ -173,9 +173,6 @@ function LivestreamPanel() {
   >();
   const [mode, setMode] = useState<"create" | "edit" | "metadata">(
     livestream ? "edit" : "create",
-  );
-  const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(
-    null,
   );
 
   const handleModeChange = useCallback(
@@ -219,22 +216,11 @@ function LivestreamPanel() {
         );
       }
 
-      // Clear any existing timeout
-      if (toastTimeoutId) {
-        clearTimeout(toastTimeoutId);
-      }
-
       // Show success message
       const toastTitle =
         mode === "create" ? "Livestream announced" : "Livestream updated";
 
-      toastController.show(toastTitle, title.trim(), { duration: 4 });
-
-      // Add manual timeout as fallback
-      const timeoutId = setTimeout(() => {
-        toastController.hide();
-      }, 4500);
-      setToastTimeoutId(timeoutId);
+      toast.show(toastTitle, title.trim(), { duration: 4 });
 
       // Clear form on successful create
       if (mode === "create") {
@@ -245,11 +231,6 @@ function LivestreamPanel() {
       console.error("Error with livestream:", error);
 
       try {
-        // Clear any existing timeout
-        if (toastTimeoutId) {
-          clearTimeout(toastTimeoutId);
-        }
-
         // Truncate very long error messages
         const errorMessage = String(error);
         const truncatedError =
@@ -262,13 +243,7 @@ function LivestreamPanel() {
             ? "Error creating livestream"
             : "Error updating livestream";
 
-        toastController.show(errorTitle, truncatedError, { duration: 5 });
-
-        // Add manual timeout as fallback
-        const timeoutId = setTimeout(() => {
-          toastController.hide();
-        }, 5500);
-        setToastTimeoutId(timeoutId);
+        toast.show(errorTitle, truncatedError, { duration: 5 });
       } catch (toastError) {
         console.error("Error showing toast:", toastError);
       }
@@ -283,7 +258,6 @@ function LivestreamPanel() {
     createStreamRecord,
     updateStreamRecord,
     livestream,
-    toastController,
   ]);
 
   const handleImageSelect = useCallback(() => {
@@ -320,16 +294,6 @@ function LivestreamPanel() {
     }
     return mode === "create" ? "Announce Livestream!" : "Update Livestream!";
   }, [loading, userIsLive, mode]);
-
-  // Clean up toast and timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutId) {
-        clearTimeout(toastTimeoutId);
-      }
-      toastController.hide();
-    };
-  }, [toastController]);
 
   return (
     <>
@@ -540,7 +504,6 @@ function LivestreamPanel() {
           )}
         </View>
       </ScrollView>
-      {ToastComponent}
     </>
   );
 }

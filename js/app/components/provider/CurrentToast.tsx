@@ -1,58 +1,64 @@
-import { Toast, useToastController, useToastState } from "@tamagui/toast";
-import { Button, H4, XStack, YStack, isWeb } from "tamagui";
+import { Text, zero } from "@streamplace/components";
+import { Platform, Pressable, View } from "react-native";
+
+const isWeb = Platform.OS === "web";
+
+// Note: Toast functionality removed - this is now a placeholder implementation
+// In a real app, you might want to use a toast library like react-native-toast-message
+// or implement a simple alert/modal system
 
 export function CurrentToast() {
-  const currentToast = useToastState();
-
-  if (!currentToast || currentToast.isHandledNatively) return null;
-
-  return (
-    <Toast
-      key={currentToast.id}
-      duration={currentToast.duration}
-      viewportName={currentToast.viewportName}
-      enterStyle={{ opacity: 0, scale: 0.5, y: -25 }}
-      exitStyle={{ opacity: 0, scale: 1, y: -20 }}
-      y={isWeb ? "$12" : 0}
-      theme="purple"
-      br="$6"
-      animation="quick"
-      zIndex={999999}
-    >
-      <YStack ai="center" p="$2" gap="$2">
-        <Toast.Title fow="bold">{currentToast.title}</Toast.Title>
-        {!!currentToast.message && (
-          <Toast.Description>{currentToast.message}</Toast.Description>
-        )}
-      </YStack>
-    </Toast>
-  );
+  // Toast functionality removed - would need replacement with simple modal or alert
+  return null;
 }
 
 export function ToastControl() {
-  const toast = useToastController();
-
+  // Note: This was a demo component for testing toasts
   return (
-    <YStack gap="$2" ai="center">
-      <H4>Toast demo</H4>
-      <XStack gap="$2" jc="center">
-        <Button
+    <View style={[{ gap: 8 }, zero.layout.flex.alignCenter]}>
+      <Text style={[{ fontSize: 18, fontWeight: "bold" }]}>
+        Toast demo (disabled)
+      </Text>
+      <View
+        style={[
+          zero.layout.flex.row,
+          { gap: 8 },
+          zero.layout.flex.justifyCenter,
+        ]}
+      >
+        <Pressable
+          style={[
+            {
+              backgroundColor: "#0066cc",
+              padding: 12,
+              borderRadius: 8,
+              alignItems: "center",
+            },
+          ]}
           onPress={() => {
-            toast.show("Successfully saved!", {
-              message: "Don't worry, we've got your data.",
-            });
+            // Would show toast: "Successfully saved!" with message: "Don't worry, we've got your data."
+            console.log("Toast would show: Successfully saved!");
           }}
         >
-          Show
-        </Button>
-        <Button
+          <Text style={{ color: "white" }}>Show</Text>
+        </Pressable>
+        <Pressable
+          style={[
+            {
+              backgroundColor: "#666",
+              padding: 12,
+              borderRadius: 8,
+              alignItems: "center",
+            },
+          ]}
           onPress={() => {
-            toast.hide();
+            // Would hide toast
+            console.log("Toast would hide");
           }}
         >
-          Hide
-        </Button>
-      </XStack>
-    </YStack>
+          <Text style={{ color: "white" }}>Hide</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }

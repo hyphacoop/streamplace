@@ -21,6 +21,8 @@ import (
 
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/livepeer/go-livepeer/cmd/livepeer/starter"
+	"github.com/lmittmann/tint"
+	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/peterbourgon/ff/v3"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/constants"
@@ -114,6 +116,21 @@ type CLI struct {
 	ContentFilters         *ContentFilters
 	LivepeerHelp           bool
 	PLCURL                 string
+	ContentFilters         *ContentFilters
+	SQLLogging             bool
+	SentryDSN              string
+	LivepeerDebug          bool
+}
+
+// ContentFilters represents the content filtering configuration
+type ContentFilters struct {
+	ContentWarnings struct {
+		Enabled         bool     `json:"enabled"`
+		BlockedWarnings []string `json:"blocked_warnings"`
+	} `json:"content_warnings"`
+	DistributionPolicy struct {
+		Enabled bool `json:"enabled"`
+	} `json:"distribution_policy"`
 }
 
 // ContentFilters represents the content filtering configuration
@@ -189,6 +206,9 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	cli.JSONFlag(fs, &cli.ContentFilters, "content-filters", "{}", "JSON content filtering rules")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
 	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
+	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
+	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
+	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -255,6 +275,13 @@ func DefaultDataDir() string {
 	return filepath.Join(home, ".streamplace")
 }
 
+var GormLogger = slogGorm.New(
+	slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
+		TimeFormat: time.RFC3339,
+	})),
+	// slogGorm.WithTraceAll(),
+)
+
 func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	err := ff.Parse(
 		fs, args,
@@ -271,6 +298,10 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	}
 	if cli.LivepeerGateway {
 		gatewayPath := cli.DataFilePath([]string{"livepeer", "gateway"})
+		err = fs.Set("livepeer.rtmp-addr", "127.0.0.1:0")
+		if err != nil {
+			return err
+		}
 		err = fs.Set("livepeer.data-dir", gatewayPath)
 		if err != nil {
 			return err
@@ -295,6 +326,13 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	}
 	for _, dest := range cli.dataDirFlags {
 		*dest = strings.Replace(*dest, SPDataDir, cli.DataDir, 1)
+	}
+	if !cli.SQLLogging {
+		GormLogger = slogGorm.New(
+			slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
+				TimeFormat: time.RFC3339,
+			})),
+		)
 	}
 	return nil
 }

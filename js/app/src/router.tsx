@@ -15,23 +15,7 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import {
-  ArrowLeft,
-  Book,
-  Download,
-  ExternalLink,
-  Home,
-  LogIn,
-  Menu,
-  Notebook,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings as SettingsIcon,
-  ShieldQuestion,
-  User,
-  Video,
-} from "@tamagui/lucide-icons";
-import { useToastController } from "@tamagui/toast";
+import { Text, useTheme } from "@streamplace/components";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
 import Login from "components/login/login";
@@ -51,7 +35,22 @@ import { pollMySegments } from "features/streamplace/streamplaceSlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import usePlatform from "hooks/usePlatform";
 import { useSidebarControl } from "hooks/useSidebarControl";
-import { Fragment, ReactElement, useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  Book,
+  Download,
+  ExternalLink,
+  Home,
+  LogIn,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings as SettingsIcon,
+  ShieldQuestion,
+  User,
+  Video,
+} from "lucide-react-native";
+import React, { Fragment, useEffect, useState } from "react";
 import {
   ImageBackground,
   ImageSourcePropType,
@@ -59,9 +58,9 @@ import {
   Platform,
   Pressable,
   StatusBar,
+  View,
 } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
-import { H3, Text, useTheme, View } from "tamagui";
 import AboutScreen from "./screens/about";
 import AppReturnScreen from "./screens/app-return";
 import PopoutChat from "./screens/chat-popout";
@@ -72,8 +71,6 @@ import LiveDashboard from "./screens/live-dashboard";
 import MultiScreen from "./screens/multi";
 import SupportScreen from "./screens/support";
 
-// probabl should move this
-import SignUp from "components/login/signup";
 import KeyManager from "components/settings/key-manager";
 import { loadStateFromStorage } from "features/base/sidebarSlice";
 import { store } from "store/store";
@@ -85,6 +82,7 @@ import { SystemBars } from "react-native-edge-to-edge";
 import {
   configureReanimatedLogger,
   ReanimatedLogLevel,
+  useAnimatedStyle,
 } from "react-native-reanimated";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
@@ -113,7 +111,6 @@ type RootStackParamList = {
   GoLive: undefined;
   LiveDashboard: undefined;
   Login: undefined;
-  Signup: undefined;
   AVSync: undefined;
   AppReturn: { scheme: string };
   About: undefined;
@@ -150,7 +147,6 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       GoLive: "golive",
       LiveDashboard: "live",
       Login: "login",
-      Signup: "signup",
       AVSync: "sync-test",
       AppReturn: "app-return/:scheme",
       About: "about",
@@ -186,6 +182,7 @@ const Drawer = createDrawerNavigator();
 const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
   const sidebar = useSidebarControl();
   const navigation = useNavigation();
+  const { theme } = useTheme();
 
   const handlePress = () => {
     if (sidebar?.isActive) {
@@ -201,29 +198,33 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
     }
   };
 
-  let icon: ReactElement | null = null;
-  if (sidebar?.isActive) {
-    if (sidebar.isCollapsed) {
-      icon = <PanelLeftOpen />;
-    } else {
-      icon = <PanelLeftClose />;
-    }
-  }
-
   return (
     <View
-      flexDirection="row"
-      marginLeft={Platform.OS === "android" ? "$0" : "$3"}
-      marginRight={Platform.OS === "android" ? "$3" : "$0"}
+      style={[
+        { flexDirection: "row" },
+        {
+          marginLeft: Platform.OS === "android" ? 0 : 12,
+          marginRight: Platform.OS === "android" ? 12 : 0,
+        },
+      ]}
     >
-      {icon && (
+      {sidebar?.isActive ? (
         <Pressable style={{ padding: 5 }} onPress={handlePress}>
-          {icon}
+          {sidebar.isCollapsed ? (
+            <PanelLeftOpen size={24} color={theme.colors.accentForeground} />
+          ) : (
+            <PanelLeftClose size={24} color={theme.colors.accentForeground} />
+          )}
+        </Pressable>
+      ) : (
+        <Pressable style={{ padding: 5 }} onPress={handleGoBackPress}>
+          {canGoBack ? (
+            <ArrowLeft size={24} color={theme.colors.accentForeground} />
+          ) : (
+            <Menu size={24} color={theme.colors.accentForeground} />
+          )}
         </Pressable>
       )}
-      <Pressable style={{ padding: 5 }} onPress={handleGoBackPress}>
-        {canGoBack ? <ArrowLeft /> : sidebar?.isActive || <Menu />}
-      </Pressable>
     </View>
   );
 };
@@ -245,7 +246,7 @@ const AvatarButton = () => {
         style={{
           width: 40,
           height: 40,
-          borderRadius: 20,
+          borderRadius: 24,
           overflow: "hidden",
           marginRight: 10,
           backgroundColor: "black",
@@ -253,7 +254,7 @@ const AvatarButton = () => {
           alignItems: "center",
         }}
       >
-        <User opacity={opacity}></User>
+        <User size={24} color="white" style={{ zIndex: -2 }} />
       </ImageBackground>
     </AQLink>
   );
@@ -261,13 +262,21 @@ const AvatarButton = () => {
 
 const useExternalItems = (): ExternalDrawerItem[] => {
   const streamplaceUrl = useUrl();
+  const { theme } = useTheme();
   return [
     {
-      item: Book as any,
+      item: React.memo(() => <Book size={24} color={theme.colors.text} />),
       label: (
-        <Text alignSelf="flex-start">
+        <Text variant="h5" style={{ alignSelf: "flex-start" }}>
           Documentation{" "}
-          <ExternalLink size={16} paddingLeft={4} position="relative" top={2} />
+          <ExternalLink
+            size={16}
+            color={theme.colors.mutedForeground}
+            style={{
+              position: "relative",
+              top: 2,
+            }}
+          />
         </Text>
       ) as any,
       onPress: () => {
@@ -281,15 +290,23 @@ const useExternalItems = (): ExternalDrawerItem[] => {
 
 // TODO: merge in ^
 function CustomDrawerContent(props) {
+  let { theme } = useTheme();
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItemList {...props} />
       <DrawerItem
-        icon={() => <Book />}
+        icon={() => <Book size={24} color={theme.colors.text} />}
         label={() => (
-          <Text alignSelf="flex-start">
+          <Text style={{ alignSelf: "flex-start" }}>
             Documentation{" "}
-            <ExternalLink size={16} pl={4} position="relative" top={2} />
+            <ExternalLink
+              size={16}
+              color="#666"
+              style={{
+                position: "relative",
+                top: 2,
+              }}
+            />
           </Text>
         )}
         onPress={() => {
@@ -340,6 +357,12 @@ export function StreamplaceDrawer() {
   const notificationDestination = useAppSelector(selectNotificationDestination);
   const linkTo = useLinkTo();
 
+  const animatedDrawerStyle = useAnimatedStyle(() => {
+    return {
+      width: sidebar.isActive ? sidebar.animatedWidth.value : undefined,
+    };
+  });
+
   useEffect(() => {
     if (notificationDestination) {
       linkTo(notificationDestination);
@@ -358,7 +381,9 @@ export function StreamplaceDrawer() {
   }, []);
 
   const userIsLive = useLiveUser();
-  const toast = useToastController();
+  // Note: Toast functionality removed, would need simple alert replacement
+
+  let foregroundColor = theme.theme.colors.text || "#fff";
 
   const [isLiveDashboard, setIsLiveDashboard] = useState(true);
   useEffect(() => {
@@ -381,12 +406,12 @@ export function StreamplaceDrawer() {
           // for the custom sidebar
           drawerType: sidebar.isActive ? "permanent" : "front",
           swipeEnabled: !sidebar.isActive,
-          drawerStyle: {
-            // afaict the drawer is a RN Animated component internally
-            width: sidebar.isActive
-              ? (sidebar.animatedWidth as any)
-              : undefined,
-          },
+          drawerStyle: [
+            {
+              zIndex: 128000,
+            },
+            sidebar.isActive ? animatedDrawerStyle : [],
+          ],
           // rest
           headerLeft: () => (
             <>
@@ -396,7 +421,7 @@ export function StreamplaceDrawer() {
             </>
           ),
           headerRight: () => <AvatarButton />,
-          drawerActiveTintColor: theme.accentColor.val,
+          drawerActiveTintColor: "#a0287c33",
           unmountOnBlur: true,
         }}
         drawerContent={
@@ -417,8 +442,8 @@ export function StreamplaceDrawer() {
           name="Home"
           component={MainTab}
           options={{
-            drawerIcon: () => <Home />,
-            drawerLabel: () => <Text>Home</Text>,
+            drawerIcon: () => <Home color={foregroundColor} size={24} />,
+            drawerLabel: () => <Text variant="h5">Home</Text>,
             headerTitle: "Streamplace",
             headerShown: isWeb,
             title: "Streamplace",
@@ -446,8 +471,10 @@ export function StreamplaceDrawer() {
           name="About"
           component={AboutScreen}
           options={{
-            drawerLabel: () => <Text>What's Streamplace?</Text>,
-            drawerIcon: () => <ShieldQuestion />,
+            drawerLabel: () => <Text variant="h5">What's Streamplace?</Text>,
+            drawerIcon: () => (
+              <ShieldQuestion color={foregroundColor} size={24} />
+            ),
             drawerItemStyle: isNative ? { display: "none" } : undefined,
           }}
         />
@@ -455,8 +482,8 @@ export function StreamplaceDrawer() {
           name="Download"
           component={DownloadScreen}
           options={{
-            drawerLabel: () => <Text>Download</Text>,
-            drawerIcon: () => <Download />,
+            drawerLabel: () => <Text variant="h5">Download</Text>,
+            drawerIcon: () => <Download color={foregroundColor} size={24} />,
             drawerItemStyle: isBrowser ? undefined : { display: "none" },
           }}
         />
@@ -464,8 +491,10 @@ export function StreamplaceDrawer() {
           name="Settings"
           component={Settings}
           options={{
-            drawerIcon: () => <SettingsIcon />,
-            drawerLabel: () => <Text>Settings</Text>,
+            drawerIcon: () => (
+              <SettingsIcon color={foregroundColor} size={24} />
+            ),
+            drawerLabel: () => <Text variant="h5">Settings</Text>,
           }}
         />
 
@@ -473,7 +502,7 @@ export function StreamplaceDrawer() {
           name="KeyManagement"
           component={KeyManager}
           options={{
-            drawerLabel: () => <Text>Key Manager</Text>,
+            drawerLabel: () => <Text variant="h5">Key Manager</Text>,
             drawerItemStyle: { display: "none" },
           }}
         />
@@ -481,7 +510,7 @@ export function StreamplaceDrawer() {
           name="Support"
           component={SupportScreen}
           options={{
-            drawerLabel: () => <Text>Support</Text>,
+            drawerLabel: () => <Text variant="h5">Support</Text>,
             drawerItemStyle: { display: "none" },
           }}
         />
@@ -489,8 +518,8 @@ export function StreamplaceDrawer() {
           name="LiveDashboard"
           component={LiveDashboard}
           options={{
-            drawerLabel: () => <Text>Live Dashboard</Text>,
-            drawerIcon: () => <Video />,
+            drawerLabel: () => <Text variant="h5">Live Dashboard</Text>,
+            drawerIcon: () => <Video color={foregroundColor} size={24} />,
             drawerItemStyle: isNative ? { display: "none" } : undefined,
           }}
         />
@@ -515,17 +544,8 @@ export function StreamplaceDrawer() {
           name="Login"
           component={Login}
           options={{
-            drawerIcon: () => <LogIn />,
-            drawerLabel: () => <Text>Login</Text>,
-          }}
-        />
-        <Drawer.Screen
-          name="Signup"
-          component={SignUp}
-          options={{
-            drawerIcon: () => <Notebook />,
-            drawerItemStyle: { display: "none" },
-            drawerLabel: () => <Text>Sign up</Text>,
+            drawerIcon: () => <LogIn color={foregroundColor} size={24} />,
+            drawerLabel: () => <Text variant="h5">Login</Text>,
           }}
         />
         <Drawer.Screen
@@ -562,9 +582,9 @@ export function StreamplaceDrawer() {
           options={{
             headerTitle: "Go Live",
             drawerItemStyle: isNative ? undefined : { display: "none" },
-            drawerLabel: () => <Text>Go Live</Text>,
+            drawerLabel: () => <Text variant="h5">Go Live</Text>,
             title: "Go live",
-            drawerIcon: () => <Video />,
+            drawerIcon: () => <Video color={foregroundColor} size={24} />,
             headerShown: false,
           }}
         />
@@ -579,14 +599,20 @@ export function StreamplaceDrawer() {
             setLivePopup(false);
           }}
           containerProps={{
-            bottom: "$8",
+            style: { bottom: 32 },
           }}
           bubbleProps={{
-            cursor: "pointer",
-            backgroundColor: "#cc0000",
+            style: { backgroundColor: "#cc0000" },
           }}
         >
-          <H3 textAlign="center">✨YOU ARE LIVE!!!✨</H3>
+          <Text
+            style={[
+              { textAlign: "center" },
+              { fontSize: 24, fontWeight: "bold" },
+            ]}
+          >
+            ✨YOU ARE LIVE!!!✨
+          </Text>
           <Text>
             {isNative ? "Tap" : "Click"} here to go to the live dashboard
           </Text>
@@ -637,6 +663,7 @@ const MainTab = () => {
         options={{
           headerTitle: "Stream",
           title: "Streamplace Stream",
+          headerShown: false,
         }}
       />
     </Stack.Navigator>

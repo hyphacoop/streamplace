@@ -1,10 +1,21 @@
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+// to get the portal
+import * as Portal from "@rn-primitives/portal";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react-native";
-import React, { forwardRef } from "react";
-import { Platform, StyleSheet, Text } from "react-native";
+import React, { forwardRef, useRef } from "react";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../lib/theme/theme";
 import { createThemedIcon } from "./icons";
 import { ModalPrimitive, ModalPrimitiveProps } from "./primitives/modal";
+import { Text } from "./text";
 
 const ThemedX = createThemedIcon(X);
 
@@ -49,10 +60,138 @@ export interface DialogProps
   onClose?: () => void;
 }
 
+// Bottom Sheet Dialog Component
+const DialogBottomSheet = forwardRef<
+  any,
+  DialogProps & {
+    overlayStyle?: any;
+    portalHost?: string;
+  }
+>(function DialogBottomSheet(
+  {
+    overlayStyle,
+    portalHost,
+    children,
+    title,
+    description,
+    showCloseButton = true,
+    onClose,
+    open = false,
+    onOpenChange,
+    ...props
+  },
+  _ref,
+) {
+  const { theme } = useTheme();
+  const sheetRef = useRef<BottomSheet>(null);
+  const { top } = useSafeAreaInsets();
+  const dims = useWindowDimensions();
+
+  const handleClose = React.useCallback(() => {
+    if (onClose) {
+      onClose();
+    }
+    if (onOpenChange) {
+      onOpenChange(false);
+    }
+  }, [onClose, onOpenChange]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <Portal.Portal name="dialog">
+      <BottomSheet
+        ref={sheetRef}
+        index={open ? 0 : -1}
+        enablePanDownToClose
+        enableDynamicSizing={true}
+        maxDynamicContentSize={dims.height - top}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        enableContentPanningGesture={false}
+        backdropComponent={({ style }) => (
+          <Pressable
+            style={[style, StyleSheet.absoluteFill]}
+            onPress={handleClose}
+          />
+        )}
+        onClose={handleClose}
+        style={[overlayStyle]}
+        backgroundStyle={{
+          backgroundColor: theme.colors.card,
+          borderRadius: theme.borderRadius.lg,
+          ...theme.shadows.lg,
+        }}
+        handleIndicatorStyle={{
+          width: 48,
+          height: 4,
+          backgroundColor: theme.colors.textMuted,
+        }}
+      >
+        <BottomSheetScrollView
+          style={{
+            flex: 1,
+            width: "100%",
+          }}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {/* Header */}
+          {(title || showCloseButton) && (
+            <View
+              style={{
+                paddingHorizontal: theme.spacing[4],
+                paddingVertical: theme.spacing[4],
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              {title && <DialogTitle>{title}</DialogTitle>}
+              {showCloseButton && (
+                <Pressable
+                  onPress={handleClose}
+                  style={{
+                    width: theme.touchTargets.minimum,
+                    height: theme.touchTargets.minimum,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: theme.borderRadius.sm,
+                    marginLeft: theme.spacing[2],
+                  }}
+                >
+                  <DialogCloseIcon />
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* Scrollable Content */}
+          <View
+            style={{
+              paddingHorizontal: theme.spacing[4],
+              paddingBottom: theme.spacing[6],
+              flex: 1,
+              width: "100%",
+            }}
+          >
+            {description && (
+              <DialogDescription>{description}</DialogDescription>
+            )}
+            {children}
+          </View>
+        </BottomSheetScrollView>
+      </BottomSheet>
+    </Portal.Portal>
+  );
+});
+
 export const Dialog = forwardRef<any, DialogProps>(
   (
     {
-      variant = "left",
+      variant = "default",
       size = "md",
       position = "center",
       children,
@@ -115,12 +254,17 @@ export const Dialog = forwardRef<any, DialogProps>(
           style={styles.overlay}
         >
           <ModalPrimitive.Content
-            position={position || "left"}
+            position={position || "center"}
             size={size || "md"}
             style={[
               styles.content,
-              styles[`${variant}Content` as keyof typeof styles],
-              styles[`${size}Content` as keyof typeof styles],
+              variant === "sheet" && styles.sheetContent,
+              variant === "fullscreen" && styles.fullscreenContent,
+              size === "sm" && styles.smContent,
+              size === "md" && styles.mdContent,
+              size === "lg" && styles.lgContent,
+              size === "xl" && styles.xlContent,
+              size === "full" && styles.fullContent,
             ]}
           >
             {(title || showCloseButton) && (
@@ -157,6 +301,43 @@ export const Dialog = forwardRef<any, DialogProps>(
 );
 
 Dialog.displayName = "Dialog";
+
+/// Responsive Dialog Component. On mobile this will render a *bottom sheet*.
+/// Prefer this over the regular Dialog component for better mobile UX.
+export const ResponsiveDialog = forwardRef<any, DialogProps>(
+  ({ children, size, ...props }, ref) => {
+    const { width } = useWindowDimensions();
+
+    // On web, you might want to always use the normal dialog
+    // On mobile (width < 800), use the bottom sheet
+    const isBottomSheet = Platform.OS !== "web" && width < 800;
+
+    if (isBottomSheet) {
+      return (
+        <DialogBottomSheet
+          ref={ref}
+          {...props}
+          size={"full"}
+          showCloseButton={false}
+          variant="fullscreen"
+        >
+          {children}
+        </DialogBottomSheet>
+      );
+    }
+
+    // Use larger default size for regular dialogs to give more room
+    const dialogSize = size || "lg";
+
+    return (
+      <Dialog ref={ref} size={dialogSize} {...props}>
+        {children}
+      </Dialog>
+    );
+  },
+);
+
+ResponsiveDialog.displayName = "ResponsiveDialog";
 
 // Dialog Title component
 export interface DialogTitleProps {
@@ -273,10 +454,6 @@ function createStyles(theme: any) {
     },
 
     // Variant styles
-    defaultContent: {
-      // Default styles already applied in content
-    },
-
     sheetContent: {
       borderTopLeftRadius: theme.borderRadius.xl,
       borderTopRightRadius: theme.borderRadius.xl,
@@ -344,6 +521,7 @@ function createStyles(theme: any) {
       paddingHorizontal: theme.spacing[6],
       paddingVertical: theme.spacing[4],
       gap: theme.spacing[2],
+      width: "100%",
     },
 
     title: {
@@ -358,7 +536,7 @@ function createStyles(theme: any) {
       fontSize: 16,
       color: theme.colors.textMuted,
       lineHeight: 22,
-      marginBottom: theme.spacing[4],
+      marginVertical: theme.spacing[4],
     },
 
     closeButton: {

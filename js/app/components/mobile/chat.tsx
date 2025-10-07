@@ -1,6 +1,7 @@
 import {
   Chat,
   ChatBox,
+  Loader,
   Resizable,
   Text,
   useHandle,
@@ -10,17 +11,17 @@ import {
 } from "@streamplace/components";
 import { useKeyboard } from "hooks/useKeyboard";
 import { useEffect } from "react";
-import { Keyboard, Pressable, TouchableWithoutFeedback } from "react-native";
+import { Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { useResponsiveLayout } from "./useResponsiveLayout";
 
 import { useNavigation } from "@react-navigation/native";
-import { ArrowRight } from "@tamagui/lucide-icons";
+import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
 import emojiData from "assets/emoji-data.json";
+import { ArrowRight } from "lucide-react-native";
 const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
 export function DesktopChatPanel({
@@ -37,7 +38,7 @@ export function DesktopChatPanel({
       "Setting sidebar offset x to",
       chatVisible ? 0 : chatPanelWidth,
     );
-    sidebarOffset.value = withSpring(chatVisible ? 0 : chatPanelWidth, {
+    sidebarOffset.value = withSpring(chatVisible ? 0 : chatPanelWidth + 64, {
       damping: 100,
       stiffness: 1000,
     });
@@ -98,39 +99,55 @@ export function MobileChatPanel({ isPlayerRatioGreater }) {
 }
 
 function ChatPanel() {
-  const { shouldShowChatSidePanel, safeAreaInsets } = useResponsiveLayout();
   const { profile } = useLivestreamInfo();
   const handle = useHandle();
+
+  let agent = usePDSAgent();
+
   const navigation = useNavigation();
-  let canModerate = profile?.handle === handle;
+
   return (
     <View
       style={[
         layout.flex.column,
         flex.values[1],
         { width: "100%", maxWidth: "100%" },
+        px[2],
       ]}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={[flex.values[1]]}>
-          <Chat canModerate={canModerate} />
-        </View>
-      </TouchableWithoutFeedback>
-      <View style={[layout.flex.column, gap.all[2], px[4]]}>
-        {handle ? (
+      <View style={[flex.values[1]]}>
+        <Chat />
+      </View>
+      <View style={[layout.flex.column, gap.all[2]]}>
+        {agent?.did ? (
           <ChatBox
             emojiData={emojiData}
             chatBoxStyle={{ borderRadius: borderRadius.xl }}
           />
+        ) : !agent ? (
+          <View
+            style={[
+              layout.flex.row,
+              layout.flex.center,
+              gap.all[1],
+              zero.p[3],
+              {
+                borderRadius: borderRadius.xl,
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              },
+            ]}
+          >
+            <Loader size="large" />
+          </View>
         ) : (
           <Pressable
             onPress={() => navigation.navigate("Login")}
             style={[
               layout.flex.row,
               layout.flex.center,
-              gap.all[2],
+              gap.all[4],
               {
-                padding: 16,
+                padding: 18,
                 borderRadius: borderRadius.xl,
                 backgroundColor: "rgba(255, 255, 255, 0.1)",
               },

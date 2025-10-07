@@ -1,12 +1,12 @@
 import { Play } from "lucide-react-native";
 import { Pressable } from "react-native";
-import { View, layout, usePlayerStore } from "../../..";
+import { View, layout, usePlayerStore, useSetMuted } from "../../..";
 import { h, p, w } from "../../../ui";
 
 export function AutoplayButton() {
   const autoplayFailed = usePlayerStore((x) => x.autoplayFailed);
   const setAutoplayFailed = usePlayerStore((x) => x.setAutoplayFailed);
-  const setMuted = usePlayerStore((x) => x.setMuted);
+  const setMuted = useSetMuted();
   const setMuteWasForced = usePlayerStore((x) => x.setMuteWasForced);
   const setUserInteraction = usePlayerStore((x) => x.setUserInteraction);
   const videoRef = usePlayerStore((x) => x.videoRef);
@@ -17,6 +17,7 @@ export function AutoplayButton() {
         .play()
         .then(() => {
           setAutoplayFailed(false);
+          setMuted(false);
           setUserInteraction();
         })
         .catch((err) => {

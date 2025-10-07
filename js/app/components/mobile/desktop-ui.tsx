@@ -37,8 +37,12 @@ function isRefObject(
 
 export function DesktopUi({
   dropdownPortalContainer,
+  isChatOpen,
+  setIsChatOpen,
 }: {
   dropdownPortalContainer?: any;
+  isChatOpen?: boolean;
+  setIsChatOpen?: (open: boolean) => void;
 }) {
   const {
     ingest,
@@ -63,7 +67,6 @@ export function DesktopUi({
   const segment = useSegment();
 
   const [isControlsVisible, setIsControlsVisible] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
   const [pipActive, setPipActive] = useState(false);
   const fadeOpacity = useSharedValue(1);
@@ -89,7 +92,7 @@ export function DesktopUi({
   }, [resetFadeTimer]);
 
   const toggleChat = useCallback(() => {
-    setIsChatOpen((prev) => !prev);
+    if (setIsChatOpen) setIsChatOpen(!isChatOpen);
   }, []);
 
   useEffect(() => {
@@ -207,7 +210,7 @@ export function DesktopUi({
               offline={offline}
               isActivelyLive={isActivelyLive}
               ingest={ingest}
-              isChatOpen={isChatOpen}
+              isChatOpen={isChatOpen || false}
               onToggleChat={toggleChat}
               safeAreaInsets={safeAreaInsets}
             />
@@ -257,6 +260,8 @@ export function DesktopUi({
               pipActive={pipActive}
               onHandlePip={handlePip}
               dropdownPortalContainer={dropdownPortalContainer}
+              showChat={isChatOpen || false}
+              setShowChat={setIsChatOpen || (() => {})}
             />
           </Animated.View>
 

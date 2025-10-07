@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { ChatMessageViewHydrated } from "streamplace";
 import { createStore, StoreApi, useStore } from "zustand";
 import { useLivestreamStore } from "../livestream-store";
+import { useStreamplaceStore } from "../streamplace-store";
 import { PlayerContext } from "./context";
 import {
   IngestMediaSource,
@@ -51,14 +52,6 @@ export const makePlayerStore = (id?: string): StoreApi<PlayerState> => {
     ingestStarted: null,
     setIngestStarted: (timestamp: number | null) =>
       set(() => ({ ingestStarted: timestamp })),
-
-    muted: false,
-    setMuted: (isMuted: boolean) =>
-      set(() => ({ muted: isMuted, muteWasForced: false })),
-
-    volume: 1.0,
-    setVolume: (volume: number) =>
-      set(() => ({ volume, muteWasForced: false })),
 
     fullscreen: false,
     setFullscreen: (isFullscreen: boolean) =>
@@ -278,4 +271,13 @@ export const useOffline = () => {
     return false;
   }
   return now - Date.parse(segment.startTime) > 10000;
+};
+
+export const useIsMyStream = () => {
+  const myHandle = useStreamplaceStore((state) => state.handle);
+  const myDid = useStreamplaceStore((state) => state.oauthSession?.did);
+  const channelId = usePlayerStore((state) => state.src);
+  return () => {
+    return myHandle === channelId || myDid === channelId;
+  };
 };

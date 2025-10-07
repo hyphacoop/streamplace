@@ -1,61 +1,71 @@
-import { X } from "@tamagui/lucide-icons";
-import { Button, View, ViewProps } from "tamagui";
+import { Text, zero } from "@streamplace/components";
+import { Pressable, View, ViewStyle } from "react-native";
+
+interface PopupProps {
+  onClose: () => void;
+  onPress?: () => void;
+  containerProps: { style?: ViewStyle };
+  bubbleProps: { style?: ViewStyle };
+  children: React.ReactNode;
+}
 
 export default function Popup({
   onClose,
-  containerProps: viewProps,
-  bubbleProps: bubbleProps,
+  containerProps,
+  bubbleProps,
   children,
   onPress,
-}: {
-  onClose: () => void;
-  onPress?: () => void;
-  containerProps: ViewProps;
-  bubbleProps: ViewProps;
-  children: React.ReactNode;
-}) {
+}: PopupProps) {
   return (
     <View
-      position="absolute"
-      bottom="$8"
-      f={1}
-      alignItems="center"
-      width="100%"
-      backgroundColor="blue"
-      height={0}
-      {...viewProps}
+      style={[
+        { position: "absolute" },
+        zero.bottom[32],
+        zero.flex.values[1],
+        { alignItems: "center" },
+        zero.w.percent[100],
+        { backgroundColor: "blue", height: 0 },
+        containerProps.style,
+      ]}
     >
-      <View
-        f={1}
-        alignItems="stretch"
-        padding="$4"
-        borderRadius="$4"
+      <Pressable
+        style={[
+          zero.flex.values[1],
+          { alignSelf: "stretch" },
+          zero.p[4],
+          zero.r.lg,
+          { position: "absolute" },
+          zero.bottom[0],
+          {
+            boxShadow: "0 0 10px 0 rgba(0, 0, 0, 0.1)",
+            elevation: 5, // Android shadow
+          },
+          bubbleProps.style,
+        ]}
         onPress={() => {
           if (onPress) {
             onPress();
           }
         }}
-        position="absolute"
-        bottom={0}
-        boxShadow="0 0 10px 0 rgba(0, 0, 0, 0.1)"
-        {...bubbleProps}
       >
-        <Button
-          position="absolute"
-          top="$0"
-          right="$0"
+        <Pressable
+          style={[
+            { position: "absolute" },
+            zero.top[0],
+            zero.right[0],
+            { marginRight: -15, marginTop: -5 },
+            zero.bg.transparent,
+            zero.p[2],
+          ]}
           onPress={(e) => {
             e.stopPropagation();
             onClose();
           }}
-          marginRight={-15}
-          marginTop={-5}
-          backgroundColor="transparent"
         >
-          <X />
-        </Button>
+          <Text style={[{ fontSize: 18 }]}>✕</Text>
+        </Pressable>
         {children}
-      </View>
+      </Pressable>
     </View>
   );
 }
