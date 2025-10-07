@@ -69,6 +69,7 @@ type ToastState = {
 class ToastManager {
   private listeners: Set<(state: ToastState[]) => void> = new Set();
   private toasts: ToastState[] = [];
+  private toastHeights: Map<string, number> = new Map();
 
   private hoverListeners: Set<(isHovered: boolean) => void> = new Set();
   private isHovered: boolean = false;
@@ -129,6 +130,14 @@ class ToastManager {
   setHovered(hovered: boolean) {
     this.isHovered = hovered;
     this.notifyHoverListeners();
+  }
+
+  updateToastHeight(id: string, height: number) {
+    this.toastHeights.set(id, height);
+  }
+
+  getToastHeight(id: string): number {
+    return this.toastHeights.get(id) || 100; // Default fallback height
   }
 
   private notifyListeners() {
@@ -367,7 +376,6 @@ function ToastContainer({
               }}
               index={index}
               isLatest={index === 0}
-              totalToasts={toasts.length}
               position={
                 position === "auto"
                   ? isDesktop
@@ -407,11 +415,11 @@ export function AndMore({ more }: { more: number }) {
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 type ToastProps = PartialBy<Omit<ToastState, "id" | "open">, "position"> & {
+  id?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   index?: number;
   isLatest?: boolean;
-  totalToasts?: number;
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -426,16 +434,16 @@ export function Toast({
   duration = 60,
   index = 0,
   isLatest = true,
-  totalToasts = 0,
   variant = "default",
   render,
   position = "auto",
+  id,
 }: ToastProps) {
   const [isHovered, setIsHovered] = useState(false);
   const progress = useSharedValue(1);
   const remainingTime = useSharedValue(duration * 1000);
   const wasOpen = useRef(open);
-  const [height, setHeight] = useState(100);
+  const [measuredHeight, setMeasuredHeight] = useState(100);
   const { theme } = useTheme();
   const isWeb = Platform.OS === "web";
   const { width } = useWindowDimensions();
@@ -479,11 +487,22 @@ export function Toast({
 
     if (isHovered) {
       // Stack vertically with proper spacing when hovered
-      const spacing = height + 8; // Height of each toast + gap
-      translateY.value = withTiming((isTop ? index : -index) * spacing, {
-        duration: 750,
-        easing: Easing.out(Easing.exp),
-      });
+      // Calculate cumulative height of all toasts before this one
+      let cumulativeHeight = 0;
+      const allToasts = toastManager.getToasts().slice(-4).reverse(); // Get visible toasts in same order as rendered
+      for (let i = 0; i < index; i++) {
+        if (allToasts[i]) {
+          cumulativeHeight += toastManager.getToastHeight(allToasts[i].id) + 8; // height + gap
+        }
+      }
+
+      translateY.value = withTiming(
+        isTop ? cumulativeHeight : -cumulativeHeight,
+        {
+          duration: 750,
+          easing: Easing.out(Easing.exp),
+        },
+      );
       scale.value = withTiming(1, {
         duration: 750,
         easing: Easing.out(Easing.exp),
@@ -507,7 +526,7 @@ export function Toast({
         easing: Easing.out(Easing.exp),
       });
     }
-  }, [open, isHovered, index, isLatest, height, duration]);
+  }, [open, isHovered, index, isLatest, measuredHeight, duration, id]);
 
   useEffect(() => {
     if (open && isLatest && duration > 0) {
@@ -577,7 +596,13 @@ export function Toast({
 
   return (
     <Animated.View
-      onLayout={(l) => setHeight(l.nativeEvent.layout.height)}
+      onLayout={(l) => {
+        const height = l.nativeEvent.layout.height;
+        setMeasuredHeight(height);
+        if (id) {
+          toastManager.updateToastHeight(id, height);
+        }
+      }}
       style={[
         isTop ? styles.containerTop : styles.containerBottom,
         animatedStyle,
@@ -610,7 +635,7 @@ export function Toast({
                 gap: theme.spacing[4],
               }}
             >
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text size="lg">{title}</Text>
                 {description ? <Text>{description}</Text> : null}
               </View>
@@ -667,7 +692,7 @@ export function Toast({
                   <Svg width="24" height="24" viewBox="0 0 24 24">
                     <AnimatedCircle
                       stroke={theme.colors.border}
-                      fill={theme.colors.muted}
+                      fill="transparent"
                       strokeWidth="2"
                       r={RADIUS}
                       cx="12"
