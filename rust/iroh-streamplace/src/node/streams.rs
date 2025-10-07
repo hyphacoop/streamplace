@@ -10,7 +10,7 @@ use iroh_base::ticket::NodeTicket;
 use iroh_gossip::{net::Gossip, proto::TopicId};
 use irpc::{WithChannels, rpc::RemoteService};
 use irpc_iroh::{IrohProtocol, IrohRemoteConnection};
-use n0_future::future::Boxed;
+use n0_future::{TryFutureExt, future::Boxed};
 
 mod rpc {
     //! Protocol API
@@ -105,6 +105,9 @@ mod api {
     #[derive(Debug, Serialize, Deserialize)]
     pub struct GetNodeAddr;
 
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Shutdown;
+
     // Use the macro to generate both the Protocol and Message enums
     // plus implement Channels for each type
     #[rpc_requests(message = Message)]
@@ -122,15 +125,19 @@ mod api {
         AddTickets(AddTickets),
         #[rpc(tx=oneshot::Sender<NodeAddr>)]
         GetNodeAddr(GetNodeAddr),
+        #[rpc(tx=oneshot::Sender<()>)]
+        Shutdown(Shutdown),
     }
 }
 use api::{Message as ApiMessage, Protocol as ApiProtocol};
 use n0_future::{FuturesUnordered, StreamExt};
 use rpc::{Message as RpcMessage, Protocol as RpcProtocol};
 use snafu::Snafu;
+use tokio::sync::oneshot;
 use tracing::{Instrument, debug, error, trace, trace_span, warn};
 
 use super::{Config, CreateError, JoinPeersError, PutError, db, streams::rpc::RecvSegment};
+use crate::node::ShutdownError;
 
 pub(crate) enum HandlerMode {
     Sender,
@@ -312,7 +319,10 @@ impl Actor {
                     let Some(msg) = msg else {
                         break;
                     };
-                    self.handle_api(msg).instrument(trace_span!("api")).await;
+                    if let Some(shutdown) = self.handle_api(msg).instrument(trace_span!("api")).await {
+                        shutdown.send(()).ok();
+                        break;
+                    }
                 }
                 res = self.tasks.next(), if !self.tasks.is_empty() => {
                     let Some((remote_id, res)) = res else {
@@ -425,7 +435,7 @@ impl Actor {
         }
     }
 
-    async fn handle_api(&mut self, msg: ApiMessage) {
+    async fn handle_api(&mut self, msg: ApiMessage) -> Option<irpc::channel::oneshot::Sender<()>> {
         match msg {
             ApiMessage::SendSegment(msg) => {
                 trace!("{:?}", msg.inner);
@@ -525,7 +535,11 @@ impl Actor {
                 let addr = self.router.endpoint().node_addr().initialized().await;
                 tx.send(addr).await.ok();
             }
+            ApiMessage::Shutdown(msg) => {
+                return Some(msg.tx);
+            }
         }
+        None
     }
 
     fn handle_send(
@@ -771,5 +785,25 @@ impl Node {
                 message: e.to_string(),
             })?;
         Ok(Arc::new(addr.node_id.into()))
+    }
+
+    /// Shutdown the node, including the streaming system and the metadata db.
+    pub async fn shutdown(&self) -> Result<(), ShutdownError> {
+        // shut down both the streams and the db concurrently, even if one fails
+        let (res1, res2) = tokio::join!(self.shutdown_streams(), self.client.shutdown());
+        res1?;
+        res2?;
+        Ok(())
+    }
+}
+
+impl Node {
+    async fn shutdown_streams(&self) -> std::result::Result<(), ShutdownError> {
+        self.api
+            .rpc(api::Shutdown)
+            .await
+            .map_err(|e| ShutdownError::Irpc {
+                message: e.to_string(),
+            })
     }
 }

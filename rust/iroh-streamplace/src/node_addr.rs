@@ -53,7 +53,6 @@ pub enum NodeAddrError {
     InvalidNetworkAddress { source: std::net::AddrParseError },
 }
 
-
 impl TryFrom<NodeAddr> for iroh::NodeAddr {
     type Error = NodeAddrError;
 

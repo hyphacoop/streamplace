@@ -12,9 +12,8 @@ use ref_cast::RefCast;
 use snafu::Snafu;
 use tokio::sync::Mutex;
 
-use crate::public_key::PublicKey;
-
 use super::db;
+use crate::public_key::PublicKey;
 
 // the files here are just copied from iroh-smol-kv-uniffi/src/code
 mod kv {
@@ -191,6 +190,16 @@ pub enum SubscribeNextError {
 pub enum WriteError {
     /// The provided private key is invalid (not 32 bytes).
     PrivateKeySize { size: u64 },
+}
+
+/// Error shutting down the database.
+///
+/// This can occur if the db is already shut down or if there is an internal error.
+#[derive(uniffi::Enum, Snafu, Debug)]
+#[snafu(module)]
+pub enum ShutdownError {
+    /// Error during the shutdown operation.
+    Irpc { message: String },
 }
 
 /// An entry returned from the database.
@@ -467,6 +476,13 @@ impl Db {
                 self.0.subscribe_with_opts(opts.into()).stream_raw(),
             )),
         })
+    }
+
+    /// Shutdown the database client and all subscriptions.
+    pub async fn shutdown(&self) -> Result<(), ShutdownError> {
+        Ok(self.0.shutdown().await.map_err(|e| ShutdownError::Irpc {
+            message: e.to_string(),
+        })?)
     }
 }
 

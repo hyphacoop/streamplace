@@ -2493,8 +2493,7 @@ dependencies = [
 [[package]]
 name = "iroh-smol-kv"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bf263d8aba7c7ec5baddcec76d9a6881b3f5470d293707b3881545f9548f31c"
+source = "git+https://github.com/n0-computer/iroh-smol-kv#4067d52fd16efc922352e072418bc2cec061b6c4"
 dependencies = [
  "bytes",
  "chrono",
