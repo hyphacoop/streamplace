@@ -10,17 +10,8 @@ import (
 	_ "stream.place/streamplace/pkg/streamplacedeps"
 )
 
-func isNilError(err error) bool {
-	if err == nil {
-		return true
-	}
-
-	v := reflect.ValueOf(err)
-	return v.Kind() == reflect.Ptr && v.IsNil()
-}
-
 func panicIfErr(err error) {
-	if !isNilError(err) {
+	if err != nil {
 		panic(err)
 	}
 }
