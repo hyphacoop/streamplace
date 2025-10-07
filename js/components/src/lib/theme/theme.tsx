@@ -348,16 +348,16 @@ function generateThemeColorsFromPalette(
     accent: isDark ? palette[800] : palette[100],
     accentForeground: isDark ? palette[50] : palette[900],
 
-    destructive: colors.destructive[800],
+    destructive: colors.destructive[700],
     destructiveForeground: colors.white,
 
-    success: colors.success[800],
+    success: colors.success[700],
     successForeground: colors.white,
 
-    warning: colors.warning[800],
+    warning: colors.warning[700],
     warningForeground: colors.white,
 
-    info: colors.blue[800],
+    info: colors.blue[700],
     infoForeground: isDark ? palette[50] : palette[900],
 
     border: isDark ? palette[500] + "30" : palette[200] + "30",

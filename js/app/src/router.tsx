@@ -331,7 +331,6 @@ export function StreamplaceDrawer() {
   const { isWeb, isElectron, isNative, isBrowser } = usePlatform();
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
-  const [poppedUp, setPoppedUp] = useState(false);
   const [livePopup, setLivePopup] = useState(false);
 
   const sidebar = useSidebarControl();
@@ -386,29 +385,32 @@ export function StreamplaceDrawer() {
 
   let foregroundColor = theme.theme.colors.text || "#fff";
 
-  const [isLiveDashboard, setIsLiveDashboard] = useState(true);
+  // are we in the live dashboard?
+  const [isLiveDashboard, setIsLiveDashboard] = useState(false);
   useEffect(() => {
-    if (!isLiveDashboard && userIsLive && !poppedUp) {
-      setPoppedUp(true);
-      setLivePopup(true);
+    console.log({
+      isLiveDashboard,
+      userIsLive,
+      livePopup,
+      navi: navigation.getState()?.routes,
+    });
+    if (!isLiveDashboard && userIsLive) {
+      toast.show("You are live!", "Do you want to go to your Live Dashboard?", {
+        actionLabel: "Go",
+        onAction: () => {
+          navigation.navigate("LiveDashboard");
+          setLivePopup(false);
+        },
+        onClose: () => setLivePopup(false),
+        variant: "error",
+        duration: 8,
+      });
     }
-  }, [userIsLive, poppedUp]);
+  }, [userIsLive]);
   const externalItems = useExternalItems();
 
   if (!hydrated) {
     return <View />;
-  }
-
-  if (isWeb && livePopup) {
-    toast.show("You are live!", "Do you want to go to the Live Dashboard?", {
-      actionLabel: "Go",
-      onAction: () => {
-        navigation.navigate("LiveDashboard");
-        setLivePopup(false);
-      },
-      onClose: () => setLivePopup(false),
-      variant: "error",
-    });
   }
 
   return (
