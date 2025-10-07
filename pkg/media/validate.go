@@ -142,16 +142,15 @@ func (mm *MediaManager) applyContentFilters(ctx context.Context, meta *SegmentMe
 
 	// Check distribution policy (if enabled)
 	if mm.cli.ContentFilters.DistributionPolicy.Enabled && meta.DistributionPolicy != nil {
-		if meta.DistributionPolicy.DurationSeconds != nil {
-			expiresAt := meta.StartTime.Time().Add(time.Duration(*meta.DistributionPolicy.DurationSeconds) * time.Second)
-			if time.Now().After(expiresAt) {
-				reason := fmt.Sprintf("distribution policy expired: segment started at %s, duration %ds", meta.StartTime, *meta.DistributionPolicy.DurationSeconds)
+		if meta.DistributionPolicy.ExpiresAt != nil {
+			if time.Now().After(*meta.DistributionPolicy.ExpiresAt) {
+				reason := fmt.Sprintf("distribution policy expired: segment expires at %s", meta.DistributionPolicy.ExpiresAt)
 				log.Log(ctx, "content filtered",
 					"reason", reason,
 					"filter_type", "distribution_policy",
 					"creator", meta.Creator,
 					"start_time", meta.StartTime,
-					"duration_seconds", *meta.DistributionPolicy.DurationSeconds)
+					"expires_at", *meta.DistributionPolicy.ExpiresAt)
 				return fmt.Errorf("content filtered: %s", reason)
 			}
 		}

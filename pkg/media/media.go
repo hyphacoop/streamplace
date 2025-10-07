@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pion/interceptor"
@@ -385,25 +386,23 @@ func extractDistributionPolicy(mani *c2patypes.Manifest, segmentStart aqtime.AQT
 		return nil
 	}
 
-	deleteAfter, ok := policyMap["deleteAfter"]
+	expiry, ok := policyMap["deleteAfter"]
 	if !ok {
 		return nil
 	}
 
-	// deleteAfter is an integer (duration in seconds)
-	var durationSecs int64
-	switch v := deleteAfter.(type) {
-	case float64:
-		durationSecs = int64(v)
-	case int64:
-		durationSecs = v
-	case int:
-		durationSecs = int64(v)
-	default:
+	// deleteAfter now contains a timestamp string (RFC3339/ISO 8601 format)
+	expiryStr, ok := expiry.(string)
+	if !ok {
+		return nil
+	}
+
+	expiryTime, err := time.Parse(time.RFC3339, expiryStr)
+	if err != nil {
 		return nil
 	}
 
 	return &model.DistributionPolicy{
-		DurationSeconds: &durationSecs,
+		ExpiresAt: &expiryTime,
 	}
 }

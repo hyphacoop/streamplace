@@ -79,7 +79,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 				log.Warn(ctx, "ManifestBuilder: failed to convert metadata, using defaults", "error", err, "did", streamerName)
 			} else {
 				log.Warn(ctx, "ManifestBuilder: enhancing manifest with metadata", "did", streamerName, "contentWarnings", streamplaceMetadata.ContentWarnings, "contentRights", streamplaceMetadata.ContentRights)
-				mani = mb.enhanceManifestWithMetadata(mani, streamplaceMetadata)
+				mani = mb.enhanceManifestWithMetadata(mani, streamplaceMetadata, start)
 			}
 		} else {
 			log.Warn(ctx, "ManifestBuilder: no metadata configuration found for streamer", "did", streamerName)
@@ -146,7 +146,7 @@ func getWarningCodeMap() map[string]string {
 	}
 }
 
-func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *streamplace.MetadataConfiguration) obj {
+func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *streamplace.MetadataConfiguration, startTimeMillis int64) obj {
 	if metadata.ContentRights != nil {
 		// TODO: We are currently validating the creator in the ValidateMP4 function to be the streamer DID
 		// if metadata.ContentRights.Creator != nil {
@@ -203,7 +203,21 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 	}
 
 	if metadata.DistributionPolicy != nil {
-		mani["assertions"].([]obj)[1]["data"].(obj)["distributionPolicy"] = metadata.DistributionPolicy
+		// Convert the distribution policy duration to an absolute expiry timestamp
+		// deleteAfter is in seconds, startTimeMillis is in milliseconds
+		if metadata.DistributionPolicy.DeleteAfter != nil {
+			// Calculate expiry: start time (seconds) + duration (seconds) = expiry timestamp (seconds)
+			startTimeSeconds := startTimeMillis / 1000
+			expiresAtSeconds := startTimeSeconds + *metadata.DistributionPolicy.DeleteAfter
+			
+			// Convert to ISO 8601 datetime string for C2PA manifest
+			// Note: In the manifest, we store this in "deleteAfter" field but with timestamp value instead of duration
+			deleteAfterTimestamp := aqtime.FromMillis(expiresAtSeconds * 1000).String()
+			
+			mani["assertions"].([]obj)[1]["data"].(obj)["distributionPolicy"] = obj{
+				"deleteAfter": deleteAfterTimestamp,
+			}
+		}
 	}
 
 	return mani

@@ -85,7 +85,7 @@ func (c ContentRights) Value() (driver.Value, error) {
 
 // DistributionPolicy represents distribution policy information
 type DistributionPolicy struct {
-	DurationSeconds *int64 `json:"durationSeconds,omitempty"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 }
 
 // Scan scan value into DistributionPolicy, implements sql.Scanner interface
@@ -175,7 +175,7 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 			License:         s.ContentRights.License,
 		}
 	}
-
+	
 	var contentWarnings *streamplace.MetadataContentWarnings
 	if len(s.ContentWarnings) > 0 {
 		contentWarnings = &streamplace.MetadataContentWarnings{
@@ -184,9 +184,13 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	}
 
 	var distributionPolicy *streamplace.MetadataDistributionPolicy
-	if s.DistributionPolicy != nil && s.DistributionPolicy.DurationSeconds != nil {
+	if s.DistributionPolicy != nil && s.DistributionPolicy.ExpiresAt != nil {
+		// Convert the absolute timestamp back to a duration (in seconds) from segment start
+		startTimeUnix := s.StartTime.Unix()
+		expiresAtUnix := s.DistributionPolicy.ExpiresAt.Unix()
+		deleteAfterSecs := expiresAtUnix - startTimeUnix
 		distributionPolicy = &streamplace.MetadataDistributionPolicy{
-			DeleteAfter: s.DistributionPolicy.DurationSeconds,
+			DeleteAfter: &deleteAfterSecs,
 		}
 	}
 
