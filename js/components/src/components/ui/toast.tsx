@@ -1,5 +1,5 @@
 import { Portal } from "@rn-primitives/portal";
-import { X } from "lucide-react-native";
+import { CheckCircle, Info, X, XCircle } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   Platform,
@@ -47,6 +47,9 @@ type ToastConfig = {
     action?: () => void;
   }) => React.ReactNode;
   position?: Position;
+  iconLeft?: React.ComponentType<any>;
+  iconRight?: React.ComponentType<any>;
+  onToastPress?: () => void;
 };
 
 type ToastState = {
@@ -64,6 +67,9 @@ type ToastState = {
     action?: () => void;
   }) => React.ReactNode;
   position: Position;
+  iconLeft?: React.ComponentType<any>;
+  iconRight?: React.ComponentType<any>;
+  onToastPress?: () => void;
 };
 
 class ToastManager {
@@ -87,6 +93,9 @@ class ToastManager {
       variant: config.variant ?? "default",
       render: config.render,
       position: config.position ?? "auto",
+      iconLeft: config.iconLeft,
+      iconRight: config.iconRight,
+      onToastPress: config.onToastPress,
     };
 
     this.toasts = [...this.toasts, toast];
@@ -162,6 +171,9 @@ export const toast = {
       onClose?: () => void;
       variant?: "default" | "success" | "error" | "info";
       position?: Position;
+      iconLeft?: React.ComponentType<any>;
+      iconRight?: React.ComponentType<any>;
+      onToastPress?: () => void;
     },
   ) => {
     toastManager.show({
@@ -192,6 +204,9 @@ export const toast = {
       onClose?: () => void;
       variant?: "default" | "success" | "error" | "info";
       position?: Position;
+      iconLeft?: React.ComponentType<any>;
+      iconRight?: React.ComponentType<any>;
+      onToastPress?: () => void;
     },
   ) => {
     toastManager.show({
@@ -438,6 +453,9 @@ export function Toast({
   render,
   position = "auto",
   id,
+  iconLeft: IconLeft,
+  iconRight: IconRight,
+  onToastPress,
 }: ToastProps) {
   const [isHovered, setIsHovered] = useState(false);
   const progress = useSharedValue(1);
@@ -455,6 +473,23 @@ export function Toast({
 
   const RADIUS = 12;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+  const dismissTranslateY = useSharedValue(0);
+  const dismissTranslateX = useSharedValue(0);
+
+  // Auto-select iconLeft based on variant if not provided
+  const defaultIconLeft =
+    !IconLeft && !onAction
+      ? variant === "success"
+        ? CheckCircle
+        : variant === "error"
+          ? XCircle
+          : variant === "info"
+            ? Info
+            : null
+      : null;
+  const FinalIconLeft = IconLeft || defaultIconLeft;
+  const FinalIconRight = IconRight;
 
   const animatedCircleProps = useAnimatedProps(() => {
     return {
@@ -556,12 +591,85 @@ export function Toast({
     };
   }, [open, isLatest, isHovered, duration]);
 
+  const dismissGestureVertical = Gesture.Pan()
+    .enabled(isLatest && !isHovered)
+    .activeOffsetY(isTop ? [-10, 999999] : [-999999, 10])
+    .onUpdate((event) => {
+      const direction = isTop ? -1 : 1;
+      const movement = event.translationY * direction;
+      if (movement > 0) {
+        dismissTranslateY.value = event.translationY;
+        dismissTranslateX.value = 0;
+      }
+    })
+    .onEnd((event) => {
+      const direction = isTop ? -1 : 1;
+      const movement = event.translationY * direction;
+      const velocity = event.velocityY * direction;
+
+      if (movement > 50 || velocity > 500) {
+        // Dismiss - slide out in expansion direction
+        dismissTranslateY.value = withTiming(
+          isTop ? -200 : 200,
+          { duration: 250 },
+          (finished) => {
+            if (finished) {
+              runOnJS(onOpenChange)(false);
+            }
+          },
+        );
+        opacity.value = withTiming(0, { duration: 250 });
+      } else {
+        // Spring back
+        dismissTranslateY.value = withTiming(0, { duration: 200 });
+      }
+    });
+
+  const dismissGestureHorizontal = Gesture.Pan()
+    .enabled(isLatest || isHovered)
+    .activeOffsetX([-10, 10])
+    .onUpdate((event) => {
+      if (event.translationX < 0) {
+        dismissTranslateX.value = event.translationX;
+        dismissTranslateY.value = 0;
+      }
+    })
+    .onEnd((event) => {
+      // Check for horizontal swipe left
+      if (event.translationX < -100 || event.velocityX < -500) {
+        dismissTranslateX.value = withTiming(
+          -400,
+          { duration: 250 },
+          (finished) => {
+            if (finished) {
+              runOnJS(onOpenChange)(false);
+            }
+          },
+        );
+        opacity.value = withTiming(0, { duration: 250 });
+      } else {
+        // Spring back
+        dismissTranslateX.value = withTiming(0, { duration: 200 });
+      }
+    });
+
+  const dismissGesture = Gesture.Race(
+    dismissGestureVertical,
+    dismissGestureHorizontal,
+  );
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
       opacity: opacity.value,
       transform: [
         // +22 is to get it just below the header
-        { translateY: translateY.value + (isTop ? top / 2 : -bottom) },
+        {
+          translateY:
+            translateY.value +
+            dismissTranslateY.value +
+            (isTop ? top / 2 : -bottom),
+        },
+        { translateX: dismissTranslateX.value },
         { scale: scale.value },
       ],
       zIndex: 1000 - index,
@@ -608,127 +716,222 @@ export function Toast({
         animatedStyle,
       ]}
     >
-      <View
-        style={[
-          styles.toast,
-          {
-            borderRadius: theme.borderRadius.xl,
-            flexDirection: "column",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: theme.spacing[4],
-            width: isDesktop ? "100%" : "95%",
-          },
-          variantStyles[variant],
-        ]}
-      >
-        {render ? (
-          render({ close: () => onOpenChange(false), action: onAction })
-        ) : (
-          <>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                width: "100%",
-                gap: theme.spacing[4],
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Text size="lg">{title}</Text>
-                {description ? <Text>{description}</Text> : null}
-              </View>
-              {isLatest && duration > 0 ? (
-                <Pressable
-                  onPress={() => onOpenChange(false)}
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Svg
-                    width={RADIUS * 2}
-                    height={RADIUS * 2}
-                    viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
-                  >
-                    <AnimatedCircle
-                      stroke={theme.colors.border}
-                      fill="transparent"
-                      strokeWidth="2"
-                      r={RADIUS}
-                      cx={RADIUS + 1}
-                      cy={RADIUS + 1}
-                    />
-                    <AnimatedCircle
-                      animatedProps={animatedCircleProps}
-                      stroke={theme.colors.primary}
-                      fill="transparent"
-                      strokeWidth="2"
-                      strokeDasharray={CIRCUMFERENCE}
-                      r={RADIUS}
-                      cx={RADIUS + 1}
-                      cy={RADIUS + 1}
-                      rotation="-90"
-                      originX={RADIUS + 1}
-                      originY={RADIUS + 1}
-                      strokeLinecap="round"
-                    />
-                  </Svg>
-                  {!onAction && (
-                    <View style={{ position: "absolute" }}>
-                      <X color={theme.colors.foreground} size={12} />
-                    </View>
-                  )}
-                </Pressable>
-              ) : (
-                <Pressable
-                  onPress={() => onOpenChange(false)}
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Svg width="24" height="24" viewBox="0 0 24 24">
-                    <AnimatedCircle
-                      stroke={theme.colors.border}
-                      fill="transparent"
-                      strokeWidth="2"
-                      r={RADIUS}
-                      cx="12"
-                      cy="12"
-                    />
-                  </Svg>
-                  {!onAction && (
-                    <View style={{ position: "absolute" }}>
-                      <X color="white" size={12} />
-                    </View>
-                  )}
-                </Pressable>
-              )}
-            </View>
-            {onAction && (
+      <GestureDetector gesture={dismissGesture}>
+        <Pressable
+          onPress={onToastPress}
+          disabled={!onToastPress}
+          style={[
+            styles.toast,
+            {
+              borderRadius: theme.borderRadius.xl,
+              flexDirection: "column",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: theme.spacing[4],
+              width: isDesktop ? "100%" : "95%",
+            },
+            variantStyles[variant],
+          ]}
+        >
+          {render ? (
+            render({ close: () => onOpenChange(false), action: onAction })
+          ) : (
+            <>
               <View
                 style={{
-                  gap: theme.spacing[1],
                   flexDirection: "row",
-                  justifyContent: "flex-end",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
                   width: "100%",
+                  gap: theme.spacing[4],
                 }}
               >
-                <Button variant={buttonTypeMap[variant]} onPress={onAction}>
-                  <Text style={{ color: theme.colors.foreground }}>
-                    {actionLabel}
-                  </Text>
-                </Button>
-                <Button variant="secondary" onPress={() => onOpenChange(false)}>
-                  <Text style={{ color: theme.colors.foreground }}>Close</Text>
-                </Button>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flex: 1,
+                    gap: theme.spacing[3],
+                  }}
+                >
+                  {FinalIconLeft && (
+                    <View style={{ paddingTop: 2 }}>
+                      <FinalIconLeft color={theme.colors.foreground} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text size="lg">{title}</Text>
+                    {description ? <Text>{description}</Text> : null}
+                  </View>
+                </View>
+                {FinalIconRight && !onAction ? (
+                  <View
+                    style={{
+                      gap: theme.spacing[2],
+                      height: "100%",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Pressable onPress={onToastPress}>
+                      <FinalIconRight color={theme.colors.foreground} />
+                    </Pressable>
+                    {isLatest && duration > 0 ? (
+                      <Pressable
+                        onPress={() => onOpenChange(false)}
+                        style={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Svg
+                          width={RADIUS * 2}
+                          height={RADIUS * 2}
+                          viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
+                        >
+                          <AnimatedCircle
+                            stroke={theme.colors.border}
+                            fill="transparent"
+                            strokeWidth="2"
+                            r={RADIUS}
+                            cx={RADIUS + 1}
+                            cy={RADIUS + 1}
+                          />
+                          <AnimatedCircle
+                            animatedProps={animatedCircleProps}
+                            stroke={theme.colors.primary}
+                            fill="transparent"
+                            strokeWidth="2"
+                            strokeDasharray={CIRCUMFERENCE}
+                            r={RADIUS}
+                            cx={RADIUS + 1}
+                            cy={RADIUS + 1}
+                            rotation="-90"
+                            originX={RADIUS + 1}
+                            originY={RADIUS + 1}
+                            strokeLinecap="round"
+                          />
+                        </Svg>
+                        <View style={{ position: "absolute" }}>
+                          <X color={theme.colors.foreground} size={12} />
+                        </View>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        onPress={() => onOpenChange(false)}
+                        style={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Svg width="24" height="24" viewBox="0 0 24 24">
+                          <AnimatedCircle
+                            stroke={theme.colors.border}
+                            fill="transparent"
+                            strokeWidth="2"
+                            r={RADIUS}
+                            cx="12"
+                            cy="12"
+                          />
+                        </Svg>
+                        <View style={{ position: "absolute" }}>
+                          <X color="white" size={12} />
+                        </View>
+                      </Pressable>
+                    )}
+                  </View>
+                ) : !onAction ? (
+                  isLatest && duration > 0 ? (
+                    <Pressable
+                      onPress={() => onOpenChange(false)}
+                      style={{
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Svg
+                        width={RADIUS * 2}
+                        height={RADIUS * 2}
+                        viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
+                      >
+                        <AnimatedCircle
+                          stroke={theme.colors.border}
+                          fill="transparent"
+                          strokeWidth="2"
+                          r={RADIUS}
+                          cx={RADIUS + 1}
+                          cy={RADIUS + 1}
+                        />
+                        <AnimatedCircle
+                          animatedProps={animatedCircleProps}
+                          stroke={theme.colors.primary}
+                          fill="transparent"
+                          strokeWidth="2"
+                          strokeDasharray={CIRCUMFERENCE}
+                          r={RADIUS}
+                          cx={RADIUS + 1}
+                          cy={RADIUS + 1}
+                          rotation="-90"
+                          originX={RADIUS + 1}
+                          originY={RADIUS + 1}
+                          strokeLinecap="round"
+                        />
+                      </Svg>
+                      <View style={{ position: "absolute" }}>
+                        <X color={theme.colors.foreground} size={12} />
+                      </View>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={() => onOpenChange(false)}
+                      style={{
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Svg width="24" height="24" viewBox="0 0 24 24">
+                        <AnimatedCircle
+                          stroke={theme.colors.border}
+                          fill="transparent"
+                          strokeWidth="2"
+                          r={RADIUS}
+                          cx="12"
+                          cy="12"
+                        />
+                      </Svg>
+                      <View style={{ position: "absolute" }}>
+                        <X color="white" size={12} />
+                      </View>
+                    </Pressable>
+                  )
+                ) : null}
               </View>
-            )}
-          </>
-        )}
-      </View>
+              {onAction && (
+                <View
+                  style={{
+                    gap: theme.spacing[1],
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    width: "100%",
+                  }}
+                >
+                  <Button variant={buttonTypeMap[variant]} onPress={onAction}>
+                    <Text style={{ color: theme.colors.foreground }}>
+                      {actionLabel}
+                    </Text>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onPress={() => onOpenChange(false)}
+                  >
+                    <Text style={{ color: theme.colors.foreground }}>
+                      Close
+                    </Text>
+                  </Button>
+                </View>
+              )}
+            </>
+          )}
+        </Pressable>
+      </GestureDetector>
     </Animated.View>
   );
 }
