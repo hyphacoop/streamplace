@@ -439,6 +439,68 @@ type ToastProps = PartialBy<Omit<ToastState, "id" | "open">, "position"> & {
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+function CloseButton({
+  onPress,
+  isLatest,
+  duration,
+  animatedCircleProps,
+  theme,
+  RADIUS,
+  CIRCUMFERENCE,
+}: {
+  onPress: () => void;
+  isLatest: boolean;
+  duration: number;
+  animatedCircleProps: any;
+  theme: any;
+  RADIUS: number;
+  CIRCUMFERENCE: number;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Svg
+        width={RADIUS * 2}
+        height={RADIUS * 2}
+        viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
+      >
+        <AnimatedCircle
+          stroke={theme.colors.border}
+          fill="transparent"
+          strokeWidth="2"
+          r={RADIUS}
+          cx={RADIUS + 1}
+          cy={RADIUS + 1}
+        />
+        {isLatest && duration > 0 && (
+          <AnimatedCircle
+            animatedProps={animatedCircleProps}
+            stroke={theme.colors.primary}
+            fill="transparent"
+            strokeWidth="2"
+            strokeDasharray={CIRCUMFERENCE}
+            r={RADIUS}
+            cx={RADIUS + 1}
+            cy={RADIUS + 1}
+            rotation="-90"
+            originX={RADIUS + 1}
+            originY={RADIUS + 1}
+            strokeLinecap="round"
+          />
+        )}
+      </Svg>
+      <View style={{ position: "absolute" }}>
+        <X color={theme.colors.foreground} size={12} />
+      </View>
+    </Pressable>
+  );
+}
+
 export function Toast({
   open = false,
   onOpenChange = () => {},
@@ -774,134 +836,26 @@ export function Toast({
                     <Pressable onPress={onToastPress}>
                       <FinalIconRight color={theme.colors.foreground} />
                     </Pressable>
-                    {isLatest && duration > 0 ? (
-                      <Pressable
-                        onPress={() => onOpenChange(false)}
-                        style={{
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Svg
-                          width={RADIUS * 2}
-                          height={RADIUS * 2}
-                          viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
-                        >
-                          <AnimatedCircle
-                            stroke={theme.colors.border}
-                            fill="transparent"
-                            strokeWidth="2"
-                            r={RADIUS}
-                            cx={RADIUS + 1}
-                            cy={RADIUS + 1}
-                          />
-                          <AnimatedCircle
-                            animatedProps={animatedCircleProps}
-                            stroke={theme.colors.primary}
-                            fill="transparent"
-                            strokeWidth="2"
-                            strokeDasharray={CIRCUMFERENCE}
-                            r={RADIUS}
-                            cx={RADIUS + 1}
-                            cy={RADIUS + 1}
-                            rotation="-90"
-                            originX={RADIUS + 1}
-                            originY={RADIUS + 1}
-                            strokeLinecap="round"
-                          />
-                        </Svg>
-                        <View style={{ position: "absolute" }}>
-                          <X color={theme.colors.foreground} size={12} />
-                        </View>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        onPress={() => onOpenChange(false)}
-                        style={{
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Svg width="24" height="24" viewBox="0 0 24 24">
-                          <AnimatedCircle
-                            stroke={theme.colors.border}
-                            fill="transparent"
-                            strokeWidth="2"
-                            r={RADIUS}
-                            cx="12"
-                            cy="12"
-                          />
-                        </Svg>
-                        <View style={{ position: "absolute" }}>
-                          <X color="white" size={12} />
-                        </View>
-                      </Pressable>
-                    )}
+                    <CloseButton
+                      onPress={() => onOpenChange(false)}
+                      isLatest={isLatest}
+                      duration={duration}
+                      animatedCircleProps={animatedCircleProps}
+                      theme={theme}
+                      RADIUS={RADIUS}
+                      CIRCUMFERENCE={CIRCUMFERENCE}
+                    />
                   </View>
                 ) : !onAction ? (
-                  isLatest && duration > 0 ? (
-                    <Pressable
-                      onPress={() => onOpenChange(false)}
-                      style={{
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Svg
-                        width={RADIUS * 2}
-                        height={RADIUS * 2}
-                        viewBox={`0 0 ${RADIUS * 2 + 2} ${RADIUS * 2 + 2}`}
-                      >
-                        <AnimatedCircle
-                          stroke={theme.colors.border}
-                          fill="transparent"
-                          strokeWidth="2"
-                          r={RADIUS}
-                          cx={RADIUS + 1}
-                          cy={RADIUS + 1}
-                        />
-                        <AnimatedCircle
-                          animatedProps={animatedCircleProps}
-                          stroke={theme.colors.primary}
-                          fill="transparent"
-                          strokeWidth="2"
-                          strokeDasharray={CIRCUMFERENCE}
-                          r={RADIUS}
-                          cx={RADIUS + 1}
-                          cy={RADIUS + 1}
-                          rotation="-90"
-                          originX={RADIUS + 1}
-                          originY={RADIUS + 1}
-                          strokeLinecap="round"
-                        />
-                      </Svg>
-                      <View style={{ position: "absolute" }}>
-                        <X color={theme.colors.foreground} size={12} />
-                      </View>
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      onPress={() => onOpenChange(false)}
-                      style={{
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Svg width="24" height="24" viewBox="0 0 24 24">
-                        <AnimatedCircle
-                          stroke={theme.colors.border}
-                          fill="transparent"
-                          strokeWidth="2"
-                          r={RADIUS}
-                          cx="12"
-                          cy="12"
-                        />
-                      </Svg>
-                      <View style={{ position: "absolute" }}>
-                        <X color="white" size={12} />
-                      </View>
-                    </Pressable>
-                  )
+                  <CloseButton
+                    onPress={() => onOpenChange(false)}
+                    isLatest={isLatest}
+                    duration={duration}
+                    animatedCircleProps={animatedCircleProps}
+                    theme={theme}
+                    RADIUS={RADIUS}
+                    CIRCUMFERENCE={CIRCUMFERENCE}
+                  />
                 ) : null}
               </View>
               {onAction && (
