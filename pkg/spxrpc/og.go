@@ -332,7 +332,7 @@ func (s *Server) generateOGImage(ctx context.Context, username string) ([]byte, 
 	canvasCtx.Fill()
 
 	// Create neutral-800 rounded card
-	canvasCtx.SetFillColor(cardColor)
+	canvasCtx.SetFillColor(blendWithBackground(borderColor, cardColor, 0.04))
 	canvasCtx.DrawPath(cardPadding, cardPadding, canvas.RoundedRectangle(cardWidth, cardHeight, cardRadius))
 	canvasCtx.Fill()
 
@@ -441,12 +441,12 @@ func (s *Server) generateOGImage(ctx context.Context, username string) ([]byte, 
 	canvasCtx.DrawText(textStartX, joinY-(joinFontSize*0.5), joinText)
 
 	// Add "streaming on Stream.place" subtitle
-	onFace := fontAHN.Face(subtitleFontSize, subtitleColor, canvas.FontRegular, canvas.FontNormal)
+	onFace := fontAHN.Face(subtitleFontSize, blendWithBackground(borderColor, subtitleColor, 0.2), canvas.FontRegular, canvas.FontNormal)
 	onText := canvas.NewTextBox(onFace, "streaming on Stream.place", 250, 30, canvas.Left, canvas.Center, &canvas.TextOptions{})
 	canvasCtx.DrawText(textStartX, subtitleY, onText)
 
 	// Add user description or promotional text
-	descFace := fontAHN.Face(descFontSize, descColor, canvas.FontRegular, canvas.FontNormal)
+	descFace := fontAHN.Face(descFontSize, blendWithBackground(borderColor, descColor, 0.2), canvas.FontRegular, canvas.FontNormal)
 	descText := canvas.NewTextBox(descFace, description, 230, 30, canvas.Left, canvas.Center, &canvas.TextOptions{})
 	canvasCtx.DrawText(textStartX, descY, descText)
 
