@@ -58,13 +58,13 @@ const (
 
 	// Font sizes
 	joinFontSize        = 56.0
-	minJoinFontSize     = 45.0
+	minJoinFontSize     = 48.0
 	subtitleFontSize    = 48.0
 	descFontSize        = 28.0
 	placeholderFontSize = 18.0
 
 	// Available text width
-	textAvailableWidth = 255.0
+	textAvailableWidth = 245.0
 
 	// Canvas DPI
 	canvasDPMM = 3.0
