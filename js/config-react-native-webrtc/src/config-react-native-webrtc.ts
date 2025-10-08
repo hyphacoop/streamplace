@@ -43,6 +43,8 @@ class MainApplication : Application(), ReactApplication {`,
       .build()
     options.audioDeviceModule = JavaAudioDeviceModule.builder(this)
       .setAudioAttributes(audioAttributes)
+      .setUseStereoInput(true)
+      .setUseStereoOutput(true)
       .createAudioDeviceModule()
 `,
   },
@@ -141,6 +143,8 @@ const iosDelegateReplacements = [
     let options = WebRTCModuleOptions.sharedInstance()
     options.loggingSeverity = .warning
     options.audioDevice = device
+    // Enable stereo audio
+    options.enableStereoOutput = true
     // End WebRTC Configuration
     
     let delegate = ReactNativeDelegate()
