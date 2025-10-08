@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use n0_future::{BufferedStreamExt, StreamExt, stream};
 use testresult::TestResult;
 
-use super::{streams::HandlerMode, *};
+use super::*;
 
 struct TestNode {
     node: Arc<Node>,
@@ -144,7 +144,7 @@ async fn two_nodes_send_receive() -> TestResult<()> {
     let (tx, mut rx) = tokio::sync::mpsc::channel(32);
     let handler = Arc::new(TestHandler::new((), tx));
     let sender = TestNode::new(HandlerMode::Sender).await?;
-    let receiver = TestNode::new(HandlerMode::receiver(handler)).await?;
+    let receiver = TestNode::new(HandlerMode::Receiver(handler)).await?;
     // join the sender to the receiver. This will also configure the receiver endpoint to be able to dial the sender.
     receiver.join_peers(vec![sender.ticket.clone()]).await?;
     let stream = "teststream".to_string();
@@ -165,7 +165,7 @@ async fn three_nodes_send_forward_receive() -> TestResult<()> {
     let handler = Arc::new(TestHandler::new((), tx));
     let sender = TestNode::new(HandlerMode::Sender).await?;
     let forwarder = TestNode::new(HandlerMode::Forwarder).await?;
-    let receiver = TestNode::new(HandlerMode::receiver(handler)).await?;
+    let receiver = TestNode::new(HandlerMode::Receiver(handler)).await?;
     // join everyone to everyone, so the receiver can reach the sender via the forwarder.
     let tickets = vec![
         sender.ticket.clone(),
@@ -196,7 +196,7 @@ async fn meta_three_nodes_send_forward_receive() -> TestResult<()> {
     let handler = Arc::new(TestHandler::new((), tx));
     let sender = TestNode::new(HandlerMode::Sender).await?;
     let forwarder = TestNode::new(HandlerMode::Forwarder).await?;
-    let receiver = TestNode::new(HandlerMode::receiver(handler)).await?;
+    let receiver = TestNode::new(HandlerMode::Receiver(handler)).await?;
     // join everyone to everyone, so the receiver can reach the sender via the forwarder.
     let tickets = vec![
         sender.ticket.clone(),
@@ -241,7 +241,7 @@ async fn broadcast(
         } else if forwarders.contains(&i) {
             HandlerMode::Forwarder
         } else {
-            HandlerMode::receiver(Arc::new(TestHandler::new(i, tx.clone())))
+            HandlerMode::Receiver(Arc::new(TestHandler::new(i, tx.clone())))
         }
     };
     let nodes = test_nodes(ntotal, make_handler, true).await?;

@@ -12,7 +12,6 @@ use ref_cast::RefCast;
 use snafu::Snafu;
 use tokio::sync::Mutex;
 
-use super::db;
 use crate::public_key::PublicKey;
 
 // the files here are just copied from iroh-smol-kv-uniffi/src/code
@@ -22,8 +21,8 @@ mod kv {
     mod subscribe_mode;
     pub use subscribe_mode::SubscribeMode;
 }
-use db::util::format_bytes;
 pub use kv::{SubscribeMode, TimeBound};
+use util::format_bytes;
 
 /// Error creating a new database node.
 #[derive(Debug, Snafu, uniffi::Error)]
@@ -542,7 +541,7 @@ mod util {
 
 #[cfg(test)]
 mod tests {
-    use super::db::util;
+    use super::util;
 
     #[test]
     fn escape_unescape() {
