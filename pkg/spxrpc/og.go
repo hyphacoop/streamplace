@@ -262,6 +262,30 @@ func (s *Server) generateOGImage(ctx context.Context, username string) ([]byte, 
 		log.Warn(ctx, "received nil profile data, using fallbacks", "username", username)
 	}
 
+	// Fetch user's chat profile color
+	var userColor = joinTextColor      // default
+	var borderColor = imageBorderColor // default
+	if userDID != "" {
+		chatProfile, err := s.ATSync.Model.GetChatProfile(ctx, userDID)
+		if err != nil {
+			log.Warn(ctx, "failed to fetch chat profile", "did", userDID, "error", err)
+		} else if chatProfile != nil {
+			streamplaceChatProfile, err := chatProfile.ToStreamplaceChatProfile()
+			if err != nil {
+				log.Warn(ctx, "failed to decode chat profile", "did", userDID, "error", err)
+			} else if streamplaceChatProfile != nil && streamplaceChatProfile.Color != nil {
+				userColor = color.RGBA{
+					R: uint8(streamplaceChatProfile.Color.Red),
+					G: uint8(streamplaceChatProfile.Color.Green),
+					B: uint8(streamplaceChatProfile.Color.Blue),
+					A: 255,
+				}
+				borderColor = userColor
+				log.Debug(ctx, "using user's custom color", "did", userDID, "color", userColor)
+			}
+		}
+	}
+
 	// Create new canvas of dimension ogWidth x ogHeight mm for profile card
 	c := canvas.New(ogWidth, ogHeight)
 
