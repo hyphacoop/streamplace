@@ -4,7 +4,6 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import {
@@ -35,7 +34,7 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
 }) => {
   const [isLocked, setIsLocked] = useState(false);
   const [canRotate, setCanRotate] = useState(isRotationAvailable);
-  const currentOrientation = useRef<Orientation>(
+  const [currentOrientation, setCurrentOrientation] = useState<Orientation>(
     ScreenOrientation?.Orientation.PORTRAIT_UP ?? 1,
   );
 
@@ -69,9 +68,8 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
       );
       setIsLocked(true);
 
-      // set current orientation to landscape left for consistency
-      currentOrientation.current =
-        ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
+      // set current orientation to landscape right
+      setCurrentOrientation(ScreenOrientation.Orientation.LANDSCAPE_RIGHT);
 
       if (__DEV__) {
         console.log("📲 Manual landscape");
@@ -85,12 +83,13 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
     if (!enabled || !canRotate || !ScreenOrientation) return;
 
     try {
+      await ScreenOrientation.unlockAsync();
       await ScreenOrientation.lockAsync(
         ScreenOrientation.OrientationLock.PORTRAIT_UP,
       );
       setIsLocked(true);
 
-      currentOrientation.current = ScreenOrientation.Orientation.PORTRAIT_UP;
+      setCurrentOrientation(ScreenOrientation.Orientation.PORTRAIT_UP);
 
       if (__DEV__) {
         console.log("📲 Manual portrait");
@@ -104,14 +103,12 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
     if (!ScreenOrientation) return;
 
     const isLandscape =
-      currentOrientation.current ===
-        ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
-      currentOrientation.current ===
-        ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
+      currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+      currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
     if (__DEV__) {
       console.log(
-        `🔄 Toggle: current=${currentOrientation.current}, isLandscape=${isLandscape}`,
+        `🔄 Toggle: current=${currentOrientation}, isLandscape=${isLandscape}`,
       );
     }
 
@@ -130,7 +127,7 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
       if (!ScreenOrientation) return;
       try {
         const orient = await ScreenOrientation.getOrientationAsync();
-        currentOrientation.current = orient;
+        setCurrentOrientation(orient);
 
         if (__DEV__) {
           console.log(`📲 Orientation on load: ${orient}`);
@@ -147,17 +144,12 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
         const newOrientation = event.orientationInfo.orientation;
-        currentOrientation.current = newOrientation;
+        setCurrentOrientation(newOrientation);
 
         if (__DEV__) {
           console.log(
             `🔄 Orientation: ${newOrientation} (locked: ${isLocked})`,
           );
-        }
-
-        // Only allow natural rotation when unlocked
-        if (!isLocked) {
-          // Natural rotation is happening, let it continue
         }
       },
     );
@@ -169,11 +161,11 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
         ScreenOrientation.unlockAsync().catch(() => {});
       }
     };
-  }, [enabled, isLocked]);
+  }, [enabled]);
 
   const contextValue = useMemo(
     () => ({
-      currentOrientation: currentOrientation.current,
+      currentOrientation,
       isLocked,
       isActive: enabled,
       rotateToLandscape,
@@ -181,7 +173,15 @@ export const RotationProvider: React.FC<RotationProviderProps> = ({
       toggleRotation,
       canRotate,
     }),
-    [isLocked, enabled, canRotate],
+    [
+      currentOrientation,
+      isLocked,
+      enabled,
+      canRotate,
+      rotateToLandscape,
+      rotateToPortrait,
+      toggleRotation,
+    ],
   );
 
   return (
