@@ -128,25 +128,23 @@ const iosDelegateReplacements = [
     to: () => `
     // WebRTC Configuration
     let config = RTCAudioSessionConfiguration.webRTC()
-    
+
     let session = AVAudioSession.sharedInstance()
     do {
-        try session.setCategory(.playAndRecord, 
+        try session.setCategory(.playAndRecord,
                               options: [.defaultToSpeaker, .allowBluetooth])
         try session.setActive(true)
     } catch {
         print("Failed to configure audio session: \(error)")
     }
-    
+
     let device = AUAudioUnitRTCAudioDevice()
 
     let options = WebRTCModuleOptions.sharedInstance()
     options.loggingSeverity = .warning
     options.audioDevice = device
-    // Enable stereo audio
-    options.enableStereoOutput = true
     // End WebRTC Configuration
-    
+
     let delegate = ReactNativeDelegate()
     `,
   },
