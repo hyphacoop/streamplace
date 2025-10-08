@@ -10,7 +10,7 @@ use iroh_base::ticket::NodeTicket;
 use iroh_gossip::{net::Gossip, proto::TopicId};
 use irpc::{WithChannels, rpc::RemoteService};
 use irpc_iroh::{IrohProtocol, IrohRemoteConnection};
-use n0_future::{TryFutureExt, future::Boxed};
+use n0_future::future::Boxed;
 
 mod rpc {
     //! Protocol API
@@ -133,11 +133,10 @@ use api::{Message as ApiMessage, Protocol as ApiProtocol};
 use n0_future::{FuturesUnordered, StreamExt};
 use rpc::{Message as RpcMessage, Protocol as RpcProtocol};
 use snafu::Snafu;
-use tokio::sync::oneshot;
 use tracing::{Instrument, debug, error, trace, trace_span, warn};
 
 use super::{Config, CreateError, JoinPeersError, PutError, db, streams::rpc::RecvSegment};
-use crate::node::ShutdownError;
+use crate::ShutdownError;
 
 pub(crate) enum HandlerMode {
     Sender,
