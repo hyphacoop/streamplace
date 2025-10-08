@@ -34,17 +34,17 @@ import (
 const (
 	// Canvas dimensions
 	ogWidth  = 400.0
-	ogHeight = 200.0
+	ogHeight = 210.0
 
 	// Card dimensions and positioning
 	cardPadding = 10.0
 	cardWidth   = 380.0
-	cardHeight  = 180.0
+	cardHeight  = 190.0
 	cardRadius  = 12.0
 
 	// Image dimensions and positioning
 	imageX      = 25.0
-	imageY      = 55.0
+	imageY      = 60.0
 	imageWidth  = 400
 	imageHeight = 480
 	imageRadius = 180.0
@@ -52,9 +52,9 @@ const (
 
 	// Text positioning
 	textStartX = 135.0
-	joinY      = 142.0
-	subtitleY  = 115.0
-	descY      = 90.0
+	joinY      = 147.0
+	subtitleY  = 120.0
+	descY      = 95.0
 
 	// Font sizes
 	joinFontSize        = 56.0
@@ -67,7 +67,7 @@ const (
 	textAvailableWidth = 255.0
 
 	// Canvas DPI
-	canvasDPMM = 2.0
+	canvasDPMM = 3.0
 )
 
 var (
@@ -312,12 +312,12 @@ func (s *Server) generateOGImage(ctx context.Context, username string) ([]byte, 
 	if img == nil {
 		// Fallback to placeholder if download or loading fails - positioned within card
 		canvasCtx.SetFillColor(placeholderColor)
-		canvasCtx.DrawPath(imageX, 50, canvas.RoundedRectangle(100, 120, 8))
+		canvasCtx.DrawPath(imageX, 55, canvas.RoundedRectangle(100, 120, 8))
 		canvasCtx.Fill()
 
 		imageFace := fontAHN.Face(placeholderFontSize, placeholderTextColor, canvas.FontBold, canvas.FontNormal)
 		imageText := canvas.NewTextBox(imageFace, "Streamplace", 100, 30, canvas.Center, canvas.Center, &canvas.TextOptions{})
-		canvasCtx.DrawText(imageX, 100, imageText)
+		canvasCtx.DrawText(imageX, 105, imageText)
 	} else {
 		// High-quality avatar processing with circular masking
 		avatarDisplaySize := imageRadius * 2 / imageDPMM
