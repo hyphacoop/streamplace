@@ -71,8 +71,8 @@ func main() {
 	fmt.Printf("Iter items: %+v\n", items3)
 
 	go func() {
-    time.Sleep(5 * time.Second)
-    err := node.Shutdown()
+		time.Sleep(5 * time.Second)
+		err := node.Shutdown()
 		panicIfErr(err)
 	}()
 
