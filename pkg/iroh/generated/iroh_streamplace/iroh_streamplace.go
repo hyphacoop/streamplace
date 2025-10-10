@@ -399,6 +399,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_db_shutdown()
+		})
+		if checksum != 9825 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_db_shutdown: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_method_db_subscribe()
 		})
 		if checksum != 415 {
@@ -548,6 +557,15 @@ func uniffiCheckChecksums() {
 		if checksum != 18989 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_node_send_segment: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_node_shutdown()
+		})
+		if checksum != 18129 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_node_shutdown: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -1172,6 +1190,8 @@ func (c FfiConverterDataHandler) register() {
 // Iroh-streamplace specific metadata database.
 type DbInterface interface {
 	IterWithOpts(filter *Filter) ([]Entry, error)
+	// Shutdown the database client and all subscriptions.
+	Shutdown() error
 	Subscribe(filter *Filter) *SubscribeResponse
 	// Subscribe with options.
 	SubscribeWithOpts(opts SubscribeOpts) *SubscribeResponse
@@ -1216,6 +1236,38 @@ func (_self *Db) IterWithOpts(filter *Filter) ([]Entry, error) {
 	}
 
 	return res, err
+}
+
+// Shutdown the database client and all subscriptions.
+func (_self *Db) Shutdown() error {
+	_pointer := _self.ffiObject.incrementPointer("*Db")
+	defer _self.ffiObject.decrementPointer()
+	_, err := uniffiRustCallAsync[ShutdownError](
+		FfiConverterShutdownErrorINSTANCE,
+		// completeFn
+		func(handle C.uint64_t, status *C.RustCallStatus) struct{} {
+			C.ffi_iroh_streamplace_rust_future_complete_void(handle, status)
+			return struct{}{}
+		},
+		// liftFn
+		func(_ struct{}) struct{} { return struct{}{} },
+		C.uniffi_iroh_streamplace_fn_method_db_shutdown(
+			_pointer),
+		// pollFn
+		func(handle C.uint64_t, continuation C.UniffiRustFutureContinuationCallback, data C.uint64_t) {
+			C.ffi_iroh_streamplace_rust_future_poll_void(handle, continuation, data)
+		},
+		// freeFn
+		func(handle C.uint64_t) {
+			C.ffi_iroh_streamplace_rust_future_free_void(handle)
+		},
+	)
+
+	if err == nil {
+		return nil
+	}
+
+	return err
 }
 
 func (_self *Db) Subscribe(filter *Filter) *SubscribeResponse {
@@ -1591,6 +1643,8 @@ type NodeInterface interface {
 	NodeScope() *WriteScope
 	// Send a segment to all subscribers of the given stream.
 	SendSegment(key string, data []byte) error
+	// Shutdown the node, including the streaming system and the metadata db.
+	Shutdown() error
 	// Subscribe to updates for a given stream from a remote node.
 	Subscribe(key string, remoteId *PublicKey) error
 	// Get this node's ticket.
@@ -1830,6 +1884,38 @@ func (_self *Node) SendSegment(key string, data []byte) error {
 		func(_ struct{}) struct{} { return struct{}{} },
 		C.uniffi_iroh_streamplace_fn_method_node_send_segment(
 			_pointer, FfiConverterStringINSTANCE.Lower(key), FfiConverterBytesINSTANCE.Lower(data)),
+		// pollFn
+		func(handle C.uint64_t, continuation C.UniffiRustFutureContinuationCallback, data C.uint64_t) {
+			C.ffi_iroh_streamplace_rust_future_poll_void(handle, continuation, data)
+		},
+		// freeFn
+		func(handle C.uint64_t) {
+			C.ffi_iroh_streamplace_rust_future_free_void(handle)
+		},
+	)
+
+	if err == nil {
+		return nil
+	}
+
+	return err
+}
+
+// Shutdown the node, including the streaming system and the metadata db.
+func (_self *Node) Shutdown() error {
+	_pointer := _self.ffiObject.incrementPointer("*Node")
+	defer _self.ffiObject.decrementPointer()
+	_, err := uniffiRustCallAsync[ShutdownError](
+		FfiConverterShutdownErrorINSTANCE,
+		// completeFn
+		func(handle C.uint64_t, status *C.RustCallStatus) struct{} {
+			C.ffi_iroh_streamplace_rust_future_complete_void(handle, status)
+			return struct{}{}
+		},
+		// liftFn
+		func(_ struct{}) struct{} { return struct{}{} },
+		C.uniffi_iroh_streamplace_fn_method_node_shutdown(
+			_pointer),
 		// pollFn
 		func(handle C.uint64_t, continuation C.UniffiRustFutureContinuationCallback, data C.uint64_t) {
 			C.ffi_iroh_streamplace_rust_future_poll_void(handle, continuation, data)
@@ -2833,177 +2919,6 @@ func (_ FfiDestroyerCreateError) Destroy(value *CreateError) {
 	}
 }
 
-// An Error.
-type Error struct {
-	err error
-}
-
-// Convience method to turn *Error into error
-// Avoiding treating nil pointer as non nil error interface
-func (err *Error) AsError() error {
-	if err == nil {
-		return nil
-	} else {
-		return err
-	}
-}
-
-func (err Error) Error() string {
-	return fmt.Sprintf("Error: %s", err.err.Error())
-}
-
-func (err Error) Unwrap() error {
-	return err.err
-}
-
-// Err* are used for checking error type with `errors.Is`
-var ErrErrorIrohBind = fmt.Errorf("ErrorIrohBind")
-var ErrErrorIrohConnect = fmt.Errorf("ErrorIrohConnect")
-var ErrErrorMissingConnection = fmt.Errorf("ErrorMissingConnection")
-var ErrErrorIrpc = fmt.Errorf("ErrorIrpc")
-
-// Variant structs
-type ErrorIrohBind struct {
-	message string
-}
-
-func NewErrorIrohBind() *Error {
-	return &Error{err: &ErrorIrohBind{}}
-}
-
-func (e ErrorIrohBind) destroy() {
-}
-
-func (err ErrorIrohBind) Error() string {
-	return fmt.Sprintf("IrohBind: %s", err.message)
-}
-
-func (self ErrorIrohBind) Is(target error) bool {
-	return target == ErrErrorIrohBind
-}
-
-type ErrorIrohConnect struct {
-	message string
-}
-
-func NewErrorIrohConnect() *Error {
-	return &Error{err: &ErrorIrohConnect{}}
-}
-
-func (e ErrorIrohConnect) destroy() {
-}
-
-func (err ErrorIrohConnect) Error() string {
-	return fmt.Sprintf("IrohConnect: %s", err.message)
-}
-
-func (self ErrorIrohConnect) Is(target error) bool {
-	return target == ErrErrorIrohConnect
-}
-
-type ErrorMissingConnection struct {
-	message string
-}
-
-func NewErrorMissingConnection() *Error {
-	return &Error{err: &ErrorMissingConnection{}}
-}
-
-func (e ErrorMissingConnection) destroy() {
-}
-
-func (err ErrorMissingConnection) Error() string {
-	return fmt.Sprintf("MissingConnection: %s", err.message)
-}
-
-func (self ErrorMissingConnection) Is(target error) bool {
-	return target == ErrErrorMissingConnection
-}
-
-type ErrorIrpc struct {
-	message string
-}
-
-func NewErrorIrpc() *Error {
-	return &Error{err: &ErrorIrpc{}}
-}
-
-func (e ErrorIrpc) destroy() {
-}
-
-func (err ErrorIrpc) Error() string {
-	return fmt.Sprintf("Irpc: %s", err.message)
-}
-
-func (self ErrorIrpc) Is(target error) bool {
-	return target == ErrErrorIrpc
-}
-
-type FfiConverterError struct{}
-
-var FfiConverterErrorINSTANCE = FfiConverterError{}
-
-func (c FfiConverterError) Lift(eb RustBufferI) *Error {
-	return LiftFromRustBuffer[*Error](c, eb)
-}
-
-func (c FfiConverterError) Lower(value *Error) C.RustBuffer {
-	return LowerIntoRustBuffer[*Error](c, value)
-}
-
-func (c FfiConverterError) Read(reader io.Reader) *Error {
-	errorID := readUint32(reader)
-
-	message := FfiConverterStringINSTANCE.Read(reader)
-	switch errorID {
-	case 1:
-		return &Error{&ErrorIrohBind{message}}
-	case 2:
-		return &Error{&ErrorIrohConnect{message}}
-	case 3:
-		return &Error{&ErrorMissingConnection{message}}
-	case 4:
-		return &Error{&ErrorIrpc{message}}
-	default:
-		panic(fmt.Sprintf("Unknown error code %d in FfiConverterError.Read()", errorID))
-	}
-
-}
-
-func (c FfiConverterError) Write(writer io.Writer, value *Error) {
-	switch variantValue := value.err.(type) {
-	case *ErrorIrohBind:
-		writeInt32(writer, 1)
-	case *ErrorIrohConnect:
-		writeInt32(writer, 2)
-	case *ErrorMissingConnection:
-		writeInt32(writer, 3)
-	case *ErrorIrpc:
-		writeInt32(writer, 4)
-	default:
-		_ = variantValue
-		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterError.Write", value))
-	}
-}
-
-type FfiDestroyerError struct{}
-
-func (_ FfiDestroyerError) Destroy(value *Error) {
-	switch variantValue := value.err.(type) {
-	case ErrorIrohBind:
-		variantValue.destroy()
-	case ErrorIrohConnect:
-		variantValue.destroy()
-	case ErrorMissingConnection:
-		variantValue.destroy()
-	case ErrorIrpc:
-		variantValue.destroy()
-	default:
-		_ = variantValue
-		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerError.Destroy", value))
-	}
-}
-
 // Error joining peers.
 type JoinPeersError struct {
 	err error
@@ -3628,6 +3543,113 @@ func (_ FfiDestroyerSpError) Destroy(value *SpError) {
 	default:
 		_ = variantValue
 		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerSpError.Destroy", value))
+	}
+}
+
+// Error shutting down the database.
+//
+// This can occur if the db is already shut down or if there is an internal error.
+type ShutdownError struct {
+	err error
+}
+
+// Convience method to turn *ShutdownError into error
+// Avoiding treating nil pointer as non nil error interface
+func (err *ShutdownError) AsError() error {
+	if err == nil {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func (err ShutdownError) Error() string {
+	return fmt.Sprintf("ShutdownError: %s", err.err.Error())
+}
+
+func (err ShutdownError) Unwrap() error {
+	return err.err
+}
+
+// Err* are used for checking error type with `errors.Is`
+var ErrShutdownErrorIrpc = fmt.Errorf("ShutdownErrorIrpc")
+
+// Variant structs
+// Error during the shutdown operation.
+type ShutdownErrorIrpc struct {
+	Message string
+}
+
+// Error during the shutdown operation.
+func NewShutdownErrorIrpc(
+	message string,
+) *ShutdownError {
+	return &ShutdownError{err: &ShutdownErrorIrpc{
+		Message: message}}
+}
+
+func (e ShutdownErrorIrpc) destroy() {
+	FfiDestroyerString{}.Destroy(e.Message)
+}
+
+func (err ShutdownErrorIrpc) Error() string {
+	return fmt.Sprint("Irpc",
+		": ",
+
+		"Message=",
+		err.Message,
+	)
+}
+
+func (self ShutdownErrorIrpc) Is(target error) bool {
+	return target == ErrShutdownErrorIrpc
+}
+
+type FfiConverterShutdownError struct{}
+
+var FfiConverterShutdownErrorINSTANCE = FfiConverterShutdownError{}
+
+func (c FfiConverterShutdownError) Lift(eb RustBufferI) *ShutdownError {
+	return LiftFromRustBuffer[*ShutdownError](c, eb)
+}
+
+func (c FfiConverterShutdownError) Lower(value *ShutdownError) C.RustBuffer {
+	return LowerIntoRustBuffer[*ShutdownError](c, value)
+}
+
+func (c FfiConverterShutdownError) Read(reader io.Reader) *ShutdownError {
+	errorID := readUint32(reader)
+
+	switch errorID {
+	case 1:
+		return &ShutdownError{&ShutdownErrorIrpc{
+			Message: FfiConverterStringINSTANCE.Read(reader),
+		}}
+	default:
+		panic(fmt.Sprintf("Unknown error code %d in FfiConverterShutdownError.Read()", errorID))
+	}
+}
+
+func (c FfiConverterShutdownError) Write(writer io.Writer, value *ShutdownError) {
+	switch variantValue := value.err.(type) {
+	case *ShutdownErrorIrpc:
+		writeInt32(writer, 1)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Message)
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterShutdownError.Write", value))
+	}
+}
+
+type FfiDestroyerShutdownError struct{}
+
+func (_ FfiDestroyerShutdownError) Destroy(value *ShutdownError) {
+	switch variantValue := value.err.(type) {
+	case ShutdownErrorIrpc:
+		variantValue.destroy()
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerShutdownError.Destroy", value))
 	}
 }
 

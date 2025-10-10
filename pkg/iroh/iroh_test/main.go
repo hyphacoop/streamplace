@@ -71,8 +71,9 @@ func main() {
 	fmt.Printf("Iter items: %+v\n", items3)
 
 	go func() {
-    time.Sleep(5 * time.Second)
-    node.Shutdown() // or whatever your shutdown method is
+		time.Sleep(5 * time.Second)
+		err := node.Shutdown()
+		panicIfErr(err)
 	}()
 
 	sub := db.Subscribe(iroh.NewFilter())

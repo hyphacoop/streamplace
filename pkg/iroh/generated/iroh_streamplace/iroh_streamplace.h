@@ -457,6 +457,11 @@ void uniffi_iroh_streamplace_fn_free_db(void* ptr, RustCallStatus *out_status
 uint64_t uniffi_iroh_streamplace_fn_method_db_iter_with_opts(void* ptr, void* filter
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DB_SHUTDOWN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DB_SHUTDOWN
+uint64_t uniffi_iroh_streamplace_fn_method_db_shutdown(void* ptr
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DB_SUBSCRIBE
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_DB_SUBSCRIBE
 void* uniffi_iroh_streamplace_fn_method_db_subscribe(void* ptr, void* filter, RustCallStatus *out_status
@@ -596,6 +601,11 @@ void* uniffi_iroh_streamplace_fn_method_node_node_scope(void* ptr, RustCallStatu
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_SEND_SEGMENT
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_SEND_SEGMENT
 uint64_t uniffi_iroh_streamplace_fn_method_node_send_segment(void* ptr, RustBuffer key, RustBuffer data
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_SHUTDOWN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_SHUTDOWN
+uint64_t uniffi_iroh_streamplace_fn_method_node_shutdown(void* ptr
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_NODE_SUBSCRIBE
@@ -1048,6 +1058,12 @@ uint16_t uniffi_iroh_streamplace_checksum_method_db_iter_with_opts(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_SHUTDOWN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_SHUTDOWN
+uint16_t uniffi_iroh_streamplace_checksum_method_db_shutdown(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_SUBSCRIBE
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_DB_SUBSCRIBE
 uint16_t uniffi_iroh_streamplace_checksum_method_db_subscribe(void
@@ -1147,6 +1163,12 @@ uint16_t uniffi_iroh_streamplace_checksum_method_node_node_scope(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_NODE_SEND_SEGMENT
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_NODE_SEND_SEGMENT
 uint16_t uniffi_iroh_streamplace_checksum_method_node_send_segment(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_NODE_SHUTDOWN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_NODE_SHUTDOWN
+uint16_t uniffi_iroh_streamplace_checksum_method_node_shutdown(void
     
 );
 #endif
