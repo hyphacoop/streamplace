@@ -28,6 +28,7 @@ import (
 	"stream.place/streamplace/pkg/constants"
 	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/integrations/discord/discordtypes"
+	"stream.place/streamplace/pkg/log"
 )
 
 const SPDataDir = "$SP_DATA_DIR"
@@ -272,6 +273,7 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 		return fmt.Errorf("defining both livepeer-gateway and livepeer-gateway-url doesn't make sense. do you want an embedded gateway or an external one?")
 	}
 	if cli.LivepeerGateway {
+		log.MonkeypatchStderr()
 		gatewayPath := cli.DataFilePath([]string{"livepeer", "gateway"})
 		err = fs.Set("livepeer.rtmp-addr", "127.0.0.1:0")
 		if err != nil {

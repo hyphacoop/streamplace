@@ -12,7 +12,8 @@ import (
 
 const SessionExpireTime = 30 * time.Second //nolint:all
 
-var viewers = map[string]int{}
+var viewersByStreamer = map[string]int{}
+var viewersByProtocol = map[string]int{}
 var viewersLock sync.RWMutex
 
 var sessions = map[string]map[string]time.Time{}
@@ -22,10 +23,10 @@ var Viewers = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "number of current viewers per user",
 }, []string{"streamer"})
 
-var ViewersTotal = promauto.NewGauge(prometheus.GaugeOpts{
+var ViewersTotal = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "streamplace_viewers_total",
 	Help: "total number of viewers",
-})
+}, []string{"protocol"})
 
 var TranscodeAttemptsTotal = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "streamplace_transcode_attempts_total",
@@ -74,34 +75,40 @@ var SegmentSubscriptionsOpen = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "number of open new segment subscriptions",
 }, []string{"streamer", "rendition"})
 
-func ViewerInc(user string) {
+func ViewerInc(user string, protocol string) {
 	go func() {
 		viewersLock.Lock()
 		defer viewersLock.Unlock()
-		viewers[user]++
-		Viewers.WithLabelValues(user).Set(float64(viewers[user]))
-		ViewersTotal.Inc()
+		viewersByStreamer[user]++
+		viewersByProtocol[protocol]++
+		Viewers.WithLabelValues(user).Set(float64(viewersByStreamer[user]))
+		ViewersTotal.WithLabelValues(protocol).Set(float64(viewersByProtocol[protocol]))
 	}()
 }
 
-func ViewerDec(user string) {
+func ViewerDec(user string, protocol string) {
 	go func() {
 		viewersLock.Lock()
 		defer viewersLock.Unlock()
-		viewers[user]--
-		if viewers[user] == 0 {
+		viewersByStreamer[user]--
+		if viewersByStreamer[user] == 0 {
 			Viewers.DeleteLabelValues(user)
 		} else {
-			Viewers.WithLabelValues(user).Set(float64(viewers[user]))
+			Viewers.WithLabelValues(user).Set(float64(viewersByStreamer[user]))
 		}
-		ViewersTotal.Dec()
+		viewersByProtocol[protocol]--
+		if viewersByProtocol[protocol] == 0 {
+			Viewers.DeleteLabelValues(protocol)
+		} else {
+			Viewers.WithLabelValues(protocol).Set(float64(viewersByProtocol[protocol]))
+		}
 	}()
 }
 
 func GetViewCount(user string) int {
 	viewersLock.RLock()
 	defer viewersLock.RUnlock()
-	return viewers[user]
+	return viewersByStreamer[user]
 }
 
 func SessionSeen(user string, session string) {
@@ -114,7 +121,7 @@ func SessionSeen(user string, session string) {
 		}
 		if _, ok := sessions[user][session]; !ok {
 			log.Warn(context.TODO(), "ViewerInc", "user", user, "session", session)
-			ViewerInc(user)
+			ViewerInc(user, "hls")
 		}
 		sessions[user][session] = now
 	}()
@@ -131,7 +138,7 @@ func ExpireSessions(ctx context.Context) error {
 				for session, seen := range sessions {
 					if time.Since(seen) > SessionExpireTime {
 						delete(sessions, session)
-						ViewerDec(user)
+						ViewerDec(user, "hls")
 					}
 				}
 			}
