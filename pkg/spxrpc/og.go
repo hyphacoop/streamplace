@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"image"
 	"image/color"
 	_ "image/jpeg"
@@ -29,6 +30,7 @@ import (
 	"stream.place/streamplace/js/app"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 )
 
 const (
@@ -77,10 +79,10 @@ var (
 	cardBorderColor      = color.RGBA{R: 64, G: 64, B: 64, A: 255}
 	placeholderColor     = color.RGBA{R: 240, G: 240, B: 240, A: 255}
 	placeholderTextColor = color.RGBA{R: 100, G: 100, B: 100, A: 255}
-	joinTextColor        = color.RGBA{R: 248, G: 186, B: 202, A: 255} // Streamplace pink #f8baca
+	joinTextColor        = color.RGBA{R: 248, G: 186, B: 202, A: 255}
 	subtitleColor        = color.RGBA{R: 200, G: 200, B: 200, A: 255}
 	descColor            = color.RGBA{R: 180, G: 180, B: 180, A: 255}
-	imageBorderColor     = color.RGBA{R: 248, G: 186, B: 202, A: 255} // Streamplace pink #f8baca
+	imageBorderColor     = color.RGBA{R: 248, G: 186, B: 202, A: 255}
 )
 
 const (
@@ -269,6 +271,13 @@ func (s *Server) generateOGImage(ctx context.Context, username string) ([]byte, 
 		chatProfile, err := s.ATSync.Model.GetChatProfile(ctx, userDID)
 		if err != nil {
 			log.Warn(ctx, "failed to fetch chat profile", "did", userDID, "error", err)
+			clr := model.DefaultColors[hashString(userDID)%len(model.DefaultColors)]
+			userColor = color.RGBA{
+				R: uint8(clr.Red),
+				G: uint8(clr.Green),
+				B: uint8(clr.Blue),
+				A: 255,
+			}
 		} else if chatProfile != nil {
 			streamplaceChatProfile, err := chatProfile.ToStreamplaceChatProfile()
 			if err != nil {
@@ -456,6 +465,12 @@ func (s *Server) generateOGImage(ctx context.Context, username string) ([]byte, 
 	}
 
 	return b.Bytes(), nil
+}
+
+func hashString(s string) int {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return int(h.Sum32())
 }
 
 // getAtkinsonRegular returns the regular Atkinson Hyperlegible Next font data from app filesystem
