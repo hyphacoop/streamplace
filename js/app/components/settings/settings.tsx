@@ -172,7 +172,6 @@ export function Settings() {
             </>
           )}
         </View>
-        <Button onPress={() => t.show("toast")}>tost</Button>
       </View>
     </ScrollView>
   );
