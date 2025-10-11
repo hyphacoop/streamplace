@@ -91,7 +91,7 @@ export default function SidebarItem({
       role="link"
       accessibilityLabel={typeof label === "string" ? label : "Link to " + href}
       // @ts-ignore This makes it render as <a> on web!
-      href={route && href}
+      href={route ? href : undefined}
     >
       <View
         style={[
