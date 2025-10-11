@@ -388,12 +388,6 @@ export function StreamplaceDrawer() {
   // are we in the live dashboard?
   const [isLiveDashboard, setIsLiveDashboard] = useState(false);
   useEffect(() => {
-    console.log({
-      isLiveDashboard,
-      userIsLive,
-      livePopup,
-      navi: navigation.getState()?.routes,
-    });
     if (!isLiveDashboard && userIsLive) {
       toast.show("You are live!", "Do you want to go to your Live Dashboard?", {
         actionLabel: "Go",
