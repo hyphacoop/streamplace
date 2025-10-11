@@ -36,6 +36,14 @@ Sentry.setTag("executionEnvironment", Constants.executionEnvironment);
 Sentry.setTag("expoGoVersion", Constants.expoVersion);
 Sentry.setTag("expoRuntimeVersion", Constants.expoRuntimeVersion);
 
+const SPDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: "transparent",
+  },
+};
+
 function ProviderInner({
   children,
   linking,
@@ -74,7 +82,7 @@ function ProviderInner({
   return (
     <SafeAreaProvider>
       <ThemeProvider forcedTheme="dark">
-        <NavigationContainer theme={DarkTheme} linking={linking}>
+        <NavigationContainer theme={SPDarkTheme} linking={linking}>
           <ReduxProvider store={store}>
             <StreamplaceProvider>
               <BlueskyProvider>
