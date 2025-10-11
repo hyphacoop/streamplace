@@ -15,11 +15,10 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Text, useTheme } from "@streamplace/components";
+import { Text, useTheme, useToast } from "@streamplace/components";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
 import Login from "components/login/login";
-import Popup from "components/popup";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 import * as ExpoLinking from "expo-linking";
 import { hydrate, selectHydrated } from "features/base/baseSlice";
@@ -332,10 +331,11 @@ export function StreamplaceDrawer() {
   const { isWeb, isElectron, isNative, isBrowser } = usePlatform();
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
-  const [poppedUp, setPoppedUp] = useState(false);
   const [livePopup, setLivePopup] = useState(false);
 
   const sidebar = useSidebarControl();
+
+  const toast = useToast();
 
   SystemBars.setStyle("dark");
 
@@ -385,18 +385,28 @@ export function StreamplaceDrawer() {
 
   let foregroundColor = theme.theme.colors.text || "#fff";
 
-  const [isLiveDashboard, setIsLiveDashboard] = useState(true);
+  // are we in the live dashboard?
+  const [isLiveDashboard, setIsLiveDashboard] = useState(false);
   useEffect(() => {
-    if (!isLiveDashboard && userIsLive && !poppedUp) {
-      setPoppedUp(true);
-      setLivePopup(true);
+    if (!isLiveDashboard && userIsLive) {
+      toast.show("You are live!", "Do you want to go to your Live Dashboard?", {
+        actionLabel: "Go",
+        onAction: () => {
+          navigation.navigate("LiveDashboard");
+          setLivePopup(false);
+        },
+        onClose: () => setLivePopup(false),
+        variant: "error",
+        duration: 8,
+      });
     }
-  }, [userIsLive, poppedUp]);
+  }, [userIsLive]);
   const externalItems = useExternalItems();
 
   if (!hydrated) {
     return <View />;
   }
+
   return (
     <>
       <StatusBar barStyle="light-content" />
@@ -589,35 +599,6 @@ export function StreamplaceDrawer() {
           }}
         />
       </Drawer.Navigator>
-      {isWeb && livePopup && (
-        <Popup
-          onPress={() => {
-            navigation.navigate("LiveDashboard");
-            setLivePopup(false);
-          }}
-          onClose={() => {
-            setLivePopup(false);
-          }}
-          containerProps={{
-            style: { bottom: 32 },
-          }}
-          bubbleProps={{
-            style: { backgroundColor: "#cc0000" },
-          }}
-        >
-          <Text
-            style={[
-              { textAlign: "center" },
-              { fontSize: 24, fontWeight: "bold" },
-            ]}
-          >
-            ✨YOU ARE LIVE!!!✨
-          </Text>
-          <Text>
-            {isNative ? "Tap" : "Click"} here to go to the live dashboard
-          </Text>
-        </Popup>
-      )}
     </>
   );
 }
