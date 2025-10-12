@@ -63,6 +63,7 @@ export function DesktopUi({
   const showMetrics = usePlayerStore((state) => state.showDebugInfo);
   const pipAction = usePlayerStore((state) => state.pipAction);
   const videoRef = usePlayerStore((state) => state.videoRef);
+  const embedded = usePlayerStore((state) => state.embedded);
 
   const segment = useSegment();
 
@@ -213,6 +214,7 @@ export function DesktopUi({
               isChatOpen={isChatOpen || false}
               onToggleChat={toggleChat}
               safeAreaInsets={safeAreaInsets}
+              embedded={embedded}
             />
           </Animated.View>
 

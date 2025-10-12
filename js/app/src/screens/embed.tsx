@@ -37,7 +37,7 @@ export default function EmbedScreen({ route }) {
   return (
     <LivestreamProvider src={src}>
       <PlayerProvider {...extraProps}>
-        <Player src={src} {...extraProps}>
+        <Player src={src} embedded={true} {...extraProps}>
           <DesktopUi />
         </Player>
       </PlayerProvider>
