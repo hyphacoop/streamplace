@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -324,6 +325,9 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 				TimeFormat: time.RFC3339,
 			})),
 		)
+	}
+	if cli.PublicOAuth {
+		log.Warn(context.Background(), "--dev-public-oauth is set, this is not recommended for production")
 	}
 	return nil
 }

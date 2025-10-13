@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -387,7 +388,13 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	var clientMetadata *oatproxy.OAuthClientMetadata
+	var host string
 	if cli.PublicOAuth {
+		u, err := url.Parse(cli.OwnPublicURL())
+		if err != nil {
+			return err
+		}
+		host = u.Host
 		clientMetadata = &oatproxy.OAuthClientMetadata{
 			Scope:      "atproto transition:generic",
 			ClientName: "Streamplace",
@@ -397,6 +404,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			},
 		}
 	} else {
+		host = cli.PublicHost
 		clientMetadata = &oatproxy.OAuthClientMetadata{
 			Scope:      "atproto transition:generic",
 			ClientName: "Streamplace",
@@ -408,7 +416,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	op := oatproxy.New(&oatproxy.Config{
-		Host:               "127.0.0.1:38080",
+		Host:               host,
 		CreateOAuthSession: state.CreateOAuthSession,
 		UpdateOAuthSession: state.UpdateOAuthSession,
 		GetOAuthSession:    state.LoadOAuthSession,
@@ -417,7 +425,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		UpstreamJWK:        cli.JWK,
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
-		Public:             true,
+		Public:             cli.PublicOAuth,
 	})
 	d := director.NewDirector(mm, mod, &cli, b, op, state)
 	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)
