@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/bluesky-social/indigo/carstore"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/livepeer/go-livepeer/cmd/livepeer/starter"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
@@ -420,7 +421,14 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 	secret := buf.Bytes()
-	swarm, err := iroh_replicator.NewSwarm(ctx, cli.Tickets, secret, mm)
+	var topic []byte
+	if cli.IrohTopic != "" {
+		topic, err = hexutil.Decode("0x" + cli.IrohTopic)
+		if err != nil {
+			return err
+		}
+	}
+	swarm, err := iroh_replicator.NewSwarm(ctx, cli.Tickets, secret, topic, mm)
 	if err != nil {
 		return err
 	}

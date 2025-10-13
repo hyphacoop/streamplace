@@ -390,7 +390,6 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		}
 
 	case *streamplace.BroadcastOrigin:
-		log.Warn(ctx, "creating broadcast origin", "origin", rec)
 		_, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
 		if err != nil {
 			return fmt.Errorf("failed to sync broadcast origin creator bluesky repo: %w", err)

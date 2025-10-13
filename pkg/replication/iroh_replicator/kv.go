@@ -3,6 +3,7 @@ package iroh_replicator
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -32,14 +33,22 @@ type OriginInfo struct {
 	Time   string `json:"time"`
 }
 
-func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.MediaManager) (*IrohSwarm, error) {
+func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte, mm *media.MediaManager) (*IrohSwarm, error) {
 	ctx = log.WithLogValues(ctx, "func", "StartKV")
+
+	if topic == nil {
+		topic = make([]byte, 32)
+		_, err := rand.Read(topic)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate random topic: %w", err)
+		}
+	}
 
 	log.Log(ctx, "Starting with tickets", "tickets", tickets)
 	config := iroh_streamplace.Config{
 		Key:             secret,
-		Topic:           make([]byte, 32), // all zero topic for testing
-		MaxSendDuration: 1000_000_000,     // 1s
+		Topic:           topic,
+		MaxSendDuration: 1000_000_000, // 1s
 	}
 	log.Log(ctx, "Config created", "config", config)
 
@@ -136,8 +145,9 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			keyStr := string(item.Key)
 			valueStr := string(item.Value)
 			log.Debug(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
-			if len(keyStr) > 0 && keyStr[0] != '{' {
+			if len(valueStr) > 0 && valueStr[0] != '{' {
 				// not JSON, it's one of the rust messages
+				log.Debug(ctx, "not JSON", "key", keyStr, "value", valueStr)
 				continue
 			}
 			var info OriginInfo
@@ -149,6 +159,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			oldSub, ok := swarm.activeSubs[keyStr]
 			if ok {
 				if oldSub.NodeID == info.NodeID {
+					log.Debug(ctx, "node hasn't changed", "streamer", keyStr)
 					// mmyep. same node still has the stream. great news.
 					continue
 				}
@@ -167,6 +178,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 				delete(swarm.activeSubs, keyStr)
 			}
 			if info.NodeID == swarm.NodeID {
+				log.Debug(ctx, "I already have this stream", "streamer", keyStr)
 				// oh, i have this stream. cool. do nothing.
 				continue
 			}
