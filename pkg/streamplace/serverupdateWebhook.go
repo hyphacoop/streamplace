@@ -20,6 +20,8 @@ type ServerUpdateWebhook_Input struct {
 	Events []string `json:"events,omitempty" cborgen:"events,omitempty"`
 	// id: The ID of the webhook to update.
 	Id string `json:"id" cborgen:"id"`
+	// muteWords: Words to filter out from chat messages. Messages containing any of these words will not be forwarded.
+	MuteWords []string `json:"muteWords,omitempty" cborgen:"muteWords,omitempty"`
 	// name: A user-friendly name for this webhook.
 	Name *string `json:"name,omitempty" cborgen:"name,omitempty"`
 	// prefix: Text to prepend to webhook messages.
