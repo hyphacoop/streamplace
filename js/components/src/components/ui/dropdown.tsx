@@ -13,7 +13,6 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -39,6 +38,7 @@ import {
   objectFromObjects,
   TextContext as TextClassContext,
 } from "./primitives/text";
+import { Text } from "./text";
 
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -87,7 +87,7 @@ export const DropdownMenuBottomSheet = forwardRef<
           zt.bg.mutedForeground,
         ]}
       >
-        <BottomSheetView style={[px[2]]}>
+        <BottomSheetView style={[px[4]]}>
           {typeof children === "function"
             ? children({ pressed: true })
             : children}
@@ -285,9 +285,15 @@ export const DropdownMenuItem = forwardRef<
             pr[2],
           ]}
         >
-          {typeof children === "function"
-            ? children({ pressed: true })
-            : children}
+          {typeof children === "function" ? (
+            children({ pressed: true })
+          ) : typeof children === "string" ? (
+            <Text style={[inset && gap[2], disabled && { opacity: 0.5 }]}>
+              {children}
+            </Text>
+          ) : (
+            children
+          )}
         </View>
       </TextClassContext.Provider>
     </Pressable>
@@ -384,13 +390,15 @@ export const DropdownMenuLabel = forwardRef<
   return (
     <Text
       ref={ref}
-      style={[
-        px[2],
-        py[2],
-        { color: theme.colors.textMuted },
-        a.fontSize.base,
-        inset && gap[2],
-      ]}
+      style={
+        [
+          px[2],
+          py[2],
+          { color: theme.colors.textMuted },
+          a.fontSize.base,
+          (inset && gap[2]) as any,
+        ] as any
+      }
       {...props}
     />
   );
@@ -404,7 +412,13 @@ export const DropdownMenuSeparator = forwardRef<
   return (
     <View
       ref={ref}
-      style={[{ height: 0.5 }, { backgroundColor: theme.colors.border }]}
+      style={[
+        {
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+          marginVertical: -0.5,
+        },
+      ]}
       {...props}
     />
   );

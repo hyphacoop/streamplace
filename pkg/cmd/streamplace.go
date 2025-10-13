@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -370,13 +371,32 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		return err
 	}
 
-	clientMetadata := &oatproxy.OAuthClientMetadata{
-		Scope:      "atproto transition:generic",
-		ClientName: "Streamplace",
-		RedirectURIs: []string{
-			fmt.Sprintf("https://%s/login", cli.BroadcasterHost),
-			fmt.Sprintf("https://%s/api/app-return", cli.BroadcasterHost),
-		},
+	var clientMetadata *oatproxy.OAuthClientMetadata
+	var host string
+	if cli.PublicOAuth {
+		u, err := url.Parse(cli.OwnPublicURL())
+		if err != nil {
+			return err
+		}
+		host = u.Host
+		clientMetadata = &oatproxy.OAuthClientMetadata{
+			Scope:      "atproto transition:generic",
+			ClientName: "Streamplace",
+			RedirectURIs: []string{
+				fmt.Sprintf("%s/login", cli.OwnPublicURL()),
+				fmt.Sprintf("%s/api/app-return", cli.OwnPublicURL()),
+			},
+		}
+	} else {
+		host = cli.BroadcasterHost
+		clientMetadata = &oatproxy.OAuthClientMetadata{
+			Scope:      "atproto transition:generic",
+			ClientName: "Streamplace",
+			RedirectURIs: []string{
+				fmt.Sprintf("https://%s/login", cli.BroadcasterHost),
+				fmt.Sprintf("https://%s/api/app-return", cli.BroadcasterHost),
+			},
+		}
 	}
 
 	exists, err := cli.DataFileExists([]string{"iroh-kv-secret"})
@@ -406,7 +426,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	op := oatproxy.New(&oatproxy.Config{
-		Host:               cli.BroadcasterHost,
+		Host:               host,
 		CreateOAuthSession: state.CreateOAuthSession,
 		UpdateOAuthSession: state.UpdateOAuthSession,
 		GetOAuthSession:    state.LoadOAuthSession,
@@ -415,6 +435,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		UpstreamJWK:        cli.JWK,
 		DownstreamJWK:      cli.AccessJWK,
 		ClientMetadata:     clientMetadata,
+		Public:             cli.PublicOAuth,
 	})
 	d := director.NewDirector(mm, mod, &cli, b, op, state, swarm)
 	a, err := api.MakeStreamplaceAPI(&cli, mod, state, eip712signer, noter, mm, ms, b, atsync, d, op)

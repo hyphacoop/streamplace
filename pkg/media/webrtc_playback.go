@@ -303,8 +303,8 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		if err != nil {
 			log.Log(ctx, "failed to set pipeline state to null", "error", err)
 		}
-		spmetrics.ViewerInc(user)
-		defer spmetrics.ViewerDec(user)
+		spmetrics.ViewerInc(user, "webrtc")
+		defer spmetrics.ViewerDec(user, "webrtc")
 
 		go func() {
 			rtcpBuf := make([]byte, 1500)

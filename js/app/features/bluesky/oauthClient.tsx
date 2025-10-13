@@ -69,9 +69,15 @@ export default async function createOAuthClient(
     );
     meta = await res.json();
   }
-  clientMetadataSchema.parse(meta);
+  try {
+    clientMetadataSchema.parse(meta);
+  } catch (e) {
+    console.error("error parsing client metadata", e, meta);
+    throw e;
+  }
   return new ReactNativeOAuthClient({
     fetch: async (input, init) => {
+      console.log("fetch", input, init);
       // Normalize input to a Request object
       let request: Request;
       if (typeof input === "string" || input instanceof URL) {
@@ -79,29 +85,62 @@ export default async function createOAuthClient(
       } else {
         request = input;
       }
-
-      // Lie to the oauth client and use our upstream server instead
-      if (
-        request.url.includes("plc.directory") ||
-        request.url.endsWith("did.json")
-      ) {
-        const res = await fetch(request, init);
-        if (!res.ok) {
-          return res;
+      if (streamplaceUrl.startsWith("http://127.0.0.1")) {
+        // everything other than PDS resolution gets rewritten to the host
+        if (
+          request.url.includes("plc.directory") ||
+          request.url.endsWith("did.json") ||
+          request.url.endsWith("/.well-known/oauth-protected-resource") ||
+          request.url.endsWith("/.well-known/oauth-authorization-server")
+        ) {
+          return fetch(request, init) as any;
         }
-        const data = await res.json();
-        const service = data.service.find((s: any) => s.id === "#atproto_pds");
-        if (!service) {
-          return res;
+        const newUrl = new URL(request.url.toString());
+        newUrl.protocol = "http:";
+        newUrl.host = "127.0.0.1:38080";
+        let newRequest: Request;
+        if (request.method === "POST") {
+          const data = await request.blob();
+          newRequest = new Request(newUrl.toString(), {
+            body: data,
+            method: "POST",
+            headers: request.headers,
+          });
+        } else if (request.method === "GET") {
+          newRequest = new Request(newUrl.toString(), {
+            method: "GET",
+            headers: request.headers,
+          });
+        } else {
+          throw new Error("Unsupported method: " + request.method);
         }
-        service.serviceEndpoint = streamplaceUrl;
-        return new Response(JSON.stringify(data), {
-          status: res.status,
-          headers: res.headers,
-        });
+        return fetch(newRequest) as any;
+      } else {
+        // Lie to the oauth client and use our upstream server instead
+        if (
+          request.url.includes("plc.directory") ||
+          request.url.endsWith("did.json")
+        ) {
+          const res = await fetch(request, init);
+          if (!res.ok) {
+            return res;
+          }
+          const data = await res.json();
+          const service = data.service.find(
+            (s: any) => s.id === "#atproto_pds",
+          );
+          if (!service) {
+            return res;
+          }
+          service.serviceEndpoint = streamplaceUrl;
+          return new Response(JSON.stringify(data), {
+            status: res.status,
+            headers: res.headers,
+          });
+        } else {
+          return fetch(request, init);
+        }
       }
-
-      return fetch(request, init);
     },
     handleResolver: streamplaceUrl,
     responseMode: "query", // or "fragment" (frontend only) or "form_post" (backend only)

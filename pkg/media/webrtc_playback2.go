@@ -181,8 +181,8 @@ func (mm *MediaManager) WebRTCPlayback2(ctx context.Context, user string, rendit
 			}
 		}()
 
-		spmetrics.ViewerInc(user)
-		defer spmetrics.ViewerDec(user)
+		spmetrics.ViewerInc(user, "webrtc")
+		defer spmetrics.ViewerDec(user, "webrtc")
 
 		go func() {
 			rtcpBuf := make([]byte, 1500)

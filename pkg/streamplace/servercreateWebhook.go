@@ -18,6 +18,8 @@ type ServerCreateWebhook_Input struct {
 	Description *string `json:"description,omitempty" cborgen:"description,omitempty"`
 	// events: The types of events this webhook should receive.
 	Events []string `json:"events" cborgen:"events"`
+	// muteWords: Words to filter out from chat messages. Messages containing any of these words will not be forwarded.
+	MuteWords []string `json:"muteWords,omitempty" cborgen:"muteWords,omitempty"`
 	// name: A user-friendly name for this webhook.
 	Name *string `json:"name,omitempty" cborgen:"name,omitempty"`
 	// prefix: Text to prepend to webhook messages.

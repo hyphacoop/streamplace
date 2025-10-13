@@ -33,6 +33,7 @@ export function PopoutChatInner({ user }: { user: string }) {
   useEffect(() => {
     setSrc(user);
   }, [user]);
+
   return (
     <View style={[{ position: "relative" }, zero.flex.values[1], zero.m[2]]}>
       <View
@@ -41,7 +42,7 @@ export function PopoutChatInner({ user }: { user: string }) {
           { position: "absolute", width: "100%", minHeight: "100%", bottom: 0 },
         ]}
       >
-        <Chat canModerate={profile?.handle === user} />
+        <Chat />
         {profile && <ChatBox emojiData={emojiData} isPopout={true} />}
       </View>
     </View>

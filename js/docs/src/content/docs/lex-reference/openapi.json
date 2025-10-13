@@ -110,6 +110,14 @@
                     "type": "string",
                     "description": "A description of what this webhook is used for.",
                     "maxLength": 500
+                  },
+                  "muteWords": {
+                    "type": "array",
+                    "description": "Words to filter out from chat messages. Messages containing any of these words will not be forwarded.",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 100
+                    }
                   }
                 },
                 "required": ["url", "events"]
@@ -465,6 +473,14 @@
                     "type": "string",
                     "description": "A description of what this webhook is used for.",
                     "maxLength": 500
+                  },
+                  "muteWords": {
+                    "type": "array",
+                    "description": "Words to filter out from chat messages. Messages containing any of these words will not be forwarded.",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 100
+                    }
                   }
                 },
                 "required": ["id"]
@@ -1655,6 +1671,14 @@
           "errorCount": {
             "type": "integer",
             "description": "Number of consecutive errors for this webhook."
+          },
+          "muteWords": {
+            "type": "array",
+            "description": "Words to filter out from chat messages. Messages containing any of these words will not be forwarded.",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            }
           }
         },
         "required": ["id", "url", "events", "active", "createdAt"]

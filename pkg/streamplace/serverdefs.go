@@ -30,6 +30,8 @@ type ServerDefs_Webhook struct {
 	Id string `json:"id" cborgen:"id"`
 	// lastTriggered: When this webhook was last triggered.
 	LastTriggered *string `json:"lastTriggered,omitempty" cborgen:"lastTriggered,omitempty"`
+	// muteWords: Words to filter out from chat messages. Messages containing any of these words will not be forwarded.
+	MuteWords []string `json:"muteWords,omitempty" cborgen:"muteWords,omitempty"`
 	// name: A user-friendly name for this webhook.
 	Name *string `json:"name,omitempty" cborgen:"name,omitempty"`
 	// prefix: Text to prepend to webhook messages.
