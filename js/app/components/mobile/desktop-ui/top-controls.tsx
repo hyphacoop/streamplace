@@ -9,10 +9,16 @@ import {
   zero,
 } from "@streamplace/components";
 import { ChevronLeft, MessageSquare, SwitchCamera } from "lucide-react-native";
-import { Image, Platform, Pressable } from "react-native";
+import {
+  Image,
+  Linking,
+  Platform,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
 import { LiveBubble } from "./live-bubble";
 
-const { borders, colors, gap, layout, p, r, text } = zero;
+const { borders, colors, gap, layout, p, px, py, r, text } = zero;
 
 interface TopControlBarProps {
   offline: boolean;
@@ -21,6 +27,7 @@ interface TopControlBarProps {
   isChatOpen: boolean;
   onToggleChat: () => void;
   safeAreaInsets: { top: number };
+  embedded?: boolean;
 }
 
 export function TopControlBar({
@@ -30,11 +37,15 @@ export function TopControlBar({
   isChatOpen,
   onToggleChat,
   safeAreaInsets,
+  embedded = false,
 }: TopControlBarProps) {
   const navigation = useNavigation();
   const { profile } = useLivestreamInfo();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
+  const { width } = useWindowDimensions();
+  const isTinyScreen = width < 450;
+  const isSmallScreen = width < 600;
 
   return (
     <View
@@ -84,6 +95,35 @@ export function TopControlBar({
       </View>
 
       <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[3]]}>
+        {embedded && Platform.OS === "web" && (
+          <Pressable
+            onPress={() => {
+              const url = window.location.href.replace("/embed/", "/");
+              Linking.openURL(url);
+            }}
+            style={[
+              layout.flex.row,
+              layout.flex.alignCenter,
+              gap.all[2],
+              py[2],
+              px[3],
+              r.xl,
+              {
+                backgroundColor: "rgba(75,75,75, 0.65)",
+              },
+            ]}
+          >
+            {!isSmallScreen && <Text size="lg">Powered by</Text>}
+            <Image
+              source={require("assets/images/cube_small.png")}
+              style={{
+                width: 24,
+                height: 24,
+              }}
+            />
+            {!isTinyScreen && <Text size="lg">Streamplace</Text>}
+          </Pressable>
+        )}
         {isActivelyLive && (
           <>
             <PlayerUI.Viewers />
