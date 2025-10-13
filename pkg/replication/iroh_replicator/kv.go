@@ -109,6 +109,10 @@ func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
 	g.Go(func() error {
 		return swarm.startSegmentSender(ctx)
 	})
+	g.Go(func() error {
+		<-ctx.Done()
+		return swarm.Node.Shutdown()
+	})
 	return g.Wait()
 }
 
