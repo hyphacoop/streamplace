@@ -32,7 +32,7 @@ func TestRTCRecording(t *testing.T) {
 		require.NoError(t, err)
 		signer, err := spkey.KeyToSigner(priv)
 		require.NoError(t, err)
-		mediaSigner, err := MakeMediaSigner(ctx, cli, pub.DIDKey(), signer)
+		mediaSigner, err := MakeMediaSigner(ctx, cli, pub.DIDKey(), signer, nil)
 		require.NoError(t, err)
 		// ctx := context.Background()
 		// mm, ms := getStaticTestMediaManager(t)
