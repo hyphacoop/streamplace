@@ -1,4 +1,3 @@
-import { BrowserOAuthClient } from "@atproto/oauth-client-browser";
 import {
   ClientMetadata,
   clientMetadataSchema,
@@ -70,8 +69,13 @@ export default async function createOAuthClient(
     );
     meta = await res.json();
   }
-  clientMetadataSchema.parse(meta);
-  return new BrowserOAuthClient({
+  try {
+    clientMetadataSchema.parse(meta);
+  } catch (e) {
+    console.error("error parsing client metadata", e, meta);
+    throw e;
+  }
+  return new ReactNativeOAuthClient({
     fetch: async (input, init) => {
       console.log("fetch", input, init);
       // Normalize input to a Request object
@@ -128,12 +132,12 @@ export default async function createOAuthClient(
           if (!service) {
             return res;
           }
-          service.serviceEndpoint = "https://example.com";
-          console.log("returning", data);
+          service.serviceEndpoint = streamplaceUrl;
           return new Response(JSON.stringify(data), {
             status: res.status,
             headers: res.headers,
           });
+        } else {
           return fetch(request, init);
         }
       }
