@@ -390,7 +390,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		}
 
 	case *streamplace.BroadcastOrigin:
-		_, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
 		if err != nil {
 			return fmt.Errorf("failed to sync broadcast origin creator bluesky repo: %w", err)
 		}
@@ -402,6 +402,17 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 		if err != nil {
 			log.Error(ctx, "failed to update broadcast origin", "err", err)
 		}
+		view := &streamplace.BroadcastDefs_BroadcastOriginView{
+			Uri: aturi.String(),
+			Cid: cid,
+			Author: &bsky.ActorDefs_ProfileViewBasic{
+				Did:    userDID,
+				Handle: repo.Handle,
+			},
+			Record: &lexutil.LexiconTypeDecoder{Val: rec},
+		}
+		// publishes with an empty string because we're discovering the stream
+		go atsync.Bus.Publish("", view)
 
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))

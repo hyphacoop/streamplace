@@ -48,6 +48,14 @@ pub enum JoinPeersError {
     Irpc { message: String },
 }
 
+/// Error joining peers.
+#[derive(Debug, Snafu, uniffi::Error)]
+#[snafu(module)]
+pub enum ParseError {
+    /// Failed to parse a provided iroh node ticket.
+    Ticket { message: String },
+}
+
 /// Error putting a value into the database.
 #[derive(Debug, Snafu, uniffi::Error)]
 #[snafu(module)]

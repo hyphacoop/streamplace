@@ -738,6 +738,11 @@ uint64_t uniffi_iroh_streamplace_fn_method_writescope_put(void* ptr, RustBuffer 
 RustBuffer uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(RustBuffer data, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_NODE_ID_FROM_TICKET
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_NODE_ID_FROM_TICKET
+void* uniffi_iroh_streamplace_fn_func_node_id_from_ticket(RustBuffer ticket_str, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
 RustBuffer uniffi_iroh_streamplace_fn_func_sign(RustBuffer manifest, RustBuffer data, RustBuffer certs, void* gosigner, RustCallStatus *out_status
@@ -1031,6 +1036,12 @@ void ffi_iroh_streamplace_rust_future_complete_void(uint64_t handle, RustCallSta
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST_AND_CERT
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFEST_AND_CERT
 uint16_t uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_NODE_ID_FROM_TICKET
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_NODE_ID_FROM_TICKET
+uint16_t uniffi_iroh_streamplace_checksum_func_node_id_from_ticket(void
     
 );
 #endif

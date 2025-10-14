@@ -428,7 +428,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 	}
-	swarm, err := iroh_replicator.NewSwarm(ctx, cli.Tickets, secret, topic, mm)
+	swarm, err := iroh_replicator.NewSwarm(ctx, cli.Tickets, secret, topic, mm, b)
 	if err != nil {
 		return err
 	}

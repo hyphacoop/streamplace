@@ -1,3 +1,4 @@
+use iroh_base::ticket::NodeTicket;
 use std::{str::FromStr, sync::Arc};
 
 use crate::public_key::PublicKey;
@@ -86,4 +87,23 @@ impl From<iroh::NodeAddr> for NodeAddr {
                 .collect(),
         }
     }
+}
+
+/// Error when converting from ffi NodeAddr to iroh::NodeAddr
+#[derive(Debug, snafu::Snafu, uniffi::Error)]
+#[uniffi(flat_error)]
+pub enum TicketError {
+    ParseError { message: String },
+}
+
+/// Get this node's ticket.
+#[uniffi::export]
+pub fn node_id_from_ticket(
+    ticket_str: String,
+) -> Result<Arc<crate::public_key::PublicKey>, TicketError> {
+    let ticket = NodeTicket::from_str(&ticket_str).map_err(|e| TicketError::ParseError {
+        message: e.to_string(),
+    })?;
+    let node_addr = ticket.node_addr();
+    Ok(Arc::new(node_addr.node_id.into()))
 }

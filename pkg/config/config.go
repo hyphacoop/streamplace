@@ -125,6 +125,7 @@ type CLI struct {
 	LivepeerDebug          bool
 	Tickets                []string
 	IrohTopic              string
+	DID                    string
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {

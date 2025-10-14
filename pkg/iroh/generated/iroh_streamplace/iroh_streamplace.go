@@ -363,6 +363,15 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_node_id_from_ticket()
+		})
+		if checksum != 36085 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_node_id_from_ticket: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_sign()
 		})
 		if checksum != 23786 {
@@ -3183,6 +3192,111 @@ func (_ FfiDestroyerNodeAddrError) Destroy(value *NodeAddrError) {
 	}
 }
 
+// Error joining peers.
+type ParseError struct {
+	err error
+}
+
+// Convience method to turn *ParseError into error
+// Avoiding treating nil pointer as non nil error interface
+func (err *ParseError) AsError() error {
+	if err == nil {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func (err ParseError) Error() string {
+	return fmt.Sprintf("ParseError: %s", err.err.Error())
+}
+
+func (err ParseError) Unwrap() error {
+	return err.err
+}
+
+// Err* are used for checking error type with `errors.Is`
+var ErrParseErrorTicket = fmt.Errorf("ParseErrorTicket")
+
+// Variant structs
+// Failed to parse a provided iroh node ticket.
+type ParseErrorTicket struct {
+	Message string
+}
+
+// Failed to parse a provided iroh node ticket.
+func NewParseErrorTicket(
+	message string,
+) *ParseError {
+	return &ParseError{err: &ParseErrorTicket{
+		Message: message}}
+}
+
+func (e ParseErrorTicket) destroy() {
+	FfiDestroyerString{}.Destroy(e.Message)
+}
+
+func (err ParseErrorTicket) Error() string {
+	return fmt.Sprint("Ticket",
+		": ",
+
+		"Message=",
+		err.Message,
+	)
+}
+
+func (self ParseErrorTicket) Is(target error) bool {
+	return target == ErrParseErrorTicket
+}
+
+type FfiConverterParseError struct{}
+
+var FfiConverterParseErrorINSTANCE = FfiConverterParseError{}
+
+func (c FfiConverterParseError) Lift(eb RustBufferI) *ParseError {
+	return LiftFromRustBuffer[*ParseError](c, eb)
+}
+
+func (c FfiConverterParseError) Lower(value *ParseError) C.RustBuffer {
+	return LowerIntoRustBuffer[*ParseError](c, value)
+}
+
+func (c FfiConverterParseError) Read(reader io.Reader) *ParseError {
+	errorID := readUint32(reader)
+
+	switch errorID {
+	case 1:
+		return &ParseError{&ParseErrorTicket{
+			Message: FfiConverterStringINSTANCE.Read(reader),
+		}}
+	default:
+		panic(fmt.Sprintf("Unknown error code %d in FfiConverterParseError.Read()", errorID))
+	}
+}
+
+func (c FfiConverterParseError) Write(writer io.Writer, value *ParseError) {
+	switch variantValue := value.err.(type) {
+	case *ParseErrorTicket:
+		writeInt32(writer, 1)
+		FfiConverterStringINSTANCE.Write(writer, variantValue.Message)
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterParseError.Write", value))
+	}
+}
+
+type FfiDestroyerParseError struct{}
+
+func (_ FfiDestroyerParseError) Destroy(value *ParseError) {
+	switch variantValue := value.err.(type) {
+	case ParseErrorTicket:
+		variantValue.destroy()
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerParseError.Destroy", value))
+	}
+}
+
 type PublicKeyError struct {
 	err error
 }
@@ -3978,6 +4092,99 @@ func (_ FfiDestroyerSubscribeNextError) Destroy(value *SubscribeNextError) {
 	}
 }
 
+// Error when converting from ffi NodeAddr to iroh::NodeAddr
+type TicketError struct {
+	err error
+}
+
+// Convience method to turn *TicketError into error
+// Avoiding treating nil pointer as non nil error interface
+func (err *TicketError) AsError() error {
+	if err == nil {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func (err TicketError) Error() string {
+	return fmt.Sprintf("TicketError: %s", err.err.Error())
+}
+
+func (err TicketError) Unwrap() error {
+	return err.err
+}
+
+// Err* are used for checking error type with `errors.Is`
+var ErrTicketErrorParseError = fmt.Errorf("TicketErrorParseError")
+
+// Variant structs
+type TicketErrorParseError struct {
+	message string
+}
+
+func NewTicketErrorParseError() *TicketError {
+	return &TicketError{err: &TicketErrorParseError{}}
+}
+
+func (e TicketErrorParseError) destroy() {
+}
+
+func (err TicketErrorParseError) Error() string {
+	return fmt.Sprintf("ParseError: %s", err.message)
+}
+
+func (self TicketErrorParseError) Is(target error) bool {
+	return target == ErrTicketErrorParseError
+}
+
+type FfiConverterTicketError struct{}
+
+var FfiConverterTicketErrorINSTANCE = FfiConverterTicketError{}
+
+func (c FfiConverterTicketError) Lift(eb RustBufferI) *TicketError {
+	return LiftFromRustBuffer[*TicketError](c, eb)
+}
+
+func (c FfiConverterTicketError) Lower(value *TicketError) C.RustBuffer {
+	return LowerIntoRustBuffer[*TicketError](c, value)
+}
+
+func (c FfiConverterTicketError) Read(reader io.Reader) *TicketError {
+	errorID := readUint32(reader)
+
+	message := FfiConverterStringINSTANCE.Read(reader)
+	switch errorID {
+	case 1:
+		return &TicketError{&TicketErrorParseError{message}}
+	default:
+		panic(fmt.Sprintf("Unknown error code %d in FfiConverterTicketError.Read()", errorID))
+	}
+
+}
+
+func (c FfiConverterTicketError) Write(writer io.Writer, value *TicketError) {
+	switch variantValue := value.err.(type) {
+	case *TicketErrorParseError:
+		writeInt32(writer, 1)
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterTicketError.Write", value))
+	}
+}
+
+type FfiDestroyerTicketError struct{}
+
+func (_ FfiDestroyerTicketError) Destroy(value *TicketError) {
+	switch variantValue := value.err.(type) {
+	case TicketErrorParseError:
+		variantValue.destroy()
+	default:
+		_ = variantValue
+		panic(fmt.Sprintf("invalid error value `%v` in FfiDestroyerTicketError.Destroy", value))
+	}
+}
+
 // A bound on time for filtering.
 type TimeBound interface {
 	Destroy()
@@ -4474,6 +4681,19 @@ func GetManifestAndCert(data []byte) (string, error) {
 		return _uniffiDefaultValue, _uniffiErr
 	} else {
 		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Get this node's ticket.
+func NodeIdFromTicket(ticketStr string) (*PublicKey, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[TicketError](FfiConverterTicketError{}, func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_iroh_streamplace_fn_func_node_id_from_ticket(FfiConverterStringINSTANCE.Lower(ticketStr), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue *PublicKey
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterPublicKeyINSTANCE.Lift(_uniffiRV), nil
 	}
 }
 

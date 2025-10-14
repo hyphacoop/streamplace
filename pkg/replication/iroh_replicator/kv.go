@@ -6,13 +6,16 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/bluesky-social/indigo/util"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
+	"stream.place/streamplace/pkg/streamplace"
 )
 
 type IrohSwarm struct {
@@ -25,6 +28,8 @@ type IrohSwarm struct {
 	NodeTicket       string
 	activeSubs       map[string]*OriginInfo
 	handleDataScoped func(topic string, data []byte)
+	bus              *bus.Bus
+	originMutex      sync.Mutex
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -33,7 +38,7 @@ type OriginInfo struct {
 	Time   string `json:"time"`
 }
 
-func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte, mm *media.MediaManager) (*IrohSwarm, error) {
+func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte, mm *media.MediaManager, bus *bus.Bus) (*IrohSwarm, error) {
 	ctx = log.WithLogValues(ctx, "func", "StartKV")
 
 	if topic == nil {
@@ -55,6 +60,7 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte
 	swarm := IrohSwarm{
 		mm:         mm,
 		activeSubs: make(map[string]*OriginInfo),
+		bus:        bus,
 	}
 
 	// workaround to get context into the HandleData callback
@@ -122,6 +128,9 @@ func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
 		<-ctx.Done()
 		return swarm.Node.Shutdown()
 	})
+	g.Go(func() error {
+		return swarm.startBusSubscribe(ctx)
+	})
 	return g.Wait()
 }
 
@@ -135,6 +144,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to get next subscription event: %w", err)
 		}
+
 		if ev == nil {
 			log.Debug(ctx, "Got empty event from sub.NextRaw(), pausing for a second")
 			time.Sleep(1 * time.Second)
@@ -156,45 +166,11 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 				log.Error(ctx, "could not unmarshal origin info", "error", err)
 				continue
 			}
-			oldSub, ok := swarm.activeSubs[keyStr]
-			if ok {
-				if oldSub.NodeID == info.NodeID {
-					log.Debug(ctx, "node hasn't changed", "streamer", keyStr)
-					// mmyep. same node still has the stream. great news.
-					continue
-				}
-				log.Log(ctx, "Stream origin changed, swapping to new node", "old_node", oldSub.NodeID, "new_node", info.NodeID, "streamer", keyStr)
-				pubKey, err := iroh_streamplace.PublicKeyFromString(oldSub.NodeID)
-				if err != nil {
-					log.Error(ctx, "could not create public key", "error", err)
-					continue
-				}
-				// different node has the stream. we need to unsubscribe from the old node.
-				err = swarm.Node.Unsubscribe(keyStr, pubKey)
-				if err != nil {
-					log.Error(ctx, "could not unsubscribe from key", "error", err)
-					continue
-				}
-				delete(swarm.activeSubs, keyStr)
-			}
-			if info.NodeID == swarm.NodeID {
-				log.Debug(ctx, "I already have this stream", "streamer", keyStr)
-				// oh, i have this stream. cool. do nothing.
-				continue
-			}
-			log.Log(ctx, "Subscribing to stream", "new_node", info.NodeID, "streamer", keyStr)
-			pubKey, err := iroh_streamplace.PublicKeyFromString(info.NodeID)
+			err = swarm.checkOrigins(ctx, keyStr, info.NodeID)
 			if err != nil {
-				log.Error(ctx, "could not create public key", "error", err)
+				log.Error(ctx, "could not check origins", "error", err)
 				continue
 			}
-			err = swarm.Node.Subscribe(keyStr, pubKey)
-			if err != nil {
-				log.Error(ctx, "could not subscribe to key", "error", err)
-				continue
-			}
-			swarm.activeSubs[keyStr] = &info
-
 		case iroh_streamplace.SubscribeItemCurrentDone:
 			log.Debug(ctx, "SubscribeItemCurrentDone", "currentDone", item)
 		case iroh_streamplace.SubscribeItemExpired:
@@ -203,6 +179,96 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			log.Debug(ctx, "SubscribeItemOther", "other", item)
 		}
 	}
+}
+
+// subscribe to all streams
+func (swarm *IrohSwarm) startBusSubscribe(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case msg := <-swarm.bus.Subscribe(""):
+			if view, ok := msg.(*streamplace.BroadcastDefs_BroadcastOriginView); ok {
+				log.Debug(ctx, "got broadcast origin view", "view", view)
+				origin, ok := view.Record.Val.(*streamplace.BroadcastOrigin)
+				if !ok {
+					log.Error(ctx, "record is not a BroadcastOrigin", "record", view.Record)
+					continue
+				}
+				if view.Author.Did != origin.Streamer {
+					// currently, only streamers are allowed to advertise origins
+					continue
+				}
+				if origin.IrohTicket == nil {
+					log.Error(ctx, "origin has no iroh ticket", "origin", origin)
+					continue
+				}
+				pubKey, err := iroh_streamplace.NodeIdFromTicket(*origin.IrohTicket)
+				if err != nil {
+					log.Error(ctx, "could not get node id from ticket", "error", err)
+					continue
+				}
+				err = swarm.Node.AddTickets([]string{*origin.IrohTicket})
+				if err != nil {
+					log.Error(ctx, "could not add tickets", "error", err)
+					continue
+				}
+				pubKeyStr := pubKey.String()
+				err = swarm.checkOrigins(ctx, origin.Streamer, pubKeyStr)
+				if err != nil {
+					log.Error(ctx, "could not check origin", "error", err)
+					continue
+				}
+			}
+		}
+	}
+}
+
+func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeID string) error {
+	swarm.originMutex.Lock()
+	defer swarm.originMutex.Unlock()
+	oldSub, ok := swarm.activeSubs[streamer]
+	if ok {
+		if oldSub.NodeID == nodeID {
+			log.Debug(ctx, "node hasn't changed", "streamer", streamer)
+			// mmyep. same node still has the stream. great news.
+			return nil
+		}
+		log.Log(ctx, "Stream origin changed, swapping to new node", "old_node", oldSub.NodeID, "new_node", nodeID, "streamer", streamer)
+		pubKey, err := iroh_streamplace.PublicKeyFromString(oldSub.NodeID)
+		if err != nil {
+			log.Error(ctx, "could not create public key", "error", err)
+			return err
+		}
+		// different node has the stream. we need to unsubscribe from the old node.
+		err = swarm.Node.Unsubscribe(streamer, pubKey)
+		if err != nil {
+			log.Error(ctx, "could not unsubscribe from key", "error", err)
+			return err
+		}
+		delete(swarm.activeSubs, streamer)
+	}
+	if nodeID == swarm.NodeID {
+		log.Debug(ctx, "I already have this stream", "streamer", streamer)
+		// oh, i have this stream. cool. do nothing.
+		return nil
+	}
+	log.Log(ctx, "Subscribing to stream", "new_node", nodeID, "streamer", streamer)
+	pubKey, err := iroh_streamplace.PublicKeyFromString(nodeID)
+	if err != nil {
+		log.Error(ctx, "could not create public key", "error", err)
+		return err
+	}
+	err = swarm.Node.Subscribe(streamer, pubKey)
+	if err != nil {
+		log.Error(ctx, "could not subscribe to key", "error", err)
+		return err
+	}
+	swarm.activeSubs[streamer] = &OriginInfo{
+		NodeID: nodeID,
+		Time:   time.Now().Format(util.ISO8601),
+	}
+	return nil
 }
 
 func (swarm *IrohSwarm) startSegmentSender(ctx context.Context) error {
