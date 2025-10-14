@@ -175,7 +175,7 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 			License:         s.ContentRights.License,
 		}
 	}
-	
+
 	var contentWarnings *streamplace.MetadataContentWarnings
 	if len(s.ContentWarnings) > 0 {
 		contentWarnings = &streamplace.MetadataContentWarnings{

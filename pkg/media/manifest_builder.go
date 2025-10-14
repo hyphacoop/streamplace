@@ -209,11 +209,11 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 			// Calculate expiry: start time (seconds) + duration (seconds) = expiry timestamp (seconds)
 			startTimeSeconds := startTimeMillis / 1000
 			expiresAtSeconds := startTimeSeconds + *metadata.DistributionPolicy.DeleteAfter
-			
+
 			// Convert to ISO 8601 datetime string for C2PA manifest
 			// Note: In the manifest, we store this in "deleteAfter" field but with timestamp value instead of duration
 			deleteAfterTimestamp := aqtime.FromMillis(expiresAtSeconds * 1000).String()
-			
+
 			mani["assertions"].([]obj)[1]["data"].(obj)["distributionPolicy"] = obj{
 				"deleteAfter": deleteAfterTimestamp,
 			}
