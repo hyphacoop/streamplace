@@ -18,8 +18,7 @@ import (
 )
 
 type DBModel struct {
-	DB  *gorm.DB
-	CLI *config.CLI
+	DB *gorm.DB
 }
 
 type Model interface {
@@ -35,7 +34,8 @@ type Model interface {
 	CreateThumbnail(thumb *Thumbnail) error
 	LatestThumbnailForUser(user string) (*Thumbnail, error)
 	GetSegment(id string) (*Segment, error)
-	StartSegmentCleaner(ctx context.Context) error
+	GetExpiredSegments(ctx context.Context) ([]Segment, error)
+	DeleteSegment(ctx context.Context, id string) error
 
 	GetIdentity(id string) (*Identity, error)
 	UpdateIdentity(ident *Identity) error

@@ -698,7 +698,6 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                           setCustomDateTime(value);
                           handleDistributionPolicyChange(value);
                         }}
-                        placeholder="300"
                         keyboardType="numeric"
                         variant="filled"
                         inputStyle={[

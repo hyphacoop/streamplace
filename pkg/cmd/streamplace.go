@@ -39,6 +39,7 @@ import (
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/statedb"
+	"stream.place/streamplace/pkg/storage"
 
 	"github.com/ThalesGroup/crypto11"
 	_ "github.com/go-gst/go-glib/glib"
@@ -506,7 +507,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	})
 
 	group.Go(func() error {
-		return mod.StartSegmentCleaner(ctx)
+		return storage.StartSegmentCleaner(ctx, mod, &cli)
 	})
 
 	group.Go(func() error {

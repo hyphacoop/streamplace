@@ -96,6 +96,10 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 	if _, err := io.Copy(fd, r); err != nil {
 		return err
 	}
+	var deleteAfter *time.Time
+	if meta.DistributionPolicy != nil && meta.DistributionPolicy.ExpiresAt != nil {
+		deleteAfter = meta.DistributionPolicy.ExpiresAt
+	}
 	seg := &model.Segment{
 		ID:                 *maniCert.Manifest.Label,
 		SigningKeyDID:      signingKeyDID,
@@ -107,6 +111,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 		ContentWarnings:    model.ContentWarningsSlice(meta.ContentWarnings),
 		ContentRights:      meta.ContentRights,
 		DistributionPolicy: meta.DistributionPolicy,
+		DeleteAfter:        deleteAfter,
 	}
 	mm.newSegmentSubsMutex.RLock()
 	defer mm.newSegmentSubsMutex.RUnlock()

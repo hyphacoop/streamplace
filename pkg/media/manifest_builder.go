@@ -85,12 +85,12 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 			log.Warn(ctx, "ManifestBuilder: failed to retrieve metadata", "error", err, "did", streamerName)
 			return nil, fmt.Errorf("failed to retrieve metadata: %w", err)
 		} else if metadata != nil {
-			log.Warn(ctx, "ManifestBuilder: found metadata configuration", "did", streamerName, "metadata", metadata)
+			log.Debug(ctx, "ManifestBuilder: found metadata configuration", "did", streamerName, "metadata", metadata)
 			streamplaceMetadata, err := metadata.ToStreamplaceMetadataConfiguration()
 			if err != nil {
 				log.Warn(ctx, "ManifestBuilder: failed to convert metadata, using defaults", "error", err, "did", streamerName)
 			} else {
-				log.Warn(ctx, "ManifestBuilder: enhancing manifest with metadata", "did", streamerName, "contentWarnings", streamplaceMetadata.ContentWarnings, "contentRights", streamplaceMetadata.ContentRights)
+				log.Debug(ctx, "ManifestBuilder: enhancing manifest with metadata", "did", streamerName, "contentWarnings", streamplaceMetadata.ContentWarnings, "contentRights", streamplaceMetadata.ContentRights)
 				mani = mb.enhanceManifestWithMetadata(mani, streamplaceMetadata, start)
 				metadataObj, err := toObj(streamplaceMetadata)
 				if err != nil {
