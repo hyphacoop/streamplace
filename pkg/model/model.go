@@ -99,6 +99,7 @@ type Model interface {
 	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
 
 	UpdateBroadcastOrigin(ctx context.Context, origin *streamplace.BroadcastOrigin, aturi syntax.ATURI) error
+	GetRecentBroadcastOrigins(ctx context.Context) ([]*streamplace.BroadcastDefs_BroadcastOriginView, error)
 }
 
 var DBRevision = 2

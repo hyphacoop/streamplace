@@ -15,6 +15,7 @@ import (
 	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
+	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/streamplace"
 )
 
@@ -30,6 +31,7 @@ type IrohSwarm struct {
 	handleDataScoped func(topic string, data []byte)
 	bus              *bus.Bus
 	originMutex      sync.Mutex
+	mod              model.Model
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -38,7 +40,7 @@ type OriginInfo struct {
 	Time   string `json:"time"`
 }
 
-func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte, mm *media.MediaManager, bus *bus.Bus) (*IrohSwarm, error) {
+func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte, mm *media.MediaManager, bus *bus.Bus, mod model.Model) (*IrohSwarm, error) {
 	ctx = log.WithLogValues(ctx, "func", "StartKV")
 
 	if topic == nil {
@@ -61,6 +63,7 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte
 		mm:         mm,
 		activeSubs: make(map[string]*OriginInfo),
 		bus:        bus,
+		mod:        mod,
 	}
 
 	// workaround to get context into the HandleData callback
@@ -183,45 +186,61 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 
 // subscribe to all streams
 func (swarm *IrohSwarm) startBusSubscribe(ctx context.Context) error {
+	// start subscription first so we're buffering new origins
+	busCh := swarm.bus.Subscribe("")
+	originViews, err := swarm.mod.GetRecentBroadcastOrigins(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get recent broadcast origins: %w", err)
+	}
+	for _, view := range originViews {
+		err = swarm.handleOriginMessage(ctx, view)
+		if err != nil {
+			log.Error(ctx, "could not check origin", "error", err)
+		}
+	}
+	log.Log(ctx, "Resumed recent broadcast origins", "count", len(originViews))
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case msg := <-swarm.bus.Subscribe(""):
+		case msg := <-busCh:
 			if view, ok := msg.(*streamplace.BroadcastDefs_BroadcastOriginView); ok {
 				log.Debug(ctx, "got broadcast origin view", "view", view)
-				origin, ok := view.Record.Val.(*streamplace.BroadcastOrigin)
-				if !ok {
-					log.Error(ctx, "record is not a BroadcastOrigin", "record", view.Record)
-					continue
-				}
-				if view.Author.Did != origin.Streamer {
-					// currently, only streamers are allowed to advertise origins
-					continue
-				}
-				if origin.IrohTicket == nil {
-					log.Error(ctx, "origin has no iroh ticket", "origin", origin)
-					continue
-				}
-				pubKey, err := iroh_streamplace.NodeIdFromTicket(*origin.IrohTicket)
+				err = swarm.handleOriginMessage(ctx, view)
 				if err != nil {
-					log.Error(ctx, "could not get node id from ticket", "error", err)
-					continue
-				}
-				err = swarm.Node.AddTickets([]string{*origin.IrohTicket})
-				if err != nil {
-					log.Error(ctx, "could not add tickets", "error", err)
-					continue
-				}
-				pubKeyStr := pubKey.String()
-				err = swarm.checkOrigins(ctx, origin.Streamer, pubKeyStr)
-				if err != nil {
-					log.Error(ctx, "could not check origin", "error", err)
-					continue
+					log.Error(ctx, "could not handle origin message", "error", err)
 				}
 			}
 		}
 	}
+}
+
+func (swarm *IrohSwarm) handleOriginMessage(ctx context.Context, view *streamplace.BroadcastDefs_BroadcastOriginView) error {
+	origin, ok := view.Record.Val.(*streamplace.BroadcastOrigin)
+	if !ok {
+		return fmt.Errorf("record is not a BroadcastOrigin")
+	}
+	if view.Author.Did != origin.Streamer {
+		// currently, only streamers are allowed to advertise origins
+		return nil
+	}
+	if origin.IrohTicket == nil {
+		return fmt.Errorf("origin has no iroh ticket")
+	}
+	pubKey, err := iroh_streamplace.NodeIdFromTicket(*origin.IrohTicket)
+	if err != nil {
+		return fmt.Errorf("could not get node id from ticket: %w", err)
+	}
+	err = swarm.Node.AddTickets([]string{*origin.IrohTicket})
+	if err != nil {
+		return fmt.Errorf("could not add tickets: %w", err)
+	}
+	pubKeyStr := pubKey.String()
+	err = swarm.checkOrigins(ctx, origin.Streamer, pubKeyStr)
+	if err != nil {
+		return fmt.Errorf("could not check origin: %w", err)
+	}
+	return nil
 }
 
 func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeID string) error {
