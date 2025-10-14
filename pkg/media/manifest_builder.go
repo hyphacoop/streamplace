@@ -32,9 +32,21 @@ func NewManifestBuilder(model model.Model) *ManifestBuilder {
 	}
 }
 
+func toObj(record any) (obj, error) {
+	jsonBs, err := json.Marshal(record)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal record: %w", err)
+	}
+	var o obj
+	err = json.Unmarshal(jsonBs, &o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal record: %w", err)
+	}
+	return o, nil
+}
+
 func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName string, start int64) ([]byte, error) {
-	fmt.Printf("🔍 BuildManifest CALLED for %s at %d\n", streamerName, start)
-	log.Warn(ctx, "🔍 BuildManifest ENTRY", "streamer", streamerName, "start", start)
+	log.Debug(ctx, "🔍 BuildManifest ENTRY", "streamer", streamerName, "start", start)
 	// Start with base manifest
 	mani := obj{
 		"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
@@ -80,6 +92,14 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 			} else {
 				log.Warn(ctx, "ManifestBuilder: enhancing manifest with metadata", "did", streamerName, "contentWarnings", streamplaceMetadata.ContentWarnings, "contentRights", streamplaceMetadata.ContentRights)
 				mani = mb.enhanceManifestWithMetadata(mani, streamplaceMetadata, start)
+				metadataObj, err := toObj(streamplaceMetadata)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+				}
+				mani["assertions"] = append(mani["assertions"].([]obj), obj{
+					"label": "place.stream.metadata.configuration",
+					"data": metadataObj,
+				})
 			}
 		} else {
 			log.Warn(ctx, "ManifestBuilder: no metadata configuration found for streamer", "did", streamerName)
@@ -100,6 +120,14 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 			} else {
 				if ls, ok := livestreamRecord.Record.Val.(*streamplace.Livestream); ok {
 					livestreamTitle = ls.Title
+					livestreamObj, err := toObj(ls)
+					if err != nil {
+						return nil, fmt.Errorf("failed to marshal livestream: %w", err)
+					}
+					mani["assertions"] = append(mani["assertions"].([]obj), obj{
+						"label": "place.stream.livestream",
+						"data": livestreamObj,
+					})
 				}
 			}
 		}
