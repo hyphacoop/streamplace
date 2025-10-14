@@ -672,9 +672,21 @@ func (t *Segment) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 9
+	fieldCount := 12
 
 	if t.Audio == nil {
+		fieldCount--
+	}
+
+	if t.ContentRights == nil {
+		fieldCount--
+	}
+
+	if t.ContentWarnings == nil {
+		fieldCount--
+	}
+
+	if t.DistributionPolicy == nil {
 		fieldCount--
 	}
 
@@ -926,6 +938,63 @@ func (t *Segment) MarshalCBOR(w io.Writer) error {
 	if _, err := cw.WriteString(string(t.SigningKey)); err != nil {
 		return err
 	}
+
+	// t.ContentRights (streamplace.MetadataContentRights) (struct)
+	if t.ContentRights != nil {
+
+		if len("contentRights") > 1000000 {
+			return xerrors.Errorf("Value in field \"contentRights\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("contentRights"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("contentRights")); err != nil {
+			return err
+		}
+
+		if err := t.ContentRights.MarshalCBOR(cw); err != nil {
+			return err
+		}
+	}
+
+	// t.ContentWarnings (streamplace.MetadataContentWarnings) (struct)
+	if t.ContentWarnings != nil {
+
+		if len("contentWarnings") > 1000000 {
+			return xerrors.Errorf("Value in field \"contentWarnings\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("contentWarnings"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("contentWarnings")); err != nil {
+			return err
+		}
+
+		if err := t.ContentWarnings.MarshalCBOR(cw); err != nil {
+			return err
+		}
+	}
+
+	// t.DistributionPolicy (streamplace.MetadataDistributionPolicy) (struct)
+	if t.DistributionPolicy != nil {
+
+		if len("distributionPolicy") > 1000000 {
+			return xerrors.Errorf("Value in field \"distributionPolicy\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("distributionPolicy"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("distributionPolicy")); err != nil {
+			return err
+		}
+
+		if err := t.DistributionPolicy.MarshalCBOR(cw); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -954,7 +1023,7 @@ func (t *Segment) UnmarshalCBOR(r io.Reader) (err error) {
 
 	n := extra
 
-	nameBuf := make([]byte, 10)
+	nameBuf := make([]byte, 18)
 	for i := uint64(0); i < n; i++ {
 		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
 		if err != nil {
@@ -1194,6 +1263,66 @@ func (t *Segment) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.SigningKey = string(sval)
+			}
+			// t.ContentRights (streamplace.MetadataContentRights) (struct)
+		case "contentRights":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.ContentRights = new(MetadataContentRights)
+					if err := t.ContentRights.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.ContentRights pointer: %w", err)
+					}
+				}
+
+			}
+			// t.ContentWarnings (streamplace.MetadataContentWarnings) (struct)
+		case "contentWarnings":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.ContentWarnings = new(MetadataContentWarnings)
+					if err := t.ContentWarnings.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.ContentWarnings pointer: %w", err)
+					}
+				}
+
+			}
+			// t.DistributionPolicy (streamplace.MetadataDistributionPolicy) (struct)
+		case "distributionPolicy":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.DistributionPolicy = new(MetadataDistributionPolicy)
+					if err := t.DistributionPolicy.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.DistributionPolicy pointer: %w", err)
+					}
+				}
+
 			}
 
 		default:
@@ -3589,6 +3718,885 @@ func (t *BroadcastSyndication) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.Broadcaster = string(sval)
+			}
+
+		default:
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(r, func(cid.Cid) {}); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+func (t *MetadataConfiguration) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+	fieldCount := 4
+
+	if t.ContentRights == nil {
+		fieldCount--
+	}
+
+	if t.ContentWarnings == nil {
+		fieldCount--
+	}
+
+	if t.DistributionPolicy == nil {
+		fieldCount--
+	}
+
+	if _, err := cw.Write(cbg.CborEncodeMajorType(cbg.MajMap, uint64(fieldCount))); err != nil {
+		return err
+	}
+
+	// t.LexiconTypeID (string) (string)
+	if len("$type") > 1000000 {
+		return xerrors.Errorf("Value in field \"$type\" was too long")
+	}
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("$type"))); err != nil {
+		return err
+	}
+	if _, err := cw.WriteString(string("$type")); err != nil {
+		return err
+	}
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("place.stream.metadata.configuration"))); err != nil {
+		return err
+	}
+	if _, err := cw.WriteString(string("place.stream.metadata.configuration")); err != nil {
+		return err
+	}
+
+	// t.ContentRights (streamplace.MetadataContentRights) (struct)
+	if t.ContentRights != nil {
+
+		if len("contentRights") > 1000000 {
+			return xerrors.Errorf("Value in field \"contentRights\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("contentRights"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("contentRights")); err != nil {
+			return err
+		}
+
+		if err := t.ContentRights.MarshalCBOR(cw); err != nil {
+			return err
+		}
+	}
+
+	// t.ContentWarnings (streamplace.MetadataContentWarnings) (struct)
+	if t.ContentWarnings != nil {
+
+		if len("contentWarnings") > 1000000 {
+			return xerrors.Errorf("Value in field \"contentWarnings\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("contentWarnings"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("contentWarnings")); err != nil {
+			return err
+		}
+
+		if err := t.ContentWarnings.MarshalCBOR(cw); err != nil {
+			return err
+		}
+	}
+
+	// t.DistributionPolicy (streamplace.MetadataDistributionPolicy) (struct)
+	if t.DistributionPolicy != nil {
+
+		if len("distributionPolicy") > 1000000 {
+			return xerrors.Errorf("Value in field \"distributionPolicy\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("distributionPolicy"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("distributionPolicy")); err != nil {
+			return err
+		}
+
+		if err := t.DistributionPolicy.MarshalCBOR(cw); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *MetadataConfiguration) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataConfiguration{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajMap {
+		return fmt.Errorf("cbor input should be of type map")
+	}
+
+	if extra > cbg.MaxLength {
+		return fmt.Errorf("MetadataConfiguration: map struct too large (%d)", extra)
+	}
+
+	n := extra
+
+	nameBuf := make([]byte, 18)
+	for i := uint64(0); i < n; i++ {
+		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(cr, func(cid.Cid) {}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		switch string(nameBuf[:nameLen]) {
+		// t.LexiconTypeID (string) (string)
+		case "$type":
+
+			{
+				sval, err := cbg.ReadStringWithMax(cr, 1000000)
+				if err != nil {
+					return err
+				}
+
+				t.LexiconTypeID = string(sval)
+			}
+			// t.ContentRights (streamplace.MetadataContentRights) (struct)
+		case "contentRights":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.ContentRights = new(MetadataContentRights)
+					if err := t.ContentRights.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.ContentRights pointer: %w", err)
+					}
+				}
+
+			}
+			// t.ContentWarnings (streamplace.MetadataContentWarnings) (struct)
+		case "contentWarnings":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.ContentWarnings = new(MetadataContentWarnings)
+					if err := t.ContentWarnings.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.ContentWarnings pointer: %w", err)
+					}
+				}
+
+			}
+			// t.DistributionPolicy (streamplace.MetadataDistributionPolicy) (struct)
+		case "distributionPolicy":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.DistributionPolicy = new(MetadataDistributionPolicy)
+					if err := t.DistributionPolicy.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.DistributionPolicy pointer: %w", err)
+					}
+				}
+
+			}
+
+		default:
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(r, func(cid.Cid) {}); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+func (t *MetadataDistributionPolicy) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+	fieldCount := 1
+
+	if t.DeleteAfter == nil {
+		fieldCount--
+	}
+
+	if _, err := cw.Write(cbg.CborEncodeMajorType(cbg.MajMap, uint64(fieldCount))); err != nil {
+		return err
+	}
+
+	// t.DeleteAfter (int64) (int64)
+	if t.DeleteAfter != nil {
+
+		if len("deleteAfter") > 1000000 {
+			return xerrors.Errorf("Value in field \"deleteAfter\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("deleteAfter"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("deleteAfter")); err != nil {
+			return err
+		}
+
+		if t.DeleteAfter == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if *t.DeleteAfter >= 0 {
+				if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(*t.DeleteAfter)); err != nil {
+					return err
+				}
+			} else {
+				if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-*t.DeleteAfter-1)); err != nil {
+					return err
+				}
+			}
+		}
+
+	}
+	return nil
+}
+
+func (t *MetadataDistributionPolicy) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataDistributionPolicy{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajMap {
+		return fmt.Errorf("cbor input should be of type map")
+	}
+
+	if extra > cbg.MaxLength {
+		return fmt.Errorf("MetadataDistributionPolicy: map struct too large (%d)", extra)
+	}
+
+	n := extra
+
+	nameBuf := make([]byte, 11)
+	for i := uint64(0); i < n; i++ {
+		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(cr, func(cid.Cid) {}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		switch string(nameBuf[:nameLen]) {
+		// t.DeleteAfter (int64) (int64)
+		case "deleteAfter":
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					maj, extra, err := cr.ReadHeader()
+					if err != nil {
+						return err
+					}
+					var extraI int64
+					switch maj {
+					case cbg.MajUnsignedInt:
+						extraI = int64(extra)
+						if extraI < 0 {
+							return fmt.Errorf("int64 positive overflow")
+						}
+					case cbg.MajNegativeInt:
+						extraI = int64(extra)
+						if extraI < 0 {
+							return fmt.Errorf("int64 negative overflow")
+						}
+						extraI = -1 - extraI
+					default:
+						return fmt.Errorf("wrong type for int64 field: %d", maj)
+					}
+
+					t.DeleteAfter = (*int64)(&extraI)
+				}
+			}
+
+		default:
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(r, func(cid.Cid) {}); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+func (t *MetadataContentRights) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+	fieldCount := 5
+
+	if t.CopyrightNotice == nil {
+		fieldCount--
+	}
+
+	if t.CopyrightYear == nil {
+		fieldCount--
+	}
+
+	if t.Creator == nil {
+		fieldCount--
+	}
+
+	if t.CreditLine == nil {
+		fieldCount--
+	}
+
+	if t.License == nil {
+		fieldCount--
+	}
+
+	if _, err := cw.Write(cbg.CborEncodeMajorType(cbg.MajMap, uint64(fieldCount))); err != nil {
+		return err
+	}
+
+	// t.Creator (string) (string)
+	if t.Creator != nil {
+
+		if len("creator") > 1000000 {
+			return xerrors.Errorf("Value in field \"creator\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("creator"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("creator")); err != nil {
+			return err
+		}
+
+		if t.Creator == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.Creator) > 1000000 {
+				return xerrors.Errorf("Value in field t.Creator was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.Creator))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.Creator)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// t.License (string) (string)
+	if t.License != nil {
+
+		if len("license") > 1000000 {
+			return xerrors.Errorf("Value in field \"license\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("license"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("license")); err != nil {
+			return err
+		}
+
+		if t.License == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.License) > 1000000 {
+				return xerrors.Errorf("Value in field t.License was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.License))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.License)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// t.CreditLine (string) (string)
+	if t.CreditLine != nil {
+
+		if len("creditLine") > 1000000 {
+			return xerrors.Errorf("Value in field \"creditLine\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("creditLine"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("creditLine")); err != nil {
+			return err
+		}
+
+		if t.CreditLine == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.CreditLine) > 1000000 {
+				return xerrors.Errorf("Value in field t.CreditLine was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.CreditLine))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.CreditLine)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// t.CopyrightYear (int64) (int64)
+	if t.CopyrightYear != nil {
+
+		if len("copyrightYear") > 1000000 {
+			return xerrors.Errorf("Value in field \"copyrightYear\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("copyrightYear"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("copyrightYear")); err != nil {
+			return err
+		}
+
+		if t.CopyrightYear == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if *t.CopyrightYear >= 0 {
+				if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(*t.CopyrightYear)); err != nil {
+					return err
+				}
+			} else {
+				if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-*t.CopyrightYear-1)); err != nil {
+					return err
+				}
+			}
+		}
+
+	}
+
+	// t.CopyrightNotice (string) (string)
+	if t.CopyrightNotice != nil {
+
+		if len("copyrightNotice") > 1000000 {
+			return xerrors.Errorf("Value in field \"copyrightNotice\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("copyrightNotice"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("copyrightNotice")); err != nil {
+			return err
+		}
+
+		if t.CopyrightNotice == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.CopyrightNotice) > 1000000 {
+				return xerrors.Errorf("Value in field t.CopyrightNotice was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.CopyrightNotice))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.CopyrightNotice)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *MetadataContentRights) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataContentRights{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajMap {
+		return fmt.Errorf("cbor input should be of type map")
+	}
+
+	if extra > cbg.MaxLength {
+		return fmt.Errorf("MetadataContentRights: map struct too large (%d)", extra)
+	}
+
+	n := extra
+
+	nameBuf := make([]byte, 15)
+	for i := uint64(0); i < n; i++ {
+		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(cr, func(cid.Cid) {}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		switch string(nameBuf[:nameLen]) {
+		// t.Creator (string) (string)
+		case "creator":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.Creator = (*string)(&sval)
+				}
+			}
+			// t.License (string) (string)
+		case "license":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.License = (*string)(&sval)
+				}
+			}
+			// t.CreditLine (string) (string)
+		case "creditLine":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.CreditLine = (*string)(&sval)
+				}
+			}
+			// t.CopyrightYear (int64) (int64)
+		case "copyrightYear":
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					maj, extra, err := cr.ReadHeader()
+					if err != nil {
+						return err
+					}
+					var extraI int64
+					switch maj {
+					case cbg.MajUnsignedInt:
+						extraI = int64(extra)
+						if extraI < 0 {
+							return fmt.Errorf("int64 positive overflow")
+						}
+					case cbg.MajNegativeInt:
+						extraI = int64(extra)
+						if extraI < 0 {
+							return fmt.Errorf("int64 negative overflow")
+						}
+						extraI = -1 - extraI
+					default:
+						return fmt.Errorf("wrong type for int64 field: %d", maj)
+					}
+
+					t.CopyrightYear = (*int64)(&extraI)
+				}
+			}
+			// t.CopyrightNotice (string) (string)
+		case "copyrightNotice":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.CopyrightNotice = (*string)(&sval)
+				}
+			}
+
+		default:
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(r, func(cid.Cid) {}); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+func (t *MetadataContentWarnings) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+	fieldCount := 1
+
+	if t.Warnings == nil {
+		fieldCount--
+	}
+
+	if _, err := cw.Write(cbg.CborEncodeMajorType(cbg.MajMap, uint64(fieldCount))); err != nil {
+		return err
+	}
+
+	// t.Warnings ([]string) (slice)
+	if t.Warnings != nil {
+
+		if len("warnings") > 1000000 {
+			return xerrors.Errorf("Value in field \"warnings\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("warnings"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("warnings")); err != nil {
+			return err
+		}
+
+		if len(t.Warnings) > 8192 {
+			return xerrors.Errorf("Slice value in field t.Warnings was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.Warnings))); err != nil {
+			return err
+		}
+		for _, v := range t.Warnings {
+			if len(v) > 1000000 {
+				return xerrors.Errorf("Value in field v was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(v))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(v)); err != nil {
+				return err
+			}
+
+		}
+	}
+	return nil
+}
+
+func (t *MetadataContentWarnings) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = MetadataContentWarnings{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajMap {
+		return fmt.Errorf("cbor input should be of type map")
+	}
+
+	if extra > cbg.MaxLength {
+		return fmt.Errorf("MetadataContentWarnings: map struct too large (%d)", extra)
+	}
+
+	n := extra
+
+	nameBuf := make([]byte, 8)
+	for i := uint64(0); i < n; i++ {
+		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			// Field doesn't exist on this type, so ignore it
+			if err := cbg.ScanForLinks(cr, func(cid.Cid) {}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		switch string(nameBuf[:nameLen]) {
+		// t.Warnings ([]string) (slice)
+		case "warnings":
+
+			maj, extra, err = cr.ReadHeader()
+			if err != nil {
+				return err
+			}
+
+			if extra > 8192 {
+				return fmt.Errorf("t.Warnings: array too large (%d)", extra)
+			}
+
+			if maj != cbg.MajArray {
+				return fmt.Errorf("expected cbor array")
+			}
+
+			if extra > 0 {
+				t.Warnings = make([]string, extra)
+			}
+
+			for i := 0; i < int(extra); i++ {
+				{
+					var maj byte
+					var extra uint64
+					var err error
+					_ = maj
+					_ = extra
+					_ = err
+
+					{
+						sval, err := cbg.ReadStringWithMax(cr, 1000000)
+						if err != nil {
+							return err
+						}
+
+						t.Warnings[i] = string(sval)
+					}
+
+				}
 			}
 
 		default:

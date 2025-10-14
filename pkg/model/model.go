@@ -100,6 +100,10 @@ type Model interface {
 
 	UpdateBroadcastOrigin(ctx context.Context, origin *streamplace.BroadcastOrigin, aturi syntax.ATURI) error
 	GetRecentBroadcastOrigins(ctx context.Context) ([]*streamplace.BroadcastDefs_BroadcastOriginView, error)
+
+	CreateMetadataConfiguration(ctx context.Context, metadata *MetadataConfiguration) error
+	GetMetadataConfiguration(ctx context.Context, repoDID string) (*MetadataConfiguration, error)
+	DeleteMetadataConfiguration(ctx context.Context, repoDID string) error
 }
 
 var DBRevision = 2
@@ -157,6 +161,7 @@ func MakeDB(dbURL string) (Model, error) {
 		Labeler{},
 		Label{},
 		BroadcastOrigin{},
+		MetadataConfiguration{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

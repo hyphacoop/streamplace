@@ -1,4 +1,7 @@
 import {
+  Button,
+  ContentMetadataForm,
+  Textarea,
   useCreateStreamRecord,
   useLivestream,
   useToast,
@@ -15,8 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Button } from "../../../components/src/components/ui/button";
-import { Textarea } from "../../../components/src/components/ui/textarea";
 import { selectUserProfile } from "../../features/bluesky/blueskySlice";
 import { useCaptureVideoFrame } from "../../hooks/useCaptureVideoFrame";
 import { useLiveUser } from "../../hooks/useLiveUser";
@@ -170,13 +171,16 @@ function LivestreamPanel() {
   const [selectedImage, setSelectedImage] = useState<
     string | File | Blob | undefined
   >();
-  const [mode, setMode] = useState<"create" | "edit">(
+  const [mode, setMode] = useState<"create" | "edit" | "metadata">(
     livestream ? "edit" : "create",
   );
 
-  const handleModeChange = useCallback((newMode: "create" | "edit") => {
-    setMode(newMode);
-  }, []);
+  const handleModeChange = useCallback(
+    (newMode: "create" | "edit" | "metadata") => {
+      setMode(newMode);
+    },
+    [],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) return;
@@ -327,6 +331,7 @@ function LivestreamPanel() {
               values={[
                 { label: "Create", value: "create" },
                 { label: "Edit", value: "edit" },
+                { label: "Metadata", value: "metadata" },
               ]}
               style={[{ marginVertical: -2 }]}
               selectedValue={mode}
@@ -349,7 +354,16 @@ function LivestreamPanel() {
                 No active livestream to edit. Start a livestream first!
               </Text>
             </View>
+          ) : mode === "metadata" ? (
+            // Metadata view
+            <View style={[flex.values[1], p[4]]}>
+              <ContentMetadataForm
+                showUpdateButton={!userIsLive}
+                style={{ flex: 1, height: "100%" }}
+              />
+            </View>
           ) : (
+            // Create/Edit view
             <View
               style={[
                 gap.all[8],

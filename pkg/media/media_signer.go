@@ -19,6 +19,8 @@ import (
 	"stream.place/streamplace/pkg/crypto/aqpub"
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
+	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/spmetrics"
 )
 
@@ -30,12 +32,14 @@ type MediaSigner interface {
 }
 
 type MediaSignerLocal struct {
-	StreamerName string
-	Signer       crypto.Signer
-	AQPub        aqpub.Pub
-	Cert         []byte
-	TAURL        string
-	did          string
+	StreamerName     string
+	Signer           crypto.Signer
+	AQPub            aqpub.Pub
+	Cert             []byte
+	TAURL            string
+	did              string
+	manifestBuilder  *ManifestBuilder
+	PrebuiltManifest []byte // Optional: use this manifest instead of building one
 }
 
 func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]byte, error) {
@@ -48,7 +52,7 @@ func prepareCert(ctx context.Context, cli *config.CLI, signer crypto.Signer) ([]
 	return cert, nil
 }
 
-func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, signer crypto.Signer) (MediaSigner, error) {
+func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, signer crypto.Signer, model model.Model) (MediaSigner, error) {
 	cert, err := prepareCert(ctx, cli, signer)
 	if err != nil {
 		return nil, err
@@ -62,12 +66,13 @@ func MakeMediaSigner(ctx context.Context, cli *config.CLI, streamer string, sign
 		return nil, err
 	}
 	return &MediaSignerLocal{
-		Signer:       signer,
-		Cert:         cert,
-		StreamerName: streamer,
-		TAURL:        cli.TAURL,
-		AQPub:        pub,
-		did:          did.DIDKey(),
+		Signer:          signer,
+		Cert:            cert,
+		StreamerName:    streamer,
+		TAURL:           cli.TAURL,
+		AQPub:           pub,
+		did:             did.DIDKey(),
+		manifestBuilder: NewManifestBuilder(model),
 	}, nil
 }
 
@@ -79,37 +84,62 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	startTime := time.Now()
 	ctx, span := otel.Tracer("signer").Start(ctx, "SignMP4")
 	defer span.End()
-	title := "livestream"
-	mani := obj{
-		"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
-		"assertions": []obj{
-			{
-				"label": "c2pa.actions",
-				"data": obj{
-					"actions": []obj{
-						{"action": "c2pa.created"},
-						{"action": "c2pa.published"},
+
+	// Build manifest with metadata from database
+	var manifestBs []byte
+	var err error
+	if len(ms.PrebuiltManifest) > 0 {
+		// Use prebuilt manifest (from external signing subprocess)
+		manifestBs = ms.PrebuiltManifest
+		log.Debug(ctx, "SignMP4: using prebuilt manifest", "manifestLength", len(manifestBs))
+	} else if ms.manifestBuilder != nil {
+		ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_BuildManifest")
+		manifestBs, err = ms.manifestBuilder.BuildManifest(ctx, ms.StreamerName, start)
+		if err != nil {
+			span.End()
+			return nil, fmt.Errorf("failed to build manifest: %w", err)
+		}
+		span.End()
+	} else {
+		// This should NOT happen in production - manifestBuilder should always be initialized
+		log.Warn(ctx, "SignMP4: manifestBuilder is nil, using fallback manifest - this indicates model was not passed to MakeMediaSigner", "streamer", ms.StreamerName)
+		// Fallback to basic manifest without metadata
+		ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_BasicManifest")
+		title := "livestream"
+		mani := obj{
+			"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
+			"assertions": []obj{
+				{
+					"label": "c2pa.actions",
+					"data": obj{
+						"actions": []obj{
+							{"action": "c2pa.created"},
+							{"action": "c2pa.published"},
+						},
+					},
+				},
+				{
+					"label": StreamplaceMetadata,
+					"data": obj{
+						"@context": obj{
+							"dc": "http://purl.org/dc/elements/1.1/",
+						},
+						"dc:creator": ms.StreamerName,
+						"dc:title":   []string{title},
+						"dc:date":    []string{aqtime.FromMillis(start).String()},
 					},
 				},
 			},
-			{
-				"label": StreamplaceMetadata,
-				"data": obj{
-					"@context": obj{
-						"dc": "http://purl.org/dc/elements/1.1/",
-					},
-					"dc:creator": ms.StreamerName,
-					"dc:title":   []string{title},
-					"dc:date":    []string{aqtime.FromMillis(start).String()},
-				},
-			},
-		},
+		}
+		manifestBs, err = json.Marshal(mani)
+		if err != nil {
+			span.End()
+			return nil, fmt.Errorf("failed to marshal basic manifest: %w", err)
+		}
+		span.End()
 	}
+
 	ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_MarshalManifest")
-	manifestBs, err := json.Marshal(mani)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal manifest: %w", err)
-	}
 	var manifest c2patypes.ManifestDefinition
 	err = json.Unmarshal(manifestBs, &manifest)
 	if err != nil {

@@ -43,3 +43,6 @@ export * as Dashboard from "./components/dashboard";
 // Storage exports
 export { default as storage } from "./storage";
 export type { AQStorage } from "./storage/storage.shared";
+
+// Content metadata components
+export * from "./components/content-metadata";
