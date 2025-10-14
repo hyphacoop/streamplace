@@ -91,8 +91,9 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 				if err != nil {
 					log.Error(ctx, "error validating segment", "error", err)
 					globalerror.GlobalError(err)
-					// Stop the pipeline to end the stream (removes from feed)
-					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, err.Error(), fmt.Sprintf("Segment validation failed: %s", err.Error()))
+					// We don't want to stop the pipeline here because we want to keep the stream
+					// alive. Lots of weird invalid data coming in from WebRTC connections on
+					// phones. Better we drop one weird segment than force the stream to restart
 					return
 				}
 			},
