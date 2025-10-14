@@ -171,11 +171,11 @@ func (ss *StreamSession) NewSegment(ctx context.Context, notif *media.NewSegment
 		})
 	}
 
-	ss.Go(ctx, func() error {
-		return ss.UpdateStatus(ctx, spseg.Creator)
-	})
-
 	if notif.Local {
+		ss.Go(ctx, func() error {
+			return ss.UpdateStatus(ctx, spseg.Creator)
+		})
+
 		ss.Go(ctx, func() error {
 			return ss.UpdateBroadcastOrigin(ctx)
 		})
