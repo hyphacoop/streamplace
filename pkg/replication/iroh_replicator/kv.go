@@ -12,6 +12,7 @@ import (
 	"github.com/bluesky-social/indigo/util"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/bus"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
@@ -32,6 +33,7 @@ type IrohSwarm struct {
 	bus              *bus.Bus
 	originMutex      sync.Mutex
 	mod              model.Model
+	cli              *config.CLI
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -40,7 +42,7 @@ type OriginInfo struct {
 	Time   string `json:"time"`
 }
 
-func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte, mm *media.MediaManager, bus *bus.Bus, mod model.Model) (*IrohSwarm, error) {
+func NewSwarm(ctx context.Context, cli *config.CLI, secret []byte, topic []byte, mm *media.MediaManager, bus *bus.Bus, mod model.Model) (*IrohSwarm, error) {
 	ctx = log.WithLogValues(ctx, "func", "StartKV")
 
 	if topic == nil {
@@ -51,7 +53,7 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte
 		}
 	}
 
-	log.Log(ctx, "Starting with tickets", "tickets", tickets)
+	log.Log(ctx, "Starting with tickets", "tickets", cli.Tickets)
 	config := iroh_streamplace.Config{
 		Key:             secret,
 		Topic:           topic,
@@ -64,6 +66,7 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, topic []byte
 		activeSubs: make(map[string]*OriginInfo),
 		bus:        bus,
 		mod:        mod,
+		cli:        cli,
 	}
 
 	// workaround to get context into the HandleData callback
@@ -244,6 +247,10 @@ func (swarm *IrohSwarm) handleOriginMessage(ctx context.Context, view *streampla
 }
 
 func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeID string) error {
+	err := swarm.cli.StreamIsAllowed(streamer)
+	if err != nil {
+		return fmt.Errorf("user %s is not allowlisted on this node: %w", streamer, err)
+	}
 	swarm.originMutex.Lock()
 	defer swarm.originMutex.Unlock()
 	oldSub, ok := swarm.activeSubs[streamer]
