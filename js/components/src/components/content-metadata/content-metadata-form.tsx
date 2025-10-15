@@ -208,11 +208,12 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
     // Handle distribution policy changes
     const handleDistributionPolicyChange = useCallback(
       (deleteAfter: string) => {
-        const duration = parseInt(deleteAfter, 10);
-        const newPolicy =
-          deleteAfter.trim() !== "" && !isNaN(duration)
-            ? { deleteAfter: duration }
-            : {};
+        let duration = parseInt(deleteAfter, 10);
+        if (isNaN(duration) || duration < 0) {
+          duration = 0;
+        }
+        const newPolicy = duration > 0 ? { deleteAfter: duration } : {};
+        console.log("newPolicy", newPolicy);
         setDistributionPolicy(newPolicy);
 
         if (onMetadataChange) {
@@ -223,7 +224,13 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
           });
         }
       },
-      [contentWarnings, contentRights, onMetadataChange],
+      [
+        contentWarnings,
+        contentRights,
+        onMetadataChange,
+        distributionPolicy,
+        setDistributionPolicy,
+      ],
     );
 
     // Handle content rights changes
@@ -255,11 +262,12 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
         }
 
         // Only include distributionPolicy if it has a deleteAfter value
-        if (customDateTime && customDateTime.trim() !== "") {
-          const duration = parseInt(customDateTime, 10);
-          if (!isNaN(duration)) {
-            metadata.distributionPolicy = { deleteAfter: duration };
-          }
+        const duration = parseInt(customDateTime, 10);
+        if (!isNaN(duration) && duration > 0) {
+          metadata.distributionPolicy = { deleteAfter: duration };
+          setCustomDateTime(`${duration}`);
+        } else {
+          setCustomDateTime("");
         }
 
         // Only include contentRights if it has actual values
@@ -690,7 +698,8 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                           { fontSize: 12, paddingBottom: 4 },
                         ]}
                       >
-                        Duration in seconds (e.g., 300 for 5 minutes)
+                        Duration in seconds (e.g., 300 for 5 minutes) or 0 to
+                        allow archiving your stream
                       </Text>
                       <Input
                         value={customDateTime}

@@ -77,7 +77,6 @@ export default async function createOAuthClient(
   }
   return new ReactNativeOAuthClient({
     fetch: async (input, init) => {
-      console.log("fetch", input, init);
       // Normalize input to a Request object
       let request: Request;
       if (typeof input === "string" || input instanceof URL) {
