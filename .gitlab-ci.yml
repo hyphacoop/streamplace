@@ -1,7 +1,7 @@
 include: ".ci/dockerfile-hash.yaml"
 
 variables:
-  DOCKER_REPO: "975050346355.dkr.ecr.us-east-2.amazonaws.com/streamplace"
+  DOCKER_REPO: "public.ecr.aws/m4j3c0j7/streamplace"
 
 build-bunny:
   stage: build
