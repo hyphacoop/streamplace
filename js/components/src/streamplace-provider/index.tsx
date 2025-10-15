@@ -1,5 +1,6 @@
 import { SessionManager } from "@atproto/api/dist/session-manager";
 import { useEffect, useRef } from "react";
+import { useGetChatProfile } from "../streamplace-store";
 import { makeStreamplaceStore } from "../streamplace-store/streamplace-store";
 import { StreamplaceContext } from "./context";
 import Poller from "./poller";
@@ -13,7 +14,7 @@ export function StreamplaceProvider({
   url: string;
   oauthSession?: SessionManager | null;
 }) {
-  console.log("session in provider is", oauthSession);
+  const getChatProfile = useGetChatProfile();
   // todo: handle url changes?
   const store = useRef(makeStreamplaceStore({ url })).current;
 
@@ -23,6 +24,10 @@ export function StreamplaceProvider({
 
   useEffect(() => {
     store.setState({ oauthSession });
+    // possibly their first login, trigger this so we create a chat profile record for them
+    if (oauthSession) {
+      getChatProfile();
+    }
   }, [oauthSession]);
 
   return (
