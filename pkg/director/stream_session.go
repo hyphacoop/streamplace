@@ -39,6 +39,7 @@ type StreamSession struct {
 	repoDID        string
 	segmentChan    chan struct{}
 	lastStatus     time.Time
+	lastStatusCID  *string
 	lastStatusLock sync.Mutex
 	lastOriginTime time.Time
 	lastOriginLock sync.Mutex
@@ -116,6 +117,11 @@ func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotif
 			log.Log(ctx, "no new segments for 1 minute, shutting down")
 			for _, r := range allRenditions {
 				ss.bus.EndSession(ctx, spseg.Creator, r.Name)
+			}
+			if notif.Local {
+				ss.Go(ctx, func() error {
+					return ss.DeleteStatus(spseg.Creator)
+				})
 			}
 			cancel()
 		}
@@ -329,7 +335,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		},
 	}
 
-	duration := int64(2)
+	duration := int64(120)
 	status := bsky.ActorStatus{
 		Status:          "app.bsky.actor.status#live",
 		DurationMinutes: &duration,
@@ -372,6 +378,8 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 	}
 	out := atproto.RepoPutRecord_Output{}
 
+	ss.lastStatusCID = &out.Cid
+
 	err = client.Do(ctx, xrpc.Procedure, "application/json", "com.atproto.repo.putRecord", map[string]any{}, inp, &out)
 	if err != nil {
 		return fmt.Errorf("could not create record: %w", err)
@@ -380,6 +388,50 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 
 	ss.lastStatus = time.Now()
 
+	return nil
+}
+
+func (ss *StreamSession) DeleteStatus(repoDID string) error {
+	// need a special extra context because the stream session context is already cancelled
+	ctx := log.WithLogValues(context.Background(), "func", "DeleteStatus", "repoDID", repoDID)
+	ss.lastStatusLock.Lock()
+	defer ss.lastStatusLock.Unlock()
+	if ss.lastStatusCID == nil {
+		log.Debug(ctx, "no status cid to delete")
+		return nil
+	}
+	inp := atproto.RepoDeleteRecord_Input{
+		Collection: "app.bsky.actor.status",
+		Rkey:       "self",
+		Repo:       repoDID,
+	}
+	inp.SwapRecord = ss.lastStatusCID
+	out := atproto.RepoDeleteRecord_Output{}
+
+	session, err := ss.statefulDB.GetSessionByDID(repoDID)
+	if err != nil {
+		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
+	}
+	if session == nil {
+		return fmt.Errorf("no session found for repoDID: %s", repoDID)
+	}
+
+	session, err = ss.op.RefreshIfNeeded(session)
+	if err != nil {
+		return fmt.Errorf("could not refresh session for repoDID: %w", err)
+	}
+
+	client, err := ss.op.GetXrpcClient(session)
+	if err != nil {
+		return fmt.Errorf("could not get xrpc client: %w", err)
+	}
+
+	err = client.Do(ctx, xrpc.Procedure, "application/json", "com.atproto.repo.deleteRecord", map[string]any{}, inp, &out)
+	if err != nil {
+		return fmt.Errorf("could not delete record: %w", err)
+	}
+
+	ss.lastStatusCID = nil
 	return nil
 }
 
