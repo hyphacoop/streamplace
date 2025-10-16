@@ -14,7 +14,6 @@ export function StreamplaceProvider({
   url: string;
   oauthSession?: SessionManager | null;
 }) {
-  const getChatProfile = useGetChatProfile();
   // todo: handle url changes?
   const store = useRef(makeStreamplaceStore({ url })).current;
 
@@ -24,15 +23,29 @@ export function StreamplaceProvider({
 
   useEffect(() => {
     store.setState({ oauthSession });
-    // possibly their first login, trigger this so we create a chat profile record for them
-    if (oauthSession) {
-      getChatProfile();
-    }
   }, [oauthSession]);
 
   return (
     <StreamplaceContext.Provider value={{ store: store }}>
-      <Poller>{children}</Poller>
+      <ChatProfileCreator oauthSession={oauthSession}>
+        <Poller>{children}</Poller>
+      </ChatProfileCreator>
     </StreamplaceContext.Provider>
   );
+}
+
+export function ChatProfileCreator({
+  oauthSession,
+  children,
+}: {
+  oauthSession?: SessionManager | null;
+  children: React.ReactNode;
+}) {
+  const getChatProfile = useGetChatProfile();
+  useEffect(() => {
+    if (oauthSession) {
+      getChatProfile();
+    }
+  }, [oauthSession]);
+  return <>{children}</>;
 }
