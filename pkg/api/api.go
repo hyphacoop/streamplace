@@ -77,6 +77,8 @@ type StreamplaceAPI struct {
 
 	// override tls port for http redirect server if we're using systemd file descriptors
 	HTTPRedirectTLSPort *int
+	sessions            map[string]map[string]time.Time
+	sessionsLock        sync.RWMutex
 }
 
 type WebsocketTracker struct {
@@ -106,6 +108,8 @@ func MakeStreamplaceAPI(cli *config.CLI, mod model.Model, statefulDB *statedb.St
 		limiters:         make(map[string]*rate.Limiter),
 		SignerCache:      make(map[string]media.MediaSigner),
 		op:               op,
+		sessions:         make(map[string]map[string]time.Time),
+		sessionsLock:     sync.RWMutex{},
 	}
 	a.Mimes, err = updater.GetMimes()
 	if err != nil {

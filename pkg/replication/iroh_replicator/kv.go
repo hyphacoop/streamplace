@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,7 +30,7 @@ type IrohSwarm struct {
 	segChan          chan *media.NewSegmentNotification
 	NodeID           string
 	NodeTicket       string
-	activeSubs       map[string]*OriginInfo
+	activeSubs       map[string]*SwarmOriginInfo
 	handleDataScoped func(topic string, data []byte)
 	bus              *bus.Bus
 	originMutex      sync.Mutex
@@ -37,9 +39,18 @@ type IrohSwarm struct {
 }
 
 // A message saying "hey I ingested node data at this time"
-type OriginInfo struct {
-	NodeID string `json:"node_id"`
-	Time   string `json:"time"`
+type SwarmOriginInfo struct {
+	Type     string `json:"$type"`
+	NodeID   string `json:"node_id"`
+	Time     string `json:"time"`
+	Streamer string `json:"streamer"`
+}
+
+type SwarmViewerCount struct {
+	Type     string `json:"$type"`
+	Server   string `json:"server"`
+	Streamer string `json:"streamer"`
+	Viewers  int    `json:"viewers"`
 }
 
 func NewSwarm(ctx context.Context, cli *config.CLI, secret []byte, topic []byte, mm *media.MediaManager, bus *bus.Bus, mod model.Model) (*IrohSwarm, error) {
@@ -63,7 +74,7 @@ func NewSwarm(ctx context.Context, cli *config.CLI, secret []byte, topic []byte,
 
 	swarm := IrohSwarm{
 		mm:         mm,
-		activeSubs: make(map[string]*OriginInfo),
+		activeSubs: make(map[string]*SwarmOriginInfo),
 		bus:        bus,
 		mod:        mod,
 		cli:        cli,
@@ -137,6 +148,9 @@ func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
 	g.Go(func() error {
 		return swarm.startBusSubscribe(ctx)
 	})
+	g.Go(func() error {
+		return swarm.startViewerCountSubscribe(ctx)
+	})
 	return g.Wait()
 }
 
@@ -152,31 +166,19 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 		}
 
 		if ev == nil {
-			log.Debug(ctx, "Got empty event from sub.NextRaw(), pausing for a second")
+			log.Warn(ctx, "Got empty event from sub.NextRaw(), pausing for a second and continuing")
 			time.Sleep(1 * time.Second)
 			continue
 		}
+
 		switch item := (*ev).(type) {
 		case iroh_streamplace.SubscribeItemEntry:
-			keyStr := string(item.Key)
-			valueStr := string(item.Value)
-			log.Debug(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
-			if len(valueStr) > 0 && valueStr[0] != '{' {
-				// not JSON, it's one of the rust messages
-				log.Debug(ctx, "not JSON", "key", keyStr, "value", valueStr)
-				continue
-			}
-			var info OriginInfo
-			err := json.Unmarshal(item.Value, &info)
+			err := swarm.handleIrohMessage(ctx, item)
 			if err != nil {
-				log.Error(ctx, "could not unmarshal origin info", "error", err)
+				log.Error(ctx, "could not handle iroh message", "error", err)
 				continue
 			}
-			err = swarm.checkOrigins(ctx, keyStr, info.NodeID)
-			if err != nil {
-				log.Error(ctx, "could not check origins", "error", err)
-				continue
-			}
+
 		case iroh_streamplace.SubscribeItemCurrentDone:
 			log.Debug(ctx, "SubscribeItemCurrentDone", "currentDone", item)
 		case iroh_streamplace.SubscribeItemExpired:
@@ -185,6 +187,61 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			log.Debug(ctx, "SubscribeItemOther", "other", item)
 		}
 	}
+}
+
+func (swarm *IrohSwarm) handleIrohMessage(ctx context.Context, item iroh_streamplace.SubscribeItemEntry) error {
+	keyStr := string(item.Key)
+	valueStr := string(item.Value)
+	log.Warn(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
+	if len(valueStr) > 0 && valueStr[0] != '{' {
+		// not JSON, it's one of the rust messages
+		log.Debug(ctx, "not JSON", "key", keyStr, "value", valueStr)
+		return nil
+	}
+	rawMessage, err := decodeIrohMessage(item.Key, item.Value)
+	if err != nil {
+		return fmt.Errorf("could not decode iroh message: %w", err)
+	}
+	switch message := rawMessage.(type) {
+	case SwarmOriginInfo:
+		err = swarm.checkOrigins(ctx, message.Streamer, message.NodeID)
+		if err != nil {
+			return fmt.Errorf("could not check origins: %w", err)
+		}
+	case SwarmViewerCount:
+		log.Log(ctx, "got viewer count", "viewerCount", message)
+		if message.Server == swarm.NodeID {
+			// no infinite loops allowed
+			return nil
+		}
+		swarm.bus.SetViewerCount(message.Streamer, message.Server, message.Viewers)
+		log.Log(ctx, "set viewer count", "viewerCount", message)
+		return nil
+	default:
+		return fmt.Errorf("unknown message type: %s", reflect.TypeOf(rawMessage))
+	}
+	return nil
+}
+
+func decodeIrohMessage(key, value []byte) (any, error) {
+	keyStr := string(key)
+	if strings.HasPrefix(keyStr, "origin::") {
+		var originInfo SwarmOriginInfo
+		err := json.Unmarshal(value, &originInfo)
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal origin info: %w", err)
+		}
+		return originInfo, nil
+	}
+	if strings.HasPrefix(keyStr, "viewers::") {
+		var viewerCount SwarmViewerCount
+		err := json.Unmarshal(value, &viewerCount)
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal viewer count: %w", err)
+		}
+		return viewerCount, nil
+	}
+	return nil, fmt.Errorf("unknown key: %s", keyStr)
 }
 
 // subscribe to all streams
@@ -218,6 +275,40 @@ func (swarm *IrohSwarm) startBusSubscribe(ctx context.Context) error {
 	}
 }
 
+func (swarm *IrohSwarm) startViewerCountSubscribe(ctx context.Context) error {
+	ch := swarm.bus.SubscribeToViewerCount()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case msg := <-ch:
+			log.Log(ctx, "got viewer count update", "viewerCount", msg)
+			if msg.Origin != "local" {
+				continue
+			}
+			swarmMsg := SwarmViewerCount{
+				Type:     "place.stream.swarm.viewerCount",
+				Server:   swarm.NodeID,
+				Streamer: msg.Streamer,
+				Viewers:  msg.Count,
+			}
+			bs, err := json.Marshal(swarmMsg)
+			if err != nil {
+				log.Error(ctx, "could not marshal viewer count", "error", err)
+				continue
+			}
+			key := fmt.Sprintf("viewers::%s::%s", swarm.NodeID, msg.Streamer)
+			err = swarm.w.Put(nil, []byte(key), bs)
+			if err != nil {
+				log.Error(ctx, "could not put viewer count to swarm", "error", err)
+				continue
+			}
+			log.Log(ctx, "put viewer count to swarm", "viewerCount", msg)
+
+		}
+	}
+}
+
 func (swarm *IrohSwarm) handleOriginMessage(ctx context.Context, view *streamplace.BroadcastDefs_BroadcastOriginView) error {
 	origin, ok := view.Record.Val.(*streamplace.BroadcastOrigin)
 	if !ok {
@@ -247,6 +338,7 @@ func (swarm *IrohSwarm) handleOriginMessage(ctx context.Context, view *streampla
 }
 
 func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeID string) error {
+	ctx = log.WithLogValues(ctx, "streamer", streamer, "nodeID", nodeID, "func", "checkOrigins")
 	err := swarm.cli.StreamIsAllowed(streamer)
 	if err != nil {
 		return fmt.Errorf("user %s is not allowlisted on this node: %w", streamer, err)
@@ -290,9 +382,11 @@ func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeI
 		log.Error(ctx, "could not subscribe to key", "error", err)
 		return err
 	}
-	swarm.activeSubs[streamer] = &OriginInfo{
-		NodeID: nodeID,
-		Time:   time.Now().Format(util.ISO8601),
+	swarm.activeSubs[streamer] = &SwarmOriginInfo{
+		Type:     "place.stream.swarm.originInfo",
+		NodeID:   nodeID,
+		Time:     time.Now().Format(util.ISO8601),
+		Streamer: streamer,
 	}
 	return nil
 }
@@ -321,16 +415,18 @@ func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNo
 	if !not.Local {
 		return nil
 	}
-	originInfo := OriginInfo{
-		NodeID: swarm.NodeID,
-		Time:   not.Segment.StartTime.Format(util.ISO8601),
+	originInfo := SwarmOriginInfo{
+		Type:     "place.stream.swarm.originInfo",
+		NodeID:   swarm.NodeID,
+		Time:     not.Segment.StartTime.Format(util.ISO8601),
+		Streamer: not.Segment.RepoDID,
 	}
 	bs, err := json.Marshal(originInfo)
 	if err != nil {
 		log.Error(ctx, "could not marshal origin info", "error", err)
 		return err
 	}
-	keyBs := []byte(not.Segment.RepoDID)
+	keyBs := []byte(fmt.Sprintf("origin::%s", not.Segment.RepoDID))
 	err = swarm.w.Put(nil, keyBs, bs)
 	if err != nil {
 		log.Error(ctx, "could not put segment to swarm", "error", err)

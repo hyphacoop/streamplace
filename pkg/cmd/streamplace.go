@@ -503,7 +503,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	}
 
 	group.Go(func() error {
-		return spmetrics.ExpireSessions(ctx)
+		return a.ExpireSessions(ctx)
 	})
 
 	group.Go(func() error {

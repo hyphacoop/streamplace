@@ -1,23 +1,16 @@
 package spmetrics
 
 import (
-	"context"
 	"sync"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"stream.place/streamplace/pkg/log"
 )
-
-const SessionExpireTime = 30 * time.Second //nolint:all
 
 var viewersByStreamer = map[string]int{}
 var viewersByProtocol = map[string]int{}
 var viewersLock sync.RWMutex
 
-var sessions = map[string]map[string]time.Time{}
-var sessionsLock sync.RWMutex
 var Viewers = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "streamplace_viewers",
 	Help: "number of current viewers per user",
@@ -109,40 +102,4 @@ func GetViewCount(user string) int {
 	viewersLock.RLock()
 	defer viewersLock.RUnlock()
 	return viewersByStreamer[user]
-}
-
-func SessionSeen(user string, session string) {
-	now := time.Now()
-	go func() {
-		sessionsLock.Lock()
-		defer sessionsLock.Unlock()
-		if _, ok := sessions[user]; !ok {
-			sessions[user] = map[string]time.Time{}
-		}
-		if _, ok := sessions[user][session]; !ok {
-			log.Warn(context.TODO(), "ViewerInc", "user", user, "session", session)
-			ViewerInc(user, "hls")
-		}
-		sessions[user][session] = now
-	}()
-}
-
-func ExpireSessions(ctx context.Context) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-time.After(5 * time.Second):
-			sessionsLock.Lock()
-			for user, sessions := range sessions {
-				for session, seen := range sessions {
-					if time.Since(seen) > SessionExpireTime {
-						delete(sessions, session)
-						ViewerDec(user, "hls")
-					}
-				}
-			}
-			sessionsLock.Unlock()
-		}
-	}
 }
