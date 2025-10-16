@@ -342,6 +342,11 @@ func (a *StreamplaceAPI) NotFoundLinkingHandler(ctx context.Context, linker *lin
 		req.URL.Host = req.Host
 		req.URL.Scheme = proto
 		maybeHandle := strings.TrimPrefix(req.URL.Path, "/")
+		// quick check for things that aren't valid handles/dids
+		if strings.ContainsAny(maybeHandle, "/_") {
+			defaultHandler.ServeHTTP(w, req)
+			return
+		}
 		repo, err := a.Model.GetRepoByHandleOrDID(maybeHandle)
 		if err != nil || repo == nil {
 			log.Error(ctx, "no repo found", "maybeHandle", maybeHandle)
