@@ -525,7 +525,15 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			return err
 		}
 		group.Go(func() error {
-			return GoLivepeer(ctx, fs)
+			err := GoLivepeer(ctx, fs)
+			if err != nil {
+				return err
+			}
+			// livepeer returns nil on error, so we need to check if we're responsible
+			if ctx.Err() == nil {
+				return fmt.Errorf("livepeer exited")
+			}
+			return nil
 		})
 	}
 
