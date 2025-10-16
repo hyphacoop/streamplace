@@ -74,6 +74,9 @@ type StreamplaceAPI struct {
 	SignerCache   map[string]media.MediaSigner
 	SignerCacheMu sync.Mutex
 	op            *oatproxy.OATProxy
+
+	// override tls port for http redirect server if we're using systemd file descriptors
+	HTTPRedirectTLSPort *int
 }
 
 type WebsocketTracker struct {
@@ -427,9 +430,15 @@ func (a *StreamplaceAPI) FileHandler(ctx context.Context, fs http.Handler) http.
 }
 
 func (a *StreamplaceAPI) RedirectHandler(ctx context.Context) (http.Handler, error) {
-	_, tlsPort, err := net.SplitHostPort(a.CLI.HTTPSAddr)
-	if err != nil {
-		return nil, err
+	var tlsPort string
+	var err error
+	if a.HTTPRedirectTLSPort != nil {
+		tlsPort = fmt.Sprintf("%d", *a.HTTPRedirectTLSPort)
+	} else {
+		_, tlsPort, err = net.SplitHostPort(a.CLI.HTTPSAddr)
+		if err != nil {
+			return nil, err
+		}
 	}
 	handleRedirect := func(w http.ResponseWriter, req *http.Request) {
 		host, _, err := net.SplitHostPort(req.Host)
@@ -724,11 +733,12 @@ func (a *StreamplaceAPI) RateLimitMiddleware(ctx context.Context) func(http.Hand
 
 // helper for getting a listener from a systemd file descriptor
 func getListenerFromFD(fdName string) (net.Listener, error) {
-	log.Log(context.TODO(), "getting listener from fd", "fdName", fdName, "LISTEN_PID", os.Getenv("LISTEN_PID"), "LISTEN_FDNAMES", os.Getenv("LISTEN_FDNAMES"))
+	log.Debug(context.TODO(), "getting listener from fd", "fdName", fdName, "LISTEN_PID", os.Getenv("LISTEN_PID"), "LISTEN_FDNAMES", os.Getenv("LISTEN_FDNAMES"))
 	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()) {
 		names := strings.Split(os.Getenv("LISTEN_FDNAMES"), ":")
 		for i, name := range names {
 			if name == fdName {
+				log.Warn(context.TODO(), "using systemd file descriptor", "fdName", fdName, "fdIndex", i+3)
 				f1 := os.NewFile(uintptr(i+3), fdName)
 				return net.FileListener(f1)
 			}
@@ -799,6 +809,9 @@ func (a *StreamplaceAPI) ServeHTTPS(ctx context.Context) error {
 				return err
 			}
 		} else {
+			// tell the redirect handler we're using systemd and they should go to 443
+			port443 := 443
+			a.HTTPRedirectTLSPort = &port443
 			log.Warn(ctx, "https server listening for https over systemd socket", "addr", ln.Addr())
 		}
 		log.Log(ctx, "https server starting",
