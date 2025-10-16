@@ -272,7 +272,7 @@ dev: app-cached
 	$(MAKE) dev-rust
 	PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) \
 	CGO_LDFLAGS="$(MACOS_VERSION_FLAG)" \
-	LD_LIBRARY_PATH=$(BUILDDIR)/lib go build -o $(BUILDDIR)/libstreamplace ./cmd/libstreamplace/...
+	LD_LIBRARY_PATH=$(BUILDDIR)/lib go build -tags mainnet -o $(BUILDDIR)/libstreamplace ./cmd/libstreamplace/...
 
 .PHONY: dev-setup-meson
 dev-setup-meson:

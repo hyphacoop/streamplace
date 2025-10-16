@@ -289,6 +289,7 @@ if get_option('default_library') == 'static'
     command: [
       prog_go,
       'build',
+      '-tags', 'mainnet',
       '-o', '@OUTPUT0@',
       '-buildmode', 'c-archive',
       '-tags', 'netgo,static',

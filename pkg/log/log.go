@@ -79,6 +79,7 @@ func MonkeypatchStderr() {
 	}
 	realStderr := os.Stderr
 	os.Stderr = w
+	ctx := WithLogValues(context.Background(), "component", "livepeer")
 	go func() {
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
@@ -91,15 +92,15 @@ func MonkeypatchStderr() {
 			caller := match[2]
 			message := match[3]
 			if level == "I" {
-				Log(context.Background(), message, "caller", caller)
+				Log(ctx, message, "caller", caller)
 			} else if level == "W" {
-				Warn(context.Background(), message)
+				Warn(ctx, message)
 			} else if level == "E" {
-				Error(context.Background(), message)
+				Error(ctx, message)
 			} else if level == "F" {
-				Warn(context.Background(), message)
+				Warn(ctx, message)
 			} else {
-				fmt.Fprintf(realStderr, "UNKNOWN LOG LEVEL: %s\n", level)
+				fmt.Fprintf(realStderr, "UNKNOWN LOG LEVEL: %s %s\n", level, message)
 			}
 		}
 		if err := scanner.Err(); err != nil {
