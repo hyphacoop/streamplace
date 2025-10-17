@@ -10,7 +10,6 @@ import (
 
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/aqtime"
-	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/streamplace"
 )
 
@@ -52,16 +51,103 @@ func (j SegmentMediaData) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
+// ContentRights represents content rights and attribution information
+type ContentRights struct {
+	CopyrightNotice *string `json:"copyrightNotice,omitempty"`
+	CopyrightYear   *int64  `json:"copyrightYear,omitempty"`
+	Creator         *string `json:"creator,omitempty"`
+	CreditLine      *string `json:"creditLine,omitempty"`
+	License         *string `json:"license,omitempty"`
+}
+
+// Scan scan value into ContentRights, implements sql.Scanner interface
+func (c *ContentRights) Scan(value any) error {
+	if value == nil {
+		*c = ContentRights{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal ContentRights value:", value))
+	}
+
+	result := ContentRights{}
+	err := json.Unmarshal(bytes, &result)
+	*c = ContentRights(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (c ContentRights) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+// DistributionPolicy represents distribution policy information
+type DistributionPolicy struct {
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+}
+
+// Scan scan value into DistributionPolicy, implements sql.Scanner interface
+func (d *DistributionPolicy) Scan(value any) error {
+	if value == nil {
+		*d = DistributionPolicy{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal DistributionPolicy value:", value))
+	}
+
+	result := DistributionPolicy{}
+	err := json.Unmarshal(bytes, &result)
+	*d = DistributionPolicy(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (d DistributionPolicy) Value() (driver.Value, error) {
+	return json.Marshal(d)
+}
+
+// ContentWarningsSlice is a custom type for storing content warnings as JSON in the database
+type ContentWarningsSlice []string
+
+// Scan scan value into ContentWarningsSlice, implements sql.Scanner interface
+func (c *ContentWarningsSlice) Scan(value any) error {
+	if value == nil {
+		*c = ContentWarningsSlice{}
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal ContentWarningsSlice value:", value))
+	}
+
+	result := ContentWarningsSlice{}
+	err := json.Unmarshal(bytes, &result)
+	*c = ContentWarningsSlice(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (c ContentWarningsSlice) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
 type Segment struct {
-	ID            string            `json:"id"                   gorm:"primaryKey"`
-	SigningKeyDID string            `json:"signingKeyDID"        gorm:"column:signing_key_did"`
-	SigningKey    *SigningKey       `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
-	StartTime     time.Time         `json:"startTime"            gorm:"index:latest_segments"`
-	RepoDID       string            `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
-	Repo          *Repo             `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
-	Title         string            `json:"title"`
-	Size          int               `json:"size"                gorm:"column:size"`
-	MediaData     *SegmentMediaData `json:"mediaData,omitempty"`
+	ID                 string               `json:"id"                   gorm:"primaryKey"`
+	SigningKeyDID      string               `json:"signingKeyDID"        gorm:"column:signing_key_did"`
+	SigningKey         *SigningKey          `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
+	StartTime          time.Time            `json:"startTime"            gorm:"index:latest_segments"`
+	RepoDID            string               `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
+	Repo               *Repo                `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
+	Title              string               `json:"title"`
+	Size               int                  `json:"size"                gorm:"column:size"`
+	MediaData          *SegmentMediaData    `json:"mediaData,omitempty"`
+	ContentWarnings    ContentWarningsSlice `json:"contentWarnings,omitempty"`
+	ContentRights      *ContentRights       `json:"contentRights,omitempty"`
+	DistributionPolicy *DistributionPolicy  `json:"distributionPolicy,omitempty"`
+	DeleteAfter        *time.Time           `json:"deleteAfter,omitempty" gorm:"column:delete_after;index:delete_after"`
 }
 
 func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
@@ -77,14 +163,48 @@ func (s *Segment) ToStreamplaceSegment() (*streamplace.Segment, error) {
 	}
 	duration := s.MediaData.Duration
 	sizei64 := int64(s.Size)
+
+	// Convert model metadata to streamplace metadata
+	var contentRights *streamplace.MetadataContentRights
+	if s.ContentRights != nil {
+		contentRights = &streamplace.MetadataContentRights{
+			CopyrightNotice: s.ContentRights.CopyrightNotice,
+			CopyrightYear:   s.ContentRights.CopyrightYear,
+			Creator:         s.ContentRights.Creator,
+			CreditLine:      s.ContentRights.CreditLine,
+			License:         s.ContentRights.License,
+		}
+	}
+
+	var contentWarnings *streamplace.MetadataContentWarnings
+	if len(s.ContentWarnings) > 0 {
+		contentWarnings = &streamplace.MetadataContentWarnings{
+			Warnings: []string(s.ContentWarnings),
+		}
+	}
+
+	var distributionPolicy *streamplace.MetadataDistributionPolicy
+	if s.DistributionPolicy != nil && s.DistributionPolicy.ExpiresAt != nil {
+		// Convert the absolute timestamp back to a duration (in seconds) from segment start
+		startTimeUnix := s.StartTime.Unix()
+		expiresAtUnix := s.DistributionPolicy.ExpiresAt.Unix()
+		deleteAfterSecs := expiresAtUnix - startTimeUnix
+		distributionPolicy = &streamplace.MetadataDistributionPolicy{
+			DeleteAfter: &deleteAfterSecs,
+		}
+	}
+
 	return &streamplace.Segment{
-		LexiconTypeID: "place.stream.segment",
-		Creator:       s.RepoDID,
-		Id:            s.ID,
-		SigningKey:    s.SigningKeyDID,
-		StartTime:     string(aqt),
-		Duration:      &duration,
-		Size:          &sizei64,
+		LexiconTypeID:      "place.stream.segment",
+		Creator:            s.RepoDID,
+		Id:                 s.ID,
+		SigningKey:         s.SigningKeyDID,
+		StartTime:          string(aqt),
+		Duration:           &duration,
+		Size:               &sizei64,
+		ContentRights:      contentRights,
+		ContentWarnings:    contentWarnings,
+		DistributionPolicy: distributionPolicy,
 		Video: []*streamplace.Segment_Video{
 			{
 				Codec:  "h264",
@@ -217,60 +337,20 @@ func (m *DBModel) GetSegment(id string) (*Segment, error) {
 	return &seg, nil
 }
 
-func (m *DBModel) StartSegmentCleaner(ctx context.Context) error {
-	err := m.SegmentCleaner(ctx)
-	if err != nil {
-		return err
-	}
-	ticker := time.NewTicker(1 * time.Minute)
-	defer ticker.Stop()
+func (m *DBModel) GetExpiredSegments(ctx context.Context) ([]Segment, error) {
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-ticker.C:
-			err := m.SegmentCleaner(ctx)
-			if err != nil {
-				log.Error(ctx, "Failed to clean segments", "error", err)
-			}
-		}
+	var expiredSegments []Segment
+	now := time.Now()
+	err := m.DB.
+		Where("delete_after IS NOT NULL AND delete_after < ?", now.UTC()).
+		Find(&expiredSegments).Error
+	if err != nil {
+		return nil, err
 	}
+
+	return expiredSegments, nil
 }
 
-func (m *DBModel) SegmentCleaner(ctx context.Context) error {
-	// Calculate the cutoff time (10 minutes ago)
-	cutoffTime := aqtime.FromTime(time.Now().Add(-10 * time.Minute)).Time()
-
-	// Find all unique repo_did values
-	var repoDIDs []string
-	if err := m.DB.Model(&Segment{}).Distinct("repo_did").Pluck("repo_did", &repoDIDs).Error; err != nil {
-		log.Error(ctx, "Failed to get unique repo_dids for segment cleaning", "error", err)
-		return err
-	}
-
-	// For each user, keep their last 10 segments and delete older ones
-	for _, repoDID := range repoDIDs {
-		// Get IDs of the last 10 segments for this user
-		var keepSegmentIDs []string
-		if err := m.DB.Model(&Segment{}).
-			Where("repo_did = ?", repoDID).
-			Order("start_time DESC").
-			Limit(10).
-			Pluck("id", &keepSegmentIDs).Error; err != nil {
-			log.Error(ctx, "Failed to get segment IDs to keep", "repo_did", repoDID, "error", err)
-			return err
-		}
-
-		// Delete old segments except the ones we want to keep
-		result := m.DB.Where("repo_did = ? AND start_time < ? AND id NOT IN ?",
-			repoDID, cutoffTime, keepSegmentIDs).Delete(&Segment{})
-
-		if result.Error != nil {
-			log.Error(ctx, "Failed to clean old segments", "repo_did", repoDID, "error", result.Error)
-		} else if result.RowsAffected > 0 {
-			log.Log(ctx, "Cleaned old segments", "repo_did", repoDID, "count", result.RowsAffected)
-		}
-	}
-	return nil
+func (m *DBModel) DeleteSegment(ctx context.Context, id string) error {
+	return m.DB.Delete(&Segment{}, "id = ?", id).Error
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"strings"
 	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
@@ -157,15 +158,9 @@ func (atsync *ATProtoSynchronizer) StartFirehoseRetry(ctx context.Context) error
 }
 
 var CollectionFilter = []string{
-	constants.PLACE_STREAM_KEY,
-	constants.PLACE_STREAM_LIVESTREAM,
-	constants.PLACE_STREAM_CHAT_MESSAGE,
-	constants.PLACE_STREAM_CHAT_PROFILE,
 	constants.APP_BSKY_GRAPH_FOLLOW,
 	constants.APP_BSKY_FEED_POST,
 	constants.APP_BSKY_GRAPH_BLOCK,
-	constants.PLACE_STREAM_SERVER_SETTINGS,
-	constants.PLACE_STREAM_CHAT_GATE,
 }
 
 func (atsync *ATProtoSynchronizer) handleCommitEventOps(ctx context.Context, evt *comatproto.SyncSubscribeRepos_Commit) {
@@ -195,6 +190,9 @@ func (atsync *ATProtoSynchronizer) handleCommitEventOps(ctx context.Context, evt
 
 		if len(CollectionFilter) > 0 {
 			keep := slices.Contains(CollectionFilter, collection.String())
+			if strings.HasPrefix(collection.String(), "place.stream.") {
+				keep = true
+			}
 			if !keep {
 				continue
 			}

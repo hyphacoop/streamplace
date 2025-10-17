@@ -16,8 +16,8 @@ import (
 
 func TestLexiconRepo(t *testing.T) {
 	cli := config.CLI{
-		PublicHost: "example.com",
-		DBURL:      ":memory:",
+		BroadcasterHost: "example.com",
+		DBURL:           ":memory:",
 	}
 	cli.DataDir = t.TempDir()
 	mod, err := model.MakeDB(":memory:")

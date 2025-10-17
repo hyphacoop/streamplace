@@ -87,10 +87,13 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 					return
 				}
 
-				err = mm.ValidateMP4(ctx, bytes.NewReader(bs))
+				err = mm.ValidateMP4(ctx, bytes.NewReader(bs), true)
 				if err != nil {
 					log.Error(ctx, "error validating segment", "error", err)
 					globalerror.GlobalError(err)
+					// We don't want to stop the pipeline here because we want to keep the stream
+					// alive. Lots of weird invalid data coming in from WebRTC connections on
+					// phones. Better we drop one weird segment than force the stream to restart
 					return
 				}
 			},

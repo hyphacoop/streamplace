@@ -39,10 +39,6 @@ PrivateTmp=yes
 ReadWritePaths=/var/lib/streamplace
 ReadOnlyPaths=/etc/streamplace
 
-# Network access
-PrivateNetwork=no
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-
 # Resource limits
 LimitNOFILE=65536
 LimitNPROC=4096

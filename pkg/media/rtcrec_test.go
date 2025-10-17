@@ -11,7 +11,6 @@ import (
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/spkey"
 	"stream.place/streamplace/pkg/globalerror"
-	"stream.place/streamplace/pkg/replication/boring"
 	"stream.place/streamplace/pkg/rtcrec"
 )
 
@@ -26,13 +25,13 @@ func TestRTCRecording(t *testing.T) {
 		fs := cli.NewFlagSet("rtcrec-test")
 		err = cli.Parse(fs, []string{"--data-dir", dir, "-wide-open=true"})
 		require.NoError(t, err)
-		mm, err := MakeMediaManager(context.Background(), cli, nil, &boring.BoringReplicator{}, nil, nil, nil)
+		mm, err := MakeMediaManager(context.Background(), cli, nil, nil, nil, nil)
 		require.NoError(t, err)
 		priv, pub, err := spkey.GenerateStreamKey()
 		require.NoError(t, err)
 		signer, err := spkey.KeyToSigner(priv)
 		require.NoError(t, err)
-		mediaSigner, err := MakeMediaSigner(ctx, cli, pub.DIDKey(), signer)
+		mediaSigner, err := MakeMediaSigner(ctx, cli, pub.DIDKey(), signer, nil)
 		require.NoError(t, err)
 		// ctx := context.Background()
 		// mm, ms := getStaticTestMediaManager(t)

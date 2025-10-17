@@ -52,75 +52,93 @@ func (b BuildFlags) BuildTimeStrExpo() string {
 }
 
 type CLI struct {
-	AdminAccount           string
-	Build                  *BuildFlags
-	DataDir                string
-	DBURL                  string
-	EthAccountAddr         string
-	EthKeystorePath        string
-	EthPassword            string
-	FirebaseServiceAccount string
-	GitLabURL              string
-	HTTPAddr               string
-	HTTPInternalAddr       string
-	HTTPSAddr              string
-	RtmpsAddr              string
-	Secure                 bool
-	NoMist                 bool
-	MistAdminPort          int
-	MistHTTPPort           int
-	MistRTMPPort           int
-	SigningKeyPath         string
-	TAURL                  string
-	TLSCertPath            string
-	TLSKeyPath             string
-	PKCS11ModulePath       string
-	PKCS11Pin              string
-	PKCS11TokenSlot        string
-	PKCS11TokenLabel       string
-	PKCS11TokenSerial      string
-	PKCS11KeypairLabel     string
-	PKCS11KeypairID        string
-	StreamerName           string
-	RelayHost              string
-	Debug                  map[string]map[string]int
-	AllowedStreams         []string
-	WideOpen               bool
-	Peers                  []string
-	Redirects              []string
-	TestStream             bool
-	FrontendProxy          string
-	PublicOAuth            bool
-	AppBundleID            string
-	NoFirehose             bool
-	PrintChat              bool
-	Color                  string
-	LivepeerGatewayURL     string
-	LivepeerGateway        bool
-	WHIPTest               string
-	Thumbnail              bool
-	SmearAudio             bool
-	ExternalSigning        bool
-	RTMPServerAddon        string
-	TracingEndpoint        string
-	PublicHost             string
-	RateLimitPerSecond     int
-	RateLimitBurst         int
-	RateLimitWebsocket     int
-	JWK                    jwk.Key
-	AccessJWK              jwk.Key
-	dataDirFlags           []*string
-	DiscordWebhooks        []*discordtypes.Webhook
-	NewWebRTCPlayback      bool
-	AppleTeamID            string
-	AndroidCertFingerprint string
-	Labelers               []string
-	AtprotoDID             string
-	LivepeerHelp           bool
-	PLCURL                 string
-	SQLLogging             bool
-	SentryDSN              string
-	LivepeerDebug          bool
+	AdminAccount               string
+	Build                      *BuildFlags
+	DataDir                    string
+	DBURL                      string
+	EthAccountAddr             string
+	EthKeystorePath            string
+	EthPassword                string
+	FirebaseServiceAccount     string
+	FirebaseServiceAccountFile string
+	GitLabURL                  string
+	HTTPAddr                   string
+	HTTPInternalAddr           string
+	HTTPSAddr                  string
+	RtmpsAddr                  string
+	Secure                     bool
+	NoMist                     bool
+	MistAdminPort              int
+	MistHTTPPort               int
+	MistRTMPPort               int
+	SigningKeyPath             string
+	TAURL                      string
+	TLSCertPath                string
+	TLSKeyPath                 string
+	PKCS11ModulePath           string
+	PKCS11Pin                  string
+	PKCS11TokenSlot            string
+	PKCS11TokenLabel           string
+	PKCS11TokenSerial          string
+	PKCS11KeypairLabel         string
+	PKCS11KeypairID            string
+	StreamerName               string
+	RelayHost                  string
+	Debug                      map[string]map[string]int
+	AllowedStreams             []string
+	WideOpen                   bool
+	Peers                      []string
+	Redirects                  []string
+	TestStream                 bool
+	FrontendProxy              string
+	PublicOAuth                bool
+	AppBundleID                string
+	NoFirehose                 bool
+	PrintChat                  bool
+	Color                      string
+	LivepeerGatewayURL         string
+	LivepeerGateway            bool
+	WHIPTest                   string
+	Thumbnail                  bool
+	SmearAudio                 bool
+	ExternalSigning            bool
+	RTMPServerAddon            string
+	TracingEndpoint            string
+	BroadcasterHost            string
+	XXDeprecatedPublicHost     string
+	ServerHost                 string
+	RateLimitPerSecond         int
+	RateLimitBurst             int
+	RateLimitWebsocket         int
+	JWK                        jwk.Key
+	AccessJWK                  jwk.Key
+	dataDirFlags               []*string
+	DiscordWebhooks            []*discordtypes.Webhook
+	NewWebRTCPlayback          bool
+	AppleTeamID                string
+	AndroidCertFingerprint     string
+	Labelers                   []string
+	AtprotoDID                 string
+	LivepeerHelp               bool
+	PLCURL                     string
+	ContentFilters             *ContentFilters
+	SQLLogging                 bool
+	SentryDSN                  string
+	LivepeerDebug              bool
+	Tickets                    []string
+	IrohTopic                  string
+	DID                        string
+}
+
+// ContentFilters represents the content filtering configuration
+type ContentFilters struct {
+	ContentWarnings struct {
+		Enabled         bool     `json:"enabled"`
+		BlockedWarnings []string `json:"blocked_warnings"`
+	} `json:"content_warnings"`
+	DistributionPolicy struct {
+		Enabled bool `json:"enabled"`
+	} `json:"distribution_policy"`
 }
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -136,7 +154,8 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.DBURL, "db-url", "sqlite://$SP_DATA_DIR/state.sqlite", "URL of the database to use for storing private streamplace state")
 	cli.dataDirFlags = append(cli.dataDirFlags, &cli.DBURL)
 	fs.StringVar(&cli.AdminAccount, "admin-account", "", "ethereum account that administrates this streamplace node")
-	fs.StringVar(&cli.FirebaseServiceAccount, "firebase-service-account", "", "JSON string of a firebase service account key")
+	fs.StringVar(&cli.FirebaseServiceAccount, "firebase-service-account", "", "Base64-encoded JSON string of a firebase service account key")
+	fs.StringVar(&cli.FirebaseServiceAccountFile, "firebase-service-account-file", "", "Path to a JSON file containing a firebase service account key")
 	fs.StringVar(&cli.GitLabURL, "gitlab-url", "https://git.stream.place/api/v4/projects/1", "gitlab url for generating download links")
 	cli.DataDirFlag(fs, &cli.EthKeystorePath, "eth-keystore-path", "keystore", "path to ethereum keystore")
 	fs.StringVar(&cli.EthAccountAddr, "eth-account-addr", "", "ethereum account address to use (if keystore contains more than one)")
@@ -167,10 +186,12 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
 	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
 	fs.StringVar(&cli.Color, "color", "", "'true' to enable colorized logging, 'false' to disable")
-	fs.StringVar(&cli.PublicHost, "public-host", "", "public host for this streamplace node (excluding https:// e.g. stream.place)")
+	fs.StringVar(&cli.BroadcasterHost, "broadcaster-host", "", "public host for the broadcaster group that this node is a part of (excluding https:// e.g. stream.place)")
+	fs.StringVar(&cli.XXDeprecatedPublicHost, "public-host", "", "deprecated, use broadcaster-host or server-host instead as appropriate")
+	fs.StringVar(&cli.ServerHost, "server-host", "", "public host for this particular physical streamplace node. defaults to broadcaster-host and only must be set for multi-node broadcasters")
 	fs.BoolVar(&cli.Thumbnail, "thumbnail", true, "enable thumbnail generation")
 	fs.BoolVar(&cli.SmearAudio, "smear-audio", false, "enable audio smearing to create 'perfect' segment timestamps")
-	fs.BoolVar(&cli.ExternalSigning, "external-signing", true, "enable external signing via exec (prevents potential memory leak)")
+	fs.BoolVar(&cli.ExternalSigning, "external-signing", false, "enable external signing via exec (prevents potential memory leak)")
 	fs.StringVar(&cli.TracingEndpoint, "tracing-endpoint", "", "gRPC endpoint to send traces to")
 	fs.IntVar(&cli.RateLimitPerSecond, "rate-limit-per-second", 0, "rate limit for requests per second per ip")
 	fs.IntVar(&cli.RateLimitBurst, "rate-limit-burst", 0, "rate limit burst for requests per ip")
@@ -183,11 +204,14 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.AndroidCertFingerprint, "android-cert-fingerprint", "", "android cert fingerprint for deep linking")
 	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
+	cli.JSONFlag(fs, &cli.ContentFilters, "content-filters", "{}", "JSON content filtering rules")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
 	fs.StringVar(&cli.PLCURL, "plc-url", "https://plc.directory", "url of the plc directory")
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
 	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
+	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", "[]", "tickets to join the swarm with")
+	fs.StringVar(&cli.IrohTopic, "iroh-topic", "", "topic to use for the iroh swarm (must be 32 bytes in hex)")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -270,7 +294,7 @@ var GormLogger = slogGorm.New(
 	slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
 		TimeFormat: time.RFC3339,
 	})),
-	// slogGorm.WithTraceAll(),
+	slogGorm.WithTraceAll(),
 )
 
 func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
@@ -326,8 +350,25 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 			})),
 		)
 	}
+	if cli.XXDeprecatedPublicHost != "" && cli.BroadcasterHost == "" {
+		log.Warn(context.Background(), "public-host is deprecated, use broadcaster-host or server-host instead as appropriate")
+		cli.BroadcasterHost = cli.XXDeprecatedPublicHost
+	}
+	if cli.ServerHost == "" && cli.BroadcasterHost != "" {
+		cli.ServerHost = cli.BroadcasterHost
+	}
 	if cli.PublicOAuth {
 		log.Warn(context.Background(), "--dev-public-oauth is set, this is not recommended for production")
+	}
+	if cli.FirebaseServiceAccount != "" && cli.FirebaseServiceAccountFile != "" {
+		return fmt.Errorf("defining both firebase-service-account and firebase-service-account-file doesn't make sense. do you want a base64-encoded string or a file?")
+	}
+	if cli.FirebaseServiceAccountFile != "" {
+		bs, err := os.ReadFile(cli.FirebaseServiceAccountFile)
+		if err != nil {
+			return err
+		}
+		cli.FirebaseServiceAccount = string(bs)
 	}
 	return nil
 }
@@ -546,5 +587,5 @@ func (cli *CLI) StreamIsAllowed(did string) error {
 }
 
 func (cli *CLI) MyDID() string {
-	return fmt.Sprintf("did:web:%s", cli.PublicHost)
+	return fmt.Sprintf("did:web:%s", cli.BroadcasterHost)
 }

@@ -13,9 +13,12 @@ func init() {
 } //
 // RECORDTYPE: Segment
 type Segment struct {
-	LexiconTypeID string           `json:"$type,const=place.stream.segment" cborgen:"$type,const=place.stream.segment"`
-	Audio         []*Segment_Audio `json:"audio,omitempty" cborgen:"audio,omitempty"`
-	Creator       string           `json:"creator" cborgen:"creator"`
+	LexiconTypeID      string                      `json:"$type,const=place.stream.segment" cborgen:"$type,const=place.stream.segment"`
+	Audio              []*Segment_Audio            `json:"audio,omitempty" cborgen:"audio,omitempty"`
+	ContentRights      *MetadataContentRights      `json:"contentRights,omitempty" cborgen:"contentRights,omitempty"`
+	ContentWarnings    *MetadataContentWarnings    `json:"contentWarnings,omitempty" cborgen:"contentWarnings,omitempty"`
+	Creator            string                      `json:"creator" cborgen:"creator"`
+	DistributionPolicy *MetadataDistributionPolicy `json:"distributionPolicy,omitempty" cborgen:"distributionPolicy,omitempty"`
 	// duration: The duration of the segment in nanoseconds
 	Duration *int64 `json:"duration,omitempty" cborgen:"duration,omitempty"`
 	// id: Unique identifier for the segment

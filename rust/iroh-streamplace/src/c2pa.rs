@@ -1,10 +1,7 @@
-use c2pa::Builder;
-use c2pa::CallbackSigner;
-use c2pa::Reader;
-use c2pa::settings::Settings;
+use std::{io::Cursor, sync::Arc};
+
+use c2pa::{Builder, CallbackSigner, Reader, settings::Settings};
 use serde_json;
-use std::io::Cursor;
-use std::sync::Arc;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 #[uniffi(flat_error)]

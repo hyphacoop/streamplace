@@ -291,7 +291,7 @@ if get_option('default_library') == 'static'
       'build',
       '-o', '@OUTPUT0@',
       '-buildmode', 'c-archive',
-      '-tags', 'netgo,static',
+      '-tags', 'netgo,static,mainnet',
       '@INPUT@',
     ],
     build_always_stale: true,
@@ -318,7 +318,7 @@ if get_option('default_library') == 'static'
         prog_go,
         'build',
         '-o', '@OUTPUT0@',
-        '-tags', 'netgo,static',
+        '-tags', 'netgo,static,mainnet',
         'streamplace.go',
         '@INPUT1@'
       ],

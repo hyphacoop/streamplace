@@ -389,6 +389,47 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			log.Error(ctx, "failed to create signing key", "err", err)
 		}
 
+	case *streamplace.BroadcastOrigin:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync broadcast origin creator bluesky repo: %w", err)
+		}
+		_, err = atsync.SyncBlueskyRepoCached(ctx, rec.Streamer, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync broadcast origin streamer bluesky repo: %w", err)
+		}
+		err = atsync.Model.UpdateBroadcastOrigin(ctx, rec, aturi)
+		if err != nil {
+			log.Error(ctx, "failed to update broadcast origin", "err", err)
+		}
+		view := &streamplace.BroadcastDefs_BroadcastOriginView{
+			Uri: aturi.String(),
+			Cid: cid,
+			Author: &bsky.ActorDefs_ProfileViewBasic{
+				Did:    userDID,
+				Handle: repo.Handle,
+			},
+			Record: &lexutil.LexiconTypeDecoder{Val: rec},
+		}
+		// publishes with an empty string because we're discovering the stream
+		go atsync.Bus.Publish("", view)
+
+	case *streamplace.MetadataConfiguration:
+		repo, err := atsync.SyncBlueskyRepoCached(ctx, userDID, atsync.Model)
+		if err != nil {
+			return fmt.Errorf("failed to sync bluesky repo: %w", err)
+		}
+		log.Debug(ctx, "creating metadata configuration", "metadata", rec)
+		metadata := &model.MetadataConfiguration{
+			RepoDID: userDID,
+			Record:  recCBOR,
+			Repo:    repo,
+		}
+		err = atsync.Model.CreateMetadataConfiguration(ctx, metadata)
+		if err != nil {
+			log.Error(ctx, "failed to create metadata configuration", "err", err)
+		}
+
 	default:
 		log.Debug(ctx, "unhandled record type", "type", reflect.TypeOf(rec))
 	}

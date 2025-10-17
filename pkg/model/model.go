@@ -9,6 +9,7 @@ import (
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"stream.place/streamplace/pkg/config"
@@ -17,8 +18,7 @@ import (
 )
 
 type DBModel struct {
-	DB  *gorm.DB
-	CLI *config.CLI
+	DB *gorm.DB
 }
 
 type Model interface {
@@ -34,7 +34,8 @@ type Model interface {
 	CreateThumbnail(thumb *Thumbnail) error
 	LatestThumbnailForUser(user string) (*Thumbnail, error)
 	GetSegment(id string) (*Segment, error)
-	StartSegmentCleaner(ctx context.Context) error
+	GetExpiredSegments(ctx context.Context) ([]Segment, error)
+	DeleteSegment(ctx context.Context, id string) error
 
 	GetIdentity(id string) (*Identity, error)
 	UpdateIdentity(ident *Identity) error
@@ -96,6 +97,13 @@ type Model interface {
 
 	CreateLabel(label *Label) error
 	GetActiveLabels(uri string) ([]*comatproto.LabelDefs_Label, error)
+
+	UpdateBroadcastOrigin(ctx context.Context, origin *streamplace.BroadcastOrigin, aturi syntax.ATURI) error
+	GetRecentBroadcastOrigins(ctx context.Context) ([]*streamplace.BroadcastDefs_BroadcastOriginView, error)
+
+	CreateMetadataConfiguration(ctx context.Context, metadata *MetadataConfiguration) error
+	GetMetadataConfiguration(ctx context.Context, repoDID string) (*MetadataConfiguration, error)
+	DeleteMetadataConfiguration(ctx context.Context, repoDID string) error
 }
 
 var DBRevision = 2
@@ -152,6 +160,8 @@ func MakeDB(dbURL string) (Model, error) {
 		ServerSettings{},
 		Labeler{},
 		Label{},
+		BroadcastOrigin{},
+		MetadataConfiguration{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {
