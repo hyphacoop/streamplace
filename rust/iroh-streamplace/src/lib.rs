@@ -22,7 +22,7 @@ use std::{
 };
 
 use bytes::Bytes;
-use iroh::{NodeId, PublicKey, RelayMode, SecretKey, Watcher};
+use iroh::{NodeId, PublicKey, RelayMode, SecretKey, discovery::static_provider::StaticProvider};
 use iroh_base::ticket::NodeTicket;
 use iroh_gossip::{net::Gossip, proto::TopicId};
 use irpc::{WithChannels, rpc::RemoteService};
@@ -62,6 +62,7 @@ mod rpc {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RecvSegment {
+        pub from: NodeId,
         pub key: String,
         pub data: Bytes,
     }
@@ -189,6 +190,8 @@ struct Actor {
     connections: ConnectionPool,
     /// How to handle incoming data
     handler: HandlerMode,
+    /// Static provider for node discovery
+    sp: StaticProvider,
     /// Iroh protocol router, I need to keep it around to keep the protocol alive
     router: iroh::protocol::Router,
     /// Metadata db
@@ -256,6 +259,7 @@ impl ConnectionPool {
 impl Actor {
     pub async fn spawn(
         endpoint: iroh::Endpoint,
+        sp: StaticProvider,
         topic: iroh_gossip::proto::TopicId,
         config: Config,
         handler: HandlerMode,
@@ -285,6 +289,7 @@ impl Actor {
             connections: ConnectionPool::new(router.endpoint().clone()),
             handler,
             router,
+            sp,
             write: write.clone(),
             client: client.clone(),
             tasks: FuturesUnordered::new(),
@@ -399,7 +404,7 @@ impl Actor {
                 trace!("{:?}", msg.inner);
                 let WithChannels {
                     tx,
-                    inner: rpc::RecvSegment { key, data },
+                    inner: rpc::RecvSegment { key, from, data },
                     ..
                 } = msg;
                 match &self.handler {
@@ -422,7 +427,8 @@ impl Actor {
                     }
                     HandlerMode::Receiver(handler) => {
                         if self.subscriptions.contains_key(&key) {
-                            handler.handle_data(key, data.to_vec()).await;
+                            let from = Arc::new(from.into());
+                            handler.handle_data(from, key, data.to_vec()).await;
                         } else {
                             warn!("received segment for unsubscribed key: {}", key);
                         }
@@ -500,7 +506,7 @@ impl Actor {
                     ..
                 } = msg;
                 for addr in &peers {
-                    self.router.endpoint().add_node_addr(addr.clone()).ok();
+                    self.sp.add_node_info(addr.clone());
                 }
                 // self.client.inner().join_peers(ids).await.ok();
                 tx.send(()).await.ok();
@@ -518,7 +524,7 @@ impl Actor {
                     .filter(|id| *id != self.node_id())
                     .collect::<HashSet<_>>();
                 for addr in &peers {
-                    self.router.endpoint().add_node_addr(addr.clone()).ok();
+                    self.sp.add_node_info(addr.clone());
                 }
                 self.client.inner().join_peers(ids).await.ok();
                 tx.send(()).await.ok();
@@ -528,9 +534,9 @@ impl Actor {
                 let WithChannels { tx, .. } = msg;
                 if !self.config.disable_relay {
                     // don't await home relay if we have disabled relays, this will hang forever
-                    self.router.endpoint().home_relay().initialized().await;
+                    self.router.endpoint().online().await;
                 }
-                let addr = self.router.endpoint().node_addr().initialized().await;
+                let addr = self.router.endpoint().node_addr();
                 tx.send(addr).await.ok();
             }
             ApiMessage::Shutdown(msg) => {
@@ -548,7 +554,12 @@ impl Actor {
         data: Bytes,
         remotes: &BTreeSet<NodeId>,
     ) {
-        let msg = rpc::RecvSegment { key, data };
+        let me = connections.endpoint.node_id();
+        let msg = rpc::RecvSegment {
+            key,
+            data,
+            from: me,
+        };
         for remote in remotes {
             trace!("sending to stream {}: {}", msg.key, remote);
             let conn = connections.get(remote);
@@ -610,15 +621,17 @@ impl Node {
         } else {
             RelayMode::Default
         };
+        let sp = StaticProvider::new();
         let endpoint = iroh::Endpoint::builder()
             .secret_key(secret_key)
             .relay_mode(relay_mode)
+            .discovery(sp.clone())
             .bind()
             .await
             .map_err(|e| CreateError::Bind {
                 message: e.to_string(),
             })?;
-        let (api, actor) = Actor::spawn(endpoint, topic, config, handler)
+        let (api, actor) = Actor::spawn(endpoint, sp, topic, config, handler)
             .await
             .map_err(|e| CreateError::Subscribe {
                 message: e.to_string(),
@@ -636,7 +649,12 @@ impl Node {
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
 pub trait DataHandler: Send + Sync {
-    async fn handle_data(&self, topic: String, data: Vec<u8>);
+    async fn handle_data(
+        &self,
+        from: Arc<crate::public_key::PublicKey>,
+        topic: String,
+        data: Vec<u8>,
+    );
 }
 
 #[uniffi::export]

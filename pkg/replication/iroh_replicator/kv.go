@@ -23,7 +23,7 @@ type IrohSwarm struct {
 	NodeID           string
 	NodeTicket       string
 	activeSubs       map[string]*OriginInfo
-	handleDataScoped func(topic string, data []byte)
+	handleDataScoped func(pubKey *iroh_streamplace.PublicKey, topic string, data []byte)
 }
 
 // A message saying "hey I ingested node data at this time"
@@ -49,7 +49,7 @@ func NewSwarm(ctx context.Context, tickets []string, secret []byte, mm *media.Me
 	}
 
 	// workaround to get context into the HandleData callback
-	swarm.handleDataScoped = func(topic string, data []byte) {
+	swarm.handleDataScoped = func(_ *iroh_streamplace.PublicKey, topic string, data []byte) {
 		if ctx.Err() != nil {
 			return
 		}
@@ -205,8 +205,8 @@ func (swarm *IrohSwarm) startSegmentSender(ctx context.Context) error {
 	}
 }
 
-func (swarm *IrohSwarm) HandleData(topic string, data []byte) {
-	swarm.handleDataScoped(topic, data)
+func (swarm *IrohSwarm) HandleData(pubKey *iroh_streamplace.PublicKey, topic string, data []byte) {
+	swarm.handleDataScoped(pubKey, topic, data)
 }
 
 func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNotification) error {

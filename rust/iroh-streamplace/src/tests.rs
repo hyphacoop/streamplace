@@ -35,7 +35,7 @@ impl TestNode {
     }
 
     async fn new_with_config(handler: HandlerMode, mut config: Config) -> TestResult<TestNode> {
-        let key = iroh::SecretKey::generate(&mut rand::rngs::OsRng);
+        let key = iroh::SecretKey::generate(&mut rand::rng());
         let key = key.to_bytes().to_vec();
         config.key = key.clone();
         let node = Node::new_in_runtime(config, handler).await?;
@@ -130,7 +130,7 @@ impl<T> TestHandler<T> {
 
 #[async_trait]
 impl<T: Clone + Send + Sync + 'static> DataHandler for TestHandler<T> {
-    async fn handle_data(&self, topic: String, data: Vec<u8>) {
+    async fn handle_data(&self, _from: Arc<public_key::PublicKey>, topic: String, data: Vec<u8>) {
         self.sender
             .send((self.info.clone(), topic, data))
             .await
