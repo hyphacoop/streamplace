@@ -383,7 +383,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_method_datahandler_handle_data()
 		})
-		if checksum != 27893 {
+		if checksum != 48772 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_datahandler_handle_data: UniFFI API checksum mismatch")
 		}
@@ -993,7 +993,7 @@ func (ffiObject *FfiObject) freeRustArcPtr() {
 
 // DataHandler trait that is exported to go for receiving data callbacks.
 type DataHandler interface {
-	HandleData(topic string, data []byte)
+	HandleData(from *PublicKey, topic string, data []byte)
 }
 
 // DataHandler trait that is exported to go for receiving data callbacks.
@@ -1001,7 +1001,7 @@ type DataHandlerImpl struct {
 	ffiObject FfiObject
 }
 
-func (_self *DataHandlerImpl) HandleData(topic string, data []byte) {
+func (_self *DataHandlerImpl) HandleData(from *PublicKey, topic string, data []byte) {
 	_pointer := _self.ffiObject.incrementPointer("DataHandler")
 	defer _self.ffiObject.decrementPointer()
 	uniffiRustCallAsync[error](
@@ -1014,7 +1014,7 @@ func (_self *DataHandlerImpl) HandleData(topic string, data []byte) {
 		// liftFn
 		func(_ struct{}) struct{} { return struct{}{} },
 		C.uniffi_iroh_streamplace_fn_method_datahandler_handle_data(
-			_pointer, FfiConverterStringINSTANCE.Lower(topic), FfiConverterBytesINSTANCE.Lower(data)),
+			_pointer, FfiConverterPublicKeyINSTANCE.Lower(from), FfiConverterStringINSTANCE.Lower(topic), FfiConverterBytesINSTANCE.Lower(data)),
 		// pollFn
 		func(handle C.uint64_t, continuation C.UniffiRustFutureContinuationCallback, data C.uint64_t) {
 			C.ffi_iroh_streamplace_rust_future_poll_void(handle, continuation, data)
@@ -1129,7 +1129,7 @@ func (cm *concurrentHandleMap[T]) tryGet(handle uint64) (T, bool) {
 }
 
 //export iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerMethod0
-func iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerMethod0(uniffiHandle C.uint64_t, topic C.RustBuffer, data C.RustBuffer, uniffiFutureCallback C.UniffiForeignFutureCompleteVoid, uniffiCallbackData C.uint64_t, uniffiOutReturn *C.UniffiForeignFuture) {
+func iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerMethod0(uniffiHandle C.uint64_t, from unsafe.Pointer, topic C.RustBuffer, data C.RustBuffer, uniffiFutureCallback C.UniffiForeignFutureCompleteVoid, uniffiCallbackData C.uint64_t, uniffiOutReturn *C.UniffiForeignFuture) {
 	handle := uint64(uniffiHandle)
 	uniffiObj, ok := FfiConverterDataHandlerINSTANCE.handleMap.tryGet(handle)
 	if !ok {
@@ -1161,6 +1161,7 @@ func iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerMethod0(uniffiHand
 		}()
 
 		uniffiObj.HandleData(
+			FfiConverterPublicKeyINSTANCE.Lift(from),
 			FfiConverterStringINSTANCE.Lift(GoRustBuffer{
 				inner: topic,
 			}),
