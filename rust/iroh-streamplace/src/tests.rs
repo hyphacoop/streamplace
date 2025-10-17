@@ -130,7 +130,7 @@ impl<T> TestHandler<T> {
 
 #[async_trait]
 impl<T: Clone + Send + Sync + 'static> DataHandler for TestHandler<T> {
-    async fn handle_data(&self, topic: String, data: Vec<u8>) {
+    async fn handle_data(&self, _from: Arc<public_key::PublicKey>, topic: String, data: Vec<u8>) {
         self.sender
             .send((self.info.clone(), topic, data))
             .await

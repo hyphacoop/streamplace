@@ -62,6 +62,7 @@ mod rpc {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RecvSegment {
+        pub from: NodeId,
         pub key: String,
         pub data: Bytes,
     }
@@ -399,7 +400,7 @@ impl Actor {
                 trace!("{:?}", msg.inner);
                 let WithChannels {
                     tx,
-                    inner: rpc::RecvSegment { key, data },
+                    inner: rpc::RecvSegment { key, from, data },
                     ..
                 } = msg;
                 match &self.handler {
@@ -422,7 +423,8 @@ impl Actor {
                     }
                     HandlerMode::Receiver(handler) => {
                         if self.subscriptions.contains_key(&key) {
-                            handler.handle_data(key, data.to_vec()).await;
+                            let from = Arc::new(from.into());
+                            handler.handle_data(from, key, data.to_vec()).await;
                         } else {
                             warn!("received segment for unsubscribed key: {}", key);
                         }
@@ -548,7 +550,8 @@ impl Actor {
         data: Bytes,
         remotes: &BTreeSet<NodeId>,
     ) {
-        let msg = rpc::RecvSegment { key, data };
+        let me = connections.endpoint.node_id();
+        let msg = rpc::RecvSegment { key, data, from: me };
         for remote in remotes {
             trace!("sending to stream {}: {}", msg.key, remote);
             let conn = connections.get(remote);
@@ -636,7 +639,7 @@ impl Node {
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
 pub trait DataHandler: Send + Sync {
-    async fn handle_data(&self, topic: String, data: Vec<u8>);
+    async fn handle_data(&self, from: Arc<crate::public_key::PublicKey>, topic: String, data: Vec<u8>);
 }
 
 #[uniffi::export]
