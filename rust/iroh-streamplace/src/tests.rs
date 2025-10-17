@@ -35,7 +35,7 @@ impl TestNode {
     }
 
     async fn new_with_config(handler: HandlerMode, mut config: Config) -> TestResult<TestNode> {
-        let key = iroh::SecretKey::generate(&mut rand::rngs::OsRng);
+        let key = iroh::SecretKey::generate(&mut rand::rng());
         let key = key.to_bytes().to_vec();
         config.key = key.clone();
         let node = Node::new_in_runtime(config, handler).await?;
