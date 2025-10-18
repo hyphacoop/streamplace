@@ -297,6 +297,23 @@ var GormLogger = slogGorm.New(
 	slogGorm.WithTraceAll(),
 )
 
+func DisableSQLLogging() {
+	GormLogger = slogGorm.New(
+		slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
+			TimeFormat: time.RFC3339,
+		})),
+	)
+}
+
+func EnableSQLLogging() {
+	GormLogger = slogGorm.New(
+		slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
+			TimeFormat: time.RFC3339,
+		})),
+		slogGorm.WithTraceAll(),
+	)
+}
+
 func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 	err := ff.Parse(
 		fs, args,
@@ -344,11 +361,9 @@ func (cli *CLI) Parse(fs *flag.FlagSet, args []string) error {
 		*dest = strings.Replace(*dest, SPDataDir, cli.DataDir, 1)
 	}
 	if !cli.SQLLogging {
-		GormLogger = slogGorm.New(
-			slogGorm.WithHandler(tint.NewHandler(os.Stderr, &tint.Options{
-				TimeFormat: time.RFC3339,
-			})),
-		)
+		DisableSQLLogging()
+	} else {
+		EnableSQLLogging()
 	}
 	if cli.XXDeprecatedPublicHost != "" && cli.BroadcasterHost == "" {
 		log.Warn(context.Background(), "public-host is deprecated, use broadcaster-host or server-host instead as appropriate")
