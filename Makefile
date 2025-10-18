@@ -833,16 +833,7 @@ deb-pkg:
 		--deb-systemd-restart-after-upgrade \
 		--after-install=util/systemd/after-install.sh \
 		--description="Live video for the AT Protocol. Solving video for everybody forever." \
-		build-linux-$(SP_ARCH_NAME)/streamplace=/usr/bin/streamplace \
-	&& fpm $(FPM_BASE_OPTS) \
-		-n streamplace-default-http \
-		-a $(SP_ARCH_NAME) \
-		-d streamplace \
-		--deb-systemd-restart-after-upgrade \
-		-p bin/streamplace-default-http-$(VERSION)-linux-$(SP_ARCH_NAME).deb \
-		--description="Installing this package will install Streamplace as the default HTTP server on ports 80 and 443." \
-		util/systemd/streamplace-http.socket=/lib/systemd/system/streamplace-http.socket \
-		util/systemd/streamplace-https.socket=/lib/systemd/system/streamplace-https.socket
+		build-linux-$(SP_ARCH_NAME)/streamplace=/usr/bin/streamplace
 
 .PHONY: pkg-linux-amd64
 pkg-linux-amd64:
@@ -869,20 +860,16 @@ deb-release:
 	aptly repo create -distribution=all -component=main streamplace-releases
 	aptly mirror create old-version $$S3_PUBLIC_URL/debian all
 	aptly mirror update old-version
-	aptly repo import old-version streamplace-releases streamplace streamplace-default-http
+	aptly repo import old-version streamplace-releases streamplace
 	aptly repo add streamplace-releases \
-		bin/streamplace-default-http-$(VERSION)-linux-arm64.deb \
 		bin/streamplace-$(VERSION)-linux-arm64.deb \
-		bin/streamplace-default-http-$(VERSION)-linux-amd64.deb \
 		bin/streamplace-$(VERSION)-linux-amd64.deb
 	aptly snapshot create streamplace-$(VERSION) from repo streamplace-releases
 	aptly publish snapshot -distribution=all streamplace-$(VERSION) s3:streamplace-releases:
 
 .PHONY: ci-deb-release
 ci-deb-release:
-	$(MAKE) ci-download-file download_file=streamplace-default-http-$(VERSION)-linux-amd64.deb
 	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-linux-amd64.deb
-	$(MAKE) ci-download-file download_file=streamplace-default-http-$(VERSION)-linux-arm64.deb
 	$(MAKE) ci-download-file download_file=streamplace-$(VERSION)-linux-arm64.deb
 	echo $$CI_SIGNING_KEY_BASE64 | base64 -d | gpg --import
 	gpg --armor --export | gpg --no-default-keyring --keyring trustedkeys.gpg --import
@@ -905,14 +892,12 @@ ci-upload: ci-upload-node ci-upload-android
 ci-upload-node-linux-amd64:
 	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-amd64.tar.gz \
 	&& $(MAKE) ci-upload-file upload_file=streamplace-desktop-$(VERSION)-linux-amd64.AppImage \
-	&& $(MAKE) ci-upload-file upload_file=streamplace-default-http-$(VERSION)-linux-amd64.deb \
 	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-amd64.deb
 
 .PHONY: ci-upload-node-linux-arm64
 ci-upload-node-linux-arm64:
 	$(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-arm64.tar.gz \
 	&& $(MAKE) ci-upload-file upload_file=streamplace-desktop-$(VERSION)-linux-arm64.AppImage \
-	&& $(MAKE) ci-upload-file upload_file=streamplace-default-http-$(VERSION)-linux-arm64.deb \
 	&& $(MAKE) ci-upload-file upload_file=streamplace-$(VERSION)-linux-arm64.deb
 
 .PHONY: ci-upload-node-darwin-arm64
