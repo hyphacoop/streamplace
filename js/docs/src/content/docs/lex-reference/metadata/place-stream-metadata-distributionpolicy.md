@@ -17,9 +17,10 @@ Distribution and rebroadcast policy.
 
 **Properties:**
 
-| Name          | Type      | Req'd | Description                                                                                                             | Constraints |
-| ------------- | --------- | ----- | ----------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `deleteAfter` | `integer` | ❌    | Duration in seconds after which segments should be deleted. Each segment will expire N seconds after its creation time. |             |
+| Name                  | Type              | Req'd | Description                                                                                                                                              | Constraints |
+| --------------------- | ----------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `deleteAfter`         | `integer`         | ❌    | Duration in seconds after which segments should be deleted. Each segment will expire N seconds after its creation time.                                  |             |
+| `allowedBroadcasters` | Array of `string` | ❌    | List of did:webs of the broadcasters you want to allow to distribute your content. "\*" allows anyone. Starting a line with a "!" bans that broadcaster. |             |
 
 ---
 
@@ -37,6 +38,13 @@ Distribution and rebroadcast policy.
         "deleteAfter": {
           "type": "integer",
           "description": "Duration in seconds after which segments should be deleted. Each segment will expire N seconds after its creation time."
+        },
+        "allowedBroadcasters": {
+          "type": "array",
+          "description": "List of did:webs of the broadcasters you want to allow to distribute your content. \"*\" allows anyone. Starting a line with a \"!\" bans that broadcaster.",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

@@ -6,6 +6,11 @@ import {
 } from "../../lib/metadata-constants";
 
 import {
+  PlaceStreamMetadataConfiguration,
+  PlaceStreamMetadataContentRights,
+  PlaceStreamMetadataDistributionPolicy,
+} from "streamplace";
+import {
   useGetContentMetadata,
   useSaveContentMetadata,
 } from "../../streamplace-store/content-metadata-actions";
@@ -23,29 +28,12 @@ import { Tooltip } from "../ui/tooltip";
 
 const { p, r, bg, borders, w, text, layout, gap, flex } = zero;
 
-// Types
-export interface DistributionPolicy {
-  deleteAfter?: number;
-}
-
-export interface Rights {
-  creator?: string;
-  copyrightNotice?: string;
-  copyrightYear?: string | number;
-  license?: string;
-  creditLine?: string;
-}
-
-export interface ContentMetadata {
-  contentWarnings: { warnings: string[] };
-  distributionPolicy: DistributionPolicy;
-  contentRights: Rights;
-}
-
 export interface ContentMetadataFormProps {
   showUpdateButton?: boolean;
-  onMetadataChange?: (metadata: ContentMetadata) => void;
-  initialMetadata?: ContentMetadata;
+  onMetadataChange?: (
+    metadata: PlaceStreamMetadataConfiguration.Record,
+  ) => void;
+  initialMetadata?: PlaceStreamMetadataConfiguration.Record;
   style?: any;
 }
 
@@ -105,11 +93,11 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
     // Local state for metadata
     const [contentWarnings, setContentWarnings] = useState<string[]>([]);
     const [distributionPolicy, setDistributionPolicy] =
-      useState<DistributionPolicy>({});
-    const [contentRights, setContentRights] = useState<Rights>({});
+      useState<PlaceStreamMetadataDistributionPolicy.Main>({});
+    const [contentRights, setContentRights] =
+      useState<PlaceStreamMetadataContentRights.Main>({});
     const [selectedLicense, setSelectedLicense] = useState<string>("");
     const [customLicenseText, setCustomLicenseText] = useState<string>("");
-    const [customDateTime, setCustomDateTime] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [hasMetadata, setHasMetadata] = useState(false);
 
@@ -128,11 +116,6 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
         }
         if (initialMetadata.distributionPolicy) {
           setDistributionPolicy(initialMetadata.distributionPolicy);
-          setCustomDateTime(
-            initialMetadata.distributionPolicy.deleteAfter
-              ? String(initialMetadata.distributionPolicy.deleteAfter)
-              : "",
-          );
         }
         if (initialMetadata.contentRights) {
           setContentRights(initialMetadata.contentRights);
@@ -155,11 +138,6 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
             }
             if (metadata.record.distributionPolicy) {
               setDistributionPolicy(metadata.record.distributionPolicy);
-              setCustomDateTime(
-                metadata.record.distributionPolicy.deleteAfter
-                  ? String(metadata.record.distributionPolicy.deleteAfter)
-                  : "",
-              );
             }
             if (metadata.record.contentRights) {
               setContentRights(metadata.record.contentRights);
@@ -185,6 +163,7 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
 
         if (onMetadataChange) {
           onMetadataChange({
+            $type: "place.stream.metadata.configuration",
             contentWarnings: { warnings: newWarnings },
             distributionPolicy,
             contentRights,
@@ -198,6 +177,7 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
     useEffect(() => {
       if (onMetadataChange) {
         onMetadataChange({
+          $type: "place.stream.metadata.configuration",
           contentWarnings: { warnings: contentWarnings },
           distributionPolicy,
           contentRights,
@@ -207,19 +187,40 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
 
     // Handle distribution policy changes
     const handleDistributionPolicyChange = useCallback(
-      (deleteAfter: string) => {
-        let duration = parseInt(deleteAfter, 10);
-        if (isNaN(duration) || duration < 0) {
-          duration = 0;
+      ({
+        deleteAfter,
+        allowedBroadcasters,
+      }: {
+        deleteAfter?: string;
+        allowedBroadcasters?: string;
+      }) => {
+        let newDistributionPolicy: PlaceStreamMetadataDistributionPolicy.Main =
+          {
+            ...distributionPolicy,
+          };
+        if (typeof deleteAfter === "string") {
+          let duration = parseInt(deleteAfter, 10);
+          if (isNaN(duration)) {
+            newDistributionPolicy.deleteAfter = undefined;
+          } else {
+            if (isNaN(duration) || duration < 0) {
+              duration = -1;
+            }
+            newDistributionPolicy.deleteAfter =
+              duration === 0 ? undefined : duration;
+          }
         }
-        const newPolicy = duration > 0 ? { deleteAfter: duration } : {};
-        console.log("newPolicy", newPolicy);
-        setDistributionPolicy(newPolicy);
+        if (typeof allowedBroadcasters === "string") {
+          newDistributionPolicy.allowedBroadcasters =
+            allowedBroadcasters.split("\n");
+        }
+        setDistributionPolicy(newDistributionPolicy);
 
         if (onMetadataChange) {
           onMetadataChange({
+            $type: "place.stream.metadata.configuration",
             contentWarnings: { warnings: contentWarnings },
-            distributionPolicy: newPolicy,
+            distributionPolicy: newDistributionPolicy,
             contentRights,
           });
         }
@@ -241,6 +242,7 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
 
         if (onMetadataChange) {
           onMetadataChange({
+            $type: "place.stream.metadata.configuration",
             contentWarnings: { warnings: contentWarnings },
             distributionPolicy,
             contentRights: newRights,
@@ -254,20 +256,13 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
       setLoading(true);
       try {
         // Build the metadata object, only including non-empty fields
-        const metadata: any = {};
+        const metadata: PlaceStreamMetadataConfiguration.Record = {
+          $type: "place.stream.metadata.configuration",
+        };
 
         // Only include contentWarnings if it has values
         if (contentWarnings && contentWarnings.length > 0) {
-          metadata.contentWarnings = contentWarnings;
-        }
-
-        // Only include distributionPolicy if it has a deleteAfter value
-        const duration = parseInt(customDateTime, 10);
-        if (!isNaN(duration) && duration > 0) {
-          metadata.distributionPolicy = { deleteAfter: duration };
-          setCustomDateTime(`${duration}`);
-        } else {
-          setCustomDateTime("");
+          metadata.contentWarnings = { warnings: contentWarnings };
         }
 
         // Only include contentRights if it has actual values
@@ -301,6 +296,21 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
           metadata.contentRights = filteredRights;
         }
 
+        metadata.distributionPolicy = {
+          ...distributionPolicy,
+        };
+
+        if (distributionPolicy?.allowedBroadcasters) {
+          const filteredBs = distributionPolicy.allowedBroadcasters.filter(
+            (broadcaster) => broadcaster !== "",
+          );
+          metadata.distributionPolicy.allowedBroadcasters = filteredBs;
+          setDistributionPolicy({
+            ...distributionPolicy,
+            allowedBroadcasters: filteredBs,
+          });
+        }
+
         await saveContentMetadata(metadata);
         setHasMetadata(true);
         // Show success toast
@@ -320,7 +330,6 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
       contentRights,
       selectedLicense,
       customLicenseText,
-      customDateTime,
       hasMetadata,
       saveContentMetadata,
     ]);
@@ -670,58 +679,168 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                     optional
                   </Text>
                 </View>
-                <View style={[gap.all[3], w.percent[100]]}>
-                  <View
-                    style={[
-                      layout.flex.row,
-                      layout.flex.alignCenter,
-                      w.percent[100],
-                    ]}
-                  >
-                    <Text
+
+                {/* allow everyone to distribute your content */}
+                <Tooltip
+                  content="Distribution of your content is unlimited, but they still have to respect the deleteAfter policy below."
+                  position="top"
+                >
+                  <Checkbox
+                    checked={
+                      distributionPolicy.allowedBroadcasters?.includes("*") ||
+                      false
+                    }
+                    onCheckedChange={(checked) =>
+                      handleDistributionPolicyChange({
+                        allowedBroadcasters: checked ? "*" : "",
+                      })
+                    }
+                    label={"Allow everyone to distribute your content"}
+                    style={[{ fontSize: 12 }]}
+                  />
+                </Tooltip>
+
+                {/* allowedBroadcasters */}
+                {!distributionPolicy.allowedBroadcasters?.includes("*") && (
+                  <View style={[gap.all[3], w.percent[100]]}>
+                    <View
                       style={[
-                        text.neutral[300],
-                        {
-                          minWidth: 100,
-                          textAlign: "left",
-                          paddingBottom: 8,
-                          fontSize: 14,
-                        },
+                        layout.flex.row,
+                        layout.flex.alignCenter,
+                        w.percent[100],
                       ]}
                     >
-                      Delete After
-                    </Text>
-                    <View style={[flex.values[1]]}>
                       <Text
                         style={[
-                          text.gray[500],
-                          { fontSize: 12, paddingBottom: 4 },
+                          text.neutral[300],
+                          {
+                            minWidth: 100,
+                            textAlign: "left",
+                            paddingBottom: 8,
+                            fontSize: 14,
+                          },
                         ]}
                       >
-                        Duration in seconds (e.g., 300 for 5 minutes) or 0 to
-                        allow archiving your stream
+                        Allowed<br></br>Broadcasters
                       </Text>
-                      <Input
-                        value={customDateTime}
-                        onChange={(value) => {
-                          setCustomDateTime(value);
-                          handleDistributionPolicyChange(value);
-                        }}
-                        keyboardType="numeric"
-                        variant="filled"
-                        inputStyle={[
-                          p[3],
-                          r.md,
-                          bg.neutral[800],
-                          text.white,
-                          borders.width.thin,
-                          borders.color.neutral[600],
-                          w.percent[100],
-                        ]}
-                      />
+                      <View style={[flex.values[1]]}>
+                        <Text
+                          style={[
+                            text.gray[500],
+                            { fontSize: 12, paddingBottom: 4 },
+                          ]}
+                        >
+                          Enter the did:webs of the broadcasters you want to
+                          allow to distribute your content, one per line.
+                        </Text>
+                        <Input
+                          multiline={true}
+                          numberOfLines={4}
+                          value={
+                            distributionPolicy.allowedBroadcasters?.join(
+                              "\n",
+                            ) || ""
+                          }
+                          onChange={(value) => {
+                            handleDistributionPolicyChange({
+                              allowedBroadcasters: value,
+                            });
+                          }}
+                          variant="filled"
+                          inputStyle={[
+                            p[3],
+                            r.md,
+                            bg.neutral[800],
+                            text.white,
+                            borders.width.thin,
+                            borders.color.neutral[600],
+                            w.percent[100],
+                          ]}
+                        />
+                      </View>
                     </View>
                   </View>
-                </View>
+                )}
+
+                <Tooltip
+                  content="Anyone may archive your content indefinitely."
+                  position="top"
+                >
+                  <Checkbox
+                    checked={distributionPolicy.deleteAfter === -1}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleDistributionPolicyChange({
+                          deleteAfter: "-1",
+                        });
+                      } else {
+                        handleDistributionPolicyChange({
+                          deleteAfter: "300",
+                        });
+                      }
+                    }}
+                    label={"Allow everyone to archive your content"}
+                    style={[{ fontSize: 12 }]}
+                  />
+                </Tooltip>
+
+                {/* deleteAfter */}
+                {distributionPolicy.deleteAfter !== -1 && (
+                  <View style={[gap.all[3], w.percent[100]]}>
+                    <View
+                      style={[
+                        layout.flex.row,
+                        layout.flex.alignCenter,
+                        w.percent[100],
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          text.neutral[300],
+                          {
+                            minWidth: 100,
+                            textAlign: "left",
+                            paddingBottom: 8,
+                            fontSize: 14,
+                          },
+                        ]}
+                      >
+                        Delete After
+                      </Text>
+                      <View style={[flex.values[1]]}>
+                        <Text
+                          style={[
+                            text.gray[500],
+                            { fontSize: 12, paddingBottom: 4 },
+                          ]}
+                        >
+                          Duration in seconds (e.g., 300 for 5 minutes)
+                        </Text>
+                        <Input
+                          value={
+                            distributionPolicy.deleteAfter?.toString() || ""
+                          }
+                          onChange={(value) => {
+                            handleDistributionPolicyChange({
+                              deleteAfter: value,
+                            });
+                          }}
+                          keyboardType="numeric"
+                          variant="filled"
+                          inputStyle={[
+                            p[3],
+                            r.md,
+                            bg.neutral[800],
+                            text.white,
+                            borders.width.thin,
+                            borders.color.neutral[600],
+                            w.percent[100],
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
 

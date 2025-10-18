@@ -1,3 +1,4 @@
+import { PlaceStreamMetadataConfiguration } from "streamplace";
 import {
   ContentMetadataResult,
   useDID,
@@ -10,41 +11,17 @@ export const useSaveContentMetadata = () => {
   const did = useDID();
   const setContentMetadata = useSetContentMetadata();
 
-  return async (params: {
-    contentWarnings?: string[];
-    distributionPolicy?: { deleteAfter?: number };
-    contentRights?: Record<string, any>;
-    rkey?: string;
-  }) => {
+  return async (metadataRecord: PlaceStreamMetadataConfiguration.Record) => {
     if (!pdsAgent || !did) {
       throw new Error("No PDS agent or DID available");
     }
-
-    const metadataRecord = {
-      $type: "place.stream.metadata.configuration",
-      createdAt: new Date().toISOString(),
-      ...(params.contentWarnings &&
-        params.contentWarnings.length > 0 && {
-          contentWarnings: { warnings: params.contentWarnings },
-        }),
-      ...(params.distributionPolicy &&
-        params.distributionPolicy.deleteAfter && {
-          distributionPolicy: params.distributionPolicy,
-        }),
-      ...(params.contentRights &&
-        Object.keys(params.contentRights).length > 0 && {
-          contentRights: params.contentRights,
-        }),
-    };
-
-    const rkey = params.rkey || "self";
 
     try {
       // Try to update existing record first
       const result = await (pdsAgent as any).com.atproto.repo.putRecord({
         repo: did,
         collection: "place.stream.metadata.configuration",
-        rkey,
+        rkey: "self",
         record: metadataRecord,
       });
 
@@ -52,7 +29,7 @@ export const useSaveContentMetadata = () => {
         record: metadataRecord as any,
         uri: result.data.uri,
         cid: result.data.cid || "",
-        rkey,
+        rkey: "self",
       };
 
       setContentMetadata(contentMetadata);
@@ -71,7 +48,7 @@ export const useSaveContentMetadata = () => {
         ).com.atproto.repo.createRecord({
           repo: did,
           collection: "place.stream.metadata.configuration",
-          rkey,
+          rkey: "self",
           record: metadataRecord,
         });
 
@@ -79,7 +56,7 @@ export const useSaveContentMetadata = () => {
           record: metadataRecord as any,
           uri: createResult.data.uri,
           cid: createResult.data.cid || "",
-          rkey,
+          rkey: "self",
         };
 
         setContentMetadata(contentMetadata);

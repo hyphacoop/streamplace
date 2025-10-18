@@ -8,6 +8,8 @@ package streamplace
 //
 // Distribution and rebroadcast policy.
 type MetadataDistributionPolicy struct {
+	// allowedBroadcasters: List of did:webs of the broadcasters you want to allow to distribute your content. "*" allows anyone. Starting a line with a "!" bans that broadcaster.
+	AllowedBroadcasters []string `json:"allowedBroadcasters,omitempty" cborgen:"allowedBroadcasters,omitempty"`
 	// deleteAfter: Duration in seconds after which segments should be deleted. Each segment will expire N seconds after its creation time.
 	DeleteAfter *int64 `json:"deleteAfter,omitempty" cborgen:"deleteAfter,omitempty"`
 }
