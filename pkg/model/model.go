@@ -12,6 +12,7 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/plugin/prometheus"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/streamplace"
@@ -138,6 +139,16 @@ func MakeDB(dbURL string) (Model, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error setting journal mode: %w", err)
 	}
+
+	err = db.Use(prometheus.New(prometheus.Config{
+		DBName:          "index",
+		RefreshInterval: 10,
+		StartServer:     false,
+	}))
+	if err != nil {
+		return nil, fmt.Errorf("error using prometheus plugin: %w", err)
+	}
+
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("error getting database: %w", err)
