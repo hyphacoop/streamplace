@@ -77,6 +77,7 @@ require (
 	gorm.io/datatypes v1.2.4
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/driver/sqlite v1.5.7
+	gorm.io/plugin/prometheus v0.1.0
 )
 
 require (

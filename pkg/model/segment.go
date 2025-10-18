@@ -138,8 +138,8 @@ type Segment struct {
 	ID                 string               `json:"id"                   gorm:"primaryKey"`
 	SigningKeyDID      string               `json:"signingKeyDID"        gorm:"column:signing_key_did"`
 	SigningKey         *SigningKey          `json:"signingKey,omitempty" gorm:"foreignKey:DID;references:SigningKeyDID"`
-	StartTime          time.Time            `json:"startTime"            gorm:"index:latest_segments"`
-	RepoDID            string               `json:"repoDID"              gorm:"index:latest_segments;column:repo_did"`
+	StartTime          time.Time            `json:"startTime"            gorm:"index:latest_segments,priority:2;index:start_time"`
+	RepoDID            string               `json:"repoDID"              gorm:"index:latest_segments,priority:1;column:repo_did"`
 	Repo               *Repo                `json:"repo,omitempty"       gorm:"foreignKey:DID;references:RepoDID"`
 	Title              string               `json:"title"`
 	Size               int                  `json:"size"                gorm:"column:size"`
@@ -243,18 +243,9 @@ func (m *DBModel) MostRecentSegments() ([]Segment, error) {
 
 	err := m.DB.Table("segments").
 		Select("segments.*").
-		Where("id IN (?)",
-			m.DB.Table("segments").
-				Select("id").
-				Where("(repo_did, start_time) IN (?)",
-					m.DB.Table("segments").
-						Select("repo_did, MAX(start_time)").
-						Group("repo_did"))).
+		Where("start_time > ?", thirtySecondsAgo.UTC()).
 		Order("start_time DESC").
-		Joins("JOIN repos ON segments.repo_did = repos.did").
-		Preload("Repo").
 		Find(&segments).Error
-
 	if err != nil {
 		return nil, err
 	}
@@ -262,11 +253,21 @@ func (m *DBModel) MostRecentSegments() ([]Segment, error) {
 		return []Segment{}, nil
 	}
 
-	filteredSegments := []Segment{}
+	segmentMap := make(map[string]Segment)
 	for _, seg := range segments {
-		if seg.StartTime.After(thirtySecondsAgo) {
-			filteredSegments = append(filteredSegments, seg)
+		prev, ok := segmentMap[seg.RepoDID]
+		if !ok {
+			segmentMap[seg.RepoDID] = seg
+		} else {
+			if seg.StartTime.After(prev.StartTime) {
+				segmentMap[seg.RepoDID] = seg
+			}
 		}
+	}
+
+	filteredSegments := []Segment{}
+	for _, seg := range segmentMap {
+		filteredSegments = append(filteredSegments, seg)
 	}
 
 	return filteredSegments, nil
@@ -296,27 +297,6 @@ func (m *DBModel) LatestSegmentsForUser(user string, limit int, before *time.Tim
 		return nil, err
 	}
 	return segs, nil
-}
-
-func (m *DBModel) GetLiveUsers() ([]Segment, error) {
-	var liveUsers []Segment
-	thirtySecondsAgo := aqtime.FromTime(time.Now().Add(-30 * time.Second)).Time()
-
-	err := m.DB.Model(&Segment{}).
-		Preload("Repo").
-		Where("start_time >= ?", thirtySecondsAgo).
-		Where("start_time = (SELECT MAX(start_time) FROM segments s2 WHERE s2.repo_did = segments.repo_did)").
-		Order("start_time DESC").
-		Find(&liveUsers).Error
-
-	if err != nil {
-		return nil, err
-	}
-	if liveUsers == nil {
-		return []Segment{}, nil
-	}
-
-	return liveUsers, nil
 }
 
 func (m *DBModel) GetSegment(id string) (*Segment, error) {
