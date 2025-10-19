@@ -700,6 +700,38 @@
         ]
       }
     },
+    "/xrpc/place.stream.broadcast.getBroadcaster": {
+      "get": {
+        "summary": "Get information about a Streamplace broadcaster.",
+        "operationId": "place.stream.broadcast.getBroadcaster",
+        "tags": ["place.stream.broadcast"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "broadcaster": {
+                      "type": "string",
+                      "description": "DID of the Streamplace broadcaster to which this server belongs",
+                      "format": "did"
+                    },
+                    "server": {
+                      "type": "string",
+                      "description": "DID of this particular Streamplace server",
+                      "format": "did"
+                    }
+                  },
+                  "required": ["broadcaster"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/xrpc/com.atproto.sync.getRecord": {
       "get": {
         "summary": "Get data blocks needed to prove the existence or non-existence of record in the current version of repo. Does not require auth.",

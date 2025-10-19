@@ -18,7 +18,12 @@
           "server": {
             "type": "string",
             "format": "did",
-            "description": "did:web of the server that's currently rebroadcasting the livestream"
+            "description": "did of the server that's currently rebroadcasting the livestream"
+          },
+          "broadcaster": {
+            "type": "string",
+            "format": "did",
+            "description": "did of the broadcaster that operates the server syndicating the livestream"
           },
           "updatedAt": {
             "type": "string",

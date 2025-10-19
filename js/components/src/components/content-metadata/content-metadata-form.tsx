@@ -11,10 +11,14 @@ import {
   PlaceStreamMetadataDistributionPolicy,
 } from "streamplace";
 import {
+  useGetBroadcasterDID,
   useGetContentMetadata,
   useSaveContentMetadata,
 } from "../../streamplace-store/content-metadata-actions";
-import { useDID } from "../../streamplace-store/streamplace-store";
+import {
+  useDID,
+  useStreamplaceStore,
+} from "../../streamplace-store/streamplace-store";
 import { usePDSAgent } from "../../streamplace-store/xrpc";
 import * as zero from "../../ui";
 import { Button } from "../ui/button";
@@ -106,6 +110,13 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
       useState<string>("contentWarnings");
 
     const currentYear = new Date().getFullYear();
+
+    const getBroadcasterDID = useGetBroadcasterDID();
+    useEffect(() => {
+      getBroadcasterDID();
+    }, [getBroadcasterDID]);
+
+    const broadcasterDID = useStreamplaceStore((state) => state.broadcasterDID);
 
     // Load existing metadata on mount or from initialMetadata prop
     useEffect(() => {
@@ -692,7 +703,9 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                     }
                     onCheckedChange={(checked) =>
                       handleDistributionPolicyChange({
-                        allowedBroadcasters: checked ? "*" : "",
+                        allowedBroadcasters: checked
+                          ? "*"
+                          : broadcasterDID || "",
                       })
                     }
                     label={"Allow everyone to distribute your content"}

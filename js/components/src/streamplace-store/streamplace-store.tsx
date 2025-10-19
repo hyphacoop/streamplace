@@ -44,6 +44,11 @@ export interface StreamplaceState {
   contentMetadata: ContentMetadataResult | null;
   setContentMetadata: (metadata: ContentMetadataResult | null) => void;
 
+  broadcasterDID: string | null;
+  setBroadcasterDID: (broadcasterDID: string | null) => void;
+  serverDID: string | null;
+  setServerDID: (serverDID: string | null) => void;
+
   // Volume state
   volume: number;
   muted: boolean;
@@ -80,6 +85,12 @@ export const makeStreamplaceStore = ({
     oauthSession: null,
     handle: null,
     chatProfile: null,
+
+    broadcasterDID: null,
+    setBroadcasterDID: (broadcasterDID: string | null) =>
+      set({ broadcasterDID }),
+    serverDID: null,
+    setServerDID: (serverDID: string | null) => set({ serverDID }),
 
     // Content metadata
     contentMetadata: null,

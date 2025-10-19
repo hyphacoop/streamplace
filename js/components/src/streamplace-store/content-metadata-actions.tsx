@@ -3,8 +3,34 @@ import {
   ContentMetadataResult,
   useDID,
   useSetContentMetadata,
+  useStreamplaceStore,
 } from "./streamplace-store";
 import { usePDSAgent } from "./xrpc";
+
+export const useGetBroadcasterDID = () => {
+  const pdsAgent = usePDSAgent();
+  const did = useDID();
+  const setBroadcasterDID = useStreamplaceStore(
+    (state) => state.setBroadcasterDID,
+  );
+  const setServerDID = useStreamplaceStore((state) => state.setServerDID);
+  return async () => {
+    if (!pdsAgent || !did) {
+      throw new Error("No PDS agent or DID available");
+    }
+
+    const result = await pdsAgent.place.stream.broadcast.getBroadcaster();
+    if (!result.success) {
+      throw new Error("Failed to get broadcaster DID");
+    }
+    setBroadcasterDID(result.data.broadcaster);
+    if (result.data.server) {
+      setServerDID(result.data.server);
+    } else {
+      setServerDID(null);
+    }
+  };
+};
 
 export const useSaveContentMetadata = () => {
   const pdsAgent = usePDSAgent();

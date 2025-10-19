@@ -3283,7 +3283,11 @@ func (t *BroadcastOrigin) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 5
+	fieldCount := 6
+
+	if t.Broadcaster == nil {
+		fieldCount--
+	}
 
 	if t.IrohTicket == nil {
 		fieldCount--
@@ -3412,6 +3416,38 @@ func (t *BroadcastOrigin) MarshalCBOR(w io.Writer) error {
 			}
 		}
 	}
+
+	// t.Broadcaster (string) (string)
+	if t.Broadcaster != nil {
+
+		if len("broadcaster") > 1000000 {
+			return xerrors.Errorf("Value in field \"broadcaster\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("broadcaster"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("broadcaster")); err != nil {
+			return err
+		}
+
+		if t.Broadcaster == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.Broadcaster) > 1000000 {
+				return xerrors.Errorf("Value in field t.Broadcaster was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.Broadcaster))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.Broadcaster)); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -3440,7 +3476,7 @@ func (t *BroadcastOrigin) UnmarshalCBOR(r io.Reader) (err error) {
 
 	n := extra
 
-	nameBuf := make([]byte, 10)
+	nameBuf := make([]byte, 11)
 	for i := uint64(0); i < n; i++ {
 		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
 		if err != nil {
@@ -3519,6 +3555,27 @@ func (t *BroadcastOrigin) UnmarshalCBOR(r io.Reader) (err error) {
 					}
 
 					t.IrohTicket = (*string)(&sval)
+				}
+			}
+			// t.Broadcaster (string) (string)
+		case "broadcaster":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.Broadcaster = (*string)(&sval)
 				}
 			}
 
