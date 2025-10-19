@@ -37,6 +37,8 @@ type Model interface {
 	GetSegment(id string) (*Segment, error)
 	GetExpiredSegments(ctx context.Context) ([]Segment, error)
 	DeleteSegment(ctx context.Context, id string) error
+	StartSegmentCleaner(ctx context.Context) error
+	SegmentCleaner(ctx context.Context) error
 
 	GetIdentity(id string) (*Identity, error)
 	UpdateIdentity(ident *Identity) error
