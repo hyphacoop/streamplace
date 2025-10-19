@@ -133,7 +133,16 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 		Local:    local,
 	}
 	for _, ch := range mm.newSegmentSubs {
-		go func() { ch <- not }()
+		go func() {
+			select {
+			case ch <- not:
+			case <-ctx.Done():
+				return
+			case <-time.After(1 * time.Minute):
+				log.Warn(ctx, "failed to send segment to channel, timing out", "streamer", repoDID, "signingKey", signingKeyDID, "segmentID", *maniCert.Manifest.Label)
+				return
+			}
+		}()
 	}
 	aqt := aqtime.FromTime(meta.StartTime.Time())
 	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *maniCert.Manifest.Label)
