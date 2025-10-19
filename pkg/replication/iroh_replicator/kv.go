@@ -427,15 +427,17 @@ func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNo
 		return err
 	}
 	keyBs := []byte(fmt.Sprintf("origin::%s", not.Segment.RepoDID))
-	err = swarm.w.Put(nil, keyBs, bs)
-	if err != nil {
-		log.Error(ctx, "could not put segment to swarm", "error", err)
-		return err
-	}
-	err = swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
-	if err != nil {
-		log.Error(ctx, "could not send segment to swarm", "error", err)
-		return err
-	}
+	go func() {
+		err = swarm.w.Put(nil, keyBs, bs)
+		if err != nil {
+			log.Error(ctx, "could not put segment to swarm", "error", err)
+		}
+	}()
+	go func() {
+		err = swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
+		if err != nil {
+			log.Error(ctx, "could not send segment to swarm", "error", err)
+		}
+	}()
 	return nil
 }
