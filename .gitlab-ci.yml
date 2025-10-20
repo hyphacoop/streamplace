@@ -249,12 +249,10 @@ build-docker-manifest:
     - curl -s -L https://github.com/estesp/manifest-tool/releases/download/v2.1.7/binaries-manifest-tool-2.1.7.tar.gz | tar xvz
     - mv manifest-tool-linux-amd64 ./manifest-tool
     - chmod +x ./manifest-tool
-    - mkdir -p /kaniko/.docker
-    - cp "$DOCKER_AUTH_CONFIG" /kaniko/.docker/config.json
   timeout: 2 hours
   script:
     - ./manifest-tool push from-args
-      --docker-cfg /kaniko/.docker/config.json
+      --docker-cfg "$DOCKER_AUTH_CONFIG"
       --platforms linux/amd64,linux/arm64
       --template $DOCKER_REPO:$STREAMPLACE_VERSION-ARCH
       --tags $STREAMPLACE_BRANCH
