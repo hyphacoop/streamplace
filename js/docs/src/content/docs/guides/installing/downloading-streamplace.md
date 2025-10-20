@@ -44,6 +44,25 @@ SP_TLS_CERT=/tls/tls.crt
 SP_TLS_KEY=/tls/tls.key
 ```
 
+### Docker
+
+Running Streamplace from a Docker image works great except for Docker
+networking. Streamplace relies heavily on WebRTC for playback, which requires
+large numbers of ephemeral UDP ports to work properly. So, we reccomend using
+host networking. So that command would look something like:
+
+```shell
+  docker run \
+    --name streamplace \
+    -d \
+    -e SP_HTTP_ADDR=:80 \
+    -e SP_HTTPS_ADDR=:443 \
+    -e SP_SECURE=true \
+    -e SP_BROADCASTER_HOST=example.com \
+    --net=host \
+    oci.stream.place/streamplace
+```
+
 ## Download a binary
 
 Binaries for all platforms are available to download from
