@@ -39,6 +39,9 @@ SP_BROADCASTER_HOST=example.com
 # If you have a multi-node cluster, they'll each need different public DNS names:
 SP_SERVER_HOST=prod-nyc0.example.com
 
+# If you don't want to syndicate everyone, add your list of allowed DIDs here:
+SP_ALLOWED_STREAMS=did:web:example.com,did:plc:rbvrr34edl5ddpuwcubjiost
+
 # Useful if your TLS cert and key aren't in the default
 SP_TLS_CERT=/tls/tls.crt
 SP_TLS_KEY=/tls/tls.key
@@ -48,7 +51,7 @@ SP_TLS_KEY=/tls/tls.key
 
 Running Streamplace from a Docker image works great except for Docker
 networking. Streamplace relies heavily on WebRTC for playback, which requires
-large numbers of ephemeral UDP ports to work properly. So, we reccomend using
+large numbers of ephemeral UDP ports to work properly. So, we recommend using
 host networking. So that command would look something like:
 
 ```shell
@@ -59,6 +62,8 @@ host networking. So that command would look something like:
     -e SP_HTTPS_ADDR=:443 \
     -e SP_SECURE=true \
     -e SP_BROADCASTER_HOST=example.com \
+    -e SP_ALLOWED_STREAMS=did:web:example.com,did:plc:rbvrr34edl5ddpuwcubjiost \
+    -v /var/lib/streamplace:/var/lib/streamplace \
     --net=host \
     oci.stream.place/streamplace
 ```
