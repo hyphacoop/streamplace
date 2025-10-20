@@ -14,7 +14,7 @@ description: Reference for the place.stream.broadcast.syndication lexicon
 **Type:** `record`
 
 Record created by a Streamplace broadcaster to indicate that they will be
-replicating a livestream
+replicating a livestream. NYI
 
 **Record Key:** `tid`
 
@@ -38,7 +38,7 @@ replicating a livestream
     "main": {
       "type": "record",
       "key": "tid",
-      "description": "Record created by a Streamplace broadcaster to indicate that they will be replicating a livestream",
+      "description": "Record created by a Streamplace broadcaster to indicate that they will be replicating a livestream. NYI",
       "record": {
         "type": "object",
         "required": ["broadcaster", "streamer", "createdAt"],

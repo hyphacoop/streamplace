@@ -20,12 +20,13 @@ given address. By convention, the record key is streamer::server
 
 **Record Properties:**
 
-| Name         | Type     | Req'd | Description                                                           | Constraints        |
-| ------------ | -------- | ----- | --------------------------------------------------------------------- | ------------------ |
-| `streamer`   | `string` | ✅    | DID of the streamer whose livestream is being published               | Format: `did`      |
-| `server`     | `string` | ✅    | did:web of the server that's currently rebroadcasting the livestream  | Format: `did`      |
-| `updatedAt`  | `string` | ✅    | Periodically updated timestamp when this origin last saw a livestream | Format: `datetime` |
-| `irohTicket` | `string` | ❌    | Iroh ticket that can be used to access the livestream from the server | Max Length: 2048   |
+| Name          | Type     | Req'd | Description                                                                | Constraints        |
+| ------------- | -------- | ----- | -------------------------------------------------------------------------- | ------------------ |
+| `streamer`    | `string` | ✅    | DID of the streamer whose livestream is being published                    | Format: `did`      |
+| `server`      | `string` | ✅    | did of the server that's currently rebroadcasting the livestream           | Format: `did`      |
+| `broadcaster` | `string` | ❌    | did of the broadcaster that operates the server syndicating the livestream | Format: `did`      |
+| `updatedAt`   | `string` | ✅    | Periodically updated timestamp when this origin last saw a livestream      | Format: `datetime` |
+| `irohTicket`  | `string` | ❌    | Iroh ticket that can be used to access the livestream from the server      | Max Length: 2048   |
 
 ---
 
@@ -52,7 +53,12 @@ given address. By convention, the record key is streamer::server
           "server": {
             "type": "string",
             "format": "did",
-            "description": "did:web of the server that's currently rebroadcasting the livestream"
+            "description": "did of the server that's currently rebroadcasting the livestream"
+          },
+          "broadcaster": {
+            "type": "string",
+            "format": "did",
+            "description": "did of the broadcaster that operates the server syndicating the livestream"
           },
           "updatedAt": {
             "type": "string",

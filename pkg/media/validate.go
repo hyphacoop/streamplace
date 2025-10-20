@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"time"
 
@@ -47,6 +48,16 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 	meta, err := ParseSegmentAssertions(ctx, &maniCert.Manifest)
 	if err != nil {
 		return err
+	}
+	if meta.MetadataConfiguration != nil {
+		if meta.MetadataConfiguration.DistributionPolicy != nil {
+			allowedBroadcasters := meta.MetadataConfiguration.DistributionPolicy.AllowedBroadcasters
+			if allowedBroadcasters != nil {
+				if !slices.Contains(allowedBroadcasters, "*") && !slices.Contains(allowedBroadcasters, fmt.Sprintf("did:web:%s", mm.cli.BroadcasterHost)) {
+					return fmt.Errorf("broadcaster %s is not allowed to distribute content. Allowed broadcasters: %v", fmt.Sprintf("did:web:%s", mm.cli.BroadcasterHost), allowedBroadcasters)
+				}
+			}
+		}
 	}
 	mediaData, err := ParseSegmentMediaData(ctx, buf)
 	if err != nil {
@@ -122,7 +133,16 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 		Local:    local,
 	}
 	for _, ch := range mm.newSegmentSubs {
-		go func() { ch <- not }()
+		go func() {
+			select {
+			case ch <- not:
+			case <-ctx.Done():
+				return
+			case <-time.After(1 * time.Minute):
+				log.Warn(ctx, "failed to send segment to channel, timing out", "streamer", repoDID, "signingKey", signingKeyDID, "segmentID", *maniCert.Manifest.Label)
+				return
+			}
+		}()
 	}
 	aqt := aqtime.FromTime(meta.StartTime.Time())
 	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *maniCert.Manifest.Label)

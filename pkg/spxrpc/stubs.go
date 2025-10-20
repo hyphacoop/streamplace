@@ -262,6 +262,7 @@ func (s *Server) HandleComAtprotoSyncListRepos(c echo.Context) error {
 }
 
 func (s *Server) RegisterHandlersPlaceStream(e *echo.Echo) error {
+	e.GET("/xrpc/place.stream.broadcast.getBroadcaster", s.HandlePlaceStreamBroadcastGetBroadcaster)
 	e.GET("/xrpc/place.stream.graph.getFollowingUser", s.HandlePlaceStreamGraphGetFollowingUser)
 	e.GET("/xrpc/place.stream.live.getLiveUsers", s.HandlePlaceStreamLiveGetLiveUsers)
 	e.GET("/xrpc/place.stream.live.getProfileCard", s.HandlePlaceStreamLiveGetProfileCard)
@@ -272,6 +273,19 @@ func (s *Server) RegisterHandlersPlaceStream(e *echo.Echo) error {
 	e.GET("/xrpc/place.stream.server.listWebhooks", s.HandlePlaceStreamServerListWebhooks)
 	e.POST("/xrpc/place.stream.server.updateWebhook", s.HandlePlaceStreamServerUpdateWebhook)
 	return nil
+}
+
+func (s *Server) HandlePlaceStreamBroadcastGetBroadcaster(c echo.Context) error {
+	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamBroadcastGetBroadcaster")
+	defer span.End()
+	var out *placestreamtypes.BroadcastGetBroadcaster_Output
+	var handleErr error
+	// func (s *Server) handlePlaceStreamBroadcastGetBroadcaster(ctx context.Context) (*placestreamtypes.BroadcastGetBroadcaster_Output, error)
+	out, handleErr = s.handlePlaceStreamBroadcastGetBroadcaster(ctx)
+	if handleErr != nil {
+		return handleErr
+	}
+	return c.JSON(200, out)
 }
 
 func (s *Server) HandlePlaceStreamGraphGetFollowingUser(c echo.Context) error {

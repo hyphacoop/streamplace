@@ -23,6 +23,7 @@ import (
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/streamplace"
 
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/replication"
@@ -188,12 +189,14 @@ type ExpandedSchemaOrg []struct {
 }
 
 type SegmentMetadata struct {
-	StartTime          aqtime.AQTime
-	Title              string
-	Creator            string
-	ContentWarnings    []string
-	ContentRights      *model.ContentRights
-	DistributionPolicy *model.DistributionPolicy
+	StartTime             aqtime.AQTime
+	Title                 string
+	Creator               string
+	ContentWarnings       []string
+	ContentRights         *model.ContentRights
+	DistributionPolicy    *model.DistributionPolicy
+	MetadataConfiguration *streamplace.MetadataConfiguration
+	Livestream            *streamplace.Livestream
 }
 
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
@@ -247,14 +250,16 @@ func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*Seg
 	contentWarnings := extractContentWarnings(mani)
 	contentRights := extractContentRights(mani)
 	distributionPolicy := extractDistributionPolicy(mani, start)
+	metadataConfiguration := extractMetadataConfiguration(mani)
 
 	out := SegmentMetadata{
-		StartTime:          start,
-		Title:              meta.Title[0].Value,
-		Creator:            meta.Creator[0].Value,
-		ContentWarnings:    contentWarnings,
-		ContentRights:      contentRights,
-		DistributionPolicy: distributionPolicy,
+		StartTime:             start,
+		Title:                 meta.Title[0].Value,
+		Creator:               meta.Creator[0].Value,
+		ContentWarnings:       contentWarnings,
+		ContentRights:         contentRights,
+		DistributionPolicy:    distributionPolicy,
+		MetadataConfiguration: metadataConfiguration,
 	}
 	return &out, nil
 }
@@ -405,4 +410,23 @@ func extractDistributionPolicy(mani *c2patypes.Manifest, segmentStart aqtime.AQT
 	return &model.DistributionPolicy{
 		ExpiresAt: &expiryTime,
 	}
+}
+
+// extractDistributionPolicy extracts the place.stream.metadata.configuration from the C2PA manifest
+func extractMetadataConfiguration(mani *c2patypes.Manifest) *streamplace.MetadataConfiguration {
+	ass := findAssertion(mani, "place.stream.metadata.configuration")
+	if ass == nil {
+		return nil
+	}
+
+	bs, err := json.Marshal(ass.Data)
+	if err != nil {
+		return nil
+	}
+	var metadataConfiguration streamplace.MetadataConfiguration
+	err = json.Unmarshal(bs, &metadataConfiguration)
+	if err != nil {
+		return nil
+	}
+	return &metadataConfiguration
 }

@@ -14,9 +14,11 @@ func init() {
 // RECORDTYPE: BroadcastOrigin
 type BroadcastOrigin struct {
 	LexiconTypeID string `json:"$type,const=place.stream.broadcast.origin" cborgen:"$type,const=place.stream.broadcast.origin"`
+	// broadcaster: did of the broadcaster that operates the server syndicating the livestream
+	Broadcaster *string `json:"broadcaster,omitempty" cborgen:"broadcaster,omitempty"`
 	// irohTicket: Iroh ticket that can be used to access the livestream from the server
 	IrohTicket *string `json:"irohTicket,omitempty" cborgen:"irohTicket,omitempty"`
-	// server: did:web of the server that's currently rebroadcasting the livestream
+	// server: did of the server that's currently rebroadcasting the livestream
 	Server string `json:"server" cborgen:"server"`
 	// streamer: DID of the streamer whose livestream is being published
 	Streamer string `json:"streamer" cborgen:"streamer"`

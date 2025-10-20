@@ -9,7 +9,8 @@ import (
 
 	"github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
-	"github.com/bluesky-social/indigo/lex/util"
+	lexutil "github.com/bluesky-social/indigo/lex/util"
+	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"golang.org/x/sync/errgroup"
@@ -238,7 +239,7 @@ func (ss *StreamSession) Thumbnail(ctx context.Context, repoDID string, not *med
 	return nil
 }
 
-func getThumbnailCID(pv *bsky.FeedDefs_PostView) (*util.LexBlob, error) {
+func getThumbnailCID(pv *bsky.FeedDefs_PostView) (*lexutil.LexBlob, error) {
 	if pv == nil {
 		return nil, fmt.Errorf("post view is nil")
 	}
@@ -371,7 +372,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 
 	inp := atproto.RepoPutRecord_Input{
 		Collection: "app.bsky.actor.status",
-		Record:     &util.LexiconTypeDecoder{Val: &status},
+		Record:     &lexutil.LexiconTypeDecoder{Val: &status},
 		Rkey:       "self",
 		Repo:       repoDID,
 		SwapRecord: swapRecord,
@@ -445,11 +446,13 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 		log.Debug(ctx, "not updating origin, last origin was less than 30 seconds ago")
 		return nil
 	}
+	broadcaster := fmt.Sprintf("did:web:%s", ss.cli.BroadcasterHost)
 	origin := streamplace.BroadcastOrigin{
-		Streamer:   ss.repoDID,
-		Server:     fmt.Sprintf("did:web:%s", ss.cli.BroadcasterHost),
-		UpdatedAt:  time.Now().Format(time.RFC3339),
-		IrohTicket: &ss.swarm.NodeTicket,
+		Streamer:    ss.repoDID,
+		Server:      fmt.Sprintf("did:web:%s", ss.cli.ServerHost),
+		Broadcaster: &broadcaster,
+		UpdatedAt:   time.Now().Format(util.ISO8601),
+		IrohTicket:  &ss.swarm.NodeTicket,
 	}
 
 	session, err := ss.statefulDB.GetSessionByDID(ss.repoDID)
@@ -470,7 +473,7 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 		return fmt.Errorf("could not get xrpc client: %w", err)
 	}
 
-	rkey := fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.BroadcasterHost)
+	rkey := fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.ServerHost)
 
 	var swapRecord *string
 	getOutput := atproto.RepoGetRecord_Output{}
@@ -495,7 +498,7 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 
 	inp := atproto.RepoPutRecord_Input{
 		Collection: "place.stream.broadcast.origin",
-		Record:     &util.LexiconTypeDecoder{Val: &origin},
+		Record:     &lexutil.LexiconTypeDecoder{Val: &origin},
 		Rkey:       fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.BroadcasterHost),
 		Repo:       ss.repoDID,
 		SwapRecord: swapRecord,
