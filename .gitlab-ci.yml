@@ -251,8 +251,7 @@ build-docker-manifest:
     - chmod +x ./manifest-tool
   timeout: 2 hours
   script:
-    - ./manifest-tool push from-args
-      --docker-cfg "$DOCKER_AUTH_CONFIG"
+    - ./manifest-tool --docker-cfg "$DOCKER_AUTH_CONFIG" push from-args
       --platforms linux/amd64,linux/arm64
       --template $DOCKER_REPO:$STREAMPLACE_VERSION-ARCH
       --tags $STREAMPLACE_BRANCH
