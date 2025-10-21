@@ -17,9 +17,9 @@ manifest, extracted from the MP4 segment using
 
 ```json
 {
-  "active_manifest": "urn:c2pa:81079123-e073-494f-b2cb-c0f3fae61efc",
+  "active_manifest": "urn:c2pa:b23b55a7-bd34-4138-99d8-ce565fab3934",
   "manifests": {
-    "urn:c2pa:81079123-e073-494f-b2cb-c0f3fae61efc": {
+    "urn:c2pa:b23b55a7-bd34-4138-99d8-ce565fab3934": {
       "claim_generator_info": [
         {
           "name": "c2pa-rs",
@@ -27,8 +27,8 @@ manifest, extracted from the MP4 segment using
           "org.contentauth.c2pa_rs": "0.58.0"
         }
       ],
-      "title": "Livestream Segment at 2025-10-08T15:19:00.895Z",
-      "instance_id": "xmp:iid:a54aedfb-9bf2-471f-9a38-dbbdd54060fa",
+      "title": "Livestream Segment at 2025-10-21T19:24:24.156Z",
+      "instance_id": "xmp:iid:17f3177c-7cfe-4de2-9a23-019dcdb00559",
       "ingredients": [],
       "assertions": [
         {
@@ -83,7 +83,7 @@ manifest, extracted from the MP4 segment using
               }
             ],
             "alg": "sha256",
-            "hash": "708u7jVcOE1EsN2TQX+K2vidjhgSDimo8xfDzLfecsk=",
+            "hash": "HrLwGm+HdaZh9TkBiWhJH1Mo7QcvLgmhMThcG8f3qZc=",
             "name": "jumbf manifest"
           }
         },
@@ -92,34 +92,68 @@ manifest, extracted from the MP4 segment using
           "data": {
             "@context": {
               "photoshop": "http://ns.adobe.com/photoshop/1.0/",
-              "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
               "dc": "http://purl.org/dc/elements/1.1/",
-              "xmpRights": "http://ns.adobe.com/xap/1.0/rights/"
+              "xmpRights": "http://ns.adobe.com/xap/1.0/rights/",
+              "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/"
             },
-            "dc:title": ["Test"],
+            "dc:creator": "did:plc:y3lae7hmqiwyq7w2v3bcb2c2",
+            "dc:title": [
+              "🦎🦎"
+            ],
+            "dc:date": [
+              "2025-10-21T19:24:24.156Z"
+            ],
             "distributionPolicy": {
-              "deleteAfter": "2025-10-08T15:24:00.000Z"
+              "deleteAfter": "2025-10-21T19:29:24.000Z"
             },
-            "xmpRights:UsageTerms": "All rights reserved",
-            "Iptc4xmpExt:ContentWarning": ["cwarn:flashingLights"],
-            "dc:creator": "did:plc:2j2ounbiyi3ftihronlw5qhj",
-            "dc:date": ["2025-10-08T15:19:00.895Z"]
+            "Iptc4xmpExt:LinkedEncRightsExpr": "http://creativecommons.org/publicdomain/zero/1.0/"
           },
           "kind": "Json"
+        },
+        {
+          "label": "place.stream.metadata.configuration",
+          "data": {
+            "$type": "place.stream.metadata.configuration",
+            "contentRights": {
+              "license": "place.stream.metadata.contentRights#cc0_1__0"
+            },
+            "distributionPolicy": {
+              "deleteAfter": 300
+            }
+          }
+        },
+        {
+          "label": "place.stream.livestream",
+          "data": {
+            "url": "https://picnic-labs-nicholas-not.trycloudflare.com",
+            "post": {
+              "cid": "bafyreicucf722xnyf74psia5ghd5usdnona4e7bkcgbqhdma2a6dokqh5m",
+              "uri": "at://did:plc:y3lae7hmqiwyq7w2v3bcb2c2/app.bsky.feed.post/3lxyfybn55m2o"
+            },
+            "$type": "place.stream.livestream",
+            "thumb": {
+              "ref": {
+                "$link": "bafkreiauoc74hcintbaua7tvp233qbfl4iymiyocc5aclhyohkz3bdinty"
+              },
+              "size": 9231,
+              "$type": "blob",
+              "mimeType": "image/jpeg"
+            },
+            "title": "🦎🦎",
+            "createdAt": "2025-10-06T16:25:06.950Z"
+          }
         }
       ],
       "signature_info": {
         "issuer": "Streamplace",
-        "common_name": "did:key:zQ3shoX1bhiMNLJ7UTMVKazUByeaLSLx28PbpihL5C7ASGENz",
-        "cert_serial_number": "14378093328514229579390314818363024382"
+        "common_name": "did:key:zQ3shfmFgwDstMiGaAkS4HhMJ7p3pTVhyLTHz9ABbhd4v4KJn",
+        "cert_serial_number": "54472225560857906834076190516168844896"
       },
-      "label": "urn:c2pa:81079123-e073-494f-b2cb-c0f3fae61efc"
+      "label": "urn:c2pa:b23b55a7-bd34-4138-99d8-ce565fab3934"
     }
   }
 }
 ```
-
-TODO: use updated manifest
 
 The official version of c2patool can extract this manifest, but will not
 consider it valid due to the use of ES256K. If you build c2patool from the
@@ -130,9 +164,9 @@ Note the variety of information stored in the manifest: user DID, signing key,
 timestamp, content warnings, copyright, etc. More can be added in the future,
 for example whether you consent to remixing.
 
-You can see one the `assertions` is called `place.stream.metadata.configuration`.
-This is the same as the lexicon, and holds all the configuration information
-for this livestream. It's the easiest place to parse out this metadata.
+You can see several assertions with the name `place.stream.*`. This is 
+where Streamplace-specific metadata is stored, and is related to the lexicon.
+It's the easiest place to parse out this metadata.
 
 Some metadata (like content rights) might be duplicated in other `assertions`,
 that aren't custom and are mentioned in the C2PA spec. This allows
