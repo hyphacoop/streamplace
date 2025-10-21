@@ -7,13 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bluesky-social/indigo/api/atproto"
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/api/bsky"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
@@ -370,7 +371,7 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 	}
 
 	var swapRecord *string
-	getOutput := atproto.RepoGetRecord_Output{}
+	getOutput := comatproto.RepoGetRecord_Output{}
 	err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", map[string]any{
 		"repo":       repoDID,
 		"collection": "app.bsky.actor.status",
@@ -390,14 +391,14 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		swapRecord = getOutput.Cid
 	}
 
-	inp := atproto.RepoPutRecord_Input{
+	inp := comatproto.RepoPutRecord_Input{
 		Collection: "app.bsky.actor.status",
 		Record:     &lexutil.LexiconTypeDecoder{Val: &status},
 		Rkey:       "self",
 		Repo:       repoDID,
 		SwapRecord: swapRecord,
 	}
-	out := atproto.RepoPutRecord_Output{}
+	out := comatproto.RepoPutRecord_Output{}
 
 	ss.lastStatusCID = &out.Cid
 
@@ -421,13 +422,13 @@ func (ss *StreamSession) DeleteStatus(repoDID string) error {
 		log.Debug(ctx, "no status cid to delete")
 		return nil
 	}
-	inp := atproto.RepoDeleteRecord_Input{
+	inp := comatproto.RepoDeleteRecord_Input{
 		Collection: "app.bsky.actor.status",
 		Rkey:       "self",
 		Repo:       repoDID,
 	}
 	inp.SwapRecord = ss.lastStatusCID
-	out := atproto.RepoDeleteRecord_Output{}
+	out := comatproto.RepoDeleteRecord_Output{}
 
 	client, err := ss.GetClientByDID(repoDID)
 	if err != nil {
@@ -470,7 +471,7 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 	rkey := fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.ServerHost)
 
 	var swapRecord *string
-	getOutput := atproto.RepoGetRecord_Output{}
+	getOutput := comatproto.RepoGetRecord_Output{}
 	err = client.Do(ctx, xrpc.Query, "application/json", "com.atproto.repo.getRecord", map[string]any{
 		"repo":       ss.repoDID,
 		"collection": "place.stream.broadcast.origin",
@@ -490,14 +491,14 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 		swapRecord = getOutput.Cid
 	}
 
-	inp := atproto.RepoPutRecord_Input{
+	inp := comatproto.RepoPutRecord_Input{
 		Collection: "place.stream.broadcast.origin",
 		Record:     &lexutil.LexiconTypeDecoder{Val: &origin},
 		Rkey:       rkey,
 		Repo:       ss.repoDID,
 		SwapRecord: swapRecord,
 	}
-	out := atproto.RepoPutRecord_Output{}
+	out := comatproto.RepoPutRecord_Output{}
 
 	err = client.Do(ctx, xrpc.Procedure, "application/json", "com.atproto.repo.putRecord", map[string]any{}, inp, &out)
 	if err != nil {
@@ -621,6 +622,40 @@ type XRPCClient interface {
 }
 
 func (ss *StreamSession) GetClientByDID(did string) (XRPCClient, error) {
+	password, ok := ss.cli.DevAccountCreds[did]
+	if ok {
+		repo, err := ss.mod.GetRepoByHandleOrDID(did)
+		if err != nil {
+			return nil, fmt.Errorf("could not get repo by did: %w", err)
+		}
+		if repo == nil {
+			return nil, fmt.Errorf("repo not found for did: %s", did)
+		}
+		anonXRPCC := &xrpc.Client{
+			Host:   repo.PDS,
+			Client: &aqhttp.Client,
+		}
+		session, err := comatproto.ServerCreateSession(context.Background(), anonXRPCC, &comatproto.ServerCreateSession_Input{
+			Identifier: repo.DID,
+			Password:   password,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("could not create session: %w", err)
+		}
+
+		log.Warn(context.Background(), "created session for dev account", "did", repo.DID, "handle", repo.Handle, "pds", repo.PDS)
+
+		return &xrpc.Client{
+			Host:   repo.PDS,
+			Client: &aqhttp.Client,
+			Auth: &xrpc.AuthInfo{
+				Did:        repo.DID,
+				AccessJwt:  session.AccessJwt,
+				RefreshJwt: session.RefreshJwt,
+				Handle:     repo.Handle,
+			},
+		}, nil
+	}
 	session, err := ss.statefulDB.GetSessionByDID(ss.repoDID)
 	if err != nil {
 		return nil, fmt.Errorf("could not get OAuth session for repoDID: %w", err)

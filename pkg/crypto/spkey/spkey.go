@@ -30,7 +30,7 @@ func GenerateStreamKeyForDID(did string) (string, *atcrypto.PublicKeyK256, error
 	}
 	didBytes := []byte(did)
 	combinedBytes := append(priv.Bytes(), didBytes...)
-	multibaseKey := base58.Encode(combinedBytes)
+	multibaseKey := "z" + base58.Encode(combinedBytes)
 	return multibaseKey, pub, nil
 }
 

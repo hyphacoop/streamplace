@@ -129,6 +129,7 @@ type CLI struct {
 	IrohTopic                  string
 	DID                        string
 	DisableIrohRelay           bool
+	DevAccountCreds            map[string]string
 }
 
 // ContentFilters represents the content filtering configuration
@@ -214,6 +215,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", "[]", "tickets to join the swarm with")
 	fs.StringVar(&cli.IrohTopic, "iroh-topic", "", "topic to use for the iroh swarm (must be 32 bytes in hex)")
 	fs.BoolVar(&cli.DisableIrohRelay, "disable-iroh-relay", false, "disable the iroh relay")
+	cli.KVSliceFlag(fs, &cli.DevAccountCreds, "dev-account-creds", "", "(FOR DEVELOPMENT ONLY) did=password pairs for logging into test accounts without oauth")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -538,6 +540,25 @@ func (cli *CLI) StringSliceFlag(fs *flag.FlagSet, dest *[]string, name, defaultV
 		}
 		strs := strings.Split(s, ",")
 		*dest = append(*dest, strs...)
+		return nil
+	})
+}
+
+func (cli *CLI) KVSliceFlag(fs *flag.FlagSet, dest *map[string]string, name, defaultValue, usage string) {
+	*dest = map[string]string{}
+	usage = fmt.Sprintf(`%s (default: "%s")`, usage, *dest)
+	fs.Func(name, usage, func(s string) error {
+		if s == "" {
+			return nil
+		}
+		pairs := strings.Split(s, ",")
+		for _, pair := range pairs {
+			parts := strings.Split(pair, "=")
+			if len(parts) != 2 {
+				return fmt.Errorf("invalid kv flag: %s", pair)
+			}
+			(*dest)[parts[0]] = parts[1]
+		}
 		return nil
 	})
 }
