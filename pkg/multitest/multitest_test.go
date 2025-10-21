@@ -23,6 +23,7 @@ import (
 	"stream.place/streamplace/pkg/gstinit"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/streamplace"
+	"stream.place/streamplace/test/remote"
 )
 
 func TestMultinodeSyndication(t *testing.T) {
@@ -48,7 +49,7 @@ func TestMultinodeSyndication(t *testing.T) {
 	log.Log(context.Background(), "created stream key", "did", acct.DID, "pub", pub.DIDKey())
 	whip := &cmd.WHIPClient{
 		StreamKey: priv,
-		File:      "/home/iameli/testvids/RocketLeague_1h55m_1sGOP_1080p60_NoBframes.mp4",
+		File:      remote.RemoteFixture("3188c071b354f2e548d7f2d332699758e8e3ab1600280e5b07cb67eedc64f274/BigBuckBunny_1sGOP_240p30_NoBframes.mp4"),
 		Endpoint:  fmt.Sprintf("http://%s", node1.Env["SP_HTTP_ADDR"]),
 		Count:     1,
 	}
@@ -105,7 +106,8 @@ func startStreamplaceNode(t *testing.T, dev *devenv.DevEnv) *TestNode {
 		"SP_DEV_ACCOUNT_CREDS":  strings.Join(devAccountCreds, ","),
 	}
 	_, file, _, _ := runtime.Caller(0)
-	abs, err := filepath.Abs(filepath.Join(filepath.Dir(file), "..", "..", "build-linux-amd64", "streamplace"))
+	buildDir := fmt.Sprintf("build-%s-%s", runtime.GOOS, runtime.GOARCH)
+	abs, err := filepath.Abs(filepath.Join(filepath.Dir(file), "..", "..", buildDir, "streamplace"))
 	require.NoError(t, err)
 	// Run the streamplace binary at abs with the environment env
 	cmd := exec.Command(abs)
