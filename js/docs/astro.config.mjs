@@ -71,6 +71,10 @@ export default defineConfig({
         //   autogenerate: { directory: "reference" },
         // },
         {
+          label: "Video Metadata",
+          autogenerate: { directory: "video-metadata" },
+        },
+        {
           label: "Components",
           autogenerate: { directory: "components" },
         },
