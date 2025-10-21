@@ -314,17 +314,9 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		return nil
 	}
 
-	session, err := ss.statefulDB.GetSessionByDID(repoDID)
+	client, err := ss.GetClientByDID(repoDID)
 	if err != nil {
-		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
-	}
-	if session == nil {
-		return fmt.Errorf("no session found for repoDID: %s", repoDID)
-	}
-
-	session, err = ss.op.RefreshIfNeeded(session)
-	if err != nil {
-		return fmt.Errorf("could not refresh session for repoDID: %w", err)
+		return fmt.Errorf("could not get xrpc client: %w", err)
 	}
 
 	ls, err := ss.mod.GetLatestLivestreamForRepo(repoDID)
@@ -375,11 +367,6 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		DurationMinutes: &duration,
 		Embed:           &actorStatusEmbed,
 		CreatedAt:       time.Now().Format(time.RFC3339),
-	}
-
-	client, err := ss.op.GetXrpcClient(session)
-	if err != nil {
-		return fmt.Errorf("could not get xrpc client: %w", err)
 	}
 
 	var swapRecord *string
@@ -442,20 +429,7 @@ func (ss *StreamSession) DeleteStatus(repoDID string) error {
 	inp.SwapRecord = ss.lastStatusCID
 	out := atproto.RepoDeleteRecord_Output{}
 
-	session, err := ss.statefulDB.GetSessionByDID(repoDID)
-	if err != nil {
-		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
-	}
-	if session == nil {
-		return fmt.Errorf("no session found for repoDID: %s", repoDID)
-	}
-
-	session, err = ss.op.RefreshIfNeeded(session)
-	if err != nil {
-		return fmt.Errorf("could not refresh session for repoDID: %w", err)
-	}
-
-	client, err := ss.op.GetXrpcClient(session)
+	client, err := ss.GetClientByDID(repoDID)
 	if err != nil {
 		return fmt.Errorf("could not get xrpc client: %w", err)
 	}
@@ -488,22 +462,9 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 		IrohTicket:  &ss.swarm.NodeTicket,
 	}
 
-	session, err := ss.statefulDB.GetSessionByDID(ss.repoDID)
+	client, err := ss.GetClientByDID(ss.repoDID)
 	if err != nil {
-		return fmt.Errorf("could not get OAuth session for repoDID: %w", err)
-	}
-	if session == nil {
-		return fmt.Errorf("no session found for repoDID: %s", ss.repoDID)
-	}
-
-	session, err = ss.op.RefreshIfNeeded(session)
-	if err != nil {
-		return fmt.Errorf("could not refresh session for repoDID: %w", err)
-	}
-
-	client, err := ss.op.GetXrpcClient(session)
-	if err != nil {
-		return fmt.Errorf("could not get xrpc client: %w", err)
+		return fmt.Errorf("could not get xrpc client for repoDID: %w", err)
 	}
 
 	rkey := fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.ServerHost)
@@ -653,4 +614,30 @@ func (ss *StreamSession) AddToHLS(ctx context.Context, spseg *streamplace.Segmen
 	}
 
 	return nil
+}
+
+type XRPCClient interface {
+	Do(ctx context.Context, method string, contentType string, path string, queryParams map[string]any, body any, out any) error
+}
+
+func (ss *StreamSession) GetClientByDID(did string) (XRPCClient, error) {
+	session, err := ss.statefulDB.GetSessionByDID(ss.repoDID)
+	if err != nil {
+		return nil, fmt.Errorf("could not get OAuth session for repoDID: %w", err)
+	}
+	if session == nil {
+		return nil, fmt.Errorf("no session found for repoDID: %s", ss.repoDID)
+	}
+
+	session, err = ss.op.RefreshIfNeeded(session)
+	if err != nil {
+		return nil, fmt.Errorf("could not refresh session for repoDID: %w", err)
+	}
+
+	client, err := ss.op.GetXrpcClient(session)
+	if err != nil {
+		return nil, fmt.Errorf("could not get xrpc client: %w", err)
+	}
+
+	return client, nil
 }
