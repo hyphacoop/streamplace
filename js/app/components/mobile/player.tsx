@@ -7,6 +7,7 @@ import {
   PlayerProps,
   PlayerProvider,
   PlayerUI,
+  RotationProvider,
   Text,
   usePlayerDimensions,
   usePlayerStore,
@@ -19,7 +20,7 @@ import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
-import { Animated, ScrollView, StatusBar } from "react-native";
+import { Animated, Platform, ScrollView, StatusBar } from "react-native";
 import { useAppSelector } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
@@ -27,6 +28,12 @@ import { DesktopUi } from "./desktop-ui";
 import { OfflineCounter } from "./offline-counter";
 import { MobileUi } from "./ui";
 import { useResponsiveLayout } from "./useResponsiveLayout";
+
+import {
+  setSidebarHidden,
+  setSidebarUnhidden,
+} from "features/base/sidebarSlice";
+import { useDispatch } from "react-redux";
 
 export function Player(
   props: Partial<PlayerProps> & {
@@ -121,36 +128,38 @@ export function Player(
   }
 
   return (
-    <LivestreamProvider src={props.src ?? ""}>
-      <StatusBar hidden={true} />
-      <PlayerProvider defaultId={props.playerId || undefined}>
-        <View
-          style={{
-            flexDirection: chatVisible ? "row" : "column",
-            flex: 1,
-            width: "100%",
-            height: "100%",
-            paddingLeft: safeAreaInsets.left,
-            paddingRight: safeAreaInsets.right,
-          }}
-        >
-          <PlayerInner
-            {...props}
-            showChat={showChat}
-            setShowChat={setShowChat}
-          />
-          {shouldShowChatSidePanel ? (
-            <DesktopChatPanel
-              chatVisible={chatVisible}
-              chatPanelWidth={chatPanelWidth}
-              safeAreaInsets={safeAreaInsets}
+    <RotationProvider enabled={Platform.OS !== "web"}>
+      <LivestreamProvider src={props.src ?? ""}>
+        <StatusBar hidden={true} />
+        <PlayerProvider defaultId={props.playerId || undefined}>
+          <View
+            style={{
+              flexDirection: chatVisible ? "row" : "column",
+              flex: 1,
+              width: "100%",
+              height: "100%",
+              paddingLeft: safeAreaInsets.left,
+              paddingRight: safeAreaInsets.right,
+            }}
+          >
+            <PlayerInner
+              {...props}
+              showChat={showChat}
+              setShowChat={setShowChat}
             />
-          ) : (
-            <MobileUi />
-          )}
-        </View>
-      </PlayerProvider>
-    </LivestreamProvider>
+            {shouldShowChatSidePanel ? (
+              <DesktopChatPanel
+                chatVisible={chatVisible}
+                chatPanelWidth={chatPanelWidth}
+                safeAreaInsets={safeAreaInsets}
+              />
+            ) : (
+              <MobileUi />
+            )}
+          </View>
+        </PlayerProvider>
+      </LivestreamProvider>
+    </RotationProvider>
   );
 }
 
@@ -176,6 +185,9 @@ export function PlayerInner(
     showChatSidePanelOnLandscape: props.showChat,
   });
 
+  // for hiding sidebar
+  const dispatch = useDispatch();
+
   // content info
   const { width, height } = usePlayerDimensions();
 
@@ -183,6 +195,19 @@ export function PlayerInner(
 
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
+
+  // on mobile we want to hide the sidebar when going fullscreen
+  useEffect(() => {
+    if (Platform.OS !== "web" && width > height) {
+      console.log("hiding sb");
+      dispatch(setSidebarHidden());
+    } else {
+      dispatch(setSidebarUnhidden());
+    }
+    return () => {
+      dispatch(setSidebarUnhidden());
+    };
+  }, [width, height]);
   // should cover full width on mobile?
   const isDesktopMode = shouldShowChatSidePanel || screenWidth > 1200;
 

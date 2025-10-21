@@ -13,6 +13,7 @@ import {
   useMuted,
   usePlayerDimensions,
   usePlayerStore,
+  useRotation,
   useSegmentDimensions,
   useSetMuted,
   useSetVolume,
@@ -25,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Fullscreen,
+  Maximize,
   Minimize,
   SwitchCamera,
   Volume2,
@@ -420,6 +422,7 @@ function RightControlsPanel({
   const setMuted = useSetMuted();
   const fullscreen = usePlayerStore((x) => x.fullscreen);
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
+  const { toggleRotation, canRotate, currentOrientation } = useRotation();
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
@@ -459,7 +462,7 @@ function RightControlsPanel({
             : zero.layout.flex.row,
           zero.layout.flex.center,
           zero.gap.all[4],
-          zero.py[2],
+          zero.py[3],
           showChat === undefined ? zero.px[2] : zero.px[3],
           zero.layout.position.relative,
         ]}
@@ -467,23 +470,24 @@ function RightControlsPanel({
         {ingest === null ? (
           Platform.OS === "web" && <PlayerUI.ContextMenu />
         ) : (
-          <Pressable onPress={doSetIngestCamera}>
-            <SwitchCamera color={theme.colors.foreground} size={20} />
-          </Pressable>
+          <>
+            <Pressable onPress={doSetIngestCamera}>
+              <SwitchCamera color={theme.colors.foreground} size={20} />
+            </Pressable>
+          </>
         )}
         {Platform.OS === "web" ? (
           <>
             <Pressable
               onPress={() => {
-                console.log("UI.tsx Button pressed at:", Date.now());
                 setFullscreen(!fullscreen);
               }}
               style={[zero.p[2], r[1]]}
             >
               {fullscreen ? (
-                <Minimize color={theme.colors.text} />
+                <Minimize color={theme.colors.text} size={20} />
               ) : (
-                <Fullscreen color={theme.colors.text} />
+                <Fullscreen color={theme.colors.text} size={20} />
               )}
             </Pressable>
             <Pressable onPress={handleVolumePress}>
@@ -495,7 +499,30 @@ function RightControlsPanel({
             </Pressable>
           </>
         ) : (
-          <PlayerUI.ContextMenu />
+          <View
+            style={[
+              showChat === undefined
+                ? { flexDirection: "column-reverse" }
+                : { flexDirection: "row" },
+              zero.layout.flex.center,
+              zero.gap.all[4],
+            ]}
+          >
+            {canRotate && (
+              <Pressable
+                onPress={() => {
+                  toggleRotation();
+                }}
+              >
+                {currentOrientation === 1 ? (
+                  <Maximize color={theme.colors.foreground} size={20} />
+                ) : (
+                  <Minimize color={theme.colors.foreground} size={20} />
+                )}
+              </Pressable>
+            )}
+            <PlayerUI.ContextMenu />
+          </View>
         )}
         {shouldShowChatSidePanel && setShowChat && (
           <Pressable
