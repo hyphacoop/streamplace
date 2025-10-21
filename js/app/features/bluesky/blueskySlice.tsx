@@ -253,7 +253,12 @@ export const blueskySlice = createAppSlice({
           throw new Error("No client");
         }
         const u = await bluesky.client.authorize(handle, {});
-        if (document.location.href.startsWith("http://127.0.0.1")) {
+
+        // if we're native, we can't access document
+        if (
+          typeof document !== "undefined" &&
+          document.location.href.startsWith("http://127.0.0.1")
+        ) {
           const hostUrl = new URL(document.location.href);
           u.host = hostUrl.host;
           u.protocol = hostUrl.protocol;
