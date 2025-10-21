@@ -22,34 +22,6 @@ get started:
 - pkg-config
 - Rust
 - Working C and C++ compilers: `gcc` on Linux or `clang` (via Xcode) on macOS.
-- Reverse proxy
-
-## Reverse Proxy
-
-Due to the nature of ATProto, a requirement for developing for Streamplace is
-using a reverse proxy so that your PDS can connect with your development
-environment.
-
-Popular options include:
-
-- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
-  (recommended)
-- [zrok](https://zrok.io/) (self hostable, recommended)
-- [Pangolin](https://github.com/fosrl/pangolin) (self-hostable)
-- [ngrok](https://ngrok.com/)
-
-**Example usage:**
-
-- Cloudflare Tunnel: `cloudflared tunnel --url http://127.0.0.1:38080`
-- zrok: `zrok share http 127.0.0.1:38080`
-- Pangolin: (if you have a site set up)
-  `newt --id my-id --secret my-secret --endpoint 127.0.0.1:38080`
-- ngrok: `ngrok http 38080`
-
-> **Tip:** A static tunnel URL is preferred for consistency, especially if you
-> need to share your dev environment or if you want to stay logged in between
-> proxy restarts. Look at the docs for your preferred reverse proxy for more
-> information.
 
 ## Get Started
 
@@ -88,7 +60,7 @@ make dev && ./build-darwin-arm64/streamplace --dev-frontend-proxy=""
 
 If you're using a proxy server, you may want to set your tunnel URL as the
 public host URL so you can get authentication working. You may do that via the
-`--public-host` argument.
+`--broadcaster-host` argument.
 
 Similarly, if you're working on mobile and need authentication, use the
 `--app-bundle-id` argument with your bundle NSID in `app.json` (for Devplace,
@@ -98,7 +70,7 @@ Here's an example with both:
 
 ```shell
 make dev && ./build-darwin-arm64/streamplace \
-  --public-host your.proxy.example.com \
+  --broadcaster-host your.proxy.example.com \
   --app-bundle-id tv.aquareum.dev
 ```
 
@@ -161,3 +133,36 @@ pnpm run docs start
 
 And you can then access them at
 [http://127.0.0.1:38082/docs](http://127.0.0.1:38082/docs).
+
+## Reverse Proxy
+
+For testing certain applications of the Streamplace node, a reverse proxy may be
+necessary to handle incoming HTTPS requests from the public internet. To test
+these use cases, you'll need to run the streamplace node with something like:
+
+```shell
+--dev-public-oauth=false \
+--broadcaster-host=yourproxy.example.com
+```
+
+This will break logging in at `http://127.0.0.1:38080` but allow you to log in
+through your public HTTPS address. Popular options include:
+
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+  (recommended)
+- [zrok](https://zrok.io/) (self hostable, recommended)
+- [Pangolin](https://github.com/fosrl/pangolin) (self-hostable)
+- [ngrok](https://ngrok.com/)
+
+**Example usage:**
+
+- Cloudflare Tunnel: `cloudflared tunnel --url http://127.0.0.1:38080`
+- zrok: `zrok share http 127.0.0.1:38080`
+- Pangolin: (if you have a site set up)
+  `newt --id my-id --secret my-secret --endpoint 127.0.0.1:38080`
+- ngrok: `ngrok http 38080`
+
+> **Tip:** A static tunnel URL is preferred for consistency, especially if you
+> need to share your dev environment or if you want to stay logged in between
+> proxy restarts. Look at the docs for your preferred reverse proxy for more
+> information.
