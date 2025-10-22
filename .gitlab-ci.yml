@@ -159,7 +159,7 @@ test:
     STREAMPLACE_TEST_COUNT: "1"
   script:
     - git fetch --unshallow || echo 'already unshallow'
-    - make dev-setup && make dev-test && make ci-lexicons
+    - make dev-setup && make dev && make dev-test && make ci-lexicons
   artifacts:
     when: always
     paths:
