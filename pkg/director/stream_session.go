@@ -499,7 +499,7 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 	inp := atproto.RepoPutRecord_Input{
 		Collection: "place.stream.broadcast.origin",
 		Record:     &lexutil.LexiconTypeDecoder{Val: &origin},
-		Rkey:       fmt.Sprintf("%s::did:web:%s", ss.repoDID, ss.cli.BroadcasterHost),
+		Rkey:       rkey,
 		Repo:       ss.repoDID,
 		SwapRecord: swapRecord,
 	}
