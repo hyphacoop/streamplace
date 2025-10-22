@@ -139,6 +139,11 @@ ios: app
 rtcrec:
 	go build -o $(BUILDDIR)/rtcrec ./pkg/rtcrec/cmd/...
 
+# Go takes care of this automatically but we can speed up the build by downloading go deps while the build is running
+.PHONY: godeps
+godeps:
+	go get ./pkg/...
+
 #   __  __ ______  _____  ____  _   _
 #  |  \/  |  ____|/ ____|/ __ \| \ | |
 #  | \  / | |__  | (___ | |  | |  \| |
@@ -579,7 +584,7 @@ streamplace: app-cached meson-setup-static
 	meson compile -C $(BUILDDIR) streamplace | grep -v drectve
 
 .PHONY: archive
-archive: app-cached meson-setup-static
+archive: app-cached meson-setup-static godeps
 	meson compile -C $(BUILDDIR) archive | grep -v drectve
 
 .PHONY: linux-amd64
