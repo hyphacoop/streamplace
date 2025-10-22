@@ -2,11 +2,10 @@ import { KeepAwake } from "@streamplace/components";
 import { Redirect } from "components/aqlink";
 import { Player } from "components/mobile/player";
 import { FullscreenProvider } from "contexts/FullscreenContext";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
-import { useAppSelector } from "store/hooks";
+import { useUserProfile } from "store/hooks";
 
 export default function MobileGoLive() {
-  const userProfile = useAppSelector(selectUserProfile);
+  const userProfile = useUserProfile();
 
   if (!userProfile) {
     return <Redirect to={{ screen: "Login" }} />;

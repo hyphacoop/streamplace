@@ -2,14 +2,6 @@ import { useNavigation } from "@react-navigation/native";
 import { Button, Text, useTheme, zero } from "@streamplace/components";
 import Loading from "components/loading/loading";
 import NameColorPicker from "components/name-color-picker/name-color-picker";
-import {
-  login,
-  logout,
-  selectChatProfile,
-  selectIsReady,
-  selectLogin,
-  selectUserProfile,
-} from "features/bluesky/blueskySlice";
 import { Info, LogOut, UserRoundPen } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
@@ -23,25 +15,34 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import {
+  useChatProfile,
+  useIsReady,
+  useLogin,
+  useUserProfile,
+} from "store/hooks";
 
 export default function Login() {
   const { theme } = useTheme();
-  const dispatch = useAppDispatch();
-  const chatProfile = useAppSelector(selectChatProfile);
-  const userProfile = useAppSelector(selectUserProfile);
-  const loginState = useAppSelector(selectLogin);
+  const loginAction = useStore((state) => state.login);
+  const logout = useStore((state) => state.logout);
+  const openLoginLink = useStore((state) => state.openLoginLink);
+  const streamplaceUrl = useStore((state) => state.url);
+  const chatProfile = useChatProfile();
+  const userProfile = useUserProfile();
+  const loginState = useLogin();
   const [handle, setHandle] = useState("");
-  const isReady = useAppSelector(selectIsReady);
+  const isReady = useIsReady();
   const navigation = useNavigation();
 
   const submit = () => {
     let clean = handle;
     if (handle.startsWith("@")) clean = handle.slice(1);
-    dispatch(login(clean));
+    loginAction(clean, streamplaceUrl, openLoginLink);
   };
   const onSignup = () => {
-    dispatch(login("https://bsky.social"));
+    loginAction("https://bsky.social", streamplaceUrl, openLoginLink);
   };
   const onEnterPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {
@@ -98,7 +99,7 @@ export default function Login() {
           ]}
         >
           <Button
-            onPress={() => dispatch(logout())}
+            onPress={() => logout()}
             variant="secondary"
             leftIcon={<LogOut color={theme.colors.text} />}
             style={[

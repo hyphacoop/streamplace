@@ -1,35 +1,34 @@
 import { useURL } from "expo-linking";
 import { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "store/hooks";
-import {
-  getProfile,
-  loadOAuthClient,
-  oauthCallback,
-  selectIsReady,
-  selectOAuthSession,
-  selectUserProfile,
-} from "./blueskySlice";
+import { useStore } from "store";
+import { useIsReady, useOAuthSession, useUserProfile } from "store/hooks";
 
 export default function BlueskyProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const dispatch = useAppDispatch();
-  const isReady = useAppSelector(selectIsReady);
+  const loadOAuthClient = useStore((state) => state.loadOAuthClient);
+  const oauthCallback = useStore((state) => state.oauthCallback);
+  const getProfile = useStore((state) => state.getProfile);
+  const streamplaceUrl = useStore((state) => state.url);
+  const isReady = useIsReady();
+
   useEffect(() => {
-    dispatch(loadOAuthClient());
-  }, []);
+    loadOAuthClient(streamplaceUrl);
+  }, [streamplaceUrl]);
+
   useEffect(() => {
     if (!isReady) {
       const handle = setInterval(() => {
-        dispatch(loadOAuthClient());
+        loadOAuthClient(streamplaceUrl);
       }, 5000);
       return () => clearInterval(handle);
     }
-  }, [isReady]);
-  const oauthSession = useAppSelector(selectOAuthSession);
-  const userProfile = useAppSelector(selectUserProfile);
+  }, [isReady, streamplaceUrl]);
+
+  const oauthSession = useOAuthSession();
+  const userProfile = useUserProfile();
 
   const [lastLink, setLastLink] = useState<string | null>(null);
   const url = useURL();
@@ -40,16 +39,17 @@ export default function BlueskyProvider({
       if (url.includes("?")) {
         const params = new URLSearchParams(url.split("?")[1]);
         if (params.has("error") || params.has("code")) {
-          dispatch(oauthCallback(url));
+          oauthCallback(url, streamplaceUrl);
         }
       }
     }
-  }, [url, lastLink]);
+  }, [url, lastLink, streamplaceUrl]);
 
   useEffect(() => {
     if (oauthSession && !userProfile) {
-      dispatch(getProfile(oauthSession.did));
+      getProfile(oauthSession.did);
     }
   }, [oauthSession, userProfile]);
+
   return <>{children}</>;
 }

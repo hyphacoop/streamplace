@@ -1,23 +1,22 @@
 import { Text, useLivestream, zero } from "@streamplace/components";
-import {
-  selectNewLivestream,
-  selectUserProfile,
-  updateLivestreamRecord,
-} from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useNewLivestream, useUserProfile } from "store/hooks";
 
 export default function UpdateLivestream() {
-  const dispatch = useAppDispatch();
+  const updateLivestreamRecord = useStore(
+    (state) => state.updateLivestreamRecord,
+  );
+  const streamplaceUrl = useStore((state) => state.url);
   // Note: Toast functionality removed, would need simple alert replacement
   const userIsLive = useLiveUser();
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
-  const profile = useAppSelector(selectUserProfile);
+  const profile = useUserProfile();
   const livestream = useLivestream();
-  const newLivestream = useAppSelector(selectNewLivestream);
+  const newLivestream = useNewLivestream();
 
   useEffect(() => {
     if (newLivestream?.record) {
@@ -37,12 +36,7 @@ export default function UpdateLivestream() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await dispatch(
-        updateLivestreamRecord({
-          title,
-          livestream,
-        }),
-      );
+      await updateLivestreamRecord(title, livestream, streamplaceUrl);
     } catch (error) {
       console.error("Error updating livestream:", error);
       // Would show toast: "Error updating livestream"

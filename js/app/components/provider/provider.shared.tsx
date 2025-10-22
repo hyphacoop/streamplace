@@ -11,13 +11,10 @@ import {
 } from "@streamplace/components";
 import { useFonts } from "expo-font";
 import BlueskyProvider from "features/bluesky/blueskyProvider";
-import { selectOAuthSession } from "features/bluesky/blueskySlice";
 import StreamplaceProvider from "features/streamplace/streamplaceProvider";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import React from "react";
-import { Provider as ReduxProvider } from "react-redux";
-import { useAppSelector } from "store/hooks";
-import { store } from "store/store";
+import { useOAuthSession } from "store/hooks";
 
 export default Sentry.wrap(ProviderInner);
 
@@ -91,16 +88,14 @@ function ProviderInner({
       <ThemeProvider forcedTheme="dark">
         <I18nProvider i18n={i18n}>
           <NavigationContainer theme={SPDarkTheme} linking={linking}>
-            <ReduxProvider store={store}>
               <StreamplaceProvider>
-                <BlueskyProvider>
-                  <NewStreamplaceProvider>
-                    <FontProvider>{children}</FontProvider>
-                  </NewStreamplaceProvider>
-                </BlueskyProvider>
-              </StreamplaceProvider>
-            </ReduxProvider>
-          </NavigationContainer>
+              <BlueskyProvider>
+                <NewStreamplaceProvider>
+                  <FontProvider>{children}</FontProvider>
+                </NewStreamplaceProvider>
+              </BlueskyProvider>
+            </StreamplaceProvider>
+            </NavigationContainer>
         </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
@@ -113,7 +108,7 @@ export const NewStreamplaceProvider = ({
   children: React.ReactNode;
 }) => {
   const { url } = useStreamplaceNode();
-  const oauthSession = useAppSelector(selectOAuthSession);
+  const oauthSession = useOAuthSession();
   return (
     <ZustandStreamplaceProvider url={url} oauthSession={oauthSession}>
       {children}

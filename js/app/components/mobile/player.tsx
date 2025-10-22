@@ -15,25 +15,19 @@ import {
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
 import { Animated, Platform, ScrollView, StatusBar } from "react-native";
-import { useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useUserProfile } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
 import { DesktopUi } from "./desktop-ui";
 import { OfflineCounter } from "./offline-counter";
 import { MobileUi } from "./ui";
 import { useResponsiveLayout } from "./useResponsiveLayout";
-
-import {
-  setSidebarHidden,
-  setSidebarUnhidden,
-} from "features/base/sidebarSlice";
-import { useDispatch } from "react-redux";
 
 export function Player(
   props: Partial<PlayerProps> & {
@@ -50,7 +44,7 @@ export function Player(
   >(null);
   // are we currently streaming on another device?
   const userIsLive = useLiveUser();
-  const userProfile = useAppSelector(selectUserProfile);
+  const userProfile = useUserProfile();
 
   useEffect(() => {
     if (props.ingest && userIsLive && isStreamingElsewhere === null) {
@@ -61,6 +55,8 @@ export function Player(
   }, [userIsLive]);
 
   const navigation = useNavigation();
+  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
+  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
 
   useEffect(() => {
     return () => {
@@ -185,8 +181,8 @@ export function PlayerInner(
     showChatSidePanelOnLandscape: props.showChat,
   });
 
-  // for hiding sidebar
-  const dispatch = useDispatch();
+  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
+  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
 
   // content info
   const { width, height } = usePlayerDimensions();
@@ -200,12 +196,12 @@ export function PlayerInner(
   useEffect(() => {
     if (Platform.OS !== "web" && width > height) {
       console.log("hiding sb");
-      dispatch(setSidebarHidden());
+      setSidebarHidden();
     } else {
-      dispatch(setSidebarUnhidden());
+      setSidebarUnhidden();
     }
     return () => {
-      dispatch(setSidebarUnhidden());
+      setSidebarUnhidden();
     };
   }, [width, height]);
   // should cover full width on mobile?

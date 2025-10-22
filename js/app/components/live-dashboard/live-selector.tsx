@@ -3,13 +3,9 @@ import { Button, Text, View, zero } from "@streamplace/components";
 import { flex } from "@streamplace/components/src/ui";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
-import {
-  selectIsReady,
-  selectUserProfile,
-} from "features/bluesky/blueskySlice";
 import { Camera, FerrisWheel } from "lucide-react-native";
 import React, { useState } from "react";
-import { useAppSelector } from "store/hooks";
+import { useIsReady, useUserProfile } from "store/hooks";
 import { StreamKeyScreen } from "./stream-key";
 
 const { layout, gap } = zero;
@@ -29,8 +25,8 @@ const elems = [
 
 export default function StreamScreen({ route }) {
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
-  const isReady = useAppSelector(selectIsReady);
-  const userProfile = useAppSelector(selectUserProfile);
+  const isReady = useIsReady();
+  const userProfile = useUserProfile();
   const navigation = useNavigation();
 
   if (!isReady) {

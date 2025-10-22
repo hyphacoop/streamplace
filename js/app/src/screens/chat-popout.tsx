@@ -7,10 +7,9 @@ import {
   zero,
 } from "@streamplace/components";
 import emojiData from "assets/emoji-data.json";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useEffect } from "react";
 import { View } from "react-native";
-import { useAppSelector } from "store/hooks";
+import { useUserProfile } from "store/hooks";
 
 export default function PopoutChat({ route }) {
   const user = route.params?.user;
@@ -29,7 +28,7 @@ export default function PopoutChat({ route }) {
 
 export function PopoutChatInner({ user }: { user: string }) {
   const setSrc = usePlayerStore((x) => x.setSrc);
-  const profile = useAppSelector(selectUserProfile);
+  const profile = useUserProfile();
   useEffect(() => {
     setSrc(user);
   }, [user]);
