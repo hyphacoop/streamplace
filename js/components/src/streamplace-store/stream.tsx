@@ -131,18 +131,17 @@ export function useCreateStreamRecord() {
     title,
     customThumbnail,
     submitPost,
-    customUrl,
+    canonicalUrl,
+    notificationSettings,
   }: {
     title: string;
     customThumbnail?: Blob;
     submitPost?: boolean;
-    customUrl?: string | null;
+    canonicalUrl?: string;
+    notificationSettings?: PlaceStreamLivestream.NotificationSettings;
   }) => {
-    if (!submitPost) {
+    if (typeof submitPost !== "boolean") {
       submitPost = true;
-    }
-    if (!customUrl) {
-      customUrl = null;
     }
     if (!agent) {
       throw new Error("No PDS agent found");
@@ -152,8 +151,6 @@ export function useCreateStreamRecord() {
       throw new Error("No user DID found, assuming not logged in");
     }
 
-    // Use customUrl if provided, otherwise fall back to the store URL
-    const finalUrl = customUrl || url;
     const u = new URL(url);
 
     let thumbnail: BlobRef | undefined = undefined;
@@ -247,19 +244,28 @@ export function useCreateStreamRecord() {
       platVersion = getBrowserName(window.navigator.userAgent);
     }
 
+    const thisUrl = `${url}/${profile.data.handle}`;
+    if (!canonicalUrl) {
+      canonicalUrl = thisUrl;
+    }
+
     const record: PlaceStreamLivestream.Record = {
       $type: "place.stream.livestream",
       title: title,
-      url: finalUrl,
+      url: thisUrl,
       createdAt: new Date().toISOString(),
       // would match up with e.g. https://stream.place/iame.li
-      canonicalUrl: `${finalUrl}/${profile.data.handle}`,
+      canonicalUrl: canonicalUrl,
       // user agent style string
       // e.g. `@streamplace/components/0.1.0 (ios, 32.0)`
       agent: `@streamplace/components/${PackageJson.version} (${platform}, ${platVersion})`,
       post: newPost,
       thumb: thumbnail,
     };
+
+    if (notificationSettings) {
+      record.notificationSettings = notificationSettings;
+    }
 
     await agent.com.atproto.repo.createRecord({
       repo: agent.did,

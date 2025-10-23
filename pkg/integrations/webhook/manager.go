@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bluesky-social/indigo/api/bsky"
 	"stream.place/streamplace/pkg/integrations/discord"
 	"stream.place/streamplace/pkg/integrations/discord/discordtypes"
 	"stream.place/streamplace/pkg/streamplace"
@@ -35,13 +34,13 @@ func SendChatWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhoo
 }
 
 // SendLivestreamWebhook sends livestream notification to a specific webhook
-func SendLivestreamWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhook, pdsURL string, lsv *streamplace.Livestream_LivestreamView, postView *bsky.FeedDefs_PostView, spcp *streamplace.ChatProfile) error {
+func SendLivestreamWebhook(ctx context.Context, webhook *streamplace.ServerDefs_Webhook, pdsURL string, lsv *streamplace.Livestream_LivestreamView, spcp *streamplace.ChatProfile) error {
 	discordWebhook, err := webhookToDiscordWebhook(webhook)
 	if err != nil {
 		return fmt.Errorf("failed to convert webhook: %w", err)
 	}
 
-	return discord.SendLivestream(ctx, discordWebhook, pdsURL, lsv, postView, spcp)
+	return discord.SendLivestream(ctx, discordWebhook, pdsURL, lsv, spcp)
 }
 
 // webhookToDiscordWebhook converts streamplace.ServerDefs_Webhook to discordtypes.Webhook

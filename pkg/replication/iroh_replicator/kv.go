@@ -192,7 +192,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 func (swarm *IrohSwarm) handleIrohMessage(ctx context.Context, item iroh_streamplace.SubscribeItemEntry) error {
 	keyStr := string(item.Key)
 	valueStr := string(item.Value)
-	log.Warn(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
+	log.Debug(ctx, "SubscribeItemEntry", "key", keyStr, "value", valueStr)
 	if len(valueStr) > 0 && valueStr[0] != '{' {
 		// not JSON, it's one of the rust messages
 		log.Debug(ctx, "not JSON", "key", keyStr, "value", valueStr)

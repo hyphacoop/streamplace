@@ -365,13 +365,6 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			task.ChatProfile = spcp
 		}
 
-		if !isUpdate && !isFirstSync {
-			_, err = atsync.StatefulDB.EnqueueTask(ctx, statedb.TaskNotification, task, statedb.WithTaskKey(fmt.Sprintf("notification-blast::%s", aturi.String())))
-			if err != nil {
-				log.Error(ctx, "failed to enqueue notification task", "err", err)
-			}
-		}
-
 	case *streamplace.Key:
 		log.Debug(ctx, "creating key", "key", rec)
 		time, err := aqtime.FromString(rec.CreatedAt)

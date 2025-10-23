@@ -6,6 +6,7 @@ export * from "./primitives/text";
 
 // Export styled components
 export * from "./button";
+export * from "./checkbox";
 export * from "./dialog";
 export * from "./dropdown";
 export * from "./icons";
@@ -18,6 +19,7 @@ export * from "./slider";
 export * from "./text";
 export * from "./textarea";
 export * from "./toast";
+export * from "./tooltip";
 export * from "./view";
 
 // Component collections for easy importing
