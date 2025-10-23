@@ -20,7 +20,7 @@ three main components:
    the
    [IPTC controlled vocabulary for content warnings](https://cv.iptc.org/newscodes/contentwarning/).
    Each warning provides descriptions to help creators properly categorize their
-   content.
+   content. Streamplace node operators may also configure their nodes to exclude certain types of content.
 2. **Content Rights** (`place.stream.metadata.contentRights`): This section
    captures copyright and attribution information, including the creator’s name,
    copyright notice, publication year, license type, and credit line. The system
