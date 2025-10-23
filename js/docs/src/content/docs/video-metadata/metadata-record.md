@@ -31,8 +31,7 @@ three main components:
 3. **Distribution Policy** (`place.stream.metadata.distributionPolicy`): This
    section currently allows creators to specify a `deleteAfter` property, which
    is meant to indicate the time after which the user no longer wants the stream
-   to be made available for playback. It also specifies which broadcasters can
-   distribute your content.
+   to be made available for playback. It also allows you to optionally restrict syndication of your livestream to a certain set of broadcasters.
 
 When a user creates or updates their metadata configuration through the
 frontend, the record is published to their Personal Data Server (PDS) with the
