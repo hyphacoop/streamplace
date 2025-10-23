@@ -1,8 +1,10 @@
 import {
   Button,
+  Checkbox,
   ContentMetadataForm,
   Input,
   Textarea,
+  Tooltip,
   useCreateStreamRecord,
   useLivestream,
   useToast,
@@ -10,8 +12,6 @@ import {
   useUrl,
   zero,
 } from "@streamplace/components";
-import { Checkbox } from "@streamplace/components/src/components/ui/checkbox";
-import { Tooltip } from "@streamplace/components/src/components/ui/tooltip";
 import { ImagePlus, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
