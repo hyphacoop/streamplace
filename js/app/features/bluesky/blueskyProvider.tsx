@@ -11,21 +11,20 @@ export default function BlueskyProvider({
   const loadOAuthClient = useStore((state) => state.loadOAuthClient);
   const oauthCallback = useStore((state) => state.oauthCallback);
   const getProfile = useStore((state) => state.getProfile);
-  const streamplaceUrl = useStore((state) => state.url);
   const isReady = useIsReady();
 
   useEffect(() => {
-    loadOAuthClient(streamplaceUrl);
-  }, [streamplaceUrl]);
+    loadOAuthClient();
+  }, []);
 
   useEffect(() => {
     if (!isReady) {
       const handle = setInterval(() => {
-        loadOAuthClient(streamplaceUrl);
+        loadOAuthClient();
       }, 5000);
       return () => clearInterval(handle);
     }
-  }, [isReady, streamplaceUrl]);
+  }, [isReady]);
 
   const oauthSession = useOAuthSession();
   const userProfile = useUserProfile();
@@ -39,11 +38,11 @@ export default function BlueskyProvider({
       if (url.includes("?")) {
         const params = new URLSearchParams(url.split("?")[1]);
         if (params.has("error") || params.has("code")) {
-          oauthCallback(url, streamplaceUrl);
+          oauthCallback(url);
         }
       }
     }
-  }, [url, lastLink, streamplaceUrl]);
+  }, [url, lastLink]);
 
   useEffect(() => {
     if (oauthSession && !userProfile) {

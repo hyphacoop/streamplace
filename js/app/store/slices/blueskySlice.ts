@@ -11,6 +11,7 @@ import { bytesToMultibase, Secp256k1Keypair } from "@atproto/crypto";
 import { OAuthSession } from "@atproto/oauth-client";
 import { storage } from "@streamplace/components";
 import { Platform } from "react-native";
+import { AppStore } from "store";
 import {
   PlaceStreamChatProfile,
   PlaceStreamKey,
@@ -65,22 +66,20 @@ export interface BlueskySlice {
   };
   serverSettings: null | PlaceStreamServerSettings.Record;
   // actions
-  loadOAuthClient: (streamplaceUrl: string) => Promise<void>;
+  loadOAuthClient: () => Promise<void>;
   oauthError: (error: string, description: string) => void;
   login: (
     handle: string,
-    streamplaceUrl: string,
     openLoginLink: (url: string) => Promise<void>,
   ) => Promise<void>;
   logout: () => Promise<void>;
   getProfile: (actor: string) => Promise<void>;
   getProfiles: (actors: string[]) => Promise<void>;
-  oauthCallback: (url: string, streamplaceUrl: string) => Promise<void>;
+  oauthCallback: (url: string) => Promise<void>;
   golivePost: (
     text: string,
     now: Date,
     thumbnail?: BlobRef,
-    streamplaceUrl?: string,
   ) => Promise<{ uri: string; cid: string }>;
   createBlockRecord: (subjectDID: string) => Promise<void>;
   createStreamKeyRecord: (store: boolean) => Promise<void>;
@@ -91,13 +90,8 @@ export interface BlueskySlice {
   createLivestreamRecord: (
     title: string,
     customThumbnail?: Blob,
-    streamplaceUrl?: string,
   ) => Promise<void>;
-  updateLivestreamRecord: (
-    title: string,
-    livestream: any,
-    streamplaceUrl?: string,
-  ) => Promise<void>;
+  updateLivestreamRecord: (title: string, livestream: any) => Promise<void>;
   getChatProfileRecordFromPDS: () => Promise<void>;
   createChatProfileRecord: (
     red: number,
@@ -105,16 +99,9 @@ export interface BlueskySlice {
     blue: number,
   ) => Promise<void>;
   followUser: (subjectDID: string) => Promise<void>;
-  unfollowUser: (
-    subjectDID: string,
-    followUri?: string,
-    streamplaceUrl?: string,
-  ) => Promise<void>;
-  getServerSettingsFromPDS: (streamplaceUrl?: string) => Promise<void>;
-  createServerSettingsRecord: (
-    debugRecording: boolean,
-    streamplaceUrl?: string,
-  ) => Promise<void>;
+  unfollowUser: (subjectDID: string, followUri?: string) => Promise<void>;
+  getServerSettingsFromPDS: () => Promise<void>;
+  createServerSettingsRecord: (debugRecording: boolean) => Promise<void>;
 }
 
 const clearQueryParams = () => {
@@ -173,7 +160,12 @@ const uploadThumbnail = async (
   }
 };
 
-export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
+export const createBlueskySlice: StateCreator<
+  AppStore,
+  [],
+  [],
+  BlueskySlice
+> = (set, get) => ({
   authStatus: "start",
   oauthState: null,
   oauthSession: undefined,
@@ -207,9 +199,10 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
   },
   serverSettings: null,
 
-  loadOAuthClient: async (streamplaceUrl: string) => {
+  loadOAuthClient: async () => {
     set({ authStatus: "start" });
     try {
+      const streamplaceUrl = get().url;
       const client = await createOAuthClient(streamplaceUrl);
       const anonPDSAgent = new StreamplaceAgent(streamplaceUrl);
       const maybeDIDs = await Promise.all([
@@ -224,6 +217,12 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
           session = await client.restore(did);
         } catch (e) {
           console.error("Error restoring session", e);
+          // oh well, delete the session and start fresh
+          await storage.removeItem(DID_KEY);
+          await storage.removeItem("@@atproto/oauth-client-browser(sub)");
+          await storage.removeItem(
+            "@@atproto/oauth-client-react-native:did:(sub)",
+          );
         }
       }
       console.log("loadOAuthClient fulfilled", {
@@ -231,6 +230,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
         session,
         anonPDSAgent,
       });
+      console.log("session?", session);
       if (session) {
         storage.setItem(DID_KEY, session.did).catch((e) => {
           console.error("Error setting did", e);
@@ -267,9 +267,9 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
 
   login: async (
     handle: string,
-    streamplaceUrl: string,
     openLoginLink: (url: string) => Promise<void>,
   ) => {
+    console.log("Logging in");
     set({
       loginState: {
         loading: true,
@@ -278,17 +278,22 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     });
     try {
       const state = get() as BlueskySlice;
-      await state.loadOAuthClient(streamplaceUrl);
+      await state.loadOAuthClient();
       const updatedState = get() as BlueskySlice;
       if (!updatedState.client) {
         throw new Error("No client");
       }
+      console.log("Authorizing");
       const u = await updatedState.client.authorize(handle, {});
-      if (document.location.href.startsWith("http://127.0.0.1")) {
+      if (
+        typeof document !== "undefined" &&
+        document.location.href.startsWith("http://127.0.0.1")
+      ) {
         const hostUrl = new URL(document.location.href);
         u.host = hostUrl.host;
         u.protocol = hostUrl.protocol;
       }
+      console.log("Opening link");
       await openLoginLink(u.toString());
       // cheeky 500ms delay so you don't see the text flash back
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -368,7 +373,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  oauthCallback: async (url: string, streamplaceUrl: string) => {
+  oauthCallback: async (url: string) => {
     set({ authStatus: "start" });
     try {
       console.log("oauthCallback", url);
@@ -386,6 +391,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
         }
         throw new Error("Missing params, got: " + url);
       }
+      const streamplaceUrl = get().url;
       const client = await createOAuthClient(streamplaceUrl);
       try {
         const ret = await client.callback(params);
@@ -415,12 +421,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  golivePost: async (
-    text: string,
-    now: Date,
-    thumbnail?: BlobRef,
-    streamplaceUrl?: string,
-  ) => {
+  golivePost: async (text: string, now: Date, thumbnail?: BlobRef) => {
     const state = get() as BlueskySlice;
     if (!state.pdsAgent) {
       throw new Error("No agent");
@@ -433,7 +434,8 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     if (!profile) {
       throw new Error("No profile");
     }
-    const u = new URL(streamplaceUrl!);
+    const streamplaceUrl = get().url;
+    const u = new URL(streamplaceUrl);
     const params = new URLSearchParams({
       did: did,
       time: new Date().toISOString(),
@@ -692,11 +694,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  createLivestreamRecord: async (
-    title: string,
-    customThumbnail?: Blob,
-    streamplaceUrl?: string,
-  ) => {
+  createLivestreamRecord: async (title: string, customThumbnail?: Blob) => {
     set({
       newLivestream: {
         loading: true,
@@ -720,7 +718,8 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
       }
 
       let thumbnail: BlobRef | undefined = undefined;
-      const u = new URL(streamplaceUrl!);
+      const streamplaceUrl = get().url;
+      const u = new URL(streamplaceUrl);
 
       if (customThumbnail) {
         try {
@@ -776,12 +775,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
         }
       }
 
-      const newPost = await state.golivePost(
-        title,
-        now,
-        thumbnail,
-        streamplaceUrl,
-      );
+      const newPost = await state.golivePost(title, now, thumbnail);
 
       if (!newPost?.uri || !newPost?.cid) {
         throw new Error(
@@ -792,7 +786,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
       const record: PlaceStreamLivestream.Record = {
         $type: "place.stream.livestream",
         title: title,
-        url: streamplaceUrl!,
+        url: streamplaceUrl,
         createdAt: new Date().toISOString(),
         post: {
           uri: newPost.uri,
@@ -825,11 +819,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  updateLivestreamRecord: async (
-    title: string,
-    livestream: any,
-    streamplaceUrl?: string,
-  ) => {
+  updateLivestreamRecord: async (title: string, livestream: any) => {
     set({
       newLivestream: {
         loading: true,
@@ -867,10 +857,11 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
 
       console.log("Updating rkey", rkey);
 
+      const streamplaceUrl = get().url;
       const record: PlaceStreamLivestream.Record = {
         $type: "place.stream.livestream",
         title: title,
-        url: streamplaceUrl!,
+        url: streamplaceUrl,
         createdAt: new Date().toISOString(),
         post: oldRecordValue.post,
       };
@@ -1023,11 +1014,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  unfollowUser: async (
-    subjectDID: string,
-    followUri?: string,
-    streamplaceUrl?: string,
-  ) => {
+  unfollowUser: async (subjectDID: string, followUri?: string) => {
     try {
       console.log("unfollowUser pending");
       const state = get() as BlueskySlice;
@@ -1042,6 +1029,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
       if (followUri) {
         await state.pdsAgent.deleteFollow(followUri);
       } else {
+        const streamplaceUrl = get().url;
         const res = await fetch(
           `${streamplaceUrl}/xrpc/place.stream.graph.getFollowingUser?subjectDID=${encodeURIComponent(subjectDID)}&userDID=${encodeURIComponent(did)}`,
           {
@@ -1063,7 +1051,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  getServerSettingsFromPDS: async (streamplaceUrl?: string) => {
+  getServerSettingsFromPDS: async () => {
     try {
       const state = get() as BlueskySlice;
       const did = state.oauthSession?.did;
@@ -1077,7 +1065,8 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
       if (!state.pdsAgent) {
         throw new Error("No agent");
       }
-      const u = new URL(streamplaceUrl!);
+      const streamplaceUrl = get().url;
+      const u = new URL(streamplaceUrl);
       const res = await state.pdsAgent.com.atproto.repo.getRecord({
         repo: did,
         collection: "place.stream.server.settings",
@@ -1099,10 +1088,7 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
     }
   },
 
-  createServerSettingsRecord: async (
-    debugRecording: boolean,
-    streamplaceUrl?: string,
-  ) => {
+  createServerSettingsRecord: async (debugRecording: boolean) => {
     try {
       const state = get() as BlueskySlice;
       if (!state.pdsAgent) {
@@ -1116,7 +1102,8 @@ export const createBlueskySlice: StateCreator<BlueskySlice> = (set, get) => ({
       if (!profile) {
         throw new Error("No profile");
       }
-      const u = new URL(streamplaceUrl!);
+      const streamplaceUrl = get().url;
+      const u = new URL(streamplaceUrl);
       const serverSettings: PlaceStreamServerSettings.Record = {
         $type: "place.stream.server.settings",
         debugRecording: debugRecording,

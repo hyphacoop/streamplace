@@ -28,7 +28,6 @@ export default function Login() {
   const loginAction = useStore((state) => state.login);
   const logout = useStore((state) => state.logout);
   const openLoginLink = useStore((state) => state.openLoginLink);
-  const streamplaceUrl = useStore((state) => state.url);
   const chatProfile = useChatProfile();
   const userProfile = useUserProfile();
   const loginState = useLogin();
@@ -39,10 +38,10 @@ export default function Login() {
   const submit = () => {
     let clean = handle;
     if (handle.startsWith("@")) clean = handle.slice(1);
-    loginAction(clean, streamplaceUrl, openLoginLink);
+    loginAction(clean, openLoginLink);
   };
   const onSignup = () => {
-    loginAction("https://bsky.social", streamplaceUrl, openLoginLink);
+    loginAction("https://bsky.social", openLoginLink);
   };
   const onEnterPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {

@@ -65,7 +65,7 @@ export default function CreateLivestream() {
         }
       }
 
-      await createLivestreamRecord(title, thumbnailToUse, streamplaceUrl);
+      await createLivestreamRecord(title, thumbnailToUse);
     } catch (error) {
       console.error("Error creating livestream:", error);
       // Would show toast: "Error creating livestream"

@@ -74,7 +74,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [currentUserDID, streamerDID, streamplaceUrl]);
+  }, [currentUserDID, streamerDID]);
 
   const handleFollow = async () => {
     setError(null);
@@ -95,7 +95,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     setError(null);
     setIsFollowing(false); // Optimistic
     try {
-      await unfollowUser(streamerDID, followUri ?? undefined, streamplaceUrl);
+      await unfollowUser(streamerDID, followUri ?? undefined);
       setIsFollowing(false);
       setFollowUri(null);
       onFollowChange?.(false);

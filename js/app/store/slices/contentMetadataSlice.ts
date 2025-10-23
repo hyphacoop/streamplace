@@ -1,3 +1,4 @@
+import { AppStore } from "store";
 import { StateCreator } from "zustand";
 import { BlueskySlice } from "./blueskySlice";
 
@@ -39,7 +40,7 @@ export interface ContentMetadataSlice {
 }
 
 export const createContentMetadataSlice: StateCreator<
-  ContentMetadataSlice,
+  AppStore,
   [],
   [],
   ContentMetadataSlice

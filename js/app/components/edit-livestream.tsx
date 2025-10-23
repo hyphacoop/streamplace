@@ -9,7 +9,7 @@ export default function UpdateLivestream() {
   const updateLivestreamRecord = useStore(
     (state) => state.updateLivestreamRecord,
   );
-  const streamplaceUrl = useStore((state) => state.url);
+
   // Note: Toast functionality removed, would need simple alert replacement
   const userIsLive = useLiveUser();
   const [title, setTitle] = useState("");
@@ -36,7 +36,7 @@ export default function UpdateLivestream() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await updateLivestreamRecord(title, livestream, streamplaceUrl);
+      await updateLivestreamRecord(title, livestream);
     } catch (error) {
       console.error("Error updating livestream:", error);
       // Would show toast: "Error updating livestream"

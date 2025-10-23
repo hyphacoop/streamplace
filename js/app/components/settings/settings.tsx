@@ -214,7 +214,6 @@ const DebugRecording = () => {
   const createServerSettingsRecord = useStore(
     (state) => state.createServerSettingsRecord,
   );
-  const streamplaceUrl = useStore((state) => state.url);
   const isReady = useIsReady();
   const serverSettings = useServerSettings();
   const { url } = useStreamplaceNode();
@@ -223,7 +222,7 @@ const DebugRecording = () => {
 
   useEffect(() => {
     if (isReady) {
-      getServerSettingsFromPDS(streamplaceUrl);
+      getServerSettingsFromPDS();
     }
   }, [isReady]);
 
@@ -253,9 +252,9 @@ const DebugRecording = () => {
           value={debugRecordingOn}
           onValueChange={(value) => {
             if (value === true) {
-              createServerSettingsRecord(true, streamplaceUrl);
+              createServerSettingsRecord(true);
             } else {
-              createServerSettingsRecord(false, streamplaceUrl);
+              createServerSettingsRecord(false);
             }
           }}
         />
