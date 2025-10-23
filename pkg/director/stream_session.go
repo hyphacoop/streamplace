@@ -137,7 +137,7 @@ func (ss *StreamSession) Go(ctx context.Context, f func() error) {
 	ss.g.Go(func() error {
 		err := f()
 		if err != nil {
-			log.Error(ctx, "error in goroutine", "error", err)
+			log.Error(ctx, "error in stream_session goroutine", "error", err)
 		}
 		return nil
 	})
@@ -198,7 +198,71 @@ func (ss *StreamSession) NewSegment(ctx context.Context, notif *media.NewSegment
 		})
 	}
 
+	// trigger a notification blast if this is a new livestream
+	if notif.Metadata.Livestream != nil {
+		ss.Go(ctx, func() error {
+			r, err := ss.mod.GetRepoByHandleOrDID(spseg.Creator)
+			if err != nil {
+				return fmt.Errorf("failed to get repo: %w", err)
+			}
+			livestreamModel, err := ss.mod.GetLatestLivestreamForRepo(spseg.Creator)
+			if err != nil {
+				return fmt.Errorf("failed to get latest livestream for repo: %w", err)
+			}
+			if livestreamModel == nil {
+				log.Warn(ctx, "no livestream found, skipping notification blast", "repoDID", spseg.Creator)
+				return nil
+			}
+			lsv, err := livestreamModel.ToLivestreamView()
+			if err != nil {
+				return fmt.Errorf("failed to convert livestream to streamplace livestream: %w", err)
+			}
+			if !shouldNotify(lsv) {
+				log.Warn(ctx, "is not set to notify", "repoDID", spseg.Creator)
+				return nil
+			}
+			task := &statedb.NotificationTask{
+				Livestream: lsv,
+				PDSURL:     r.PDS,
+			}
+			cp, err := ss.mod.GetChatProfile(ctx, spseg.Creator)
+			if err != nil {
+				return fmt.Errorf("failed to get chat profile: %w", err)
+			}
+			if cp != nil {
+				spcp, err := cp.ToStreamplaceChatProfile()
+				if err != nil {
+					return fmt.Errorf("failed to convert chat profile to streamplace chat profile: %w", err)
+				}
+				task.ChatProfile = spcp
+			}
+
+			_, err = ss.statefulDB.EnqueueTask(ctx, statedb.TaskNotification, task, statedb.WithTaskKey(fmt.Sprintf("notification-blast::%s", lsv.Uri)))
+			if err != nil {
+				log.Error(ctx, "failed to enqueue notification task", "err", err)
+			}
+			return ss.UpdateStatus(ctx, spseg.Creator)
+		})
+	} else {
+		log.Warn(ctx, "no livestream detected in stream, skipping notification blast", "repoDID", spseg.Creator)
+	}
+
 	return nil
+}
+
+func shouldNotify(lsv *streamplace.Livestream_LivestreamView) bool {
+	lsvr, ok := lsv.Record.Val.(*streamplace.Livestream)
+	if !ok {
+		return true
+	}
+	if lsvr.NotificationSettings == nil {
+		return true
+	}
+	settings := lsvr.NotificationSettings
+	if settings.PushNotification == nil {
+		return true
+	}
+	return *settings.PushNotification
 }
 
 func (ss *StreamSession) Thumbnail(ctx context.Context, repoDID string, not *media.NewSegmentNotification) error {
@@ -239,29 +303,6 @@ func (ss *StreamSession) Thumbnail(ctx context.Context, repoDID string, not *med
 	return nil
 }
 
-func getThumbnailCID(pv *bsky.FeedDefs_PostView) (*lexutil.LexBlob, error) {
-	if pv == nil {
-		return nil, fmt.Errorf("post view is nil")
-	}
-	rec, ok := pv.Record.Val.(*bsky.FeedPost)
-	if !ok {
-		return nil, fmt.Errorf("post view record is not a feed post")
-	}
-	if rec.Embed == nil {
-		return nil, fmt.Errorf("post view embed is nil")
-	}
-	if rec.Embed.EmbedExternal == nil {
-		return nil, fmt.Errorf("post view embed external view is nil")
-	}
-	if rec.Embed.EmbedExternal.External == nil {
-		return nil, fmt.Errorf("post view embed external is nil")
-	}
-	if rec.Embed.EmbedExternal.External.Thumb == nil {
-		return nil, fmt.Errorf("post view embed external thumb is nil")
-	}
-	return rec.Embed.EmbedExternal.External.Thumb, nil
-}
-
 func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error {
 	ctx = log.WithLogValues(ctx, "func", "UpdateStatus")
 	ss.lastStatusLock.Lock()
@@ -293,21 +334,11 @@ func (ss *StreamSession) UpdateStatus(ctx context.Context, repoDID string) error
 		return fmt.Errorf("could not convert livestream to streamplace livestream: %w", err)
 	}
 
-	post, err := ss.mod.GetFeedPost(ls.PostURI)
-	if err != nil {
-		return fmt.Errorf("could not get feed post: %w", err)
+	lsvr, ok := lsv.Record.Val.(*streamplace.Livestream)
+	if !ok {
+		return fmt.Errorf("livestream is not a streamplace livestream")
 	}
-	if post == nil {
-		return fmt.Errorf("feed post not found for livestream: %w", err)
-	}
-	postView, err := post.ToBskyPostView()
-	if err != nil {
-		return fmt.Errorf("could not convert feed post to bsky post view: %w", err)
-	}
-	thumb, err := getThumbnailCID(postView)
-	if err != nil {
-		return fmt.Errorf("could not get thumbnail cid: %w", err)
-	}
+	thumb := lsvr.Thumb
 
 	repo, err := ss.mod.GetRepoByHandleOrDID(repoDID)
 	if err != nil {

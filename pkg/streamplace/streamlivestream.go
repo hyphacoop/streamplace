@@ -24,7 +24,8 @@ type Livestream struct {
 	// canonicalUrl: The primary URL where this livestream can be viewed, if available.
 	CanonicalUrl *string `json:"canonicalUrl,omitempty" cborgen:"canonicalUrl,omitempty"`
 	// createdAt: Client-declared timestamp when this livestream started.
-	CreatedAt string `json:"createdAt" cborgen:"createdAt"`
+	CreatedAt            string                           `json:"createdAt" cborgen:"createdAt"`
+	NotificationSettings *Livestream_NotificationSettings `json:"notificationSettings,omitempty" cborgen:"notificationSettings,omitempty"`
 	// post: The post that announced this livestream.
 	Post  *comatprototypes.RepoStrongRef `json:"post,omitempty" cborgen:"post,omitempty"`
 	Thumb *util.LexBlob                  `json:"thumb,omitempty" cborgen:"thumb,omitempty"`
@@ -46,6 +47,12 @@ type Livestream_LivestreamView struct {
 	Uri           string                                   `json:"uri" cborgen:"uri"`
 	// viewerCount: The number of viewers watching this livestream. Use when you can't reasonably use #viewerCount directly.
 	ViewerCount *Livestream_ViewerCount `json:"viewerCount,omitempty" cborgen:"viewerCount,omitempty"`
+}
+
+// Livestream_NotificationSettings is a "notificationSettings" in the place.stream.livestream schema.
+type Livestream_NotificationSettings struct {
+	// pushNotification: Whether this livestream should trigger a push notification to followers.
+	PushNotification *bool `json:"pushNotification,omitempty" cborgen:"pushNotification,omitempty"`
 }
 
 // Livestream_StreamplaceAnything is a "streamplaceAnything" in the place.stream.livestream schema.

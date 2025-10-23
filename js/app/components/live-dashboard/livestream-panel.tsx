@@ -1,15 +1,19 @@
 import {
   Button,
   ContentMetadataForm,
+  Input,
   Textarea,
   useCreateStreamRecord,
   useLivestream,
   useToast,
   useUpdateStreamRecord,
+  useUrl,
   zero,
 } from "@streamplace/components";
+import { Checkbox } from "@streamplace/components/src/components/ui/checkbox";
+import { Tooltip } from "@streamplace/components/src/components/ui/tooltip";
 import { ImagePlus, X } from "lucide-react-native";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   Platform,
@@ -165,22 +169,48 @@ function LivestreamPanel() {
   const livestream = useLivestream();
   const createStreamRecord = useCreateStreamRecord();
   const updateStreamRecord = useUpdateStreamRecord();
+  const url = useUrl();
 
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<
     string | File | Blob | undefined
   >();
-  const [mode, setMode] = useState<"create" | "edit" | "metadata">(
-    livestream ? "edit" : "create",
-  );
+  const [mode, setMode] = useState<"create" | "metadata">("create");
 
-  const handleModeChange = useCallback(
-    (newMode: "create" | "edit" | "metadata") => {
-      setMode(newMode);
-    },
-    [],
+  const [createPost, setCreatePost] = useState(true);
+  const [sendPushNotification, setSendPushNotification] = useState(true);
+  const [canonicalUrl, setCanonicalUrl] = useState<string>(
+    livestream?.record.canonicalUrl || "",
   );
+  const defaultCanonicalUrl = useMemo(() => {
+    return `${url}/${profile?.handle}`;
+  }, [url, profile?.handle]);
+
+  useEffect(() => {
+    if (!livestream) {
+      return;
+    }
+    if (
+      livestream.record.canonicalUrl &&
+      livestream.record.canonicalUrl !== defaultCanonicalUrl
+    ) {
+      setCanonicalUrl(livestream.record.canonicalUrl);
+    }
+    if (
+      typeof livestream.record.notificationSettings?.pushNotification ===
+      "boolean"
+    ) {
+      setSendPushNotification(
+        livestream.record.notificationSettings.pushNotification,
+      );
+    }
+    setCreatePost(typeof livestream.record.post !== "undefined");
+  }, [livestream, defaultCanonicalUrl]);
+
+  const handleModeChange = useCallback((newMode: "create" | "metadata") => {
+    setMode(newMode);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) return;
@@ -206,7 +236,11 @@ function LivestreamPanel() {
         await createStreamRecord({
           title: title.trim(),
           customThumbnail: thumbnailToUse as Blob | undefined,
-          submitPost: true,
+          submitPost: createPost,
+          notificationSettings: {
+            pushNotification: sendPushNotification,
+          },
+          canonicalUrl: canonicalUrl || undefined,
         });
       } else {
         await updateStreamRecord(
@@ -278,11 +312,9 @@ function LivestreamPanel() {
     setSelectedImage(undefined);
   }, []);
 
-  const noLivestream = mode === "edit" && !livestream;
-
   const disabled = useMemo(
-    () => !userIsLive || loading || title.trim() === "" || noLivestream,
-    [userIsLive, loading, title, noLivestream],
+    () => !userIsLive || loading || title.trim() === "",
+    [userIsLive, loading, title],
   );
 
   const buttonText = useMemo(() => {
@@ -330,31 +362,16 @@ function LivestreamPanel() {
             <ButtonSelector
               values={[
                 { label: "Create", value: "create" },
-                { label: "Edit", value: "edit" },
                 { label: "Metadata", value: "metadata" },
               ]}
               style={[{ marginVertical: -2 }]}
               selectedValue={mode}
               setSelectedValue={handleModeChange as any}
-              disabledValues={livestream ? [] : ["edit"]}
+              disabledValues={[]}
             />
           </View>
 
-          {mode === "edit" && (
-            <Text
-              style={[p[4], text.white, typography.universal?.xl || text.white]}
-            >
-              Change your Current Livestream Title
-            </Text>
-          )}
-
-          {noLivestream ? (
-            <View style={[layout.flex.center, p[4]]}>
-              <Text style={[text.neutral[400], { fontSize: 16 }]}>
-                No active livestream to edit. Start a livestream first!
-              </Text>
-            </View>
-          ) : mode === "metadata" ? (
+          {mode === "metadata" ? (
             // Metadata view
             <View style={[flex.values[1], p[4]]}>
               <ContentMetadataForm
@@ -455,7 +472,11 @@ function LivestreamPanel() {
                     </View>
                   </View>
                 </View>
-                {mode === "edit" && (
+
+                <Tooltip
+                  content="Set this to have the livestream announced with a link to this URL instead of the default URL."
+                  position="top"
+                >
                   <View
                     style={[
                       layout.flex.row,
@@ -463,14 +484,64 @@ function LivestreamPanel() {
                       w.percent[100],
                     ]}
                   >
+                    <Text
+                      style={[
+                        text.neutral[300],
+                        {
+                          minWidth: 100,
+                          textAlign: "left",
+                          paddingBottom: 8,
+                          fontSize: 14,
+                        },
+                      ]}
+                    >
+                      Canonical URL
+                    </Text>
                     <View style={[flex.values[1]]}>
-                      <Text style={[text.neutral[400], { fontSize: 12 }]}>
-                        Updating will not send out notifications to viewers or
-                        create a new social media post.
-                      </Text>
+                      <Input
+                        value={canonicalUrl}
+                        onChange={(value) => setCanonicalUrl(value)}
+                        placeholder={defaultCanonicalUrl}
+                        variant="filled"
+                        inputStyle={[
+                          p[3],
+                          r.md,
+                          bg.neutral[800],
+                          text.white,
+                          borders.width.thin,
+                          borders.color.neutral[600],
+                          w.percent[100],
+                        ]}
+                      />
                     </View>
                   </View>
-                )}
+                </Tooltip>
+
+                <Tooltip
+                  content="Create a Bluesky post announcing you're live with a link to the stream."
+                  position="top"
+                >
+                  <Checkbox
+                    checked={createPost}
+                    onCheckedChange={(checked) => setCreatePost(checked)}
+                    label={"Create Bluesky post"}
+                    style={[{ fontSize: 12 }]}
+                  />
+                </Tooltip>
+
+                <Tooltip
+                  content="Send a push notification to your followers on the Streamplace iOS/Android app."
+                  position="top"
+                >
+                  <Checkbox
+                    checked={sendPushNotification}
+                    onCheckedChange={(checked) =>
+                      setSendPushNotification(checked)
+                    }
+                    label={"Send push notification"}
+                    style={[{ fontSize: 12 }]}
+                  />
+                </Tooltip>
               </View>
 
               {/* Image upload for create mode */}

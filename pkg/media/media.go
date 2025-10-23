@@ -251,6 +251,7 @@ func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*Seg
 	contentRights := extractContentRights(mani)
 	distributionPolicy := extractDistributionPolicy(mani, start)
 	metadataConfiguration := extractMetadataConfiguration(mani)
+	livestream := extractLivestream(mani)
 
 	out := SegmentMetadata{
 		StartTime:             start,
@@ -260,6 +261,7 @@ func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*Seg
 		ContentRights:         contentRights,
 		DistributionPolicy:    distributionPolicy,
 		MetadataConfiguration: metadataConfiguration,
+		Livestream:            livestream,
 	}
 	return &out, nil
 }
@@ -429,4 +431,22 @@ func extractMetadataConfiguration(mani *c2patypes.Manifest) *streamplace.Metadat
 		return nil
 	}
 	return &metadataConfiguration
+}
+
+func extractLivestream(mani *c2patypes.Manifest) *streamplace.Livestream {
+	ass := findAssertion(mani, "place.stream.livestream")
+	if ass == nil {
+		return nil
+	}
+	bs, err := json.Marshal(ass.Data)
+	if err != nil {
+		return nil
+	}
+
+	var livestream streamplace.Livestream
+	err = json.Unmarshal(bs, &livestream)
+	if err != nil {
+		return nil
+	}
+	return &livestream
 }

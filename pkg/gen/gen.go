@@ -14,6 +14,7 @@ func main() {
 	if err := genCfg.WriteMapEncodersToFile("pkg/streamplace/cbor_gen.go", "streamplace",
 		streamplace.Key{},
 		streamplace.Livestream{},
+		streamplace.Livestream_NotificationSettings{},
 		streamplace.Segment{},
 		streamplace.Segment_Audio{},
 		streamplace.Segment_Video{},
