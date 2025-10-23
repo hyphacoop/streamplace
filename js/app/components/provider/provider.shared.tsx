@@ -36,11 +36,16 @@ Sentry.setTag("executionEnvironment", Constants.executionEnvironment);
 Sentry.setTag("expoGoVersion", Constants.expoVersion);
 Sentry.setTag("expoRuntimeVersion", Constants.expoRuntimeVersion);
 
+const isWeb = Platform.OS === "web";
+
+// set transparent dark theme on web for easier OBS browser sourcing
+const darkTheme = isWeb ? { background: "transparent" } : {};
+
 const SPDarkTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: "transparent",
+    ...darkTheme,
   },
 };
 
