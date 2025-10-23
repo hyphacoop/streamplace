@@ -46,7 +46,7 @@ Record announcing a livestream is happening
 | `author`      | [`app.bsky.actor.defs#profileViewBasic`](https://github.com/bluesky-social/atproto/tree/main/lexicons/app/bsky/actor/defs.json#profileViewBasic) | ✅    |                                                                                                          |                    |
 | `record`      | `unknown`                                                                                                                                        | ✅    |                                                                                                          |                    |
 | `indexedAt`   | `string`                                                                                                                                         | ✅    |                                                                                                          | Format: `datetime` |
-| `viewerCount` | [`place.stream.livestream#viewerCount`](/lex-reference/place-stream-livestream#viewercount)                                                      | ❌    | The number of viewers watching this livestream. Use when you can't reasonably use #viewerCount directly. |                    |
+| `viewerCount` | [`#viewerCount`](#viewercount)                                                                                                                   | ❌    | The number of viewers watching this livestream. Use when you can't reasonably use #viewerCount directly. |                    |
 
 ---
 
@@ -157,7 +157,7 @@ Record announcing a livestream is happening
         "viewerCount": {
           "type": "ref",
           "description": "The number of viewers watching this livestream. Use when you can't reasonably use #viewerCount directly.",
-          "ref": "place.stream.livestream#viewerCount"
+          "ref": "#viewerCount"
         }
       }
     },
