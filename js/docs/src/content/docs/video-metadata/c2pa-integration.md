@@ -6,7 +6,7 @@ sidebar:
 
 The actual metadata insertion and signing done to each video segment is through
 [C2PA](https://c2pa.org/) tooling. A
-[fork](https://github.com/hyphacoop/c2pa-rs/tree/es256k-rebase) of their Rust
+[fork](https://github.com/streamplace/c2pa-rs) of their Rust
 SDK that adds support for ES256K is used, and called in Go through FFI. The code
 for this can be seen in `rust/iroh-streamplace/src/c2pa.rs`.
 
