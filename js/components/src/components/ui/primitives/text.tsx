@@ -277,6 +277,22 @@ export const TextRoot = forwardRef<RNText, TextPrimitiveProps>(
     const inheritedContext =
       inherit && !reset && parentContext ? parentContext : {};
 
+    // Calculate fontSize first for line height calculation
+    let calculatedFontSize = inheritedContext.fontSize;
+
+    // Apply variant font size
+    if (variant && variantStyles[variant]?.fontSize) {
+      calculatedFontSize = variantStyles[variant].fontSize as number;
+    }
+
+    // Apply size-based font size
+    if (size) {
+      calculatedFontSize = typeof size === "number" ? size : sizeMap[size];
+    }
+
+    // Use default if still undefined
+    calculatedFontSize = calculatedFontSize || 16;
+
     // Calculate final styles
     const finalStyles: TextStyle = {
       // Start with inherited values
@@ -344,7 +360,10 @@ export const TextRoot = forwardRef<RNText, TextPrimitiveProps>(
 
       // Apply line height
       ...(leading && {
-        lineHeight: typeof leading === "number" ? leading : leadingMap[leading],
+        lineHeight:
+          typeof leading === "number"
+            ? leading
+            : leadingMap[leading] * calculatedFontSize,
       }),
 
       // Apply letter spacing
@@ -492,10 +511,11 @@ export function createTextStyle(
   }
 
   if (props.leading) {
+    const fontSize = style.fontSize || 16; // default font size
     style.lineHeight =
       typeof props.leading === "number"
         ? props.leading
-        : leadingMap[props.leading];
+        : leadingMap[props.leading] * fontSize;
   }
 
   if (props.tracking) {
