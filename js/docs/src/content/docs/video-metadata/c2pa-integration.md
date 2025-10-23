@@ -157,7 +157,7 @@ manifest, extracted from the MP4 segment using
 
 The official version of c2patool can extract this manifest, but will not
 consider it valid due to the use of ES256K. If you build c2patool from the
-[fork](https://github.com/hyphacoop/c2pa-rs/tree/es256k-rebase) used by
+[fork](https://github.com/streamplace/c2pa-rs) used by
 Streamplace, it will validate.
 
 Note the variety of information stored in the manifest: user DID, signing key,
