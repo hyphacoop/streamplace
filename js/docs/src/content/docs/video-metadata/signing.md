@@ -15,8 +15,7 @@ standard to produce a verifiable stream. At a high level, this is how it works:
    AT Protocol record for public verification.
 3. **Node Synchronization (Key)**: When the `place.stream.key` record is
    created, the AT Protocol firehose picks it up. Streamplace nodes then sync
-   this record to a local SQLite database (typically
-   `~/.streamplace/db.sqlite`).
+   this record to a local SQLite database.
 4. **Metadata Configuration**: In a similar process, the user creates a
    `place.stream.metadata.configuration` record via the frontend. This record
    contains the user's preferences for **content warnings**, **content rights**,
