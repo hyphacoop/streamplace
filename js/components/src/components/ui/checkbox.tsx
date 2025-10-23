@@ -64,7 +64,7 @@ export const Checkbox = forwardRef<any, CheckboxProps>(
               <Text
                 size={size === "sm" ? "sm" : size === "lg" ? "lg" : "base"}
                 color={disabled ? "muted" : "default"}
-                leading="loose"
+                leading="snug"
               >
                 {label}
               </Text>

@@ -408,7 +408,7 @@ export const TextRoot = forwardRef<RNText, TextPrimitiveProps>(
         if (typeof fontSize === "number" && !styleObj.lineHeight && !leading) {
           return {
             ...styleObj,
-            lineHeight: fontSize * 1.2,
+            lineHeight: fontSize,
           };
         }
       }
@@ -497,7 +497,7 @@ export function createTextStyle(
     if (props.leading === undefined) {
       style.lineHeight =
         typeof props.size === "number"
-          ? props.size * 1.2 // Auto line height for numeric sizes
+          ? props.size
           : sizeLineHeightMap[props.size];
     }
   }
