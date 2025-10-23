@@ -168,10 +168,7 @@ You can see several assertions with the name `place.stream.*`. This is
 where Streamplace-specific metadata is stored, and is related to the lexicon.
 It's the easiest place to parse out this metadata.
 
-Some metadata (like content rights) might be duplicated in other `assertions`,
-that aren't custom and are mentioned in the C2PA spec. This allows
-C2PA-compatible software not familiar with Streamplace to still display
-information about the video content.
+In addition to the primary `place.stream` assertions, we make a best-effort attempt to translate the Streamplace assertions into spec-compliant C2PA metadata assertions, which are also included in the signed manifest. This allows other C2PA-compliant software to parse out information about Streamplace segments, such as content warnings. However, not everything Streamplace does fits neatly into C2PA-compliant metadata, so the primary source of truth for metadata on a Streamplace segment remains the `place.stream` assertions.
 
 ## Code paths
 
