@@ -50,7 +50,11 @@ export function BottomMetadata({
       ]}
     >
       <View
-        style={[layout.flex.row, layout.flex.spaceBetween, { height: "100%" }]}
+        style={[
+          layout.flex.row,
+          layout.flex.spaceBetween,
+          { height: "100%", flex: "auto" as any },
+        ]}
       >
         {/* Left side - Profile info */}
         <View
