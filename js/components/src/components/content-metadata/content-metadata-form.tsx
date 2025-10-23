@@ -376,26 +376,11 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                     layout.flex.row,
                     layout.flex.alignCenter,
                     w.percent[100],
+                    gap.all[2],
                   ]}
                 >
-                  <Text
-                    style={[
-                      text.neutral[300],
-                      {
-                        minWidth: 100,
-                        textAlign: "left",
-                        paddingBottom: 8,
-                        fontSize: 14,
-                      },
-                    ]}
-                  >
-                    Content Warnings
-                  </Text>
-                  <Text
-                    style={[text.gray[500], { fontSize: 12, paddingBottom: 8 }]}
-                  >
-                    optional
-                  </Text>
+                  <Text>Content Warnings</Text>
+                  <Text muted>(optional)</Text>
                 </View>
                 <View style={[gap.all[2], w.percent[100]]}>
                   {CONTENT_WARNINGS.map((warning) => (
@@ -424,26 +409,11 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                     layout.flex.row,
                     layout.flex.alignCenter,
                     w.percent[100],
+                    gap.all[2],
                   ]}
                 >
-                  <Text
-                    style={[
-                      text.neutral[300],
-                      {
-                        minWidth: 100,
-                        textAlign: "left",
-                        paddingBottom: 8,
-                        fontSize: 14,
-                      },
-                    ]}
-                  >
-                    Content Rights
-                  </Text>
-                  <Text
-                    style={[text.gray[500], { fontSize: 12, paddingBottom: 8 }]}
-                  >
-                    optional
-                  </Text>
+                  <Text>Content Rights</Text>
+                  <Text muted>(optional)</Text>
                 </View>
 
                 <View style={[gap.all[3], w.percent[100]]}>
@@ -674,21 +644,11 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                     layout.flex.row,
                     layout.flex.alignCenter,
                     w.percent[100],
+                    gap.all[2],
                   ]}
                 >
-                  <Text
-                    style={[
-                      text.neutral[300],
-                      { minWidth: 100, textAlign: "left", paddingBottom: 8 },
-                    ]}
-                  >
-                    Distribution
-                  </Text>
-                  <Text
-                    style={[text.gray[500], { fontSize: 12, paddingBottom: 8 }]}
-                  >
-                    optional
-                  </Text>
+                  <Text>Distribution</Text>
+                  <Text muted>(optional)</Text>
                 </View>
 
                 {/* allow everyone to distribute your content */}
