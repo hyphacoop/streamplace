@@ -57,7 +57,7 @@ export function BottomControlBar({
         {Platform.OS === "web" && pipSupported && (
           <Pressable onPress={onHandlePip} disabled={pipActive}>
             <View style={{ opacity: pipActive ? 0.5 : 1 }}>
-              <PictureInPicture2 />
+              <PictureInPicture2 color={theme.colors.text} />
             </View>
           </Pressable>
         )}
