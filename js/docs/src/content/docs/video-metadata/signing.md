@@ -22,7 +22,7 @@ standard to produce a verifiable stream. At a high level, this is how it works:
    and **distribution policy**. This record is also synced by nodes to their
    local database.
 5. **Stream Authentication**: When a user starts a stream, they include their
-   stream key as a param in the HTTP request to the node. The node decodes the
+   stream key as a param in the WHIP or RTMPS request to the node. The node decodes the
    key, extracts the private key and DID, and verifies that the public key
    exists and is valid.
 6. **Signer Creation**: Once authenticated, the node creates a signer instance
