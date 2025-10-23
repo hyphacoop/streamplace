@@ -1,7 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
 import {
-  ContentRights,
-  ContentWarnings,
   PlayerUI,
   Slider,
   Text,
@@ -77,7 +75,6 @@ export function MobileUi({
   // Get content warnings and rights directly from the latest segment
   const contentWarnings =
     (segment?.contentWarnings?.warnings as string[]) || [];
-  const contentRights = segment?.contentRights;
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
@@ -231,32 +228,6 @@ export function MobileUi({
                   </View>
                 </View>
               </View>
-
-              {/* Content Metadata - Below mute button */}
-              {(contentWarnings.length > 0 ||
-                (contentRights && Object.keys(contentRights).length > 0)) && (
-                <View
-                  style={[
-                    layout.position.absolute,
-                    position.left[2],
-                    { top: safeAreaInsets.top + 100 },
-                    { maxWidth: "70%" },
-                    {
-                      backgroundColor: "rgba(0, 0, 0, 0.75)",
-                      borderRadius: 8,
-                      padding: 8,
-                    },
-                  ]}
-                >
-                  <ContentWarnings warnings={contentWarnings} compact={true} />
-                  {contentRights && (
-                    <ContentRights
-                      contentRights={contentRights}
-                      compact={true}
-                    />
-                  )}
-                </View>
-              )}
 
               {/* Right Controls Column */}
               <View
