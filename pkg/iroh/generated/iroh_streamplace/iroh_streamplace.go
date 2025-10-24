@@ -363,6 +363,24 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_init_logging()
+		})
+		if checksum != 40911 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_init_logging: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_init_logging_with_level()
+		})
+		if checksum != 49532 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_init_logging_with_level: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_node_id_from_ticket()
 		})
 		if checksum != 36085 {
@@ -4683,6 +4701,27 @@ func GetManifestAndCert(data []byte) (string, error) {
 	} else {
 		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
 	}
+}
+
+// Initialize logging with the default subscriber that respects RUST_LOG environment variable.
+// This function is safe to call multiple times - it will only initialize logging once.
+func InitLogging() {
+	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_iroh_streamplace_fn_func_init_logging(_uniffiStatus)
+		return false
+	})
+}
+
+// Initialize logging with a custom log level.
+// This function is safe to call multiple times - it will only initialize logging once.
+//
+// # Arguments
+// * `level` - Log level as a string (e.g., "trace", "debug", "info", "warn", "error")
+func InitLoggingWithLevel(level string) {
+	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_iroh_streamplace_fn_func_init_logging_with_level(FfiConverterStringINSTANCE.Lower(level), _uniffiStatus)
+		return false
+	})
 }
 
 // Get this node's ticket.

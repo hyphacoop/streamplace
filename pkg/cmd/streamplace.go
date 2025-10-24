@@ -31,6 +31,7 @@ import (
 	"stream.place/streamplace/pkg/crypto/signers"
 	"stream.place/streamplace/pkg/crypto/signers/eip712"
 	"stream.place/streamplace/pkg/director"
+	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/notifications"
@@ -54,6 +55,7 @@ type jobFunc func(ctx context.Context, cli *config.CLI) error
 
 // parse the CLI and fire up an streamplace node!
 func start(build *config.BuildFlags, platformJobs []jobFunc) error {
+	iroh_streamplace.InitLogging()
 	selfTest := len(os.Args) > 1 && os.Args[1] == "self-test"
 	err := media.RunSelfTest(context.Background())
 	if err != nil {
