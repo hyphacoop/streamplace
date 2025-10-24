@@ -116,8 +116,8 @@ func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotif
 		case <-ctx.Done():
 			return ss.g.Wait()
 		// case <-time.After(time.Minute * 1):
-		case <-time.After(time.Second * 60):
-			log.Log(ctx, "no new segments for 1 minute, shutting down")
+		case <-time.After(ss.cli.StreamSessionTimeout):
+			log.Log(ctx, "stream session timeout, shutting down", "timeout", ss.cli.StreamSessionTimeout)
 			spmetrics.StreamSessions.WithLabelValues(notif.Segment.RepoDID).Dec()
 			for _, r := range allRenditions {
 				ss.bus.EndSession(ctx, spseg.Creator, r.Name)
