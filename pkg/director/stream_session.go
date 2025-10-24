@@ -54,6 +54,7 @@ type StreamSession struct {
 
 func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotification) error {
 	ctx, cancel := context.WithCancel(ctx)
+	spmetrics.StreamSessions.WithLabelValues(notif.Segment.RepoDID).Inc()
 	ss.g, ctx = errgroup.WithContext(ctx)
 	sid := livepeer.RandomTrailer(8)
 	ctx = log.WithLogValues(ctx, "sid", sid)
@@ -116,6 +117,7 @@ func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotif
 		// case <-time.After(time.Minute * 1):
 		case <-time.After(time.Second * 60):
 			log.Log(ctx, "no new segments for 1 minute, shutting down")
+			spmetrics.StreamSessions.WithLabelValues(notif.Segment.RepoDID).Dec()
 			for _, r := range allRenditions {
 				ss.bus.EndSession(ctx, spseg.Creator, r.Name)
 			}
@@ -482,7 +484,7 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 		Streamer:    ss.repoDID,
 		Server:      fmt.Sprintf("did:web:%s", ss.cli.ServerHost),
 		Broadcaster: &broadcaster,
-		UpdatedAt:   time.Now().Format(util.ISO8601),
+		UpdatedAt:   time.Now().UTC().Format(util.ISO8601),
 		IrohTicket:  &ss.swarm.NodeTicket,
 	}
 

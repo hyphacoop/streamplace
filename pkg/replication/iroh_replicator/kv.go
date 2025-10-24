@@ -19,6 +19,7 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/model"
+	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/streamplace"
 )
 
@@ -428,12 +429,16 @@ func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNo
 	}
 	keyBs := []byte(fmt.Sprintf("origin::%s", not.Segment.RepoDID))
 	go func() {
+		spmetrics.SwarmPutCalls.WithLabelValues(not.Segment.RepoDID).Inc()
+		defer spmetrics.SwarmPutCalls.WithLabelValues(not.Segment.RepoDID).Dec()
 		err = swarm.w.Put(nil, keyBs, bs)
 		if err != nil {
 			log.Error(ctx, "could not put segment to swarm", "error", err)
 		}
 	}()
 	go func() {
+		spmetrics.SendSegmentCalls.WithLabelValues(not.Segment.RepoDID).Inc()
+		defer spmetrics.SendSegmentCalls.WithLabelValues(not.Segment.RepoDID).Dec()
 		err = swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
 		if err != nil {
 			log.Error(ctx, "could not send segment to swarm", "error", err)

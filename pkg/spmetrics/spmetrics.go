@@ -21,6 +21,21 @@ var ViewersTotal = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "total number of viewers",
 }, []string{"protocol"})
 
+var StreamSessions = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "streamplace_stream_sessions",
+	Help: "number of open stream sessions per streamer",
+}, []string{"streamer"})
+
+var SendSegmentCalls = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "streamplace_send_segment_calls",
+	Help: "total number of send segment calls currently in flight",
+}, []string{"streamer"})
+
+var SwarmPutCalls = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "streamplace_swarm_put_calls",
+	Help: "total number of swarm put calls currently in flight",
+}, []string{"streamer"})
+
 var TranscodeAttemptsTotal = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "streamplace_transcode_attempts_total",
 	Help: "total number of transcode attempts",
