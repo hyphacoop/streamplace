@@ -15,6 +15,7 @@ import (
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/bluesky-social/indigo/util"
+	scraper "github.com/starttoaster/prometheus-exporter-scraper"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/cmd"
@@ -33,15 +34,20 @@ func TestMultinodeSyndication(t *testing.T) {
 	gstinit.InitGST()
 	dev := devenv.WithDevEnv(t)
 	acct := dev.CreateAccount(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	node1 := startStreamplaceNode(t, dev)
-	node2 := startStreamplaceNode(t, dev)
-	node3 := startStreamplaceNode(t, dev)
+	node1 := startStreamplaceNode(ctx, t, dev)
+	node2 := startStreamplaceNode(ctx, t, dev)
+	node3 := startStreamplaceNode(ctx, t, dev)
 	node1.StartStream(ctx, t, acct)
-	node2.PlayStream(ctx, t, acct)
-	node3.PlayStream(ctx, t, acct)
-	<-ctx.Done()
+	node2.PlayStream(t, acct)
+	node3.PlayStream(t, acct)
+	<-time.After(10 * time.Second)
+	node2.Shutdown(t)
+	<-time.After(20 * time.Second)
+	// node4 := startStreamplaceNode(ctx, t, dev)
+	// node4.PlayStream(ctx, t, acct)
+	// <-time.After(30 * time.Second)
 }
 
 var currentPort = 10000
@@ -52,11 +58,15 @@ func nextPort() int {
 }
 
 type TestNode struct {
-	Env map[string]string
-	Dev *devenv.DevEnv
+	Env      map[string]string
+	Dev      *devenv.DevEnv
+	Cmd      *exec.Cmd
+	Ctx      context.Context // don't ever do this, it's just a test
+	Shutdown func(t *testing.T)
 }
 
-func startStreamplaceNode(t *testing.T, dev *devenv.DevEnv) *TestNode {
+func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv) *TestNode {
+	nodeCtx, nodeCancel := context.WithCancel(ctx)
 	dataDir := t.TempDir()
 	devAccountCreds := []string{}
 	for _, acct := range dev.Accounts {
@@ -85,12 +95,7 @@ func startStreamplaceNode(t *testing.T, dev *devenv.DevEnv) *TestNode {
 	cmd.Stderr = os.Stderr
 	err = cmd.Start()
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		err := cmd.Process.Kill()
-		require.NoError(t, err)
-		_, err = cmd.Process.Wait()
-		require.NoError(t, err)
-	})
+
 	// Wait for the streamplace node to be ready by polling the health endpoint
 	healthz := fmt.Sprintf("http://%s/api/healthz", env["SP_HTTP_ADDR"])
 	client := &http.Client{Timeout: 2 * time.Second}
@@ -104,10 +109,51 @@ func startStreamplaceNode(t *testing.T, dev *devenv.DevEnv) *TestNode {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	return &TestNode{
+	node := &TestNode{
 		Env: env,
 		Dev: dev,
+		Cmd: cmd,
+		Ctx: nodeCtx,
 	}
+	go func() {
+		<-nodeCtx.Done()
+		node.Shutdown(t)
+	}()
+	go func() {
+		for {
+			select {
+			case <-nodeCtx.Done():
+				return
+			case <-time.After(1 * time.Second):
+				scrp, err := scraper.NewWebScraper(fmt.Sprintf("http://%s/metrics", env["SP_HTTP_INTERNAL_ADDR"]))
+				require.NoError(t, err)
+				data, err := scrp.ScrapeWeb()
+				require.NoError(t, err)
+				for _, metric := range data.Gauges {
+					if metric.Key == "streamplace_send_segment_calls" {
+						require.Lessf(t, metric.Value, float64(2), "send segment calls should be < 2, got %f", metric.Value)
+					}
+				}
+			}
+		}
+	}()
+	shuttingDown := false
+	nodeShutdown := func(t *testing.T) {
+		if shuttingDown {
+			return
+		}
+		shuttingDown = true
+		nodeCancel()
+		err := node.Cmd.Process.Kill()
+		require.NoError(t, err)
+		_, err = node.Cmd.Process.Wait()
+		require.NoError(t, err)
+	}
+	node.Shutdown = nodeShutdown
+	t.Cleanup(func() {
+		node.Shutdown(t)
+	})
+	return node
 }
 
 func (node *TestNode) StartStream(ctx context.Context, t *testing.T, acct *devenv.DevEnvAccount) {
@@ -139,12 +185,12 @@ func (node *TestNode) StartStream(ctx context.Context, t *testing.T, acct *deven
 	})
 }
 
-func (node *TestNode) PlayStream(ctx context.Context, t *testing.T, acct *devenv.DevEnvAccount) {
+func (node *TestNode) PlayStream(t *testing.T, acct *devenv.DevEnvAccount) {
 	whep := &cmd.WHEPClient{
 		Endpoint: fmt.Sprintf("http://%s/api/playback/%s/webrtc", node.Env["SP_HTTP_ADDR"], acct.DID),
 		Count:    1,
 	}
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := errgroup.WithContext(node.Ctx)
 	g.Go(func() error {
 		return whep.WHEP(ctx)
 	})

@@ -1291,6 +1291,8 @@ github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 h1:ZdkidVdpLW13BQ9a+
 github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388/go.mod h1:C/WY5lmWfMtPFYYBTd3Lzdn4FTLr+RxlIeiBNye+/os=
 github.com/ssgreg/nlreturn/v2 v2.2.1 h1:X4XDI7jstt3ySqGU86YGAURbxw3oTDPK9sPEi6YEwQ0=
 github.com/ssgreg/nlreturn/v2 v2.2.1/go.mod h1:E/iiPB78hV7Szg2YfRgyIrk1AD6JVMTRkkxBiELzh2I=
+github.com/starttoaster/prometheus-exporter-scraper v0.0.1 h1:E3Zl3ho3v3Yt2Yk7i9z3noEPco9wggSOsPezOn4Q+mI=
+github.com/starttoaster/prometheus-exporter-scraper v0.0.1/go.mod h1:qNccVOSo0np2jYi6DolRyUICFcMkhH5k1Gs7CYxav1w=
 github.com/stbenjam/no-sprintf-host-port v0.2.0 h1:i8pxvGrt1+4G0czLr/WnmyH7zbZ8Bg8etvARQ1rpyl4=
 github.com/stbenjam/no-sprintf-host-port v0.2.0/go.mod h1:eL0bQ9PasS0hsyTyfTjjG+E80QIyPnBVQbYZyv20Jfk=
 github.com/streamplace/atproto-oauth-golang v0.0.0-20250619231223-a9c04fb888ac h1:heVM4CGox3kfJclSmagsI3hvKk7W52EegnFqqs9CSYk=

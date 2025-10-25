@@ -438,8 +438,8 @@ func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNo
 		}
 	}()
 	go func() {
-		spmetrics.SendSegmentCalls.WithLabelValues(not.Segment.RepoDID).Inc()
-		defer spmetrics.SendSegmentCalls.WithLabelValues(not.Segment.RepoDID).Dec()
+		spmetrics.SendSegmentCalls.Inc()
+		defer spmetrics.SendSegmentCalls.Dec()
 		err = swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
 		if err != nil {
 			log.Error(ctx, "could not send segment to swarm", "error", err)
