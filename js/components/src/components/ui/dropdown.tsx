@@ -8,7 +8,7 @@ import {
   ChevronUp,
   Circle,
 } from "lucide-react-native";
-import React, { forwardRef, ReactNode, useMemo, useRef } from "react";
+import React, { forwardRef, ReactNode, useRef } from "react";
 import {
   Platform,
   Pressable,
@@ -61,16 +61,12 @@ export const DropdownMenuBottomSheet = forwardRef<
   // Use the primitives' context to know if open
   const { open, onOpenChange } = DropdownMenuPrimitive.useRootContext();
   const { zero: zt } = useTheme();
-  const snapPoints = useMemo(() => ["25%", "50%", "80%"], []);
   const sheetRef = useRef<BottomSheet>(null);
 
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
       <BottomSheet
         ref={sheetRef}
-        // why the heck is this 1-indexed
-        index={open ? 3 : -1}
-        snapPoints={snapPoints}
         enablePanDownToClose
         enableDynamicSizing
         enableContentPanningGesture={false}

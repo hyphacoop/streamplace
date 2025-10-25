@@ -1,5 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import {
+  ContentWarningBadge,
   PlayerUI,
   Slider,
   Text,
@@ -70,11 +71,6 @@ export function MobileUi({
   const { isPlayerRatioGreater } = useSegmentDimensions();
   const { doSetIngestCamera } = useCameraToggle();
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
-  const segment = useLivestreamStore((x) => x.segment);
-
-  // Get content warnings and rights directly from the latest segment
-  const contentWarnings =
-    (segment?.contentWarnings?.warnings as string[]) || [];
 
   const muteWasForced = usePlayerStore((state) => state.muteWasForced);
   const setMuteWasForced = usePlayerStore((state) => state.setMuteWasForced);
@@ -87,6 +83,7 @@ export function MobileUi({
     chatPanelWidth,
     safeAreaInsets,
   } = useResponsiveLayout();
+
   const [showLoading, setShowLoading] = useState(false);
 
   // get width/height
@@ -171,63 +168,17 @@ export function MobileUi({
             <View
               style={[layout.position.absolute, h.percent[100], w.percent[100]]}
             >
-              {/* Top Left - Back Button and Profile */}
-              <View
-                style={[
-                  layout.position.absolute,
-                  position.left[2],
-                  { top: safeAreaInsets.top + 12 },
-                  { maxWidth: "70%" },
-                ]}
-              >
-                <View
-                  style={[
-                    {
-                      padding: 3,
-                      paddingRight: 8,
-                      backgroundColor: "rgba(90,90,90, 0.25)",
-                      borderRadius: 12,
-                    },
-                    r[2],
-                  ]}
-                >
-                  <View
-                    style={[layout.flex.row, layout.flex.center, gap.all[2]]}
-                  >
-                    <Pressable
-                      onPress={() => {
-                        navigation.canGoBack()
-                          ? navigation.goBack()
-                          : navigation.navigate("Home", {
-                              screen: "StreamList",
-                            });
-                      }}
-                    >
-                      <ChevronLeft color="white" />
-                    </Pressable>
-                    <Image
-                      source={
-                        profile?.did
-                          ? { url: avatars[profile?.did]?.avatar }
-                          : require("assets/images/goose.png")
-                      }
-                      width={32}
-                      height={32}
-                      style={[
-                        {
-                          width: 36,
-                          height: 36,
-                          backgroundColor: "green",
-                        },
-                        { borderRadius: 999 },
-                        borders.width.thin,
-                        borders.color.gray[700],
-                      ]}
-                    />
-                    <Text>{profile?.handle}</Text>
-                  </View>
-                </View>
-              </View>
+              {/* Left Controls Column */}
+              <LeftControlsPanel
+                navigation={navigation}
+                profile={profile}
+                avatars={avatars}
+                safeAreaInsets={safeAreaInsets}
+                muted={muted}
+                setMuted={setMuted}
+                muteWasForced={muteWasForced}
+                setMuteWasForced={setMuteWasForced}
+              />
 
               {/* Right Controls Column */}
               <View
@@ -317,52 +268,6 @@ export function MobileUi({
               duration={5}
             />
           </Animated.View>
-          {muted && (
-            <View
-              style={[
-                layout.position.absolute,
-                position.top[16],
-                position.left[2],
-                layout.flex.column,
-                layout.flex.center,
-              ]}
-            >
-              <Pressable
-                onPress={() => {
-                  if (muteWasForced) {
-                    setMuted(false);
-                    setMuteWasForced(false);
-                  } else {
-                    setMuted(false);
-                  }
-                }}
-                style={[
-                  {
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    {
-                      padding: 4,
-                      backgroundColor: "rgba(50, 30, 30, 0.4)",
-                      borderRadius: 999,
-                      borderWidth: 2,
-                      borderColor: "rgba(255, 120, 120, 0.2)",
-                    },
-                  ]}
-                >
-                  <VolumeX size="24" color="rgba(255,120,120,0.8)" />
-                </View>
-                <Text color="muted" size="sm">
-                  Tap to unmute
-                </Text>
-              </Pressable>
-            </View>
-          )}
           <PlayerUI.AutoplayButton />
         </View>
       </GestureDetector>
@@ -370,6 +275,133 @@ export function MobileUi({
         <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
       )}
     </>
+  );
+}
+
+function LeftControlsPanel({
+  navigation,
+  profile,
+  avatars,
+  safeAreaInsets,
+  muted,
+  setMuted,
+  muteWasForced,
+  setMuteWasForced,
+}: {
+  navigation: any;
+  profile: any;
+  avatars: any;
+  safeAreaInsets: { top: number; bottom: number; left: number; right: number };
+  muted: boolean;
+  setMuted: (muted: boolean) => void;
+  muteWasForced: boolean;
+  setMuteWasForced: (forced: boolean) => void;
+}) {
+  // Get content warnings from segment
+  const segment = useLivestreamStore((x) => x.segment);
+  const contentWarnings =
+    (segment?.contentWarnings?.warnings as string[]) || [];
+
+  return (
+    <View
+      style={[
+        layout.position.absolute,
+        position.left[2],
+        { top: safeAreaInsets.top + 12 },
+        layout.flex.column,
+        gap.all[2],
+        { maxWidth: "70%" },
+      ]}
+    >
+      {/* Back Button and Profile */}
+      <View
+        style={[
+          {
+            padding: 3,
+            paddingRight: 8,
+            backgroundColor: "rgba(90,90,90, 0.25)",
+            borderRadius: 12,
+            alignSelf: "flex-start",
+          },
+          r[2],
+        ]}
+      >
+        <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
+          <Pressable
+            onPress={() => {
+              navigation.canGoBack()
+                ? navigation.goBack()
+                : navigation.navigate("Home", {
+                    screen: "StreamList",
+                  });
+            }}
+          >
+            <ChevronLeft color="white" />
+          </Pressable>
+          <Image
+            source={
+              profile?.did
+                ? { url: avatars[profile?.did]?.avatar }
+                : require("assets/images/goose.png")
+            }
+            width={32}
+            height={32}
+            style={[
+              {
+                width: 36,
+                height: 36,
+                backgroundColor: "green",
+              },
+              { borderRadius: 999 },
+              borders.width.thin,
+              borders.color.gray[700],
+            ]}
+          />
+          <Text>{profile?.handle}</Text>
+        </View>
+      </View>
+
+      {/* Muted indicator */}
+      {muted && (
+        <Pressable
+          onPress={() => {
+            if (muteWasForced) {
+              setMuted(false);
+              setMuteWasForced(false);
+            } else {
+              setMuted(false);
+            }
+          }}
+          style={[
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            },
+          ]}
+        >
+          <View
+            style={[
+              {
+                padding: 4,
+                backgroundColor: "rgba(50, 30, 30, 0.4)",
+                borderRadius: 999,
+                borderWidth: 2,
+                borderColor: "rgba(255, 120, 120, 0.2)",
+              },
+            ]}
+          >
+            <VolumeX size="24" color="rgba(255,120,120,0.8)" />
+          </View>
+          <Text color="muted" size="sm">
+            Tap to unmute
+          </Text>
+        </Pressable>
+      )}
+      <View>
+        <ContentWarningBadge warnings={contentWarnings} />
+      </View>
+    </View>
   );
 }
 
