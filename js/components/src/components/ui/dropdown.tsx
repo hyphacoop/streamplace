@@ -8,14 +8,16 @@ import {
   ChevronUp,
   Circle,
 } from "lucide-react-native";
-import React, { forwardRef, ReactNode, useMemo, useRef } from "react";
+import React, { forwardRef, ReactNode, useRef } from "react";
 import {
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
+import { zero } from "../..";
 import {
   a,
   borderRadius,
@@ -53,22 +55,18 @@ export const DropdownMenuBottomSheet = forwardRef<
     portalHost?: string;
   }
 >(function DropdownMenuBottomSheet(
-  { overlayStyle, portalHost, children },
+  { overlayStyle, portalHost, children, ...rest },
   _ref,
 ) {
   // Use the primitives' context to know if open
   const { open, onOpenChange } = DropdownMenuPrimitive.useRootContext();
   const { zero: zt } = useTheme();
-  const snapPoints = useMemo(() => ["25%", "50%", "80%"], []);
   const sheetRef = useRef<BottomSheet>(null);
 
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
       <BottomSheet
         ref={sheetRef}
-        // why the heck is this 1-indexed
-        index={open ? 3 : -1}
-        snapPoints={snapPoints}
         enablePanDownToClose
         enableDynamicSizing
         enableContentPanningGesture={false}
@@ -79,7 +77,7 @@ export const DropdownMenuBottomSheet = forwardRef<
           />
         )}
         onClose={() => onOpenChange?.(false)}
-        style={[overlayStyle]}
+        style={[overlayStyle, StyleSheet.flatten(rest.style)]}
         backgroundStyle={[zt.bg.popover, a.radius.all.md, a.shadows.md, p[1]]}
         handleIndicatorStyle={[
           a.sizes.width[12],
@@ -169,7 +167,7 @@ export const DropdownMenuContent = forwardRef<
     overlayStyle?: any;
     portalHost?: string;
   }
->(({ overlayStyle, portalHost, ...props }, ref) => {
+>(({ overlayStyle, portalHost, style, children, ...props }, ref) => {
   const { zero: zt } = useTheme();
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
@@ -193,10 +191,17 @@ export const DropdownMenuContent = forwardRef<
               zt.bg.popover,
               p[2],
               a.shadows.md,
+              style,
             ] as any
           }
           {...props}
-        />
+        >
+          <ScrollView showsVerticalScrollIndicator={true}>
+            {typeof children === "function"
+              ? children({ pressed: false })
+              : children}
+          </ScrollView>
+        </DropdownMenuPrimitive.Content>
       </DropdownMenuPrimitive.Overlay>
     </DropdownMenuPrimitive.Portal>
   );
@@ -206,37 +211,52 @@ export const DropdownMenuContentWithoutPortal = forwardRef<
   any,
   DropdownMenuPrimitive.ContentProps & {
     overlayStyle?: any;
+    maxHeightPercentage?: number;
   }
->(({ overlayStyle, ...props }, ref) => {
-  const { theme } = useTheme();
-  return (
-    <DropdownMenuPrimitive.Overlay
-      style={[
-        Platform.OS !== "web" ? StyleSheet.absoluteFill : undefined,
-        overlayStyle,
-      ]}
-    >
-      <DropdownMenuPrimitive.Content
-        ref={ref}
-        style={
-          [
-            { zIndex: 999999 },
-            a.sizes.minWidth[32],
-            a.sizes.maxWidth[64],
-            a.overflow.hidden,
-            a.radius.all.md,
-            a.borders.width.thin,
-            { borderColor: theme.colors.border },
-            { backgroundColor: theme.colors.popover },
-            p[2],
-            a.shadows.md,
-          ] as any
-        }
-        {...props}
-      />
-    </DropdownMenuPrimitive.Overlay>
-  );
-});
+>(
+  (
+    { overlayStyle, maxHeightPercentage = 0.8, children, style, ...props },
+    ref,
+  ) => {
+    const { theme } = useTheme();
+    const { height } = useWindowDimensions();
+    const maxHeight = height * maxHeightPercentage;
+
+    return (
+      <DropdownMenuPrimitive.Overlay
+        style={[
+          Platform.OS !== "web" ? StyleSheet.absoluteFill : undefined,
+          overlayStyle,
+        ]}
+      >
+        <DropdownMenuPrimitive.Content
+          ref={ref}
+          style={
+            [
+              { zIndex: 999999 },
+              a.sizes.minWidth[32],
+              a.sizes.maxWidth[64],
+              a.radius.all.md,
+              a.borders.width.thin,
+              { borderColor: theme.colors.border },
+              { backgroundColor: theme.colors.popover },
+              p[2],
+              a.shadows.md,
+              style,
+            ] as any
+          }
+          {...props}
+        >
+          <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={true}>
+            {typeof children === "function"
+              ? children({ pressed: false })
+              : children}
+          </ScrollView>
+        </DropdownMenuPrimitive.Content>
+      </DropdownMenuPrimitive.Overlay>
+    );
+  },
+);
 
 /// Responsive Dropdown Menu Content. On mobile this will render a *bottom sheet* that is **portaled to the root of the app**.
 /// Prefer passing scoped content in as **otherwise it may crash the app**.
@@ -250,7 +270,7 @@ export const ResponsiveDropdownMenuContent = forwardRef<any, any>(
     if (isBottomSheet) {
       return (
         <DropdownMenuBottomSheet ref={ref} {...props}>
-          {children}
+          <ScrollView style={[zero.pb[12]]}>{children}</ScrollView>
         </DropdownMenuBottomSheet>
       );
     }

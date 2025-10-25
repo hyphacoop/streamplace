@@ -1,10 +1,12 @@
-import { forwardRef } from "react";
-import { StyleSheet, View } from "react-native";
+import { forwardRef, type ComponentProps } from "react";
+import { StyleSheet } from "react-native";
+import { useTheme, zero } from "../..";
 import { LICENSE_URL_LABELS } from "../../lib/metadata-constants";
-import { useTheme } from "../../lib/theme/theme";
 import { Text } from "../ui/text";
 
-export interface ContentRightsProps {
+const { layout, gap, mt, text: textStyles } = zero;
+
+export interface ContentRightsProps extends ComponentProps<typeof Text> {
   contentRights: {
     creator?: string;
     copyrightNotice?: string;
@@ -15,15 +17,12 @@ export interface ContentRightsProps {
   compact?: boolean;
 }
 
-export const ContentRights = forwardRef<any, ContentRightsProps>(
-  ({ contentRights }, ref) => {
-    const { theme } = useTheme();
-
+export const ContentRights = forwardRef<Text, ContentRightsProps>(
+  ({ contentRights, compact, ...rest }, ref) => {
+    const { zero } = useTheme();
     if (!contentRights || Object.keys(contentRights).length === 0) {
       return null;
     }
-
-    const styles = createStyles(theme);
 
     const formatLicense = (license: string) => {
       return LICENSE_URL_LABELS[license] || license;
@@ -38,7 +37,11 @@ export const ContentRights = forwardRef<any, ContentRightsProps>(
     // }
 
     if (contentRights.copyrightYear) {
-      elements.push(`© ${contentRights.copyrightYear.toString()}`);
+      elements.push(
+        `© ${contentRights.copyrightYear.toString()}${contentRights.creditLine ? " " + contentRights.creditLine : ""}`,
+      );
+    } else if (contentRights.creditLine) {
+      elements.push(contentRights.creditLine);
     }
 
     if (contentRights.license) {
@@ -49,56 +52,28 @@ export const ContentRights = forwardRef<any, ContentRightsProps>(
       elements.push(contentRights.copyrightNotice);
     }
 
-    if (contentRights.creditLine) {
-      elements.push(contentRights.creditLine);
+    if (elements.length > 0) {
+      elements[0] = "Stream content is " + elements[0];
+    }
+
+    if (elements.length == 0) {
+      return null;
     }
 
     return (
-      <View ref={ref} style={styles.compactContainer}>
-        <Text style={styles.compactText}>{elements.join(" • ")}</Text>
-      </View>
+      <Text
+        ref={ref}
+        style={[
+          zero.text.mutedForeground,
+          mt[1],
+          StyleSheet.flatten(rest.style),
+        ]}
+        {...rest}
+      >
+        {elements.join(" • ")}
+      </Text>
     );
   },
 );
 
 ContentRights.displayName = "ContentRights";
-
-function createStyles(theme: any) {
-  return StyleSheet.create({
-    container: {
-      paddingVertical: theme.spacing[3],
-    },
-    title: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.colors.text,
-      marginBottom: theme.spacing[2],
-    },
-    content: {
-      gap: theme.spacing[2],
-    },
-    row: {
-      flexDirection: "row",
-      gap: theme.spacing[2],
-    },
-    label: {
-      fontSize: 13,
-      color: theme.colors.textMuted,
-    },
-    value: {
-      fontSize: 13,
-      color: theme.colors.text,
-    },
-    compactContainer: {
-      flexDirection: "row",
-      gap: theme.spacing[2],
-      flexWrap: "wrap",
-      marginTop: theme.spacing[1],
-    },
-    compactText: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: theme.colors.text,
-    },
-  });
-}

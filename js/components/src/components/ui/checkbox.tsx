@@ -1,7 +1,7 @@
 import { Check } from "lucide-react-native";
 import { forwardRef } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { useTheme } from "../../lib/theme/theme";
+import { Theme, useTheme } from "../../lib/theme/theme";
 import { Text } from "./text";
 
 export interface CheckboxProps {
@@ -60,9 +60,23 @@ export const Checkbox = forwardRef<any, CheckboxProps>(
         </View>
         {(label || description) && (
           <View style={styles.content}>
-            {label && <Text style={styles.label}>{label}</Text>}
+            {label && (
+              <Text
+                size={size === "sm" ? "sm" : size === "lg" ? "lg" : "base"}
+                color={disabled ? "muted" : "default"}
+                leading="snug"
+              >
+                {label}
+              </Text>
+            )}
             {description && (
-              <Text style={styles.description}>{description}</Text>
+              <Text
+                size={size === "sm" ? "xs" : size === "lg" ? "base" : "sm"}
+                color={disabled ? "muted" : "muted"}
+                style={{ marginTop: theme.spacing[1] }}
+              >
+                {description}
+              </Text>
             )}
           </View>
         )}
@@ -74,7 +88,7 @@ export const Checkbox = forwardRef<any, CheckboxProps>(
 Checkbox.displayName = "Checkbox";
 
 function createStyles(
-  theme: any,
+  theme: Theme,
   size: string,
   disabled: boolean,
   checked: boolean,
@@ -90,13 +104,13 @@ function createStyles(
       checkboxSize: 20,
       borderRadius: 4,
       padding: theme.spacing[1],
-      gap: theme.spacing[2],
+      gap: theme.spacing[1],
     },
     lg: {
       checkboxSize: 24,
       borderRadius: 6,
-      padding: theme.spacing[2],
-      gap: theme.spacing[3],
+      padding: theme.spacing[1],
+      gap: theme.spacing[2],
     },
   };
 
@@ -116,7 +130,7 @@ function createStyles(
         ? theme.colors.border
         : checked
           ? theme.colors.primary
-          : theme.colors.border,
+          : theme.colors.textMuted,
       borderRadius: currentSize.borderRadius,
       backgroundColor: disabled
         ? theme.colors.muted
@@ -128,20 +142,8 @@ function createStyles(
     },
     content: {
       flex: 1,
-      paddingTop: currentSize.padding * 0.5,
+      paddingTop: currentSize.padding * 0.25,
       paddingLeft: theme.spacing[2],
-    },
-    label: {
-      fontSize: size === "sm" ? 14 : size === "lg" ? 18 : 16,
-      fontWeight: "500",
-      color: disabled ? theme.colors.textDisabled : theme.colors.text,
-      lineHeight: size === "sm" ? 18 : size === "lg" ? 22 : 20,
-    },
-    description: {
-      fontSize: size === "sm" ? 12 : size === "lg" ? 16 : 14,
-      color: disabled ? theme.colors.textDisabled : theme.colors.textMuted,
-      marginTop: theme.spacing[1],
-      lineHeight: size === "sm" ? 16 : size === "lg" ? 20 : 18,
     },
   });
 }

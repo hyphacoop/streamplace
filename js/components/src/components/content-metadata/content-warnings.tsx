@@ -1,23 +1,24 @@
 import { forwardRef } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
+import { zero } from "../..";
 import { C2PA_WARNING_LABELS } from "../../lib/metadata-constants";
 import { useTheme } from "../../lib/theme/theme";
 import { Text } from "../ui/text";
+
+const { layout, gap, bg, r, p, px, py, text: textStyles, borders } = zero;
 
 export interface ContentWarningsProps {
   warnings: string[];
   compact?: boolean;
 }
 
-export const ContentWarnings = forwardRef<any, ContentWarningsProps>(
-  ({ warnings, compact = false }, ref) => {
+export const ContentWarnings = forwardRef<View, ContentWarningsProps>(
+  ({ warnings, compact = false, ...rest }, ref) => {
     const { theme } = useTheme();
 
     if (!warnings || warnings.length === 0) {
       return null;
     }
-
-    const styles = createStyles(theme, compact);
 
     const getWarningLabel = (warning: string): string => {
       return C2PA_WARNING_LABELS[warning] || warning;
@@ -25,10 +26,25 @@ export const ContentWarnings = forwardRef<any, ContentWarningsProps>(
 
     if (compact) {
       return (
-        <View ref={ref} style={styles.compactContainer}>
+        <View
+          ref={ref}
+          style={[layout.flex.row, layout.flex.wrap.wrap, gap.all[1]]}
+          {...rest}
+        >
           {warnings.map((warning, index) => (
-            <View key={index} style={styles.compactWarning}>
-              <Text style={styles.compactWarningText}>
+            <View
+              key={index}
+              style={[
+                { backgroundColor: theme.colors.warning },
+                r.full,
+                px[2],
+                { paddingVertical: 2 },
+              ]}
+            >
+              <Text
+                size="sm"
+                style={[{ color: theme.colors.warningForeground }]}
+              >
                 {getWarningLabel(warning)}
               </Text>
             </View>
@@ -38,12 +54,29 @@ export const ContentWarnings = forwardRef<any, ContentWarningsProps>(
     }
 
     return (
-      <View ref={ref} style={styles.container}>
-        <Text style={styles.title}>Content Warnings</Text>
-        <View style={styles.warningsContainer}>
+      <View ref={ref} style={[layout.flex.column, gap.all[2]]} {...rest}>
+        <Text
+          style={[{ fontSize: 14, fontWeight: "600" }, textStyles.gray[900]]}
+        >
+          Content Warnings
+        </Text>
+        <View style={[layout.flex.row, layout.flex.wrap.wrap, gap.all[2]]}>
           {warnings.map((warning, index) => (
-            <View key={index} style={styles.warning}>
-              <Text style={styles.warningText}>{getWarningLabel(warning)}</Text>
+            <View
+              key={index}
+              style={[
+                { backgroundColor: theme.colors.warning },
+                r.full,
+                px[3],
+                py[1],
+              ]}
+            >
+              <Text
+                size="sm"
+                style={[{ color: theme.colors.warningForeground }]}
+              >
+                {getWarningLabel(warning)}
+              </Text>
             </View>
           ))}
         </View>
@@ -53,48 +86,3 @@ export const ContentWarnings = forwardRef<any, ContentWarningsProps>(
 );
 
 ContentWarnings.displayName = "ContentWarnings";
-
-function createStyles(theme: any, compact: boolean) {
-  return StyleSheet.create({
-    container: {
-      flexDirection: "column",
-      gap: theme.spacing[2],
-    },
-    title: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.colors.text,
-    },
-    warningsContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing[2],
-    },
-    warning: {
-      backgroundColor: theme.colors.warning,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing[2],
-    },
-    warningText: {
-      color: theme.colors.warningForeground,
-      fontSize: 12,
-      fontWeight: "500",
-    },
-    compactContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: theme.spacing[1],
-    },
-    compactWarning: {
-      backgroundColor: theme.colors.warning,
-      borderRadius: theme.borderRadius.full,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-    },
-    compactWarningText: {
-      color: theme.colors.warningForeground,
-      fontSize: 14,
-      fontWeight: "600",
-    },
-  });
-}

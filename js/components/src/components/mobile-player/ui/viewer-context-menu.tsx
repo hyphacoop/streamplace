@@ -1,11 +1,18 @@
 import { useRootContext } from "@rn-primitives/dropdown-menu";
 import { Menu } from "lucide-react-native";
 import { Image, Linking, Platform, Pressable, View } from "react-native";
-import { useAvatars, useLivestreamInfo, zero } from "../../..";
+import {
+  ContentRights,
+  ContentWarnings,
+  useAvatars,
+  useLivestreamInfo,
+  zero,
+} from "../../..";
 import { colors } from "../../../lib/theme";
 import { useLivestreamStore } from "../../../livestream-store";
 import { PlayerProtocol, usePlayerStore } from "../../../player-store/";
 import { useGraphManager } from "../../../streamplace-store/graph";
+import { gap, pt, px } from "../../../ui";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -42,8 +49,15 @@ export function ContextMenu({
   const setReportSubject = usePlayerStore((x) => x.setReportSubject);
 
   const { profile } = useLivestreamInfo();
+
+  console.log("profile", profile);
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
   const ls = useLivestreamStore((x) => x.livestream);
+  const segment = useLivestreamStore((x) => x.segment);
+
+  // Get content rights from the latest segment
+  const contentRights = segment?.contentRights;
+  const contentWarnings = segment?.contentWarnings?.warnings || [];
 
   let graphManager = useGraphManager(profile?.did);
 
@@ -160,6 +174,7 @@ export function ContextMenu({
               </DropdownMenuItem>
             </DropdownMenuGroup>
           )}
+
           <DropdownMenuGroup title="Resolution">
             <DropdownMenuRadioGroup value={quality} onValueChange={setQuality}>
               <DropdownMenuRadioItem value="source">
@@ -196,6 +211,23 @@ export function ContextMenu({
               setReportSubject={setReportSubject}
             />
           </DropdownMenuGroup>
+          <View style={[pt[3], px[2], gap.all[2]]}>
+            {contentWarnings && contentWarnings.length > 0 && (
+              <View style={[gap.all[1]]}>
+                <Text size="base" color="muted">
+                  Stream may contain
+                </Text>
+                <ContentWarnings warnings={contentWarnings} compact={true} />
+              </View>
+            )}
+            {contentRights && Object.keys(contentRights).length > 0 && (
+              <ContentRights
+                contentRights={contentRights}
+                size="xs"
+                color="muted"
+              />
+            )}
+          </View>
         </DropdownMenuContent>
       </Portal>
     </DropdownMenu>
