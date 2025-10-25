@@ -27,6 +27,9 @@ import (
 )
 
 func TestMultinodeSyndication(t *testing.T) {
+	if os.Getenv("GITHUB_ACTION") != "" {
+		t.Skip("Skipping multitest in GitHub Actions")
+	}
 	gstinit.InitGST()
 	dev := devenv.WithDevEnv(t)
 	acct := dev.CreateAccount(t)
