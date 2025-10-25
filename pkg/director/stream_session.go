@@ -57,7 +57,7 @@ func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotif
 	spmetrics.StreamSessions.WithLabelValues(notif.Segment.RepoDID).Inc()
 	ss.g, ctx = errgroup.WithContext(ctx)
 	sid := livepeer.RandomTrailer(8)
-	ctx = log.WithLogValues(ctx, "sid", sid)
+	ctx = log.WithLogValues(ctx, "sid", sid, "streamer", notif.Segment.RepoDID)
 	ss.ctx = ctx
 	log.Log(ctx, "starting stream session")
 	defer cancel()
