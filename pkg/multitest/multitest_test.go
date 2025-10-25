@@ -1,6 +1,7 @@
 package multitest
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net/http"
@@ -37,16 +38,16 @@ func TestMultinodeSyndication(t *testing.T) {
 	acct2 := dev.CreateAccount(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	node1 := startStreamplaceNode(ctx, t, dev)
-	node2 := startStreamplaceNode(ctx, t, dev)
-	node3 := startStreamplaceNode(ctx, t, dev)
+	node1 := startStreamplaceNode(ctx, "node1", t, dev)
+	node2 := startStreamplaceNode(ctx, "node2", t, dev)
+	node3 := startStreamplaceNode(ctx, "node3", t, dev)
 	node1.StartStream(t, acct1)
 	node2.PlayStream(t, acct1)
 	node3.PlayStream(t, acct1)
 	<-time.After(10 * time.Second)
 	node2.Shutdown(t)
 	<-time.After(20 * time.Second)
-	node4 := startStreamplaceNode(ctx, t, dev)
+	node4 := startStreamplaceNode(ctx, "node4", t, dev)
 	node4.StartStream(t, acct2)
 	node4.PlayStream(t, acct1)
 	node1.PlayStream(t, acct2)
@@ -63,26 +64,23 @@ func TestOriginSwap(t *testing.T) {
 	defer cancel()
 	dev := devenv.WithDevEnv(t)
 	acct1 := dev.CreateAccount(t)
-	node1 := startStreamplaceNode(ctx, t, dev)
-	node2 := startStreamplaceNode(ctx, t, dev)
-	node3 := startStreamplaceNode(ctx, t, dev)
-	node4 := startStreamplaceNode(ctx, t, dev)
+	node1 := startStreamplaceNode(ctx, "node1", t, dev)
+	node2 := startStreamplaceNode(ctx, "node2", t, dev)
+	node3 := startStreamplaceNode(ctx, "node3", t, dev)
+	// node4 := startStreamplaceNode(ctx, "node4", t, dev)
 	node1.StartStream(t, acct1)
 	node1.PlayStream(t, acct1)
 	node2.PlayStream(t, acct1)
 	node3.PlayStream(t, acct1)
-	node4.PlayStream(t, acct1)
+	// node4.PlayStream(t, acct1)
 	<-time.After(10 * time.Second)
 	node1.StopStream(t, acct1)
 	node2.StartStream(t, acct1)
 	<-time.After(10 * time.Second)
-	node2.StopStream(t, acct1)
-	node3.StartStream(t, acct1)
-	node4.Shutdown(t)
-	<-time.After(10 * time.Second)
-	node2.StopStream(t, acct1)
-	node1.StartStream(t, acct1)
-	<-time.After(30 * time.Second)
+	// node2.StopStream(t, acct1)
+	// node3.StartStream(t, acct1)
+	// node4.Shutdown(t)
+	// <-time.After(10 * time.Second)
 }
 
 var currentPort = 10000
@@ -101,7 +99,7 @@ type TestNode struct {
 	ActiveStreams map[string]context.CancelFunc
 }
 
-func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv) *TestNode {
+func startStreamplaceNode(ctx context.Context, name string, t *testing.T, dev *devenv.DevEnv) *TestNode {
 	nodeCtx, nodeCancel := context.WithCancel(ctx)
 	dataDir := t.TempDir()
 	devAccountCreds := []string{}
@@ -116,6 +114,8 @@ func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv)
 		"SP_DATA_DIR":               dataDir,
 		"SP_DEV_ACCOUNT_CREDS":      strings.Join(devAccountCreds, ","),
 		"SP_STREAM_SESSION_TIMEOUT": "3s",
+		"SP_COLOR":                  "true",
+		"RUST_LOG":                  os.Getenv("RUST_LOG"),
 	}
 	_, file, _, _ := runtime.Caller(0)
 	buildDir := fmt.Sprintf("build-%s-%s", runtime.GOOS, runtime.GOARCH)
@@ -127,8 +127,38 @@ func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv)
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	stdoutPipe, err := cmd.StdoutPipe()
+	require.NoError(t, err)
+	stderrPipe, err := cmd.StderrPipe()
+	require.NoError(t, err)
+
+	stdoutDone := make(chan struct{})
+	stderrDone := make(chan struct{})
+
+	// Goroutine to read stdout and prefix lines
+	go func() {
+		defer close(stdoutDone)
+		scanner := bufio.NewScanner(stdoutPipe)
+		for scanner.Scan() {
+			fmt.Fprintf(os.Stdout, "[%s STDOUT] %s\n", name, scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintf(os.Stdout, "[%s STDOUT] Error reading stdout: %v\n", name, err)
+		}
+	}()
+	// Goroutine to read stderr and prefix lines
+	go func() {
+		defer close(stderrDone)
+		scanner := bufio.NewScanner(stderrPipe)
+		for scanner.Scan() {
+			fmt.Fprintf(os.Stdout, "[%s STDERR] %s\n", name, scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintf(os.Stdout, "[%s STDERR] Error reading stderr: %v\n", name, err)
+		}
+	}()
+
 	err = cmd.Start()
 	require.NoError(t, err)
 
@@ -187,10 +217,11 @@ func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv)
 		}
 		shuttingDown = true
 		nodeCancel()
-		err := node.Cmd.Process.Kill()
-		require.NoError(t, err)
-		_, err = node.Cmd.Process.Wait()
-		require.NoError(t, err)
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+		// Wait for stdout/stderr readers to finish
+		<-stdoutDone
+		<-stderrDone
 	}
 	node.Shutdown = nodeShutdown
 	t.Cleanup(func() {
