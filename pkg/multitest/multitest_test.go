@@ -33,21 +33,25 @@ func TestMultinodeSyndication(t *testing.T) {
 	}
 	gstinit.InitGST()
 	dev := devenv.WithDevEnv(t)
-	acct := dev.CreateAccount(t)
+	acct1 := dev.CreateAccount(t)
+	acct2 := dev.CreateAccount(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	node1 := startStreamplaceNode(ctx, t, dev)
 	node2 := startStreamplaceNode(ctx, t, dev)
 	node3 := startStreamplaceNode(ctx, t, dev)
-	node1.StartStream(ctx, t, acct)
-	node2.PlayStream(t, acct)
-	node3.PlayStream(t, acct)
+	node1.StartStream(ctx, t, acct1)
+	node2.PlayStream(t, acct1)
+	node3.PlayStream(t, acct1)
 	<-time.After(10 * time.Second)
 	node2.Shutdown(t)
 	<-time.After(20 * time.Second)
-	// node4 := startStreamplaceNode(ctx, t, dev)
-	// node4.PlayStream(ctx, t, acct)
-	// <-time.After(30 * time.Second)
+	node4 := startStreamplaceNode(ctx, t, dev)
+	node4.StartStream(ctx, t, acct2)
+	node4.PlayStream(t, acct1)
+	node1.PlayStream(t, acct2)
+	node3.PlayStream(t, acct2)
+	<-time.After(30 * time.Second)
 }
 
 var currentPort = 10000
@@ -129,10 +133,16 @@ func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv)
 				require.NoError(t, err)
 				data, err := scrp.ScrapeWeb()
 				require.NoError(t, err)
+				found := false
 				for _, metric := range data.Gauges {
 					if metric.Key == "streamplace_send_segment_calls" {
 						require.Lessf(t, metric.Value, float64(2), "send segment calls should be < 2, got %f", metric.Value)
+						found = true
+						break
 					}
+				}
+				if !found {
+					require.FailNowf(t, "send segment calls metric not found", "send segment calls metric not found")
 				}
 			}
 		}
