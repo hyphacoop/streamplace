@@ -40,17 +40,48 @@ func TestMultinodeSyndication(t *testing.T) {
 	node1 := startStreamplaceNode(ctx, t, dev)
 	node2 := startStreamplaceNode(ctx, t, dev)
 	node3 := startStreamplaceNode(ctx, t, dev)
-	node1.StartStream(ctx, t, acct1)
+	node1.StartStream(t, acct1)
 	node2.PlayStream(t, acct1)
 	node3.PlayStream(t, acct1)
 	<-time.After(10 * time.Second)
 	node2.Shutdown(t)
 	<-time.After(20 * time.Second)
 	node4 := startStreamplaceNode(ctx, t, dev)
-	node4.StartStream(ctx, t, acct2)
+	node4.StartStream(t, acct2)
 	node4.PlayStream(t, acct1)
 	node1.PlayStream(t, acct2)
 	node3.PlayStream(t, acct2)
+	<-time.After(30 * time.Second)
+}
+
+func TestOriginSwap(t *testing.T) {
+	if os.Getenv("GITHUB_ACTION") != "" {
+		t.Skip("Skipping multitest in GitHub Actions")
+	}
+	gstinit.InitGST()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	dev := devenv.WithDevEnv(t)
+	acct1 := dev.CreateAccount(t)
+	node1 := startStreamplaceNode(ctx, t, dev)
+	node2 := startStreamplaceNode(ctx, t, dev)
+	node3 := startStreamplaceNode(ctx, t, dev)
+	node4 := startStreamplaceNode(ctx, t, dev)
+	node1.StartStream(t, acct1)
+	node1.PlayStream(t, acct1)
+	node2.PlayStream(t, acct1)
+	node3.PlayStream(t, acct1)
+	node4.PlayStream(t, acct1)
+	<-time.After(10 * time.Second)
+	node1.StopStream(t, acct1)
+	node2.StartStream(t, acct1)
+	<-time.After(10 * time.Second)
+	node2.StopStream(t, acct1)
+	node3.StartStream(t, acct1)
+	node4.Shutdown(t)
+	<-time.After(10 * time.Second)
+	node2.StopStream(t, acct1)
+	node1.StartStream(t, acct1)
 	<-time.After(30 * time.Second)
 }
 
@@ -62,11 +93,12 @@ func nextPort() int {
 }
 
 type TestNode struct {
-	Env      map[string]string
-	Dev      *devenv.DevEnv
-	Cmd      *exec.Cmd
-	Ctx      context.Context // don't ever do this, it's just a test
-	Shutdown func(t *testing.T)
+	Env           map[string]string
+	Dev           *devenv.DevEnv
+	Cmd           *exec.Cmd
+	Ctx           context.Context // don't ever do this, it's just a test
+	Shutdown      func(t *testing.T)
+	ActiveStreams map[string]context.CancelFunc
 }
 
 func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv) *TestNode {
@@ -114,10 +146,11 @@ func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv)
 		time.Sleep(200 * time.Millisecond)
 	}
 	node := &TestNode{
-		Env: env,
-		Dev: dev,
-		Cmd: cmd,
-		Ctx: nodeCtx,
+		Env:           env,
+		Dev:           dev,
+		Cmd:           cmd,
+		Ctx:           nodeCtx,
+		ActiveStreams: make(map[string]context.CancelFunc),
 	}
 	go func() {
 		<-nodeCtx.Done()
@@ -166,7 +199,9 @@ func startStreamplaceNode(ctx context.Context, t *testing.T, dev *devenv.DevEnv)
 	return node
 }
 
-func (node *TestNode) StartStream(ctx context.Context, t *testing.T, acct *devenv.DevEnvAccount) {
+func (node *TestNode) StartStream(t *testing.T, acct *devenv.DevEnvAccount) {
+	streamCtx, streamCancel := context.WithCancel(node.Ctx)
+	node.ActiveStreams[acct.DID] = streamCancel
 	priv, pub, err := spkey.GenerateStreamKeyForDID(acct.DID)
 	require.NoError(t, err)
 	createdBy := "multitest"
@@ -182,6 +217,7 @@ func (node *TestNode) StartStream(ctx context.Context, t *testing.T, acct *deven
 	})
 	require.NoError(t, err)
 	log.Log(context.Background(), "created stream key", "did", acct.DID, "pub", pub.DIDKey())
+	time.Sleep(1 * time.Second)
 	whip := &cmd.WHIPClient{
 		StreamKey: priv,
 		File:      remote.RemoteFixture("3188c071b354f2e548d7f2d332699758e8e3ab1600280e5b07cb67eedc64f274/BigBuckBunny_1sGOP_240p30_NoBframes.mp4"),
@@ -189,10 +225,19 @@ func (node *TestNode) StartStream(ctx context.Context, t *testing.T, acct *deven
 		Count:     1,
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := errgroup.WithContext(streamCtx)
 	g.Go(func() error {
 		return whip.WHIP(ctx)
 	})
+}
+
+func (node *TestNode) StopStream(t *testing.T, acct *devenv.DevEnvAccount) {
+	cancel := node.ActiveStreams[acct.DID]
+	if cancel == nil {
+		require.FailNowf(t, "stream not active", "stream not active for did %s", acct.DID)
+	}
+	cancel()
+	delete(node.ActiveStreams, acct.DID)
 }
 
 func (node *TestNode) PlayStream(t *testing.T, acct *devenv.DevEnvAccount) {
