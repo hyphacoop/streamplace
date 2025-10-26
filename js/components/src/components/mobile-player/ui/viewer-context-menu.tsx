@@ -16,7 +16,6 @@ import { gap, pt, px } from "../../../ui";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
-  DropdownMenuContentWithoutPortal,
   DropdownMenuGroup,
   DropdownMenuInfo,
   DropdownMenuItem,
@@ -72,10 +71,7 @@ export function ContextMenu({
   // dummy portal for mobile
   const Portal = isMobile ? View : DropdownMenuPortal;
 
-  // render the responsive version on mobile as we can't fullscreen there
-  const DropdownMenuContent = isMobile
-    ? ResponsiveDropdownMenuContent
-    : DropdownMenuContentWithoutPortal;
+  const DropdownMenuContent = ResponsiveDropdownMenuContent;
 
   return (
     <DropdownMenu>

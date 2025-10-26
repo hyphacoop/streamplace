@@ -1,4 +1,4 @@
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import * as DropdownMenuPrimitive from "@rn-primitives/dropdown-menu";
 import {
   Check,
@@ -17,7 +17,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { zero } from "../..";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   a,
   borderRadius,
@@ -59,9 +59,27 @@ export const DropdownMenuBottomSheet = forwardRef<
   _ref,
 ) {
   // Use the primitives' context to know if open
-  const { open, onOpenChange } = DropdownMenuPrimitive.useRootContext();
+  const { onOpenChange } = DropdownMenuPrimitive.useRootContext();
   const { zero: zt } = useTheme();
   const sheetRef = useRef<BottomSheet>(null);
+  const { width } = useWindowDimensions();
+  const isWide = Platform.OS !== "web" && width >= 800;
+  const sheetWidth = isWide ? 550 : width;
+  const horizontalMargin = isWide ? (width - sheetWidth) / 2 : 0;
+
+  const insets = useSafeAreaInsets();
+
+  // close and then closed callback
+
+  const onBackgroundTap = () => {
+    // close the bottom sheet
+
+    if (sheetRef.current) sheetRef.current?.close();
+
+    setTimeout(() => {
+      onOpenChange?.(false);
+    }, 300);
+  };
 
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
@@ -69,15 +87,20 @@ export const DropdownMenuBottomSheet = forwardRef<
         ref={sheetRef}
         enablePanDownToClose
         enableDynamicSizing
-        enableContentPanningGesture={false}
+        detached={isWide}
+        bottomInset={isWide ? insets.bottom : 0}
         backdropComponent={({ style }) => (
           <Pressable
             style={[style, StyleSheet.absoluteFill]}
-            onPress={() => onOpenChange?.(false)}
+            onPress={() => onBackgroundTap()}
           />
         )}
         onClose={() => onOpenChange?.(false)}
-        style={[overlayStyle, StyleSheet.flatten(rest.style)]}
+        style={[
+          overlayStyle,
+          StyleSheet.flatten(rest.style),
+          isWide && { marginHorizontal: horizontalMargin },
+        ]}
         backgroundStyle={[zt.bg.popover, a.radius.all.md, a.shadows.md, p[1]]}
         handleIndicatorStyle={[
           a.sizes.width[12],
@@ -85,11 +108,11 @@ export const DropdownMenuBottomSheet = forwardRef<
           zt.bg.mutedForeground,
         ]}
       >
-        <BottomSheetView style={[px[4]]}>
+        <BottomSheetScrollView style={[px[4]]}>
           {typeof children === "function"
             ? children({ pressed: true })
             : children}
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheet>
     </DropdownMenuPrimitive.Portal>
   );
@@ -169,6 +192,9 @@ export const DropdownMenuContent = forwardRef<
   }
 >(({ overlayStyle, portalHost, style, children, ...props }, ref) => {
   const { zero: zt } = useTheme();
+  const { height } = useWindowDimensions();
+  const maxHeight = height * 0.8;
+
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
       <DropdownMenuPrimitive.Overlay
@@ -196,7 +222,7 @@ export const DropdownMenuContent = forwardRef<
           }
           {...props}
         >
-          <ScrollView showsVerticalScrollIndicator={true}>
+          <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={true}>
             {typeof children === "function"
               ? children({ pressed: false })
               : children}
@@ -265,12 +291,12 @@ export const ResponsiveDropdownMenuContent = forwardRef<any, any>(
     const { width } = useWindowDimensions();
 
     // On web, you might want to always use the normal dropdown
-    const isBottomSheet = Platform.OS !== "web" && width < 800;
+    const isBottomSheet = Platform.OS !== "web";
 
     if (isBottomSheet) {
       return (
         <DropdownMenuBottomSheet ref={ref} {...props}>
-          <ScrollView style={[zero.pb[12]]}>{children}</ScrollView>
+          {children}
         </DropdownMenuBottomSheet>
       );
     }
