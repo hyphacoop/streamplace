@@ -194,6 +194,7 @@ export const DropdownMenuBottomSheet = forwardRef<
   }, [children]);
 
   const slideAnim = useSharedValue(0);
+  const fadeAnim = useSharedValue(1);
 
   const push = (item: NavigationStackItem) => {
     // First, update the stack
@@ -203,9 +204,11 @@ export const DropdownMenuBottomSheet = forwardRef<
       return [...prev, item];
     });
 
-    // Then animate from right to center
-    slideAnim.value = width;
+    // Then animate from right to center with fade
+    slideAnim.value = 40;
+    fadeAnim.value = 0;
     slideAnim.value = withTiming(0, { duration: 250 });
+    fadeAnim.value = withTiming(1, { duration: 250 });
   };
 
   const popStack = () => {
@@ -222,11 +225,13 @@ export const DropdownMenuBottomSheet = forwardRef<
   const pop = () => {
     if (stack.length <= 1) return;
 
-    // Animate out to the right
-    slideAnim.value = withTiming(width, { duration: 250 }, (finished) => {
+    // Animate out to the right with fade
+    slideAnim.value = withTiming(40, { duration: 250 });
+    fadeAnim.value = withTiming(0, { duration: 250 }, (finished) => {
       if (finished) {
         // Reset animation position first
         slideAnim.value = 0;
+        fadeAnim.value = 1;
 
         // Then update stack with startTransition for smoother render
         runOnJS(popStack)();
@@ -249,6 +254,7 @@ export const DropdownMenuBottomSheet = forwardRef<
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: slideAnim.value }],
+    opacity: fadeAnim.value,
   }));
 
   const currentLevel = stack[stack.length - 1];
@@ -325,7 +331,10 @@ export const DropdownMenuBottomSheet = forwardRef<
           <Animated.View style={animatedStyle}>
             <BottomSheetScrollView
               style={[px[4]]}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
+              contentContainerStyle={{
+                paddingBottom: insets.bottom + 50,
+                overflow: "hidden",
+              }}
             >
               {/* Render all stack levels to keep components mounted, but hide non-current ones */}
               {stack.map((level, index) => {
