@@ -170,7 +170,7 @@ export const DropdownMenuBottomSheet = forwardRef<
   const sheetRef = useRef<BottomSheet>(null);
   const { width } = useWindowDimensions();
   const isWide = Platform.OS !== "web" && width >= 800;
-  const sheetWidth = isWide ? 550 : width;
+  const sheetWidth = isWide ? 450 : width;
   const horizontalMargin = isWide ? (width - sheetWidth) / 2 : 0;
 
   const insets = useSafeAreaInsets();
@@ -278,7 +278,7 @@ export const DropdownMenuBottomSheet = forwardRef<
           enablePanDownToClose
           enableDynamicSizing
           detached={isWide}
-          bottomInset={isWide ? insets.bottom : 0}
+          bottomInset={isWide ? 0 : 0}
           backdropComponent={({ style }) => (
             <Pressable
               style={[style, StyleSheet.absoluteFill]}
