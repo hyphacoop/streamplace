@@ -222,6 +222,13 @@ export const DropdownMenuBottomSheet = forwardRef<
     });
   };
 
+  const resetAnimationValues = () => {
+    setTimeout(() => {
+      slideAnim.value = 0;
+      fadeAnim.value = 1;
+    }, 50);
+  };
+
   const pop = () => {
     if (stack.length <= 1) return;
 
@@ -229,12 +236,11 @@ export const DropdownMenuBottomSheet = forwardRef<
     slideAnim.value = withTiming(40, { duration: 250 });
     fadeAnim.value = withTiming(0, { duration: 250 }, (finished) => {
       if (finished) {
-        // Reset animation position first
-        slideAnim.value = 0;
-        fadeAnim.value = 1;
-
-        // Then update stack with startTransition for smoother render
+        // Update stack first with startTransition for smoother render
         runOnJS(popStack)();
+
+        // Then reset animation position after a brief delay to ensure component has unmounted
+        runOnJS(resetAnimationValues)();
       }
     });
   };
@@ -254,6 +260,10 @@ export const DropdownMenuBottomSheet = forwardRef<
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: slideAnim.value }],
+    opacity: fadeAnim.value,
+  }));
+
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: fadeAnim.value,
   }));
 
@@ -302,8 +312,9 @@ export const DropdownMenuBottomSheet = forwardRef<
           ]}
         >
           {isNested && (
-            <View
+            <Animated.View
               style={[
+                headerAnimatedStyle,
                 a.layout.flex.row,
                 a.layout.flex.alignCenter,
                 px[4],
@@ -326,7 +337,7 @@ export const DropdownMenuBottomSheet = forwardRef<
                 <ChevronLeft size={20} color={theme.colors.foreground} />
                 {currentLevel.title && <Text>{currentLevel.title}</Text>}
               </Pressable>
-            </View>
+            </Animated.View>
           )}
           <Animated.View style={animatedStyle}>
             <BottomSheetScrollView
