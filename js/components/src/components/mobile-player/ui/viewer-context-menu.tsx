@@ -184,9 +184,8 @@ export function ContextMenu({
                     zero.pr[4],
                   ]}
                 >
-                  <Text>Quality</Text>{" "}
+                  <Text>Quality</Text>
                   <Text muted>
-                    {" "}
                     ({quality}, {lowLatency ? "low latency" : "regular latency"}
                     )
                   </Text>

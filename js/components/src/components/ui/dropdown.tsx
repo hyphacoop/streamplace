@@ -207,8 +207,8 @@ export const DropdownMenuBottomSheet = forwardRef<
     // Then animate from right to center with fade
     slideAnim.value = 40;
     fadeAnim.value = 0;
-    slideAnim.value = withTiming(0, { duration: 250 });
-    fadeAnim.value = withTiming(1, { duration: 250 });
+    slideAnim.value = withTiming(0, { duration: 350 });
+    fadeAnim.value = withTiming(1, { duration: 350 });
   };
 
   const popStack = () => {
@@ -226,15 +226,15 @@ export const DropdownMenuBottomSheet = forwardRef<
     setTimeout(() => {
       slideAnim.value = 0;
       fadeAnim.value = 1;
-    }, 50);
+    }, 5);
   };
 
   const pop = () => {
     if (stack.length <= 1) return;
 
     // Animate out to the right with fade
-    slideAnim.value = withTiming(40, { duration: 250 });
-    fadeAnim.value = withTiming(0, { duration: 250 }, (finished) => {
+    slideAnim.value = withTiming(40, { duration: 150 });
+    fadeAnim.value = withTiming(0, { duration: 150 }, (finished) => {
       if (finished) {
         // Update stack first with startTransition for smoother render
         runOnJS(popStack)();
@@ -242,19 +242,6 @@ export const DropdownMenuBottomSheet = forwardRef<
         // Then reset animation position after a brief delay to ensure component has unmounted
         runOnJS(resetAnimationValues)();
       }
-    });
-  };
-
-  const updateContent = (
-    key: string,
-    content: ReactNode | ((state: { pressed: boolean }) => ReactNode),
-  ) => {
-    setStack((prev) => {
-      if (!Array.isArray(prev)) return prev;
-      const newStack = prev.map((item) =>
-        item.key === key ? { ...item, content } : item,
-      );
-      return newStack;
     });
   };
 
@@ -318,7 +305,6 @@ export const DropdownMenuBottomSheet = forwardRef<
                 a.layout.flex.row,
                 a.layout.flex.alignCenter,
                 px[4],
-                pt[2],
                 pb[2],
                 {
                   borderBottomWidth: 1,
@@ -333,9 +319,12 @@ export const DropdownMenuBottomSheet = forwardRef<
                   a.layout.flex.alignCenter,
                   gap.all[2],
                 ]}
+                hitSlop={80}
               >
                 <ChevronLeft size={20} color={theme.colors.foreground} />
-                {currentLevel.title && <Text>{currentLevel.title}</Text>}
+                {currentLevel?.title ? (
+                  <Text size="lg">{currentLevel.title}</Text>
+                ) : null}
               </Pressable>
             </Animated.View>
           )}
