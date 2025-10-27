@@ -4,11 +4,20 @@ import {
   Check,
   CheckCircle,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ChevronUp,
   Circle,
 } from "lucide-react-native";
-import React, { forwardRef, ReactNode, useRef } from "react";
+import React, {
+  createContext,
+  forwardRef,
+  ReactNode,
+  startTransition,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 import {
   Platform,
   Pressable,
@@ -17,6 +26,12 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   a,
@@ -42,11 +57,102 @@ import {
 } from "./primitives/text";
 import { Text } from "./text";
 
+// Navigation stack context for bottom sheet menus
+interface NavigationStackItem {
+  key: string;
+  title?: string;
+  content: ReactNode | ((state: { pressed: boolean }) => ReactNode);
+}
+
+interface NavigationStackContextValue {
+  stack: NavigationStackItem[];
+  push: (item: NavigationStackItem) => void;
+  pop: () => void;
+  isNested: boolean;
+}
+
+const NavigationStackContext =
+  createContext<NavigationStackContextValue | null>(null);
+
+const useNavigationStack = () => {
+  const context = useContext(NavigationStackContext);
+  return context;
+};
+
+// Context to capture submenu content for mobile navigation
+interface SubMenuContextValue {
+  title?: string;
+  renderContent: () => ReactNode;
+  setRenderContent: (renderer: () => ReactNode) => void;
+  setTitle: (title: string) => void;
+  trigger: () => void;
+  key: string | null;
+}
+
+const SubMenuContext = createContext<SubMenuContextValue | null>(null);
+
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 export const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
-export const DropdownMenuSub = DropdownMenuPrimitive.Sub;
 export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
+// Custom DropdownMenuSub that works with mobile navigation
+export const DropdownMenuSub = forwardRef<any, any>(
+  ({ children, ...props }, ref) => {
+    const navStack = useNavigationStack();
+    const [subMenuTitle, setSubMenuTitle] = useState<string | undefined>();
+    const renderContentRef = useRef<(() => ReactNode) | null>(null);
+    const [subMenuKey, setSubMenuKey] = useState<string | null>(null);
+
+    // If we're in a mobile navigation stack, use custom context
+    if (navStack) {
+      const trigger = () => {
+        if (renderContentRef.current) {
+          const key = `submenu-${Date.now()}`;
+          setSubMenuKey(key);
+          navStack.push({
+            key,
+            title: subMenuTitle,
+            // Store a function that always reads the latest content from the ref
+            content: (props: any) => {
+              const renderFn = renderContentRef.current;
+              return renderFn ? renderFn() : null;
+            },
+          });
+        }
+      };
+
+      const setRenderContent = (renderer: () => ReactNode) => {
+        renderContentRef.current = renderer;
+      };
+
+      const contextValue = React.useMemo(
+        () => ({
+          renderContent: () => renderContentRef.current?.(),
+          setRenderContent,
+          title: subMenuTitle,
+          setTitle: setSubMenuTitle,
+          trigger,
+          key: subMenuKey,
+        }),
+        [subMenuTitle, subMenuKey],
+      );
+
+      return (
+        <SubMenuContext.Provider value={contextValue}>
+          {children}
+        </SubMenuContext.Provider>
+      );
+    }
+
+    // Web - use primitive
+    return (
+      <DropdownMenuPrimitive.Sub ref={ref} {...props}>
+        {children}
+      </DropdownMenuPrimitive.Sub>
+    );
+  },
+);
 
 export const DropdownMenuBottomSheet = forwardRef<
   any,
@@ -60,7 +166,7 @@ export const DropdownMenuBottomSheet = forwardRef<
 ) {
   // Use the primitives' context to know if open
   const { onOpenChange } = DropdownMenuPrimitive.useRootContext();
-  const { zero: zt } = useTheme();
+  const { zero: zt, theme } = useTheme();
   const sheetRef = useRef<BottomSheet>(null);
   const { width } = useWindowDimensions();
   const isWide = Platform.OS !== "web" && width >= 800;
@@ -69,11 +175,86 @@ export const DropdownMenuBottomSheet = forwardRef<
 
   const insets = useSafeAreaInsets();
 
-  // close and then closed callback
+  // Navigation stack state
+  const [stack, setStack] = useState<NavigationStackItem[]>([
+    { key: "root", content: children },
+  ]);
+
+  // Update root content when children changes
+  React.useEffect(() => {
+    setStack((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) {
+        return [{ key: "root", content: children }];
+      }
+      // Update the root item content
+      const newStack = [...prev];
+      newStack[0] = { ...newStack[0], content: children };
+      return newStack;
+    });
+  }, [children]);
+
+  const slideAnim = useSharedValue(0);
+
+  const push = (item: NavigationStackItem) => {
+    // First, update the stack
+    setStack((prev) => {
+      if (!Array.isArray(prev))
+        return [{ key: "root", content: children }, item];
+      return [...prev, item];
+    });
+
+    // Then animate from right to center
+    slideAnim.value = width;
+    slideAnim.value = withTiming(0, { duration: 250 });
+  };
+
+  const popStack = () => {
+    startTransition(() => {
+      setStack((prev) => {
+        if (!Array.isArray(prev) || prev.length <= 1) {
+          return [{ key: "root", content: children }];
+        }
+        return prev.slice(0, -1);
+      });
+    });
+  };
+
+  const pop = () => {
+    if (stack.length <= 1) return;
+
+    // Animate out to the right
+    slideAnim.value = withTiming(width, { duration: 250 }, (finished) => {
+      if (finished) {
+        // Reset animation position first
+        slideAnim.value = 0;
+
+        // Then update stack with startTransition for smoother render
+        runOnJS(popStack)();
+      }
+    });
+  };
+
+  const updateContent = (
+    key: string,
+    content: ReactNode | ((state: { pressed: boolean }) => ReactNode),
+  ) => {
+    setStack((prev) => {
+      if (!Array.isArray(prev)) return prev;
+      const newStack = prev.map((item) =>
+        item.key === key ? { ...item, content } : item,
+      );
+      return newStack;
+    });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: slideAnim.value }],
+  }));
+
+  const currentLevel = stack[stack.length - 1];
+  const isNested = stack.length > 1;
 
   const onBackgroundTap = () => {
-    // close the bottom sheet
-
     if (sheetRef.current) sheetRef.current?.close();
 
     setTimeout(() => {
@@ -81,54 +262,153 @@ export const DropdownMenuBottomSheet = forwardRef<
     }, 300);
   };
 
+  // Safety check - if no current level, don't render
+  if (!currentLevel) {
+    return null;
+  }
+
   return (
     <DropdownMenuPrimitive.Portal hostName={portalHost}>
-      <BottomSheet
-        ref={sheetRef}
-        enablePanDownToClose
-        enableDynamicSizing
-        detached={isWide}
-        bottomInset={isWide ? insets.bottom : 0}
-        backdropComponent={({ style }) => (
-          <Pressable
-            style={[style, StyleSheet.absoluteFill]}
-            onPress={() => onBackgroundTap()}
-          />
-        )}
-        onClose={() => onOpenChange?.(false)}
-        style={[
-          overlayStyle,
-          StyleSheet.flatten(rest.style),
-          isWide && { marginHorizontal: horizontalMargin },
-        ]}
-        backgroundStyle={[zt.bg.popover, a.radius.all.md, a.shadows.md, p[1]]}
-        handleIndicatorStyle={[
-          a.sizes.width[12],
-          a.sizes.height[1],
-          zt.bg.mutedForeground,
-        ]}
-      >
-        <BottomSheetScrollView style={[px[4]]}>
-          {typeof children === "function"
-            ? children({ pressed: true })
-            : children}
-        </BottomSheetScrollView>
-      </BottomSheet>
+      <NavigationStackContext.Provider value={{ stack, push, pop, isNested }}>
+        <BottomSheet
+          ref={sheetRef}
+          enablePanDownToClose
+          enableDynamicSizing
+          detached={isWide}
+          bottomInset={isWide ? insets.bottom : 0}
+          backdropComponent={({ style }) => (
+            <Pressable
+              style={[style, StyleSheet.absoluteFill]}
+              onPress={() => onBackgroundTap()}
+            />
+          )}
+          onClose={() => onOpenChange?.(false)}
+          style={[
+            overlayStyle,
+            StyleSheet.flatten(rest.style),
+            isWide && { marginHorizontal: horizontalMargin },
+          ]}
+          backgroundStyle={[zt.bg.popover, a.radius.all.md, a.shadows.md, p[1]]}
+          handleIndicatorStyle={[
+            a.sizes.width[12],
+            a.sizes.height[1],
+            zt.bg.mutedForeground,
+          ]}
+        >
+          {isNested && (
+            <View
+              style={[
+                a.layout.flex.row,
+                a.layout.flex.alignCenter,
+                px[4],
+                pt[2],
+                pb[2],
+                {
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Pressable
+                onPress={pop}
+                style={[
+                  a.layout.flex.row,
+                  a.layout.flex.alignCenter,
+                  gap.all[2],
+                ]}
+              >
+                <ChevronLeft size={20} color={theme.colors.foreground} />
+                {currentLevel.title && <Text>{currentLevel.title}</Text>}
+              </Pressable>
+            </View>
+          )}
+          <Animated.View style={animatedStyle}>
+            <BottomSheetScrollView
+              style={[px[4]]}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 50 }}
+            >
+              {/* Render all stack levels to keep components mounted, but hide non-current ones */}
+              {stack.map((level, index) => {
+                const isCurrent = index === stack.length - 1;
+                return (
+                  <View
+                    key={level.key}
+                    style={[{ display: isCurrent ? "flex" : "none" }]}
+                  >
+                    {typeof level.content === "function"
+                      ? level.content({ pressed: true })
+                      : level.content}
+                  </View>
+                );
+              })}
+            </BottomSheetScrollView>
+          </Animated.View>
+        </BottomSheet>
+      </NavigationStackContext.Provider>
     </DropdownMenuPrimitive.Portal>
   );
 });
 
 export const DropdownMenuSubTrigger = forwardRef<
   any,
-  DropdownMenuPrimitive.SubTriggerProps & { inset?: boolean } & {
+  DropdownMenuPrimitive.SubTriggerProps & {
+    inset?: boolean;
+    subMenuTitle?: string;
+  } & {
     ref?: React.RefObject<DropdownMenuPrimitive.SubTriggerRef>;
     className?: string;
     inset?: boolean;
     children?: React.ReactNode;
   }
->(({ inset, children, ...props }, ref) => {
+>(({ inset, children, subMenuTitle, ...props }, ref) => {
+  const navStack = useNavigationStack();
+  const subMenuContext = useContext(SubMenuContext);
+  const { icons, theme } = useTheme();
+
+  // Set the title in the submenu context if provided
+  React.useEffect(() => {
+    if (subMenuContext && subMenuTitle) {
+      subMenuContext.setTitle(subMenuTitle);
+    }
+  }, [subMenuContext, subMenuTitle]);
+
+  // If we're in a navigation stack (mobile bottom sheet), handle differently
+  if (navStack && subMenuContext) {
+    return (
+      <Pressable
+        onPress={() => {
+          subMenuContext.trigger();
+        }}
+        {...props}
+      >
+        <View
+          style={[
+            inset && gap[2],
+            layout.flex.row,
+            layout.flex.alignCenter,
+            a.radius.all.sm,
+            py[1],
+            pl[2],
+            pr[2],
+          ]}
+        >
+          {typeof children === "function" ? (
+            children({ pressed: true })
+          ) : typeof children === "string" ? (
+            <Text>{children}</Text>
+          ) : (
+            children
+          )}
+          <View style={[a.layout.position.absolute, a.position.right[1]]}>
+            <ChevronRight size={18} color={icons.color.muted} />
+          </View>
+        </View>
+      </Pressable>
+    );
+  }
+
+  // Web behavior - use primitive
   const { open } = DropdownMenuPrimitive.useSubContext();
-  const { icons } = useTheme();
   const Icon =
     Platform.OS === "web" ? ChevronRight : open ? ChevronUp : ChevronDown;
   return (
@@ -161,9 +441,42 @@ export const DropdownMenuSubTrigger = forwardRef<
 
 export const DropdownMenuSubContent = forwardRef<
   any,
-  DropdownMenuPrimitive.SubContentProps
->((props, ref) => {
+  DropdownMenuPrimitive.SubContentProps & { children?: ReactNode }
+>(({ children, ...props }, ref) => {
   const { zero: zt } = useTheme();
+  const subMenuContext = useContext(SubMenuContext);
+  const navStack = useNavigationStack();
+  const prevChildrenRef = useRef<ReactNode>(null);
+
+  // Register a render function that will be called fresh each time
+  React.useEffect(() => {
+    if (subMenuContext && navStack) {
+      // Only update if children reference actually changed
+      if (prevChildrenRef.current === children) {
+        return;
+      }
+
+      prevChildrenRef.current = children;
+
+      // Pass a function that returns the current children
+      subMenuContext.setRenderContent(() => children);
+
+      // Force a stack update to trigger rerender with the actual children
+      if (subMenuContext.key) {
+        // Store the children directly so React can handle updates
+        //navStack.updateContent(subMenuContext.key, children);
+      }
+    }
+  }, [children, subMenuContext, navStack]);
+
+  // On mobile, don't render the subcontent here - it'll be rendered in the nav stack
+  // But keep the component mounted so effects run when children change
+  if (navStack && subMenuContext) {
+    // Component stays mounted to track prop changes, but renders nothing
+    return null;
+  }
+
+  // Web - use primitive
   return (
     <DropdownMenuPrimitive.SubContent
       ref={ref}
@@ -180,7 +493,9 @@ export const DropdownMenuSubContent = forwardRef<
         a.shadows.md,
       ]}
       {...props}
-    />
+    >
+      {children}
+    </DropdownMenuPrimitive.SubContent>
   );
 });
 
