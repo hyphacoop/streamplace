@@ -12,7 +12,7 @@ import { colors } from "../../../lib/theme";
 import { useLivestreamStore } from "../../../livestream-store";
 import { PlayerProtocol, usePlayerStore } from "../../../player-store/";
 import { useGraphManager } from "../../../streamplace-store/graph";
-import { gap, pb, pt, px } from "../../../ui";
+import { gap, pt, px } from "../../../ui";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -173,38 +173,54 @@ export function ContextMenu({
             </DropdownMenuGroup>
           )}
 
-          <DropdownMenuGroup title="Advanced">
+          <DropdownMenuGroup>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger subMenuTitle="Connection">
-                <Text>Connection Settings</Text>
+              <DropdownMenuSubTrigger subMenuTitle="Quality">
+                <View
+                  style={[
+                    zero.flex.values[1],
+                    zero.layout.flex.row,
+                    zero.layout.flex.spaceBetween,
+                    zero.pr[4],
+                  ]}
+                >
+                  <Text>Quality</Text>{" "}
+                  <Text muted>
+                    {" "}
+                    ({quality}, {lowLatency ? "low latency" : "regular latency"}
+                    )
+                  </Text>
+                </View>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                <DropdownMenuCheckboxItem
-                  checked={lowLatency}
-                  onCheckedChange={() => setLowLatency(!lowLatency)}
-                >
-                  <Text>Low Latency</Text>
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuInfo description="Reduces the delay between video and chat for a more real-time experience." />
-                <DropdownMenuSeparator />
-                <Text style={[px[2], pt[2], pb[1]]} color="muted">
-                  Resolution
-                </Text>
-                <DropdownMenuRadioGroup
-                  value={quality}
-                  onValueChange={setQuality}
-                >
-                  <DropdownMenuRadioItem value="source">
-                    <Text>Source (Original Quality)</Text>
-                  </DropdownMenuRadioItem>
-                  {qualities.map((r) => (
-                    <DropdownMenuRadioItem key={r.name} value={r.name}>
-                      <Text>{r.name}</Text>
+                <DropdownMenuGroup title="Resolution">
+                  <DropdownMenuRadioGroup
+                    value={quality}
+                    onValueChange={setQuality}
+                  >
+                    <DropdownMenuRadioItem value="source">
+                      <Text>Source (Original Quality)</Text>
                     </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
+                    {qualities.map((r) => (
+                      <DropdownMenuRadioItem key={r.name} value={r.name}>
+                        <Text>{r.name}</Text>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+                <DropdownMenuGroup>
+                  <DropdownMenuCheckboxItem
+                    checked={lowLatency}
+                    onCheckedChange={() => setLowLatency(!lowLatency)}
+                  >
+                    <Text>Low Latency</Text>
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuGroup>
+                <DropdownMenuInfo description="Reduces the delay between video and chat for a more real-time experience." />
               </DropdownMenuSubContent>
             </DropdownMenuSub>
+          </DropdownMenuGroup>
+          <DropdownMenuGroup title="Advanced">
             <DropdownMenuCheckboxItem
               checked={debugInfo}
               onCheckedChange={() => setShowDebugInfo(!debugInfo)}
