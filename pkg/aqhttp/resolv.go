@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -15,10 +16,17 @@ const (
 	TypeAAAA = 28 // IPv6
 )
 
+type dnsRecord struct {
+	ips       []string
+	expiresAt time.Time
+}
+
 type DoHResolver struct {
 	Server        string
 	Client        *http.Client
 	invalidRanges []*net.IPNet
+	cache         map[string]*dnsRecord
+	mu            sync.RWMutex
 }
 
 func NewDoHResolver(server string) *DoHResolver {
@@ -60,6 +68,7 @@ func NewDoHResolver(server string) *DoHResolver {
 			Timeout: 10 * time.Second,
 		},
 		invalidRanges: invalidRanges,
+		cache:         make(map[string]*dnsRecord),
 	}
 }
 
@@ -74,6 +83,17 @@ type DoHResponse struct {
 }
 
 func (r *DoHResolver) Resolve(domain string, recordType int) ([]string, error) {
+	cacheKey := fmt.Sprintf("%s:%d", domain, recordType)
+
+	r.mu.RLock()
+	if record, ok := r.cache[cacheKey]; ok {
+		if time.Now().Before(record.expiresAt) {
+			defer r.mu.RUnlock()
+			return record.ips, nil
+		}
+	}
+	r.mu.RUnlock()
+
 	reqURL := fmt.Sprintf("%s?name=%s&type=%d", r.Server, url.QueryEscape(domain), recordType)
 
 	req, err := http.NewRequest("GET", reqURL, nil)
@@ -104,10 +124,23 @@ func (r *DoHResolver) Resolve(domain string, recordType int) ([]string, error) {
 	}
 
 	var results []string
+	var minTTL = 3600
 	for _, answer := range dohResp.Answer {
 		if answer.Type == recordType {
 			results = append(results, answer.Data)
+			if answer.TTL < minTTL {
+				minTTL = answer.TTL
+			}
 		}
+	}
+
+	if len(results) > 0 {
+		r.mu.Lock()
+		r.cache[cacheKey] = &dnsRecord{
+			ips:       results,
+			expiresAt: time.Now().Add(time.Duration(minTTL) * time.Second),
+		}
+		r.mu.Unlock()
 	}
 
 	return results, nil

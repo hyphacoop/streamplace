@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"strings"
 
-	"golang.org/x/net/context/ctxhttp"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/integrations/discord/discordtypes"
 	"stream.place/streamplace/pkg/log"
@@ -18,12 +16,6 @@ import (
 )
 
 func SendChat(ctx context.Context, w *discordtypes.Webhook, did string, scm *streamplace.ChatDefs_MessageView) error {
-
-	resolv := aqhttp.NewDoHResolver("")
-	targetIP, parsedURL, err := resolv.ValidateAndGetIP(w.URL)
-	if err != nil {
-		return fmt.Errorf("webhook URL validation failed: %w", err)
-	}
 
 	msg, ok := scm.Record.Val.(*streamplace.ChatMessage)
 	if !ok {
@@ -61,26 +53,13 @@ func SendChat(ctx context.Context, w *discordtypes.Webhook, did string, scm *str
 
 	log.Warn(ctx, "sending chat to discord", "payload", string(jsonPayload))
 
-	port := parsedURL.Port()
-	if port == "" {
-		// Use default port based on scheme
-		if parsedURL.Scheme == "https" {
-			port = "443"
-		} else {
-			port = "80"
-		}
-	}
-	requestURL := fmt.Sprintf("%s://%s%s", parsedURL.Scheme, net.JoinHostPort(targetIP, port), parsedURL.RequestURI())
-
-	req, err := http.NewRequestWithContext(ctx, "POST", requestURL, bytes.NewReader(jsonPayload))
+	req, err := http.NewRequestWithContext(ctx, "POST", w.URL, bytes.NewReader(jsonPayload))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	// set Host header to the original hostname
-	req.Host = parsedURL.Host
 
-	resp, err := ctxhttp.Do(ctx, &aqhttp.Client, req)
+	resp, err := aqhttp.Do(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
