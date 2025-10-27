@@ -125,7 +125,7 @@ func (state *StatefulDB) processNotificationTask(ctx context.Context, task *AppT
 				continue
 			}
 			go func(lexiconWebhook *streamplace.ServerDefs_Webhook, wid string) {
-				err := webhook.SendLivestreamWebhook(ctx, lexiconWebhook, notificationTask.PDSURL, lsv, notificationTask.ChatProfile)
+				err := webhook.SendLivestreamWebhook(ctx, lexiconWebhook, notificationTask.PDSURL, lsv, notificationTask.FeedPost, notificationTask.ChatProfile)
 				if err != nil {
 					log.Error(ctx, "failed to send livestream to webhook", "err", err, "webhook_id", wid)
 					err := state.IncrementWebhookError(wid)
