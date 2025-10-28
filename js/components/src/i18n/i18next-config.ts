@@ -27,6 +27,7 @@ const storage = {
   getItem: (key: string): string | null => {
     try {
       if (typeof window !== "undefined" && localStorage) {
+        console.log("getting", key);
         return localStorage.getItem(key);
       }
     } catch {
@@ -37,6 +38,7 @@ const storage = {
   setItem: (key: string, value: string): void => {
     try {
       if (typeof window !== "undefined" && localStorage) {
+        console.log("Set", key, "to", value);
         localStorage.setItem(key, value);
       }
     } catch {
@@ -88,6 +90,7 @@ export function getLocaleFromSystemLocale(): string {
 
 export function getCurrentLocale(): string {
   const stored = storage.getItem("@streamplace/locale");
+  console.log("Stored locale is", stored);
   if (stored && manifest.supportedLocales.includes(stored)) {
     return stored;
   }
@@ -97,8 +100,6 @@ export function getCurrentLocale(): string {
 // Enhanced fallback logic using manifest
 function getFallbackChain(code: string): string[] {
   const fallbacks: string[] = [];
-
-  console.log("Determining fallback lang to be", code);
 
   if (!code) return manifest.fallbackChain;
 
@@ -122,10 +123,10 @@ const LOCALE = getCurrentLocale();
 export const I18NEXT_CONFIG = {
   lng: LOCALE,
   interpolation: {
-    escapeValue: false, // React already safes from XSS
+    escapeValue: false,
   },
   react: {
-    useSuspense: false, // Prevent Android crashes
+    useSuspense: false,
   },
   i18nFormat: {
     fluentBundleOptions: {
@@ -141,26 +142,15 @@ export const I18NEXT_CONFIG = {
       },
     },
   },
+  load: "currentOnly",
   fallbackLng: getFallbackChain,
-  supportedLngs: [
-    ...manifest.supportedLocales,
-    // Include base language codes for i18next fallback matching
-    "en",
-    "pt",
-    "es",
-    "zh",
-    "fr",
-  ],
+  supportedLngs: [...manifest.supportedLocales],
   debug: process.env.NODE_ENV === "development",
 };
 
 // Translation loading function that loads compiled JSON files
 async function loadTranslationData(locale: string): Promise<any> {
   try {
-    if (!manifest.supportedLocales.includes(locale)) {
-      throw new Error(`Unsupported locale: ${locale}`);
-    }
-
     let translations: any = {};
 
     try {
@@ -174,18 +164,23 @@ async function loadTranslationData(locale: string): Promise<any> {
       } else {
         // For React Native, use static requires for bundler compatibility
         switch (locale) {
+          case "en":
           case "en-US":
             translations = require("../../public/locales/en-US/messages.json");
             break;
+          case "pt":
           case "pt-BR":
             translations = require("../../public/locales/pt-BR/messages.json");
             break;
+          case "es":
           case "es-ES":
             translations = require("../../public/locales/es-ES/messages.json");
             break;
+          case "zh":
           case "zh-Hant":
             translations = require("../../public/locales/zh-Hant/messages.json");
             break;
+          case "fr":
           case "fr-FR":
             translations = require("../../public/locales/fr-FR/messages.json");
             break;
@@ -246,11 +241,13 @@ export default function initI18next(config: any = {}): Promise<typeof i18next> {
 
 // Utility functions for language management
 export async function changeLanguage(locale: string): Promise<void> {
+  console.log("new lang", locale);
   storage.setItem("@streamplace/locale", locale);
   await i18next.changeLanguage(locale);
 }
 
 export function getCurrentLanguage(): string {
+  console.log("getting", i18next.language);
   return i18next.language || LOCALE;
 }
 

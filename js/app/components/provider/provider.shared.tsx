@@ -5,6 +5,7 @@ import {
 } from "@react-navigation/native";
 import * as Sentry from "@sentry/react-native";
 import {
+  I18nProvider,
   ThemeProvider,
   StreamplaceProvider as ZustandStreamplaceProvider,
 } from "@streamplace/components";
@@ -14,7 +15,6 @@ import { selectOAuthSession } from "features/bluesky/blueskySlice";
 import StreamplaceProvider from "features/streamplace/streamplaceProvider";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import React from "react";
-import { I18nextProvider } from "react-i18next";
 import { Provider as ReduxProvider } from "react-redux";
 import { useAppSelector } from "store/hooks";
 import { store } from "store/store";
@@ -89,7 +89,7 @@ function ProviderInner({
   return (
     <SafeAreaProvider>
       <ThemeProvider forcedTheme="dark">
-        <I18nextProvider i18n={i18n}>
+        <I18nProvider i18n={i18n}>
           <NavigationContainer theme={SPDarkTheme} linking={linking}>
             <ReduxProvider store={store}>
               <StreamplaceProvider>
@@ -101,7 +101,7 @@ function ProviderInner({
               </StreamplaceProvider>
             </ReduxProvider>
           </NavigationContainer>
-        </I18nextProvider>
+        </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
