@@ -507,6 +507,7 @@ impl Actor {
                     ..
                 } = msg;
                 let conn = self.connections.get(&remote_id);
+                tx.send(()).await.ok();
                 trace!(remote = %remote_id.fmt_short(), key = %key, "send rpc::Subscribe message");
                 conn.rpc
                     .rpc(rpc::Subscribe {
@@ -517,7 +518,6 @@ impl Actor {
                     .ok();
                 trace!(remote = %remote_id.fmt_short(), key = %key, "inserting subscription");
                 self.subscriptions.insert(key, remote_id);
-                tx.send(()).await.ok();
                 trace!("finished inserting subscription");
             }
             ApiMessage::Unsubscribe(msg) => {
@@ -528,6 +528,7 @@ impl Actor {
                     ..
                 } = msg;
                 let conn = self.connections.get(&remote_id);
+                tx.send(()).await.ok();
                 conn.rpc
                     .rpc(rpc::Unsubscribe {
                         key: key.clone(),
@@ -536,7 +537,6 @@ impl Actor {
                     .await
                     .ok();
                 self.subscriptions.remove(&key);
-                tx.send(()).await.ok();
             }
             ApiMessage::AddTickets(msg) => {
                 trace!(inner = ?msg.inner, "ApiMessage::AddTickets");
