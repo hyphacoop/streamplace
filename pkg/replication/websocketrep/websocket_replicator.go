@@ -192,7 +192,7 @@ func (r *WebsocketReplicator) getMyWebsocketURL() *url.URL {
 		Scheme: "ws",
 		Host:   r.cli.ServerHost,
 	}
-	if r.cli.Secure {
+	if r.cli.HasHTTPS() {
 		u.Scheme = "wss"
 	}
 	return &u

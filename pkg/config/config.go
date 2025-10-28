@@ -133,6 +133,7 @@ type CLI struct {
 	StreamSessionTimeout       time.Duration
 	Replicators                []string
 	WebsocketURL               string
+	BehindHTTPSProxy           bool
 }
 
 // ContentFilters represents the content filtering configuration
@@ -227,6 +228,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.DurationVar(&cli.StreamSessionTimeout, "stream-session-timeout", 60*time.Second, "how long to wait before considering a stream inactive on this node?")
 	cli.StringSliceFlag(fs, &cli.Replicators, "replicators", []string{ReplicatorWebsocket}, "list of replication protocols to use (http, iroh)")
 	fs.StringVar(&cli.WebsocketURL, "websocket-url", "", "override the websocket (ws:// or wss://) url to use for replication (normally not necessary, used for testing)")
+	fs.BoolVar(&cli.BehindHTTPSProxy, "behind-https-proxy", false, "set to true if this node is behind an https proxy and we should report https URLs even though the node isn't serving HTTPS")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -637,4 +639,8 @@ func (cli *CLI) StreamIsAllowed(did string) error {
 
 func (cli *CLI) MyDID() string {
 	return fmt.Sprintf("did:web:%s", cli.BroadcasterHost)
+}
+
+func (cli *CLI) HasHTTPS() bool {
+	return cli.Secure || cli.BehindHTTPSProxy
 }
