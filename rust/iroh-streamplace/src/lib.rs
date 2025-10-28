@@ -341,6 +341,7 @@ impl Actor {
         loop {
             tokio::select! {
                 msg = self.rpc_rx.recv() => {
+                    trace!("received remote rpc message");
                     let Some(msg) = msg else {
                         error!("rpc channel closed");
                         break;
@@ -348,6 +349,7 @@ impl Actor {
                     self.handle_rpc(msg).instrument(trace_span!("rpc")).await;
                 }
                 msg = self.api_rx.recv() => {
+                    trace!("received local rpc message");
                     let Some(msg) = msg else {
                         break;
                     };
@@ -357,6 +359,7 @@ impl Actor {
                     }
                 }
                 res = self.tasks.next(), if !self.tasks.is_empty() => {
+                    trace!("processing task");
                     let Some((remote_id, res)) = res else {
                         error!("task finished but no result");
                         break;
@@ -374,6 +377,7 @@ impl Actor {
                 }
             }
         }
+        warn!("RPC Actor loop has closed");
     }
 
     async fn update_subscriber_meta(&mut self, key: &str) {
@@ -391,9 +395,10 @@ impl Actor {
 
     /// Requests from remote nodes
     async fn handle_rpc(&mut self, msg: RpcMessage) {
+        trace!("RPC.handle_rpc");
         match msg {
             RpcMessage::Subscribe(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "RpcMessage::Subscribe");
                 let WithChannels {
                     tx,
                     inner: rpc::Subscribe { key, remote_id },
@@ -407,7 +412,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             RpcMessage::Unsubscribe(msg) => {
-                debug!("{:?}", msg.inner);
+                debug!(inner = ?msg.inner, "RpcMessage::Unsubscribe");
                 let WithChannels {
                     tx,
                     inner: rpc::Unsubscribe { key, remote_id },
@@ -430,7 +435,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             RpcMessage::RecvSegment(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "RpcMessage::RecvSegment");
                 let WithChannels {
                     tx,
                     inner: rpc::RecvSegment { key, from, data },
@@ -441,6 +446,7 @@ impl Actor {
                         warn!("received segment but in sender mode");
                     }
                     HandlerMode::Forwarder => {
+                        trace!("forwarding segment");
                         if let Some(remotes) = self.subscribers.get(&key) {
                             Self::handle_send(
                                 &mut self.tasks,
@@ -469,9 +475,10 @@ impl Actor {
     }
 
     async fn handle_api(&mut self, msg: ApiMessage) -> Option<irpc::channel::oneshot::Sender<()>> {
+        trace!("RPC.handle_api");
         match msg {
             ApiMessage::SendSegment(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "ApiMessage::SendSegment");
                 let WithChannels {
                     tx,
                     inner: api::SendSegment { key, data },
@@ -492,7 +499,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             ApiMessage::Subscribe(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "ApiMessage::Subscribe");
                 let WithChannels {
                     tx,
                     inner: api::Subscribe { key, remote_id },
@@ -510,7 +517,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             ApiMessage::Unsubscribe(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "ApiMessage::Unsubscribe");
                 let WithChannels {
                     tx,
                     inner: api::Unsubscribe { key, remote_id },
@@ -528,7 +535,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             ApiMessage::AddTickets(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "ApiMessage::AddTickets");
                 let WithChannels {
                     tx,
                     inner: api::AddTickets { peers },
@@ -541,7 +548,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             ApiMessage::JoinPeers(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "ApiMessage::JoinPeers");
                 let WithChannels {
                     tx,
                     inner: api::JoinPeers { peers },
@@ -559,7 +566,7 @@ impl Actor {
                 tx.send(()).await.ok();
             }
             ApiMessage::GetNodeAddr(msg) => {
-                trace!("{:?}", msg.inner);
+                trace!(inner = ?msg.inner, "ApiMessage::GetNodeAddr");
                 let WithChannels { tx, .. } = msg;
                 if !self.config.disable_relay {
                     // don't await home relay if we have disabled relays, this will hang forever
@@ -569,6 +576,7 @@ impl Actor {
                 tx.send(addr).await.ok();
             }
             ApiMessage::Shutdown(msg) => {
+                trace!(inner = ?msg.inner, "ApiMessage::Shutdown");
                 return Some(msg.tx);
             }
         }
@@ -590,7 +598,7 @@ impl Actor {
             from: me,
         };
         for remote in remotes {
-            trace!("sending to stream {}: {}", msg.key, remote);
+            trace!(remote = %remote.fmt_short(), key = %msg.key, "handle_send to remote");
             let conn = connections.get(remote);
             tasks.push(Box::pin(Self::forward_task(
                 config.clone(),
@@ -755,6 +763,7 @@ impl Node {
 
     /// Send a segment to all subscribers of the given stream.
     pub async fn send_segment(&self, key: String, data: Vec<u8>) -> Result<(), PutError> {
+        debug!(key = &key, data_len = data.len(), "Node.send_segment");
         self.api
             .rpc(api::SendSegment {
                 key,
