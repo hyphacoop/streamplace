@@ -16,7 +16,6 @@ import { gap, pt, px } from "../../../ui";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
-  DropdownMenuContentWithoutPortal,
   DropdownMenuGroup,
   DropdownMenuInfo,
   DropdownMenuItem,
@@ -24,6 +23,9 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   ResponsiveDropdownMenuContent,
   Text,
@@ -50,7 +52,6 @@ export function ContextMenu({
 
   const { profile } = useLivestreamInfo();
 
-  console.log("profile", profile);
   const avatars = useAvatars(profile?.did ? [profile?.did] : []);
   const ls = useLivestreamStore((x) => x.livestream);
   const segment = useLivestreamStore((x) => x.segment);
@@ -72,10 +73,7 @@ export function ContextMenu({
   // dummy portal for mobile
   const Portal = isMobile ? View : DropdownMenuPortal;
 
-  // render the responsive version on mobile as we can't fullscreen there
-  const DropdownMenuContent = isMobile
-    ? ResponsiveDropdownMenuContent
-    : DropdownMenuContentWithoutPortal;
+  const DropdownMenuContent = ResponsiveDropdownMenuContent;
 
   return (
     <DropdownMenu>
@@ -175,28 +173,53 @@ export function ContextMenu({
             </DropdownMenuGroup>
           )}
 
-          <DropdownMenuGroup title="Resolution">
-            <DropdownMenuRadioGroup value={quality} onValueChange={setQuality}>
-              <DropdownMenuRadioItem value="source">
-                <Text>Source (Original Quality)</Text>
-              </DropdownMenuRadioItem>
-              {qualities.map((r) => (
-                <DropdownMenuRadioItem value={r.name}>
-                  <Text>{r.name}</Text>
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger subMenuTitle="Quality">
+                <View
+                  style={[
+                    zero.flex.values[1],
+                    zero.layout.flex.row,
+                    zero.layout.flex.spaceBetween,
+                    zero.pr[4],
+                  ]}
+                >
+                  <Text>Quality</Text>
+                  <Text muted>
+                    ({quality}, {lowLatency ? "low latency" : "regular latency"}
+                    )
+                  </Text>
+                </View>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuGroup title="Resolution">
+                  <DropdownMenuRadioGroup
+                    value={quality}
+                    onValueChange={setQuality}
+                  >
+                    <DropdownMenuRadioItem value="source">
+                      <Text>Source (Original Quality)</Text>
+                    </DropdownMenuRadioItem>
+                    {qualities.map((r) => (
+                      <DropdownMenuRadioItem key={r.name} value={r.name}>
+                        <Text>{r.name}</Text>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+                <DropdownMenuGroup>
+                  <DropdownMenuCheckboxItem
+                    checked={lowLatency}
+                    onCheckedChange={() => setLowLatency(!lowLatency)}
+                  >
+                    <Text>Low Latency</Text>
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuGroup>
+                <DropdownMenuInfo description="Reduces the delay between video and chat for a more real-time experience." />
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           </DropdownMenuGroup>
           <DropdownMenuGroup title="Advanced">
-            <DropdownMenuCheckboxItem
-              checked={lowLatency}
-              onCheckedChange={() => setLowLatency(!lowLatency)}
-            >
-              <Text>Low Latency</Text>
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuGroup>
-          <DropdownMenuInfo description="Reduces the delay between video and chat for a more real-time experience." />
-          <DropdownMenuGroup>
             <DropdownMenuCheckboxItem
               checked={debugInfo}
               onCheckedChange={() => setShowDebugInfo(!debugInfo)}
