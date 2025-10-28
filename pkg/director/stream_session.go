@@ -23,7 +23,7 @@ import (
 	"stream.place/streamplace/pkg/media"
 	"stream.place/streamplace/pkg/model"
 	"stream.place/streamplace/pkg/renditions"
-	"stream.place/streamplace/pkg/replication/iroh_replicator"
+	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/spmetrics"
 	"stream.place/streamplace/pkg/statedb"
 	"stream.place/streamplace/pkg/streamplace"
@@ -50,7 +50,7 @@ type StreamSession struct {
 	ctx            context.Context
 	packets        []bus.PacketizedSegment
 	statefulDB     *statedb.StatefulDB
-	swarm          *iroh_replicator.IrohSwarm
+	replicator     replication.Replicator
 }
 
 func (ss *StreamSession) Start(ctx context.Context, notif *media.NewSegmentNotification) error {
@@ -460,7 +460,10 @@ func (ss *StreamSession) UpdateBroadcastOrigin(ctx context.Context) error {
 		Server:      fmt.Sprintf("did:web:%s", ss.cli.ServerHost),
 		Broadcaster: &broadcaster,
 		UpdatedAt:   time.Now().UTC().Format(util.ISO8601),
-		IrohTicket:  &ss.swarm.NodeTicket,
+	}
+	err := ss.replicator.BuildOriginRecord(&origin)
+	if err != nil {
+		return fmt.Errorf("could not build origin record: %w", err)
 	}
 
 	client, err := ss.GetClientByDID(ss.repoDID)

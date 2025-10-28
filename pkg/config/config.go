@@ -131,6 +131,7 @@ type CLI struct {
 	DisableIrohRelay           bool
 	DevAccountCreds            map[string]string
 	StreamSessionTimeout       time.Duration
+	Replicators                []string
 }
 
 // ContentFilters represents the content filtering configuration
@@ -143,6 +144,11 @@ type ContentFilters struct {
 		Enabled bool `json:"enabled"`
 	} `json:"distribution_policy"`
 }
+
+const (
+	ReplicatorHTTP string = "http"
+	ReplicatorIroh string = "iroh"
+)
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs := flag.NewFlagSet("streamplace", flag.ExitOnError)
@@ -178,9 +184,9 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.StringVar(&cli.LivepeerGatewayURL, "livepeer-gateway-url", "", "URL of the Livepeer Gateway to use for transcoding")
 	fs.BoolVar(&cli.LivepeerGateway, "livepeer-gateway", false, "enable embedded Livepeer Gateway")
 	fs.BoolVar(&cli.WideOpen, "wide-open", false, "allow ALL streams to be uploaded to this node (not recommended for production)")
-	cli.StringSliceFlag(fs, &cli.AllowedStreams, "allowed-streams", "", "if set, only allow these addresses or atproto DIDs to upload to this node")
-	cli.StringSliceFlag(fs, &cli.Peers, "peers", "", "other streamplace nodes to replicate to")
-	cli.StringSliceFlag(fs, &cli.Redirects, "redirects", "", "http 302s /path/one:/path/two,/path/three:/path/four")
+	cli.StringSliceFlag(fs, &cli.AllowedStreams, "allowed-streams", []string{}, "if set, only allow these addresses or atproto DIDs to upload to this node")
+	cli.StringSliceFlag(fs, &cli.Peers, "peers", []string{}, "other streamplace nodes to replicate to")
+	cli.StringSliceFlag(fs, &cli.Redirects, "redirects", []string{}, "http 302s /path/one:/path/two,/path/three:/path/four")
 	cli.DebugFlag(fs, &cli.Debug, "debug", "", "modified log verbosity for specific functions or files in form func=ToHLS:3,file=gstreamer.go:4")
 	fs.BoolVar(&cli.TestStream, "test-stream", false, "run a built-in test stream on boot")
 	fs.BoolVar(&cli.NoFirehose, "no-firehose", false, "disable the bluesky firehose")
@@ -205,7 +211,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.NewWebRTCPlayback, "new-webrtc-playback", true, "enable new webrtc playback")
 	fs.StringVar(&cli.AppleTeamID, "apple-team-id", "", "apple team id for deep linking")
 	fs.StringVar(&cli.AndroidCertFingerprint, "android-cert-fingerprint", "", "android cert fingerprint for deep linking")
-	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", "", "did of labelers that this instance should subscribe to")
+	cli.StringSliceFlag(fs, &cli.Labelers, "labelers", []string{}, "did of labelers that this instance should subscribe to")
 	fs.StringVar(&cli.AtprotoDID, "atproto-did", "", "atproto did to respond to on /.well-known/atproto-did (default did:web:PUBLIC_HOST)")
 	cli.JSONFlag(fs, &cli.ContentFilters, "content-filters", "{}", "JSON content filtering rules")
 	fs.BoolVar(&cli.LivepeerHelp, "livepeer-help", false, "print help for livepeer flags and exit")
@@ -213,11 +219,12 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
 	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
-	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", "[]", "tickets to join the swarm with")
+	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", []string{}, "tickets to join the swarm with")
 	fs.StringVar(&cli.IrohTopic, "iroh-topic", "", "topic to use for the iroh swarm (must be 32 bytes in hex)")
 	fs.BoolVar(&cli.DisableIrohRelay, "disable-iroh-relay", false, "disable the iroh relay")
 	cli.KVSliceFlag(fs, &cli.DevAccountCreds, "dev-account-creds", "", "(FOR DEVELOPMENT ONLY) did=password pairs for logging into test accounts without oauth")
 	fs.DurationVar(&cli.StreamSessionTimeout, "stream-session-timeout", 60*time.Second, "how long to wait before considering a stream inactive on this node?")
+	cli.StringSliceFlag(fs, &cli.Replicators, "replicators", []string{ReplicatorIroh}, "list of replication protocols to use (http, iroh)")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -533,15 +540,15 @@ func (cli *CLI) AddressSliceFlag(fs *flag.FlagSet, dest *[]aqpub.Pub, name, defa
 	})
 }
 
-func (cli *CLI) StringSliceFlag(fs *flag.FlagSet, dest *[]string, name, defaultValue, usage string) {
-	*dest = []string{}
+func (cli *CLI) StringSliceFlag(fs *flag.FlagSet, dest *[]string, name string, defaultValue []string, usage string) {
+	*dest = defaultValue
 	usage = fmt.Sprintf(`%s (default: "%s")`, usage, *dest)
 	fs.Func(name, usage, func(s string) error {
 		if s == "" {
 			return nil
 		}
 		strs := strings.Split(s, ",")
-		*dest = append(*dest, strs...)
+		*dest = append([]string{}, strs...)
 		return nil
 	})
 }

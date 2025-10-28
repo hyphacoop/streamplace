@@ -121,14 +121,18 @@ func NewSwarm(ctx context.Context, cli *config.CLI, secret []byte, topic []byte,
 	return &swarm, nil
 }
 
-func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
-	if len(tickets) > 0 {
-		err := swarm.Node.JoinPeers(tickets)
+func (swarm *IrohSwarm) BuildOriginRecord(origin *streamplace.BroadcastOrigin) error {
+	origin.IrohTicket = &swarm.NodeTicket
+	return nil
+}
+
+func (swarm *IrohSwarm) Start(ctx context.Context, cli *config.CLI) error {
+	if len(cli.Tickets) > 0 {
+		err := swarm.Node.JoinPeers(cli.Tickets)
 		if err != nil {
 			return fmt.Errorf("failed to join peers: %w", err)
 		}
 	}
-
 	nodeId, err := swarm.Node.NodeId()
 	if err != nil {
 		return fmt.Errorf("failed to get node id: %w", err)
@@ -189,7 +193,6 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			log.Debug(ctx, "SubscribeItemOther", "other", item)
 		}
 	}
-	return nil
 }
 
 func (swarm *IrohSwarm) handleIrohMessage(ctx context.Context, item iroh_streamplace.SubscribeItemEntry) error {
