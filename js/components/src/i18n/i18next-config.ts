@@ -9,6 +9,9 @@ import { initReactI18next } from "react-i18next";
 
 // Import our manifest directly to avoid circular dependency
 import manifest from "../../locales/manifest.json";
+import storage from "../storage";
+
+const LOCALE_STORAGE_KEY = "@streamplace/locale";
 
 // Try to import expo-localization, but make it optional
 let Localization: typeof import("expo-localization") | null = null;
@@ -21,31 +24,6 @@ try {
 } catch {
   // expo-localization not available, will use browser/fallback detection
 }
-
-// Mock storage for now - replace with actual zustand storage
-const storage = {
-  getItem: (key: string): string | null => {
-    try {
-      if (typeof window !== "undefined" && localStorage) {
-        console.log("getting", key);
-        return localStorage.getItem(key);
-      }
-    } catch {
-      // localStorage not available (e.g. in some test environments)
-    }
-    return null;
-  },
-  setItem: (key: string, value: string): void => {
-    try {
-      if (typeof window !== "undefined" && localStorage) {
-        console.log("Set", key, "to", value);
-        localStorage.setItem(key, value);
-      }
-    } catch {
-      // localStorage not available (e.g. in some test environments)
-    }
-  },
-};
 
 function cleanLocaleName(locale: string): string {
   return locale.replace("_", "-").replace(/@.*/, "");
@@ -88,13 +66,28 @@ export function getLocaleFromSystemLocale(): string {
   return manifest.fallbackChain[0];
 }
 
-export function getCurrentLocale(): string {
-  const stored = storage.getItem("@streamplace/locale");
-  console.log("Stored locale is", stored);
+// Cache for the current locale to avoid async lookups
+let cachedLocale: string | null = null;
+
+export async function getCurrentLocale(): Promise<string> {
+  if (cachedLocale) {
+    return cachedLocale;
+  }
+
+  const stored = await storage.getItem(LOCALE_STORAGE_KEY);
   if (stored && manifest.supportedLocales.includes(stored)) {
+    cachedLocale = stored;
     return stored;
   }
-  return getLocaleFromSystemLocale();
+
+  const systemLocale = getLocaleFromSystemLocale();
+  cachedLocale = systemLocale;
+  return systemLocale;
+}
+
+// Synchronous version for initial load - returns cached or system locale
+export function getCurrentLocaleSync(): string {
+  return cachedLocale || getLocaleFromSystemLocale();
 }
 
 // Enhanced fallback logic using manifest
@@ -118,7 +111,8 @@ function getFallbackChain(code: string): string[] {
   return [...fallbacks, ...manifest.fallbackChain];
 }
 
-const LOCALE = getCurrentLocale();
+// Use sync version for initial config - will be updated when storage loads
+const LOCALE = getCurrentLocaleSync();
 
 export const I18NEXT_CONFIG = {
   lng: LOCALE,
@@ -214,13 +208,22 @@ async function loadTranslationData(locale: string): Promise<any> {
 // Initialize i18next with our configuration
 let initPromise: Promise<typeof i18next> | null = null;
 
-export default function initI18next(config: any = {}): Promise<typeof i18next> {
+export default async function initI18next(
+  config: any = {},
+): Promise<typeof i18next> {
   // Return existing promise if already initializing
   if (initPromise) {
     return initPromise;
   }
 
-  const finalConfig = { ...I18NEXT_CONFIG, ...config };
+  // Load stored locale from storage first
+  const storedLocale = await getCurrentLocale();
+
+  const finalConfig = {
+    ...I18NEXT_CONFIG,
+    lng: storedLocale,
+    ...config,
+  };
 
   initPromise = i18next
     .use(initReactI18next)
@@ -234,21 +237,30 @@ export default function initI18next(config: any = {}): Promise<typeof i18next> {
       }),
     )
     .init(finalConfig)
-    .then(() => i18next);
+    .then(() => {
+      // Automatically persist language changes to storage
+      i18next.on("languageChanged", (lng) => {
+        if (lng && manifest.supportedLocales.includes(lng)) {
+          cachedLocale = lng;
+          storage.setItem(LOCALE_STORAGE_KEY, lng);
+        }
+      });
+      return i18next;
+    });
 
   return initPromise;
 }
 
 // Utility functions for language management
 export async function changeLanguage(locale: string): Promise<void> {
-  console.log("new lang", locale);
-  storage.setItem("@streamplace/locale", locale);
+  // Storage is handled automatically via languageChanged event
   await i18next.changeLanguage(locale);
 }
 
 export function getCurrentLanguage(): string {
-  console.log("getting", i18next.language);
-  return i18next.language || LOCALE;
+  // Return the cached locale preference, not i18next's resolved language
+  // i18next.language may return just "zh" instead of "zh-Hant"
+  return getCurrentLocaleSync();
 }
 
 export function getSupportedLocales(): string[] {
