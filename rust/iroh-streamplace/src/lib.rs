@@ -263,6 +263,7 @@ impl ConnectionPool {
     /// Cheap conn pool hack
     fn get(&mut self, remote: &NodeId) -> Connection {
         if !self.connections.contains_key(remote) {
+            trace!(remote = %remote.fmt_short(),"ConnectionPool.get is inserting a new remote connection");
             let conn = IrohRemoteConnection::new(
                 self.endpoint.clone(),
                 (*remote).into(),
@@ -341,7 +342,7 @@ impl Actor {
         loop {
             tokio::select! {
                 msg = self.rpc_rx.recv() => {
-                    trace!("received remote rpc message");
+                    trace!("received local rpc message");
                     let Some(msg) = msg else {
                         error!("rpc channel closed");
                         break;
@@ -349,7 +350,7 @@ impl Actor {
                     self.handle_rpc(msg).instrument(trace_span!("rpc")).await;
                 }
                 msg = self.api_rx.recv() => {
-                    trace!("received local rpc message");
+                    trace!("received remote rpc message");
                     let Some(msg) = msg else {
                         break;
                     };
