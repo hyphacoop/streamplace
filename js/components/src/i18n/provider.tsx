@@ -19,12 +19,28 @@ export function I18nProvider({ children, i18n }: I18nProviderProps) {
   useEffect(() => {
     // Check if both initialized and language is loaded
     const checkReady = () => {
-      if (i18n.isInitialized && i18n.hasLoadedNamespace("translation")) {
+      const initialized = i18n.isInitialized;
+      const hasCommon = i18n.hasLoadedNamespace("common");
+      console.log("i18n ready check:", {
+        initialized,
+        hasCommon,
+        language: i18n.language,
+      });
+
+      if (initialized && hasCommon) {
         setIsReady(true);
       }
     };
 
     checkReady();
+
+    // Fallback: if not ready after 300ms, just proceed anyway
+    const fallbackTimeout = setTimeout(() => {
+      if (!isReady) {
+        console.log("i18n ready timeout - proceeding anyway");
+        setIsReady(true);
+      }
+    }, 300);
 
     // Listen for both initialization and language loaded events
     const handleInitialized = () => {
@@ -39,11 +55,12 @@ export function I18nProvider({ children, i18n }: I18nProviderProps) {
     i18n.on("loaded", handleLanguageLoaded);
 
     return () => {
+      clearTimeout(fallbackTimeout);
       i18n.off("initialized", handleInitialized);
       i18n.off("languageChanged", handleLanguageLoaded);
       i18n.off("loaded", handleLanguageLoaded);
     };
-  }, [i18n]);
+  }, [i18n, isReady]);
 
   if (!isReady) {
     return null;

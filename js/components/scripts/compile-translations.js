@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { parse: parseFtl } = require("@fluent/syntax");
 
 // Load language manifest
 const MANIFEST_PATH = path.join(__dirname, "..", "locales", "manifest.json");
@@ -10,21 +11,20 @@ const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf-8"));
 // Configuration
 const LOCALES_SOURCE_DIR = path.join(__dirname, "..", "locales");
 const LOCALES_OUTPUT_DIR = path.join(__dirname, "..", "public", "locales");
-const OUTPUT_FILENAME = "messages.json";
 
 /**
- * Recursively find all .ftl files in a directory
+ * Find all .ftl files in a directory (non-recursive, just top-level)
  */
 function findFtlFiles(dir) {
   const files = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
 
   for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...findFtlFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith(".ftl")) {
-      files.push(fullPath);
+    if (entry.isFile() && entry.name.endsWith(".ftl")) {
+      files.push({
+        path: path.join(dir, entry.name),
+        namespace: path.basename(entry.name, ".ftl"),
+      });
     }
   }
 
@@ -32,111 +32,106 @@ function findFtlFiles(dir) {
 }
 
 /**
- * Read and combine all .ftl files for a locale
+ * Parse FTL content using @fluent/syntax and extract messages
  */
-function combineLocaleFiles(localeDir) {
-  const ftlFiles = findFtlFiles(localeDir);
+function extractMessagesFromFtl(content) {
+  const messages = {};
 
-  if (ftlFiles.length === 0) {
-    console.warn(`⚠️  No .ftl files found in ${localeDir}`);
-    return "";
-  }
+  try {
+    const resource = parseFtl(content);
 
-  const contents = [];
+    for (const entry of resource.body) {
+      // Only process Message entries (not Comments, Terms, etc.)
+      if (entry.type === "Message" && entry.id) {
+        const key = entry.id.name;
 
-  for (const filePath of ftlFiles) {
-    try {
-      const content = fs.readFileSync(filePath, "utf-8");
-      const relativePath = path.relative(localeDir, filePath);
-
-      contents.push(`# === ${relativePath} ===`);
-      contents.push(content.trim());
-      contents.push(""); // Empty line separator
-    } catch (error) {
-      console.error(`❌ Error reading ${filePath}:`, error.message);
+        // For now, just serialize the pattern back to FTL format
+        // i18next-fluent will handle the actual parsing at runtime
+        if (entry.value) {
+          messages[key] = serializePattern(entry.value);
+        }
+      }
     }
+  } catch (error) {
+    console.error("Error parsing FTL:", error.message);
+    throw error;
   }
 
-  return contents.join("\n");
+  return messages;
 }
 
 /**
- * Parse FTL content and generate JSON with key-value pairs
- * Handles multiline constructs like pluralization rules
+ * Serialize a Fluent pattern back to FTL string format
+ * This is a simple serializer - @fluent/syntax has a full serializer
+ * but we just need the pattern text for JSON storage
  */
-function generateJsonFromFtl(content) {
-  const translations = {};
-  const lines = content.split("\n");
+function serializePattern(pattern) {
+  if (!pattern || !pattern.elements) {
+    return "";
+  }
 
-  let currentKey = null;
-  let currentValue = [];
-  let insideMultiline = false;
-  let braceCount = 0;
+  let result = "";
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    // Skip comments and empty lines when not inside a multiline construct
-    if (
-      !insideMultiline &&
-      (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("##"))
-    ) {
-      continue;
-    }
-
-    // Check for new key = value pair
-    const keyMatch = trimmed.match(/^([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*(.*)$/);
-
-    if (keyMatch && !insideMultiline) {
-      // Save previous key if exists
-      if (currentKey) {
-        translations[currentKey] = currentValue.join("\n").trim();
-      }
-
-      const [, key, value] = keyMatch;
-      currentKey = key;
-      currentValue = [value];
-
-      // Check if this starts a multiline construct (contains opening brace)
-      const openBraces = (value.match(/\{/g) || []).length;
-      const closeBraces = (value.match(/\}/g) || []).length;
-      braceCount = openBraces - closeBraces;
-
-      if (braceCount > 0) {
-        insideMultiline = true;
-      } else {
-        // Single line value, save immediately
-        translations[currentKey] = value.trim();
-        currentKey = null;
-        currentValue = [];
-      }
-    } else if (insideMultiline && currentKey) {
-      // Continue accumulating multiline value
-      currentValue.push(line); // Preserve original formatting including indentation
-
-      // Count braces to detect end of multiline construct
-      const openBraces = (line.match(/\{/g) || []).length;
-      const closeBraces = (line.match(/\}/g) || []).length;
-      braceCount += openBraces - closeBraces;
-
-      if (braceCount <= 0) {
-        // End of multiline construct
-        translations[currentKey] = currentValue.join("\n").trim();
-        currentKey = null;
-        currentValue = [];
-        insideMultiline = false;
-        braceCount = 0;
-      }
+  for (const element of pattern.elements) {
+    if (element.type === "TextElement") {
+      result += element.value;
+    } else if (element.type === "Placeable") {
+      result += serializePlaceable(element);
     }
   }
 
-  // Handle any remaining key
-  if (currentKey) {
-    translations[currentKey] = currentValue.join("\n").trim();
+  return result;
+}
+
+/**
+ * Serialize a placeable (variables, select expressions, etc.)
+ */
+function serializePlaceable(placeable) {
+  if (!placeable.expression) {
+    return "{}";
   }
 
-  return JSON.stringify(translations, null, 2);
+  const expr = placeable.expression;
+
+  if (expr.type === "VariableReference") {
+    return `{$${expr.id.name}}`;
+  } else if (expr.type === "SelectExpression") {
+    let result = `{${serializeInlineExpression(expr.selector)} ->`;
+
+    for (const variant of expr.variants) {
+      const key =
+        variant.key.type === "Identifier"
+          ? variant.key.name
+          : `[${variant.key.value}]`;
+
+      result += `\n   ${variant.default ? "*" : ""}${key} ${serializePattern(variant.value)}`;
+    }
+
+    result += "\n  }";
+    return result;
+  } else if (expr.type === "FunctionReference") {
+    const args = expr.arguments.positional
+      .map((arg) => serializeInlineExpression(arg))
+      .join(", ");
+    return `{${expr.id.name}(${args})}`;
+  }
+
+  return "{}";
+}
+
+/**
+ * Serialize inline expressions (for function arguments, etc.)
+ */
+function serializeInlineExpression(expr) {
+  if (expr.type === "VariableReference") {
+    return `$${expr.id.name}`;
+  } else if (expr.type === "NumberLiteral") {
+    return expr.value;
+  } else if (expr.type === "StringLiteral") {
+    return `"${expr.value}"`;
+  }
+
+  return "";
 }
 
 /**
@@ -155,7 +150,7 @@ function compileTranslations() {
     fs.mkdirSync(LOCALES_OUTPUT_DIR, { recursive: true });
   }
 
-  // Get supported locales from manifest, but only include those with actual data directories
+  // Get supported locales from manifest
   const manifestLocales = manifest.supportedLocales;
   const locales = manifestLocales.filter((locale) => {
     const localeDir = path.join(LOCALES_SOURCE_DIR, locale);
@@ -173,7 +168,6 @@ function compileTranslations() {
   for (const locale of locales) {
     const localeSourceDir = path.join(LOCALES_SOURCE_DIR, locale);
     const localeOutputDir = path.join(LOCALES_OUTPUT_DIR, locale);
-    const outputPath = path.join(localeOutputDir, OUTPUT_FILENAME);
 
     console.log(`📦 Processing locale: ${locale}`);
 
@@ -182,28 +176,46 @@ function compileTranslations() {
       fs.mkdirSync(localeOutputDir, { recursive: true });
     }
 
-    // Combine all .ftl files for this locale
-    const combinedContent = combineLocaleFiles(localeSourceDir);
+    // Find all .ftl files for this locale
+    const ftlFiles = findFtlFiles(localeSourceDir);
 
-    if (!combinedContent.trim()) {
-      console.warn(`⚠️  Skipping ${locale} - no content found`);
+    if (ftlFiles.length === 0) {
+      console.warn(`⚠️  No .ftl files found in ${localeSourceDir}`);
       continue;
     }
 
-    // Generate JSON from FTL content
-    const jsonContent = generateJsonFromFtl(combinedContent);
+    // Process each .ftl file as a separate namespace
+    for (const { path: ftlPath, namespace } of ftlFiles) {
+      try {
+        const content = fs.readFileSync(ftlPath, "utf-8");
+        const messages = extractMessagesFromFtl(content);
 
-    // Write the output file
-    try {
-      fs.writeFileSync(outputPath, jsonContent, "utf-8");
-      console.log(`✅ Generated: ${path.relative(process.cwd(), outputPath)}`);
-      totalFiles++;
-    } catch (error) {
-      console.error(`❌ Error writing ${outputPath}:`, error.message);
+        if (Object.keys(messages).length === 0) {
+          console.warn(`⚠️  No messages found in ${ftlPath}`);
+          continue;
+        }
+
+        // Write namespace JSON file
+        const outputPath = path.join(localeOutputDir, `${namespace}.json`);
+        fs.writeFileSync(
+          outputPath,
+          JSON.stringify(messages, null, 2),
+          "utf-8",
+        );
+
+        console.log(
+          `  ✅ ${namespace}: ${Object.keys(messages).length} keys → ${path.relative(process.cwd(), outputPath)}`,
+        );
+        totalFiles++;
+      } catch (error) {
+        console.error(`❌ Error processing ${ftlPath}:`, error.message);
+      }
     }
   }
 
-  console.log(`🎉 Compilation complete! ${totalFiles} files generated.`);
+  console.log(
+    `🎉 Compilation complete! ${totalFiles} namespace files generated.`,
+  );
 }
 
 // Run the compilation

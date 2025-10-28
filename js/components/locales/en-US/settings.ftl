@@ -36,42 +36,5 @@ debug-recording-description = Optional
 ## Key Management
 manage-keys = Manage Keys
 
-## General UI
+## Settings Page Specific
 settings-title = Settings
-loading = Loading...
-error = Error
-cancel = Cancel
-confirm = Confirm
-
-## Demo and Testing
-welcome-user = Welcome, { $username }!
-notification-count = { $count ->
-    [0] No notifications
-    [1] One notification
-   *[other] { $count } notifications
-}
-search-placeholder = Search...
-message-input = Enter your message...
-
-## Status Messages
-success = Success
-warning = Warning
-info = Information
-close = Close
-open = Open
-delete = Delete
-edit = Edit
-create = Create
-update = Update
-refresh = Refresh
-
-## Actions
-save = Save
-cancel-button = Cancel
-ok = OK
-yes = Yes
-no = No
-continue = Continue
-back = Back
-next = Next
-finish = Finish

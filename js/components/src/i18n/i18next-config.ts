@@ -116,11 +116,13 @@ const LOCALE = getCurrentLocaleSync();
 
 export const I18NEXT_CONFIG = {
   lng: LOCALE,
+  ns: ["common", "settings"], // Common should be first as it's most frequently used
+  defaultNS: "common",
   interpolation: {
-    escapeValue: false,
+    escapeValue: false, // React already safes from XSS
   },
   react: {
-    useSuspense: false,
+    useSuspense: false, // Prevent Android crashes
   },
   i18nFormat: {
     fluentBundleOptions: {
@@ -137,54 +139,67 @@ export const I18NEXT_CONFIG = {
     },
   },
   load: "currentOnly",
+  cleanCode: true,
   fallbackLng: getFallbackChain,
   supportedLngs: [...manifest.supportedLocales],
   debug: process.env.NODE_ENV === "development",
 };
 
-// Translation loading function that loads compiled JSON files
-async function loadTranslationData(locale: string): Promise<any> {
+// Translation loading function that loads compiled JSON files per namespace
+async function loadTranslationData(
+  locale: string,
+  namespace: string,
+): Promise<any> {
   try {
     let translations: any = {};
 
     try {
       // For web environments, load from public directory
       if (typeof window !== "undefined") {
-        const response = await fetch(`/locales/${locale}/messages.json`);
+        const response = await fetch(`/locales/${locale}/${namespace}.json`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
         translations = await response.json();
       } else {
         // For React Native, use static requires for bundler compatibility
-        switch (locale) {
-          case "en":
-          case "en-US":
-            translations = require("../../public/locales/en-US/messages.json");
-            break;
-          case "pt":
-          case "pt-BR":
-            translations = require("../../public/locales/pt-BR/messages.json");
-            break;
-          case "es":
-          case "es-ES":
-            translations = require("../../public/locales/es-ES/messages.json");
-            break;
-          case "zh":
-          case "zh-Hant":
-            translations = require("../../public/locales/zh-Hant/messages.json");
-            break;
-          case "fr":
-          case "fr-FR":
-            translations = require("../../public/locales/fr-FR/messages.json");
-            break;
-          default:
-            throw new Error(`No static translation file for locale: ${locale}`);
+        // Map base language codes to full locales
+        const fullLocale = locale.includes("-")
+          ? locale
+          : {
+              en: "en-US",
+              pt: "pt-BR",
+              es: "es-ES",
+              zh: "zh-Hant",
+              fr: "fr-FR",
+            }[locale] || locale;
+
+        // Static requires for React Native bundler
+        const localeNamespaceKey = `${fullLocale}/${namespace}`;
+        const translationMap: Record<string, any> = {
+          "en-US/common": require("../../public/locales/en-US/common.json"),
+          "pt-BR/common": require("../../public/locales/pt-BR/common.json"),
+          "es-ES/common": require("../../public/locales/es-ES/common.json"),
+          "zh-Hant/common": require("../../public/locales/zh-Hant/common.json"),
+          "fr-FR/common": require("../../public/locales/fr-FR/common.json"),
+          "en-US/settings": require("../../public/locales/en-US/settings.json"),
+          "pt-BR/settings": require("../../public/locales/pt-BR/settings.json"),
+          "es-ES/settings": require("../../public/locales/es-ES/settings.json"),
+          "zh-Hant/settings": require("../../public/locales/zh-Hant/settings.json"),
+          "fr-FR/settings": require("../../public/locales/fr-FR/settings.json"),
+        };
+
+        translations = translationMap[localeNamespaceKey];
+
+        if (!translations) {
+          throw new Error(
+            `No static translation mapping for ${localeNamespaceKey}`,
+          );
         }
       }
     } catch (loadError: any) {
       throw new Error(
-        `Failed to load translations for ${locale}: ${loadError.message}`,
+        `Failed to load ${namespace} translations for ${locale}: ${loadError.message}`,
       );
     }
 
@@ -194,13 +209,15 @@ async function loadTranslationData(locale: string): Promise<any> {
 
     return translations;
   } catch (error: any) {
-    console.error(`Failed to load translations for ${locale}:`, error);
+    console.error(
+      `Failed to load ${namespace} translations for ${locale}:`,
+      error,
+    );
     // Return minimal fallback
     return {
       loading: "Loading...",
       error: "Error",
       cancel: "Cancel",
-      "settings-title": "Settings",
     };
   }
 }
@@ -230,8 +247,8 @@ export default async function initI18next(
     .use(Fluent)
     .use(
       resourcesToBackend((locale: string, namespace: string, callback: any) => {
-        // Load translations using our manifest-based system
-        loadTranslationData(locale)
+        // Load translations using our manifest-based namespace system
+        loadTranslationData(locale, namespace)
           .then((translations) => callback(null, translations))
           .catch((error) => callback(error, null));
       }),

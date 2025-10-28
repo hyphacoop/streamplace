@@ -5,7 +5,7 @@ import pkg from "../../package.json";
 
 // maybe someday some PWA update stuff will live here
 export function Updates() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("settings");
   return (
     <View
       style={[

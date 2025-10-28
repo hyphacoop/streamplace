@@ -29,18 +29,32 @@ This is **NOT**:
 import { useTranslation } from 'react-i18next';
 
 function MyComponent() {
+  // Use default namespace (common)
   const { t } = useTranslation();
 
   return (
     <div>
-      {/* Simple translation */}
-      <h1>{t('settings-title')}</h1>
+      {/* Simple translation from common namespace */}
+      <button>{t('save')}</button>
+      <button>{t('cancel')}</button>
 
       {/* With variables */}
       <p>{t('welcome-user', { username: 'Alice' })}</p>
 
       {/* With count (triggers pluralization) */}
       <span>{t('notification-count', { count: 5 })}</span>
+    </div>
+  );
+}
+
+function SettingsComponent() {
+  // Specify a namespace for settings-specific translations
+  const { t } = useTranslation('settings');
+
+  return (
+    <div>
+      <h1>{t('settings-title')}</h1>
+      <p>{t('language-selection-description')}</p>
     </div>
   );
 }
@@ -106,22 +120,35 @@ function HelpText() {
 <Text>Settings</Text>
 <Text>You have 5 new messages</Text>
 
-// ✅ Use translation keys
+// ✅ Use translation keys with appropriate namespace
+// Common UI elements use default namespace
+<Button>{t('save')}</Button>
+<Button>{t('cancel')}</Button>
+
+// Settings-specific use settings namespace
+const { t } = useTranslation('settings');
 <Text>{t('settings-title')}</Text>
-<Text>{t('message-count', { count: 5 })}</Text>
 ```
 
-2. Add English translations (or others if you're proficient) to the .ftl files
-   in `js/components/locales/`:
+2. Add translations to the appropriate .ftl files in `js/components/locales/`:
+
+**For common UI elements** (buttons, labels, etc.), use `common.ftl`:
+
+```fluent
+# Edit: js/components/locales/en-US/common.ftl
+save = Save
+cancel = Cancel
+loading = Loading...
+error = Error
+```
+
+**For feature-specific translations**, use the appropriate namespace file:
 
 ```fluent
 # Edit: js/components/locales/en-US/settings.ftl
 settings-title = Settings
-message-count = { $count ->
-    [0] No messages
-    [1] You have one new message
-   *[other] You have { $count } new messages
-}
+language-selection = Language
+language-selection-description = Choose your preferred language
 ```
 
 3. Compile the translations to JSON:
@@ -132,7 +159,8 @@ pnpm i18n:compile
 ```
 
 This reads the `.ftl` files and outputs compiled JSON to
-`js/components/public/locales/{locale}/messages.json`.
+`js/components/public/locales/{locale}/{namespace}.json` (e.g., `common.json`,
+`settings.json`).
 
 4. For web: the compiled files in `public/locales/` are served as static assets
    and loaded on demand.
@@ -146,24 +174,26 @@ The i18n system is centralized in `@streamplace/components`:
 
 ```
 js/components/
-├── locales/                   # Source .ftl files
+├── locales/                   # Source .ftl files (organized by namespace)
 │   ├── en-US/
-│   │   └── *.ftl
+│   │   ├── common.ftl         # Common UI elements (buttons, labels, etc.)
+│   │   └── settings.ftl       # Settings-specific translations
 │   ├── pt-BR/
 │   ├── es-ES/
-│   ├── zh-TW/
+│   ├── zh-Hant/
 │   └── fr-FR/
 ├── src/i18n/
 │   ├── manifest.json          # Supported locales and metadata
-│   ├── i18next-config.ts      # Bootstrap configuration
+│   ├── i18next-config.ts      # Bootstrap configuration with namespace setup
 │   ├── provider.tsx           # React provider components
 │   └── index.ts               # Public exports
-├── public/locales/            # Compiled JSON output
+├── public/locales/            # Compiled JSON output (by locale and namespace)
 │   ├── en-US/
-│   │   └── messages.json
+│   │   ├── common.json
+│   │   └── settings.json
 │   └── ...
 └── scripts/
-    ├── compile-translations.js
+    ├── compile-translations.js  # Uses @fluent/syntax to parse .ftl files
     └── extract-i18n.js
 ```
 
@@ -172,6 +202,30 @@ The app imports i18n from `@streamplace/components`:
 ```ts
 import { i18next, useTranslation } from "@streamplace/components";
 ```
+
+## Namespaces
+
+Translations are organized into **namespaces** to keep related translations
+together and improve code organization:
+
+- **`common`** (default): General UI elements used across the app
+
+  - Buttons: save, cancel, delete, edit, etc.
+  - Status messages: loading, error, success, warning
+  - Common actions: yes, no, continue, back, next
+
+- **`settings`**: Settings page translations
+  - App version and update messages
+  - Language selection
+  - Custom node configuration
+  - Debug recording settings
+
+When adding new feature areas, create a new namespace `.ftl` file:
+
+1. Create `locales/{locale}/feature.ftl` for each locale
+2. Add the namespace to `I18NEXT_CONFIG.ns` array in `i18next-config.ts`
+3. Add static `require()` entries for React Native in the translation map
+4. Use `useTranslation('feature')` in your components
 
 ## Available scripts
 
@@ -217,7 +271,7 @@ platform and uses the appropriate loading strategy.
     "en-US",
     "pt-BR",
     "es-ES",
-    "zh-TW",
+    "zh-Hant",
     "fr-FR",
     "new-LOCALE"
   ],
@@ -232,18 +286,29 @@ platform and uses the appropriate loading strategy.
 }
 ```
 
-2. Create the locale directory and .ftl files in
-   `js/components/locales/new-LOCALE/`
+2. Create the locale directory and copy .ftl files from another locale:
 
-3. Add a static `require()` case in `js/components/src/i18n/i18next-config.ts`:
-
-```ts
-case "new-LOCALE":
-  translations = require("../../public/locales/new-LOCALE/messages.json");
-  break;
+```bash
+cd js/components/locales
+mkdir new-LOCALE
+cp en-US/*.ftl new-LOCALE/
 ```
 
-4. Run `pnpm i18n:compile` to generate the JSON file
+3. Translate the .ftl files in `js/components/locales/new-LOCALE/`
+
+4. Add static `require()` entries for all namespaces in
+   `js/components/src/i18n/i18next-config.ts`:
+
+```ts
+const translationMap: Record<string, any> = {
+  // ... existing entries
+  "new-LOCALE/common": require("../../public/locales/new-LOCALE/common.json"),
+  "new-LOCALE/settings": require("../../public/locales/new-LOCALE/settings.json"),
+  // Add any other namespaces you've created
+};
+```
+
+5. Run `pnpm i18n:compile` to generate the JSON files
 
 You can also
 [view the official Fluent docs](https://github.com/projectfluent/fluent/wiki/Good-Practices-for-Developers)

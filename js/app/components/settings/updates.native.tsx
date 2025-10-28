@@ -17,7 +17,7 @@ export function Updates() {
   const updateInfo = ExpoUpdates.useUpdates();
   const { currentlyRunning, isUpdateAvailable, isUpdatePending } = updateInfo;
   const toast = useToast();
-  const { t } = useTranslation();
+  const { t } = useTranslation("settings");
 
   console.log(`updateInfo: ${JSON.stringify(updateInfo)}`);
 

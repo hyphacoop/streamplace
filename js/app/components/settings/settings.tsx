@@ -36,7 +36,7 @@ export function Settings() {
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
   const [languageSearchQuery, setLanguageSearchQuery] = useState("");
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation("settings");
 
   // are we logged in?
   const loggedIn = useAppSelector(
