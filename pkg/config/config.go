@@ -132,6 +132,7 @@ type CLI struct {
 	DevAccountCreds            map[string]string
 	StreamSessionTimeout       time.Duration
 	Replicators                []string
+	WebsocketURL               string
 }
 
 // ContentFilters represents the content filtering configuration
@@ -146,8 +147,8 @@ type ContentFilters struct {
 }
 
 const (
-	ReplicatorHTTP string = "http"
-	ReplicatorIroh string = "iroh"
+	ReplicatorWebsocket string = "websocket"
+	ReplicatorIroh      string = "iroh"
 )
 
 func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
@@ -224,7 +225,8 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.DisableIrohRelay, "disable-iroh-relay", false, "disable the iroh relay")
 	cli.KVSliceFlag(fs, &cli.DevAccountCreds, "dev-account-creds", "", "(FOR DEVELOPMENT ONLY) did=password pairs for logging into test accounts without oauth")
 	fs.DurationVar(&cli.StreamSessionTimeout, "stream-session-timeout", 60*time.Second, "how long to wait before considering a stream inactive on this node?")
-	cli.StringSliceFlag(fs, &cli.Replicators, "replicators", []string{ReplicatorIroh}, "list of replication protocols to use (http, iroh)")
+	cli.StringSliceFlag(fs, &cli.Replicators, "replicators", []string{ReplicatorWebsocket}, "list of replication protocols to use (http, iroh)")
+	fs.StringVar(&cli.WebsocketURL, "websocket-url", "", "override the websocket (ws:// or wss://) url to use for replication (normally not necessary, used for testing)")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)

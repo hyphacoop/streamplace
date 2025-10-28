@@ -16,6 +16,7 @@ import (
 	"github.com/streamplace/oatproxy/pkg/oatproxy"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/atproto"
+	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/model"
@@ -29,9 +30,10 @@ type Server struct {
 	OGImageCache *cache.Cache
 	ATSync       *atproto.ATProtoSynchronizer
 	statefulDB   *statedb.StatefulDB
+	bus          *bus.Bus
 }
 
-func NewServer(ctx context.Context, cli *config.CLI, model model.Model, statefulDB *statedb.StatefulDB, op *oatproxy.OATProxy, mdlw middleware.Middleware, atsync *atproto.ATProtoSynchronizer) (*Server, error) {
+func NewServer(ctx context.Context, cli *config.CLI, model model.Model, statefulDB *statedb.StatefulDB, op *oatproxy.OATProxy, mdlw middleware.Middleware, atsync *atproto.ATProtoSynchronizer, bus *bus.Bus) (*Server, error) {
 	e := echo.New()
 	s := &Server{
 		e:            e,
@@ -40,6 +42,7 @@ func NewServer(ctx context.Context, cli *config.CLI, model model.Model, stateful
 		OGImageCache: cache.New(5*time.Minute, 10*time.Minute), // 5min TTL, 10min cleanup
 		ATSync:       atsync,
 		statefulDB:   statefulDB,
+		bus:          bus,
 	}
 	e.Use(s.ErrorHandlingMiddleware())
 	e.Use(s.ContextPreservingMiddleware())
@@ -61,6 +64,7 @@ func NewServer(ctx context.Context, cli *config.CLI, model model.Model, stateful
 		return c.JSON(http.StatusOK, map[string]string{"version": cli.Build.Version})
 	})
 	e.GET("/xrpc/com.atproto.sync.subscribeRepos", s.handleComAtprotoSyncSubscribeRepos)
+	e.GET("/xrpc/place.stream.live.subscribeSegments", s.handlePlaceStreamLiveSubscribeSegments)
 	e.GET("/xrpc/*", s.HandleWildcard)
 	e.POST("/xrpc/*", s.HandleWildcard)
 	return s, nil

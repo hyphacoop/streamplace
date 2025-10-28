@@ -75,7 +75,12 @@ var Version = promauto.NewCounterVec(prometheus.CounterOpts{
 
 var WebsocketsOpen = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "streamplace_websockets_open",
-	Help: "number of open websockets",
+	Help: "number of open playback websockets",
+})
+
+var ReplicationWebsocketsOpen = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "streamplace_replication_websockets_open",
+	Help: "number of open replication websockets",
 })
 
 var SegmentSubscriptionsOpen = promauto.NewGaugeVec(prometheus.GaugeOpts{

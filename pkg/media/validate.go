@@ -41,6 +41,14 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 	if err != nil {
 		return err
 	}
+	oldSeg, err := mm.model.GetSegment(*maniCert.Manifest.Label)
+	if err != nil {
+		return err
+	}
+	if oldSeg != nil {
+		log.Warn(ctx, "segment already exists, skipping", "segmentID", *maniCert.Manifest.Label)
+		return nil
+	}
 	pub, err := signers.ParseES256KCert([]byte(maniCert.Cert))
 	if err != nil {
 		return err

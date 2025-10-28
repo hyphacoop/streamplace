@@ -38,6 +38,7 @@ import (
 	"stream.place/streamplace/pkg/notifications"
 	"stream.place/streamplace/pkg/replication"
 	"stream.place/streamplace/pkg/replication/iroh_replicator"
+	"stream.place/streamplace/pkg/replication/websocketrep"
 	"stream.place/streamplace/pkg/rtmps"
 	v0 "stream.place/streamplace/pkg/schema/v0"
 	"stream.place/streamplace/pkg/spmetrics"
@@ -440,6 +441,9 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		if err != nil {
 			return err
 		}
+	}
+	if slices.Contains(cli.Replicators, config.ReplicatorWebsocket) {
+		replicator = websocketrep.NewWebsocketReplicator(b, mod, mm)
 	}
 
 	op := oatproxy.New(&oatproxy.Config{

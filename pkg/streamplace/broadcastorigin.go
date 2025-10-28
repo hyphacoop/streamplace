@@ -24,4 +24,6 @@ type BroadcastOrigin struct {
 	Streamer string `json:"streamer" cborgen:"streamer"`
 	// updatedAt: Periodically updated timestamp when this origin last saw a livestream
 	UpdatedAt string `json:"updatedAt" cborgen:"updatedAt"`
+	// websocketURL: URL of the websocket endpoint for the livestream
+	WebsocketURL *string `json:"websocketURL,omitempty" cborgen:"websocketURL,omitempty"`
 }

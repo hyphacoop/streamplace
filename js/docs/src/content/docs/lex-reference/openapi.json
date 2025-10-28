@@ -652,6 +652,36 @@
         ]
       }
     },
+    "/xrpc/place.stream.live.subscribeSegments": {
+      "get": {
+        "summary": "Subscribe to a stream's new segments as they come in!",
+        "operationId": "place.stream.live.subscribeSegments",
+        "tags": ["place.stream.live"],
+        "x-websocket": true,
+        "responses": {},
+        "parameters": [
+          {
+            "name": "streamer",
+            "in": "query",
+            "required": true,
+            "description": "The DID of the streamer to subscribe to",
+            "schema": {
+              "type": "string",
+              "description": "The DID of the streamer to subscribe to"
+            }
+          }
+        ],
+        "x-websocket-message": {
+          "schema": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/place.stream.live.subscribeSegments_segment"
+              }
+            ]
+          }
+        }
+      }
+    },
     "/xrpc/place.stream.graph.getFollowingUser": {
       "get": {
         "summary": "Get whether or not user A is following user B.",
@@ -2097,6 +2127,11 @@
           "record": {}
         },
         "required": ["cid", "record"]
+      },
+      "place.stream.live.subscribeSegments_segment": {
+        "type": "string",
+        "format": "byte",
+        "description": "MP4 file of a user's signed livestream segment"
       },
       "com.atproto.repo.strongRef": {
         "type": "object",

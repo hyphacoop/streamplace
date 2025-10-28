@@ -3455,13 +3455,17 @@ func (t *BroadcastOrigin) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 6
+	fieldCount := 7
 
 	if t.Broadcaster == nil {
 		fieldCount--
 	}
 
 	if t.IrohTicket == nil {
+		fieldCount--
+	}
+
+	if t.WebsocketURL == nil {
 		fieldCount--
 	}
 
@@ -3620,6 +3624,38 @@ func (t *BroadcastOrigin) MarshalCBOR(w io.Writer) error {
 			}
 		}
 	}
+
+	// t.WebsocketURL (string) (string)
+	if t.WebsocketURL != nil {
+
+		if len("websocketURL") > 1000000 {
+			return xerrors.Errorf("Value in field \"websocketURL\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("websocketURL"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("websocketURL")); err != nil {
+			return err
+		}
+
+		if t.WebsocketURL == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.WebsocketURL) > 1000000 {
+				return xerrors.Errorf("Value in field t.WebsocketURL was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.WebsocketURL))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.WebsocketURL)); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -3648,7 +3684,7 @@ func (t *BroadcastOrigin) UnmarshalCBOR(r io.Reader) (err error) {
 
 	n := extra
 
-	nameBuf := make([]byte, 11)
+	nameBuf := make([]byte, 12)
 	for i := uint64(0); i < n; i++ {
 		nameLen, ok, err := cbg.ReadFullStringIntoBuf(cr, nameBuf, 1000000)
 		if err != nil {
@@ -3748,6 +3784,27 @@ func (t *BroadcastOrigin) UnmarshalCBOR(r io.Reader) (err error) {
 					}
 
 					t.Broadcaster = (*string)(&sval)
+				}
+			}
+			// t.WebsocketURL (string) (string)
+		case "websocketURL":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.WebsocketURL = (*string)(&sval)
 				}
 			}
 

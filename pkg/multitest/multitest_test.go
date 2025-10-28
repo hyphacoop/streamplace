@@ -112,8 +112,9 @@ func startStreamplaceNode(ctx context.Context, name string, t *testing.T, dev *d
 	for _, acct := range dev.Accounts {
 		devAccountCreds = append(devAccountCreds, fmt.Sprintf("%s=%s", acct.DID, acct.Password))
 	}
+	apiPort := nextPort()
 	env := map[string]string{
-		"SP_HTTP_ADDR":              fmt.Sprintf("127.0.0.1:%d", nextPort()),
+		"SP_HTTP_ADDR":              fmt.Sprintf("127.0.0.1:%d", apiPort),
 		"SP_HTTP_INTERNAL_ADDR":     fmt.Sprintf("127.0.0.1:%d", nextPort()),
 		"SP_RELAY_HOST":             strings.ReplaceAll(dev.PDSURL, "http://", "ws://"),
 		"SP_PLC_URL":                dev.PLCURL,
@@ -122,6 +123,8 @@ func startStreamplaceNode(ctx context.Context, name string, t *testing.T, dev *d
 		"SP_STREAM_SESSION_TIMEOUT": "3s",
 		"SP_COLOR":                  "true",
 		"RUST_LOG":                  os.Getenv("RUST_LOG"),
+		"SP_BROADCASTER_HOST":       fmt.Sprintf("%s.example.com", name),
+		"SP_WEBSOCKET_URL":          fmt.Sprintf("ws://127.0.0.1:%d", apiPort),
 	}
 	_, file, _, _ := runtime.Caller(0)
 	buildDir := fmt.Sprintf("build-%s-%s", runtime.GOOS, runtime.GOARCH)
