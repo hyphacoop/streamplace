@@ -218,5 +218,37 @@ function compileTranslations() {
   );
 }
 
+/**
+ * Copy compiled translations to app/public/locales
+ */
+function copyToApp() {
+  const appPublicLocales = path.join(
+    __dirname,
+    "..",
+    "..",
+    "app",
+    "public",
+    "locales",
+  );
+
+  console.log("\n📋 Copying translations to app...");
+
+  // Remove old locales directory in app
+  if (fs.existsSync(appPublicLocales)) {
+    fs.rmSync(appPublicLocales, { recursive: true, force: true });
+  }
+
+  // Copy compiled locales to app
+  fs.cpSync(LOCALES_OUTPUT_DIR, appPublicLocales, { recursive: true });
+
+  console.log(`✅ Copied to ${path.relative(process.cwd(), appPublicLocales)}`);
+}
+
 // Run the compilation
 compileTranslations();
+
+// Copy to app if it exists
+const appPath = path.join(__dirname, "..", "..", "app");
+if (fs.existsSync(appPath)) {
+  copyToApp();
+}

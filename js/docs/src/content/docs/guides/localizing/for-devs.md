@@ -231,10 +231,38 @@ When adding new feature areas, create a new namespace `.ftl` file:
 
 In `js/components`:
 
-- `pnpm i18n:compile` - Compile .ftl files to JSON
-- `pnpm i18n:watch` - Watch .ftl files and recompile on changes
-- `pnpm i18n:extract` - Extract translation keys from source code (TODO: needs
-  path updates)
+- `pnpm i18n:compile` - Compile .ftl files to JSON and copy to app
+- `pnpm i18n:watch` - Watch .ftl files, recompile and copy on changes
+  (recommended for development)
+- `pnpm i18n:extract` - Extract translation keys from source code and add them
+  to .ftl files
+
+### Development workflow
+
+When actively working on translations:
+
+1. In one terminal, run the app dev server:
+
+   ```bash
+   cd js/app
+   pnpm start  # or pnpm web, pnpm ios, etc.
+   ```
+
+2. In another terminal, run the translation watcher:
+
+   ```bash
+   cd js/components
+   pnpm i18n:watch
+   ```
+
+3. Edit `.ftl` files in `js/components/locales/`
+
+4. Save - the watcher will automatically:
+   - Compile your changes to JSON
+   - Copy the compiled files to `js/app/public/locales/`
+   - Your dev server will pick up the changes and hot reload
+
+This provides a fast feedback loop for translation work!
 
 ## Keep in mind...
 
