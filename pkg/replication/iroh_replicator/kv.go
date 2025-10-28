@@ -70,6 +70,7 @@ func NewSwarm(ctx context.Context, cli *config.CLI, secret []byte, topic []byte,
 		Key:             secret,
 		Topic:           topic,
 		MaxSendDuration: 1000_000_000, // 1s
+		DisableRelay:    cli.DisableIrohRelay,
 	}
 	log.Log(ctx, "Config created", "config", config)
 
