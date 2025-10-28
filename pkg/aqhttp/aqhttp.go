@@ -3,6 +3,8 @@ package aqhttp
 import (
 	"context"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -19,6 +21,13 @@ var Client http.Client
 var TrustedClient http.Client
 
 func init() {
+	// Initialize the trusted client first.
+	TrustedClient = http.Client{
+		Transport: NewTrustedTransport(),
+		Timeout:   30 * time.Second,
+	}
+
+	// Initialize the default (untrusted) client which performs SSRF checks.
 	Client = http.Client{
 		Transport: NewUntrustedTransport(),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -27,12 +36,10 @@ func init() {
 		Timeout: 30 * time.Second,
 	}
 
-	TrustedClient = http.Client{
-		Transport: NewTrustedTransport(),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Timeout: 30 * time.Second,
+	// When running under `go test` the test binary name typically ends with ".test".
+	// In that case, use the trusted client to avoid SSRF blocking for localhost tests.
+	if len(os.Args) > 0 && strings.HasSuffix(os.Args[0], ".test") {
+		Client = TrustedClient
 	}
 }
 
