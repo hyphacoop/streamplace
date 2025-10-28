@@ -189,6 +189,7 @@ func (swarm *IrohSwarm) startKV(ctx context.Context) error {
 			log.Debug(ctx, "SubscribeItemOther", "other", item)
 		}
 	}
+	return nil
 }
 
 func (swarm *IrohSwarm) handleIrohMessage(ctx context.Context, item iroh_streamplace.SubscribeItemEntry) error {
@@ -373,13 +374,14 @@ func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeI
 		// oh, i have this stream. cool. do nothing.
 		return nil
 	}
-	log.Log(ctx, "Subscribing to stream", "new_node", nodeID, "streamer", streamer)
+	log.Log(ctx, "Subscribing to stream start", "new_node", nodeID, "streamer", streamer)
 	pubKey, err := iroh_streamplace.PublicKeyFromString(nodeID)
 	if err != nil {
 		log.Error(ctx, "could not create public key", "error", err)
 		return err
 	}
 	err = swarm.Node.Subscribe(streamer, pubKey)
+	log.Log(ctx, "Subscribing to stream done", "new_node", nodeID, "streamer", streamer, "pubKey", pubKey, "error", err)
 	if err != nil {
 		log.Error(ctx, "could not subscribe to key", "error", err)
 		return err

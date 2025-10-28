@@ -289,8 +289,9 @@ func (node *TestNode) PlayStream(t *testing.T, acct *devenv.DevEnvAccount) {
 		return whep.WHEP(ctx)
 	})
 	start := time.Now()
-	var prevVideoTotal int
-	var prevAudioTotal int
+	// start at -1 to give them an extra go-round to boot
+	prevVideoTotal := -1
+	prevAudioTotal := -1
 	g.Go(func() error {
 		for {
 			select {
