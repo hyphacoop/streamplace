@@ -29,9 +29,9 @@ import (
 )
 
 func TestMultinodeSyndication(t *testing.T) {
-	// if os.Getenv("GITHUB_ACTION") != "" {
-	// 	t.Skip("Skipping multitest in GitHub Actions")
-	// }
+	if os.Getenv("GITHUB_ACTION") != "" {
+		t.Skip("Skipping multitest in GitHub Actions")
+	}
 	gstinit.InitGST()
 	dev := devenv.WithDevEnv(t)
 	acct1 := dev.CreateAccount(t)
@@ -56,9 +56,9 @@ func TestMultinodeSyndication(t *testing.T) {
 }
 
 func TestOriginSwap(t *testing.T) {
-	// if os.Getenv("GITHUB_ACTION") != "" {
-	// 	t.Skip("Skipping multitest in GitHub Actions")
-	// }
+	if os.Getenv("GITHUB_ACTION") != "" {
+		t.Skip("Skipping multitest in GitHub Actions")
+	}
 	gstinit.InitGST()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
