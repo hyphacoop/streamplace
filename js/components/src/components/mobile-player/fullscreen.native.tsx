@@ -6,6 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DanmuOverlay,
   PlayerProtocol,
+  useDanmuEnabled,
+  useDanmuLaneCount,
+  useDanmuMaxMessages,
+  useDanmuOpacity,
+  useDanmuSpeed,
   useLivestreamStore,
   usePlayerStore,
   VideoRetry,
@@ -31,9 +36,11 @@ export function Fullscreen(props: {
   const setFullscreen = usePlayerStore((x) => x.setFullscreen);
   const handle = useLivestreamStore((x) => x.profile?.handle);
 
-  const danmuEnabled = usePlayerStore((x) => x.danmuEnabled);
-  const danmuOpacity = usePlayerStore((x) => x.danmuOpacity);
-  const danmuSpeed = usePlayerStore((x) => x.danmuSpeed);
+  const danmuEnabled = useDanmuEnabled();
+  const danmuOpacity = useDanmuOpacity();
+  const danmuSpeed = useDanmuSpeed();
+  const danmuLaneCount = useDanmuLaneCount();
+  const danmuMaxMessages = useDanmuMaxMessages();
 
   const setSrc = usePlayerStore((x) => x.setSrc);
 
@@ -163,6 +170,8 @@ export function Fullscreen(props: {
             enabled={danmuEnabled}
             opacity={danmuOpacity}
             speed={danmuSpeed}
+            laneCount={danmuLaneCount}
+            maxMessages={danmuMaxMessages}
           />
           {props.children}
         </View>
@@ -183,6 +192,8 @@ export function Fullscreen(props: {
         enabled={danmuEnabled}
         opacity={danmuOpacity}
         speed={danmuSpeed}
+        laneCount={danmuLaneCount}
+        maxMessages={danmuMaxMessages}
       />
       {props.children}
     </>
