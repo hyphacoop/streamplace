@@ -179,15 +179,15 @@ export function ContextMenu({
                 <View
                   style={[
                     zero.flex.values[1],
-                    zero.layout.flex.row,
+                    isMobile ? zero.layout.flex.row : zero.layout.flex.column,
                     zero.layout.flex.spaceBetween,
                     zero.pr[4],
                   ]}
                 >
                   <Text>Quality</Text>
-                  <Text muted>
-                    ({quality}, {lowLatency ? "low latency" : "regular latency"}
-                    )
+                  <Text muted size={isMobile ? "base" : "sm"}>
+                    {quality === "source" ? "Source" : quality},{" "}
+                    {lowLatency ? "Low Latency" : ""}
                   </Text>
                 </View>
               </DropdownMenuSubTrigger>

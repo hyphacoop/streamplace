@@ -94,7 +94,25 @@ const SubMenuContext = createContext<SubMenuContextValue | null>(null);
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 export const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
-export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
+export const DropdownMenuRadioGroup = forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.RadioGroup>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioGroup>
+>(({ children, ...props }, ref) => {
+  const navStack = useNavigationStack();
+
+  // On mobile/navigation stack, just render children without the primitive RadioGroup
+  if (navStack) {
+    return <>{children}</>;
+  }
+
+  // Web - use primitive
+  return (
+    <DropdownMenuPrimitive.RadioGroup ref={ref} {...props}>
+      {children}
+    </DropdownMenuPrimitive.RadioGroup>
+  );
+});
 
 // Custom DropdownMenuSub that works with mobile navigation
 export const DropdownMenuSub = forwardRef<any, any>(
@@ -169,7 +187,7 @@ export const DropdownMenuBottomSheet = forwardRef<
   const { zero: zt, theme } = useTheme();
   const sheetRef = useRef<BottomSheet>(null);
   const { width } = useWindowDimensions();
-  const isWide = Platform.OS !== "web" && width >= 800;
+  const isWide = width >= 450;
   const sheetWidth = isWide ? 450 : width;
   const horizontalMargin = isWide ? (width - sheetWidth) / 2 : 0;
 
@@ -491,7 +509,8 @@ export const DropdownMenuSubContent = forwardRef<
       ref={ref}
       style={[
         a.zIndex[50],
-        a.sizes.minWidth[32],
+        a.sizes.minWidth[64],
+        a.sizes.maxWidth[64],
         a.overflow.hidden,
         a.radius.all.md,
         a.borders.width.thin,
@@ -532,7 +551,7 @@ export const DropdownMenuContent = forwardRef<
           style={
             [
               a.zIndex[50],
-              a.sizes.minWidth[32],
+              a.sizes.minWidth[64],
               a.sizes.maxWidth[64],
               a.overflow.hidden,
               a.radius.all.md,
@@ -584,7 +603,7 @@ export const DropdownMenuContentWithoutPortal = forwardRef<
           style={
             [
               { zIndex: 999999 },
-              a.sizes.minWidth[32],
+              a.sizes.minWidth[64],
               a.sizes.maxWidth[64],
               a.radius.all.md,
               a.borders.width.thin,
@@ -610,27 +629,34 @@ export const DropdownMenuContentWithoutPortal = forwardRef<
 
 /// Responsive Dropdown Menu Content. On mobile this will render a *bottom sheet* that is **portaled to the root of the app**.
 /// Prefer passing scoped content in as **otherwise it may crash the app**.
-export const ResponsiveDropdownMenuContent = forwardRef<any, any>(
-  ({ children, ...props }, ref) => {
-    const { width } = useWindowDimensions();
+export const ResponsiveDropdownMenuContent = forwardRef<
+  any,
+  any & { onModeChange?: (isSheet: boolean) => void }
+>(({ children, onModeChange, ...props }, ref) => {
+  const { width } = useWindowDimensions();
 
-    // On web, you might want to always use the normal dropdown
-    const isBottomSheet = Platform.OS !== "web";
+  // if we're non-web or not showing sidebar (<=980px) show bottom sheet
+  const isBottomSheet =
+    Platform.OS !== "web" || (Platform.OS === "web" && width <= 980);
 
-    if (isBottomSheet) {
-      return (
-        <DropdownMenuBottomSheet ref={ref} {...props}>
-          {children}
-        </DropdownMenuBottomSheet>
-      );
-    }
+  // Notify parent of mode
+  React.useEffect(() => {
+    onModeChange?.(isBottomSheet);
+  }, [isBottomSheet, onModeChange]);
+
+  if (isBottomSheet) {
     return (
-      <DropdownMenuContent ref={ref} {...props}>
+      <DropdownMenuBottomSheet ref={ref} {...props}>
         {children}
-      </DropdownMenuContent>
+      </DropdownMenuBottomSheet>
     );
-  },
-);
+  }
+  return (
+    <DropdownMenuContent ref={ref} {...props}>
+      {children}
+    </DropdownMenuContent>
+  );
+});
 
 export const DropdownMenuItem = forwardRef<
   any,
@@ -678,6 +704,51 @@ export const DropdownMenuCheckboxItem = forwardRef<
   }
 >(({ children, checked, ...props }, ref) => {
   const { theme } = useTheme();
+  const navStack = useNavigationStack();
+
+  // On mobile/navigation stack, render as a Pressable that doesn't depend on primitive context
+  if (navStack) {
+    return (
+      <Pressable
+        onPress={(e) => {
+          props.onCheckedChange?.(!checked);
+          props.onPress?.(e);
+        }}
+        {...props}
+      >
+        <View
+          style={[
+            a.layout.flex.row,
+            a.layout.flex.alignCenter,
+            a.radius.all.sm,
+            py[1],
+            pl[2],
+            pr[2],
+            pr[8],
+          ]}
+        >
+          {children}
+          <View style={[pl[1], layout.position.absolute, right[1]]}>
+            {checked ? (
+              <CheckCircle
+                size={14}
+                strokeWidth={3}
+                color={theme.colors.foreground}
+              />
+            ) : (
+              <Circle
+                size={14}
+                strokeWidth={3}
+                color={theme.colors.mutedForeground}
+              />
+            )}
+          </View>
+        </View>
+      </Pressable>
+    );
+  }
+
+  // Web - use primitive
   return (
     <DropdownMenuPrimitive.CheckboxItem
       ref={ref}
@@ -722,13 +793,45 @@ export const DropdownMenuRadioItem = forwardRef<
   DropdownMenuPrimitive.RadioItemProps & {
     ref?: React.RefObject<DropdownMenuPrimitive.RadioItemRef>;
     children?: React.ReactNode;
+    value?: string;
   }
->(({ children, ...props }, ref) => {
+>(({ children, value, ...props }, ref) => {
   const { theme } = useTheme();
+  const navStack = useNavigationStack();
+
+  // On mobile/navigation stack, render as a Pressable that doesn't depend on primitive context
+  if (navStack) {
+    // For radio items in nav stack, we need to get the current value from RadioGroup context
+    // For now, render as a simple pressable
+    return (
+      <Pressable
+        onPress={(e) => {
+          props.onPress?.(e);
+        }}
+        {...props}
+      >
+        <View
+          style={[
+            a.layout.flex.row,
+            a.layout.flex.alignCenter,
+            a.radius.all.sm,
+            py[1],
+            pl[2],
+            pr[1],
+          ]}
+        >
+          {children}
+        </View>
+      </Pressable>
+    );
+  }
+
+  // Web - use primitive
   return (
     <DropdownMenuPrimitive.RadioItem
       ref={ref}
       closeOnPress={props.closeOnPress || false}
+      value={value}
       {...props}
     >
       <View
