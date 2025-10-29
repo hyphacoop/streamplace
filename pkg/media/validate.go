@@ -42,7 +42,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 		return err
 	}
 	label := maniCert.Manifest.Label
-	if label != nil {
+	if label != nil && mm.model != nil {
 		oldSeg, err := mm.model.GetSegment(*label)
 		if err != nil {
 			return err
