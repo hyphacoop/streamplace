@@ -26,7 +26,6 @@ import (
 	"stream.place/streamplace/pkg/streamplace"
 
 	"stream.place/streamplace/pkg/log"
-	"stream.place/streamplace/pkg/replication"
 
 	"github.com/piprate/json-gold/ld"
 
@@ -42,7 +41,6 @@ var StreamplaceMetadata = "place.stream.metadata"
 
 type MediaManager struct {
 	cli                 *config.CLI
-	replicator          replication.Replicator
 	hlsRunning          map[string]*M3U8
 	hlsRunningMut       sync.Mutex
 	httpPipes           map[string]io.Writer

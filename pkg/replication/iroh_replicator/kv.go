@@ -121,14 +121,18 @@ func NewSwarm(ctx context.Context, cli *config.CLI, secret []byte, topic []byte,
 	return &swarm, nil
 }
 
-func (swarm *IrohSwarm) Start(ctx context.Context, tickets []string) error {
-	if len(tickets) > 0 {
-		err := swarm.Node.JoinPeers(tickets)
+func (swarm *IrohSwarm) BuildOriginRecord(origin *streamplace.BroadcastOrigin) error {
+	origin.IrohTicket = &swarm.NodeTicket
+	return nil
+}
+
+func (swarm *IrohSwarm) Start(ctx context.Context, cli *config.CLI) error {
+	if len(cli.Tickets) > 0 {
+		err := swarm.Node.JoinPeers(cli.Tickets)
 		if err != nil {
 			return fmt.Errorf("failed to join peers: %w", err)
 		}
 	}
-
 	nodeId, err := swarm.Node.NodeId()
 	if err != nil {
 		return fmt.Errorf("failed to get node id: %w", err)
@@ -373,13 +377,14 @@ func (swarm *IrohSwarm) checkOrigins(ctx context.Context, streamer string, nodeI
 		// oh, i have this stream. cool. do nothing.
 		return nil
 	}
-	log.Log(ctx, "Subscribing to stream", "new_node", nodeID, "streamer", streamer)
+	log.Log(ctx, "Subscribing to stream start", "new_node", nodeID, "streamer", streamer)
 	pubKey, err := iroh_streamplace.PublicKeyFromString(nodeID)
 	if err != nil {
 		log.Error(ctx, "could not create public key", "error", err)
 		return err
 	}
 	err = swarm.Node.Subscribe(streamer, pubKey)
+	log.Log(ctx, "Subscribing to stream done", "new_node", nodeID, "streamer", streamer, "pubKey", pubKey, "error", err)
 	if err != nil {
 		log.Error(ctx, "could not subscribe to key", "error", err)
 		return err
@@ -438,8 +443,8 @@ func (swarm *IrohSwarm) SendSegment(ctx context.Context, not *media.NewSegmentNo
 		}
 	}()
 	go func() {
-		spmetrics.SendSegmentCalls.WithLabelValues(not.Segment.RepoDID).Inc()
-		defer spmetrics.SendSegmentCalls.WithLabelValues(not.Segment.RepoDID).Dec()
+		spmetrics.SendSegmentCalls.Inc()
+		defer spmetrics.SendSegmentCalls.Dec()
 		err = swarm.Node.SendSegment(not.Segment.RepoDID, not.Data)
 		if err != nil {
 			log.Error(ctx, "could not send segment to swarm", "error", err)

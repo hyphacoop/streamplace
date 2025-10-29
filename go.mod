@@ -54,6 +54,7 @@ require (
 	github.com/samber/slog-http v1.4.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/slok/go-http-metrics v0.13.0
+	github.com/starttoaster/prometheus-exporter-scraper v0.0.1
 	github.com/streamplace/atproto-oauth-golang v0.0.0-20250619231223-a9c04fb888ac
 	github.com/streamplace/oatproxy v0.0.0-20251022224044-56ff4e867807
 	github.com/stretchr/testify v1.10.0

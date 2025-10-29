@@ -26,10 +26,10 @@ var StreamSessions = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "number of open stream sessions per streamer",
 }, []string{"streamer"})
 
-var SendSegmentCalls = promauto.NewGaugeVec(prometheus.GaugeOpts{
+var SendSegmentCalls = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "streamplace_send_segment_calls",
 	Help: "total number of send segment calls currently in flight",
-}, []string{"streamer"})
+})
 
 var SwarmPutCalls = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "streamplace_swarm_put_calls",
@@ -75,7 +75,12 @@ var Version = promauto.NewCounterVec(prometheus.CounterOpts{
 
 var WebsocketsOpen = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "streamplace_websockets_open",
-	Help: "number of open websockets",
+	Help: "number of open playback websockets",
+})
+
+var ReplicationWebsocketsOpen = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "streamplace_replication_websockets_open",
+	Help: "number of open replication websockets",
 })
 
 var SegmentSubscriptionsOpen = promauto.NewGaugeVec(prometheus.GaugeOpts{

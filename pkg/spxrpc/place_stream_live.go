@@ -7,12 +7,22 @@ import (
 	"time"
 
 	"github.com/bluesky-social/indigo/lex/util"
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/spid"
 	"stream.place/streamplace/pkg/spmetrics"
 
 	placestreamtypes "stream.place/streamplace/pkg/streamplace"
 )
+
+var replicationUpgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024 * 1024 * 10, // 10MB
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func (s *Server) handlePlaceStreamLiveGetSegments(ctx context.Context, before string, limit int, userDID string) (*placestreamtypes.LiveGetSegments_Output, error) {
 	if userDID == "" {
@@ -91,4 +101,55 @@ func (s *Server) handlePlaceStreamLiveGetLiveUsers(ctx context.Context, before s
 	}
 
 	return liveUsers, nil
+}
+
+func (s *Server) handlePlaceStreamLiveSubscribeSegments(c echo.Context) error {
+	user := c.QueryParam("streamer")
+	if user == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "User DID is required")
+	}
+	spmetrics.ReplicationWebsocketsOpen.Inc()
+	defer spmetrics.ReplicationWebsocketsOpen.Dec()
+	ws, err := replicationUpgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer ws.Close()
+
+	ctx, cancel := context.WithCancel(c.Request().Context())
+	defer cancel()
+	go func() {
+
+		segChan := s.bus.SubscribeSegmentBuf(ctx, user, "source", 2)
+		defer s.bus.UnsubscribeSegment(ctx, user, "source", segChan)
+		for {
+			select {
+			case <-ctx.Done():
+				log.Debug(ctx, "exiting segment reader")
+				return
+			case file := <-segChan.C:
+				log.Debug(ctx, "got segment", "file", file.Filepath)
+				err := ws.WriteMessage(websocket.BinaryMessage, file.Data)
+				if err != nil {
+					log.Error(ctx, "could not write message", "error", err)
+					cancel()
+					return
+				}
+			}
+		}
+
+	}()
+
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		// Read
+		_, msg, err := ws.ReadMessage()
+		if err != nil {
+			c.Logger().Error(err)
+			return err
+		}
+		log.Debug(c.Request().Context(), "received message", "message", string(msg))
+	}
 }

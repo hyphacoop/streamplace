@@ -20,13 +20,14 @@ given address. By convention, the record key is streamer::server
 
 **Record Properties:**
 
-| Name          | Type     | Req'd | Description                                                                | Constraints        |
-| ------------- | -------- | ----- | -------------------------------------------------------------------------- | ------------------ |
-| `streamer`    | `string` | ✅    | DID of the streamer whose livestream is being published                    | Format: `did`      |
-| `server`      | `string` | ✅    | did of the server that's currently rebroadcasting the livestream           | Format: `did`      |
-| `broadcaster` | `string` | ❌    | did of the broadcaster that operates the server syndicating the livestream | Format: `did`      |
-| `updatedAt`   | `string` | ✅    | Periodically updated timestamp when this origin last saw a livestream      | Format: `datetime` |
-| `irohTicket`  | `string` | ❌    | Iroh ticket that can be used to access the livestream from the server      | Max Length: 2048   |
+| Name           | Type     | Req'd | Description                                                                | Constraints        |
+| -------------- | -------- | ----- | -------------------------------------------------------------------------- | ------------------ |
+| `streamer`     | `string` | ✅    | DID of the streamer whose livestream is being published                    | Format: `did`      |
+| `server`       | `string` | ✅    | did of the server that's currently rebroadcasting the livestream           | Format: `did`      |
+| `broadcaster`  | `string` | ❌    | did of the broadcaster that operates the server syndicating the livestream | Format: `did`      |
+| `updatedAt`    | `string` | ✅    | Periodically updated timestamp when this origin last saw a livestream      | Format: `datetime` |
+| `irohTicket`   | `string` | ❌    | Iroh ticket that can be used to access the livestream from the server      | Max Length: 2048   |
+| `websocketURL` | `string` | ❌    | URL of the websocket endpoint for the livestream                           | Format: `uri`      |
 
 ---
 
@@ -69,6 +70,11 @@ given address. By convention, the record key is streamer::server
             "type": "string",
             "maxLength": 2048,
             "description": "Iroh ticket that can be used to access the livestream from the server"
+          },
+          "websocketURL": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the websocket endpoint for the livestream"
           }
         }
       }

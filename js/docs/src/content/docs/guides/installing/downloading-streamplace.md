@@ -34,6 +34,10 @@ SP_HTTP_ADDR=:80
 SP_HTTPS_ADDR=:443
 SP_SECURE=true
 
+# If you're running Streamplace behind an HTTPS proxy, you'll want
+# SP_SECURE=false
+# SP_BEHIND_HTTPS_PROXY=true
+
 # Necessary to advertise a public Streamplace broadcaster
 SP_BROADCASTER_HOST=example.com
 # If you have a multi-node cluster, they'll each need different public DNS names:

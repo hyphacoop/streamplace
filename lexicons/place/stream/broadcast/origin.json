@@ -34,6 +34,11 @@
             "type": "string",
             "maxLength": 2048,
             "description": "Iroh ticket that can be used to access the livestream from the server"
+          },
+          "websocketURL": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the websocket endpoint for the livestream"
           }
         }
       }
