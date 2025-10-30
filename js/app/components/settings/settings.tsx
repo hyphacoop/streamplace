@@ -3,8 +3,8 @@ import {
   Button,
   Input,
   Slider,
-  useToast,
   Text,
+  useToast,
   View,
   zero,
 } from "@streamplace/components";
@@ -20,7 +20,13 @@ import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, Switch } from "react-native";
+import {
+  Platform,
+  ScrollView,
+ 
+  Switch,
+  useWindowDimensions,
+} from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Updates } from "./updates";
 import WebhookManager from "./webhook-manager";
@@ -274,6 +280,7 @@ const DebugRecording = () => {
 
 const DanmuSettings = () => {
   const {
+    danmuUnlocked,
     danmuEnabled,
     danmuOpacity,
     danmuSpeed,
@@ -286,8 +293,13 @@ const DanmuSettings = () => {
     setDanmuMaxMessages,
   } = useDanmuSettings();
 
+  const { width } = useWindowDimensions();
+  const isNarrowScreen = width < 550;
+
+  if (!danmuUnlocked) return null;
+
   return (
-    <View style={[{ alignItems: "stretch" }, zero.gap.all[2]]}>
+    <View style={[{ alignItems: "stretch" }, zero.gap.all[4]]}>
       <View
         style={[
           { flexDirection: "row" },
@@ -310,9 +322,9 @@ const DanmuSettings = () => {
             <View
               style={[
                 {
-                  flexDirection: "row",
+                  flexDirection: isNarrowScreen ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                 },
                 zero.gap.all[2],
               ]}
@@ -322,6 +334,7 @@ const DanmuSettings = () => {
                   {
                     flexDirection: "row",
                     alignItems: "center",
+                    justifyContent: "flex-start",
                   },
                   zero.gap.all[2],
                 ]}
@@ -338,63 +351,73 @@ const DanmuSettings = () => {
                 />
                 <Text size="lg">%</Text>
               </View>
-              <View style={styles.buttonRow}>
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                  },
+                  zero.gap.all[2],
+                ]}
+              >
                 {[0, 25, 50, 75, 100].map((value) => (
                   <Button
                     key={value}
                     onPress={() => setDanmuOpacity(value)}
                     variant={danmuOpacity === value ? "primary" : "secondary"}
-                    size="sm"
+                    size="pill"
                   >
                     <Text size="lg">{value}</Text>
                   </Button>
                 ))}
               </View>
             </View>
-            <Slider.Root
-              // i think they typed this wrong in the lib?
-              value={[danmuOpacity] as any}
-              min={0}
-              max={100}
-              step={5}
-              onValueChange={(vals) => setDanmuOpacity(vals[0])}
-              style={{ width: "100%", height: 40 }}
-            >
-              <Slider.Track
-                style={{
-                  height: 4,
-                  backgroundColor: "#374151",
-                  borderRadius: 2,
-                  width: "100%",
-                }}
+            {Platform.OS === "web" && (
+              <Slider.Root
+                // i think they typed this wrong in the lib?
+                value={[danmuOpacity] as any}
+                min={0}
+                max={100}
+                step={5}
+                onValueChange={(vals) => setDanmuOpacity(vals[0])}
+                style={{ width: "100%", height: 40 }}
               >
-                <Slider.Range
+                <Slider.Track
                   style={{
                     height: 4,
-                    backgroundColor: "#3b82f6",
+                    backgroundColor: "#374151",
                     borderRadius: 2,
+                    width: "100%",
                   }}
-                />
-                <Slider.Thumb
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: "#3b82f6",
-                    transform: [{ translateY: -8 }],
-                  }}
-                />
-              </Slider.Track>
-            </Slider.Root>
+                >
+                  <Slider.Range
+                    style={{
+                      height: 4,
+                      backgroundColor: "#3b82f6",
+                      borderRadius: 2,
+                    }}
+                  />
+                  <Slider.Thumb
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#3b82f6",
+                      transform: [{ translateY: -8 }],
+                    }}
+                  />
+                </Slider.Track>
+              </Slider.Root>
+            )}
           </View>
 
           <View style={[zero.gap.all[6]]}>
             <View
               style={[
                 {
-                  flexDirection: "row",
+                  flexDirection: isNarrowScreen ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                 },
                 zero.gap.all[2],
               ]}
@@ -420,7 +443,15 @@ const DanmuSettings = () => {
                 />
                 <Text size="lg">×</Text>
               </View>
-              <View style={styles.buttonRow}>
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                  },
+                  zero.gap.all[2],
+                ]}
+              >
                 {[
                   { label: "0.5×", value: 0.5 },
                   { label: "1×", value: 1 },
@@ -431,56 +462,58 @@ const DanmuSettings = () => {
                     key={value}
                     onPress={() => setDanmuSpeed(value)}
                     variant={danmuSpeed === value ? "primary" : "secondary"}
-                    size="sm"
+                    size="pill"
                   >
                     <Text size="lg">{label}</Text>
                   </Button>
                 ))}
               </View>
             </View>
-            <Slider.Root
-              value={[danmuSpeed] as any}
-              min={0.5}
-              max={2}
-              step={0.1}
-              onValueChange={(vals) => setDanmuSpeed(vals[0])}
-              style={{ width: "100%", height: 40 }}
-            >
-              <Slider.Track
-                style={{
-                  height: 4,
-                  backgroundColor: "#374151",
-                  borderRadius: 2,
-                  width: "100%",
-                }}
+            {Platform.OS === "web" && (
+              <Slider.Root
+                value={[danmuSpeed] as any}
+                min={0.5}
+                max={2}
+                step={0.1}
+                onValueChange={(vals) => setDanmuSpeed(vals[0])}
+                style={{ width: "100%", height: 40 }}
               >
-                <Slider.Range
+                <Slider.Track
                   style={{
                     height: 4,
-                    backgroundColor: "#3b82f6",
+                    backgroundColor: "#374151",
                     borderRadius: 2,
+                    width: "100%",
                   }}
-                />
-                <Slider.Thumb
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: "#3b82f6",
-                    transform: [{ translateY: -8 }],
-                  }}
-                />
-              </Slider.Track>
-            </Slider.Root>
+                >
+                  <Slider.Range
+                    style={{
+                      height: 4,
+                      backgroundColor: "#3b82f6",
+                      borderRadius: 2,
+                    }}
+                  />
+                  <Slider.Thumb
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#3b82f6",
+                      transform: [{ translateY: -8 }],
+                    }}
+                  />
+                </Slider.Track>
+              </Slider.Root>
+            )}
           </View>
 
           <View style={[zero.gap.all[6]]}>
             <View
               style={[
                 {
-                  flexDirection: "row",
+                  flexDirection: isNarrowScreen ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                 },
                 zero.gap.all[2],
               ]}
@@ -505,62 +538,72 @@ const DanmuSettings = () => {
                   keyboardType="number-pad"
                 />
               </View>
-              <View style={styles.buttonRow}>
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                  },
+                  zero.gap.all[2],
+                ]}
+              >
                 {[6, 8, 10, 12, 15].map((value) => (
                   <Button
                     key={value}
                     onPress={() => setDanmuLaneCount(value)}
                     variant={danmuLaneCount === value ? "primary" : "secondary"}
-                    size="sm"
+                    size="pill"
                   >
                     <Text size="lg">{value}</Text>
                   </Button>
                 ))}
               </View>
             </View>
-            <Slider.Root
-              value={[danmuLaneCount] as any}
-              min={4}
-              max={20}
-              step={1}
-              onValueChange={(vals) => setDanmuLaneCount(vals[0])}
-              style={{ width: "100%", height: 40 }}
-            >
-              <Slider.Track
-                style={{
-                  height: 4,
-                  backgroundColor: "#374151",
-                  borderRadius: 2,
-                  width: "100%",
-                }}
+            {Platform.OS === "web" && (
+              <Slider.Root
+                value={[danmuLaneCount] as any}
+                min={4}
+                max={20}
+                step={1}
+                onValueChange={(vals) => setDanmuLaneCount(vals[0])}
+                style={{ width: "100%", height: 40 }}
               >
-                <Slider.Range
+                <Slider.Track
                   style={{
                     height: 4,
-                    backgroundColor: "#3b82f6",
+                    backgroundColor: "#374151",
                     borderRadius: 2,
+                    width: "100%",
                   }}
-                />
-                <Slider.Thumb
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: "#3b82f6",
-                    transform: [{ translateY: -8 }],
-                  }}
-                />
-              </Slider.Track>
-            </Slider.Root>
+                >
+                  <Slider.Range
+                    style={{
+                      height: 4,
+                      backgroundColor: "#3b82f6",
+                      borderRadius: 2,
+                    }}
+                  />
+                  <Slider.Thumb
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#3b82f6",
+                      transform: [{ translateY: -8 }],
+                    }}
+                  />
+                </Slider.Track>
+              </Slider.Root>
+            )}
           </View>
 
           <View style={[zero.gap.all[6]]}>
             <View
               style={[
                 {
-                  flexDirection: "row",
+                  flexDirection: isNarrowScreen ? "column" : "row",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                 },
                 zero.gap.all[2],
               ]}
@@ -585,7 +628,15 @@ const DanmuSettings = () => {
                   keyboardType="number-pad"
                 />
               </View>
-              <View style={styles.buttonRow}>
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                  },
+                  zero.gap.all[2],
+                ]}
+              >
                 {[10, 25, 50, 100].map((value) => (
                   <Button
                     key={value}
@@ -593,47 +644,49 @@ const DanmuSettings = () => {
                     variant={
                       danmuMaxMessages === value ? "primary" : "secondary"
                     }
-                    size="sm"
+                    size="pill"
                   >
                     <Text size="lg">{value}</Text>
                   </Button>
                 ))}
               </View>
             </View>
-            <Slider.Root
-              value={[danmuMaxMessages] as any}
-              min={5}
-              max={200}
-              step={5}
-              onValueChange={(vals) => setDanmuMaxMessages(vals[0])}
-              style={{ width: "100%", height: 40 }}
-            >
-              <Slider.Track
-                style={{
-                  height: 4,
-                  backgroundColor: "#374151",
-                  borderRadius: 2,
-                  width: "100%",
-                }}
+            {Platform.OS === "web" && (
+              <Slider.Root
+                value={[danmuMaxMessages] as any}
+                min={5}
+                max={200}
+                step={5}
+                onValueChange={(vals) => setDanmuMaxMessages(vals[0])}
+                style={{ width: "100%", height: 40 }}
               >
-                <Slider.Range
+                <Slider.Track
                   style={{
                     height: 4,
-                    backgroundColor: "#3b82f6",
+                    backgroundColor: "#374151",
                     borderRadius: 2,
+                    width: "100%",
                   }}
-                />
-                <Slider.Thumb
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    backgroundColor: "#3b82f6",
-                    transform: [{ translateY: -8 }],
-                  }}
-                />
-              </Slider.Track>
-            </Slider.Root>
+                >
+                  <Slider.Range
+                    style={{
+                      height: 4,
+                      backgroundColor: "#3b82f6",
+                      borderRadius: 2,
+                    }}
+                  />
+                  <Slider.Thumb
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#3b82f6",
+                      transform: [{ translateY: -8 }],
+                    }}
+                  />
+                </Slider.Track>
+              </Slider.Root>
+            )}
           </View>
         </>
       )}
@@ -647,6 +700,11 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: "wrap",
     justifyContent: "flex-end",
+  },
+  buttonColumn: {
+    flexDirection: "column",
+    gap: 8,
+    alignItems: "stretch",
   },
   optionButton: {
     paddingHorizontal: 16,

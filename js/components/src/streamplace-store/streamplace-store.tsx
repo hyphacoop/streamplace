@@ -56,11 +56,13 @@ export interface StreamplaceState {
   setMuted: (muted: boolean) => void;
 
   // Danmu settings
+  danmuUnlocked: boolean;
   danmuEnabled: boolean;
   danmuOpacity: number;
   danmuSpeed: number;
   danmuLaneCount: number;
   danmuMaxMessages: number;
+  setDanmuUnlocked: (unlocked: boolean) => void;
   setDanmuEnabled: (enabled: boolean) => void;
   setDanmuOpacity: (opacity: number) => void;
   setDanmuSpeed: (speed: number) => void;
@@ -77,6 +79,7 @@ export const makeStreamplaceStore = ({
 }): StoreApi<StreamplaceState> => {
   const VOLUME_STORAGE_KEY = "globalVolume";
   const MUTED_STORAGE_KEY = "globalMuted";
+  const DANMU_UNLOCKED_KEY = "danmuUnlocked";
   const DANMU_ENABLED_KEY = "danmuEnabled";
   const DANMU_OPACITY_KEY = "danmuOpacity";
   const DANMU_SPEED_KEY = "danmuSpeed";
@@ -144,11 +147,19 @@ export const makeStreamplaceStore = ({
     },
 
     // Danmu settings - start with defaults
+    danmuUnlocked: false,
     danmuEnabled: false,
     danmuOpacity: 80,
     danmuSpeed: 1,
     danmuLaneCount: 12,
     danmuMaxMessages: 50,
+
+    setDanmuUnlocked: (unlocked: boolean) => {
+      set({ danmuUnlocked: unlocked });
+      storage
+        .setItem(DANMU_UNLOCKED_KEY, unlocked.toString())
+        .catch(console.error);
+    },
 
     setDanmuEnabled: (enabled: boolean) => {
       set({ danmuEnabled: enabled });
@@ -193,6 +204,7 @@ export const makeStreamplaceStore = ({
     try {
       const storedVolume = await storage.getItem(VOLUME_STORAGE_KEY);
       const storedMuted = await storage.getItem(MUTED_STORAGE_KEY);
+      const storedDanmuUnlocked = await storage.getItem(DANMU_UNLOCKED_KEY);
       const storedDanmuEnabled = await storage.getItem(DANMU_ENABLED_KEY);
       const storedDanmuOpacity = await storage.getItem(DANMU_OPACITY_KEY);
       const storedDanmuSpeed = await storage.getItem(DANMU_SPEED_KEY);
@@ -203,6 +215,7 @@ export const makeStreamplaceStore = ({
 
       let initialVolume = 1.0;
       let initialMuted = false;
+      let initialDanmuUnlocked = false;
       let initialDanmuEnabled = false;
       let initialDanmuOpacity = 80;
       let initialDanmuSpeed = 1;
@@ -222,6 +235,10 @@ export const makeStreamplaceStore = ({
 
       if (storedMuted) {
         initialMuted = storedMuted === "true";
+      }
+
+      if (storedDanmuUnlocked) {
+        initialDanmuUnlocked = storedDanmuUnlocked === "true";
       }
 
       if (storedDanmuEnabled) {
@@ -259,6 +276,7 @@ export const makeStreamplaceStore = ({
       store.setState({
         volume: initialVolume,
         muted: initialMuted,
+        danmuUnlocked: initialDanmuUnlocked,
         danmuEnabled: initialDanmuEnabled,
         danmuOpacity: initialDanmuOpacity,
         danmuSpeed: initialDanmuSpeed,
@@ -324,6 +342,8 @@ export const useEffectiveVolume = () =>
   });
 
 // Danmu convenience hooks
+export const useDanmuUnlocked = () =>
+  useStreamplaceStore((x) => x.danmuUnlocked);
 export const useDanmuEnabled = () => useStreamplaceStore((x) => x.danmuEnabled);
 export const useDanmuOpacity = () => useStreamplaceStore((x) => x.danmuOpacity);
 export const useDanmuSpeed = () => useStreamplaceStore((x) => x.danmuSpeed);
@@ -331,6 +351,8 @@ export const useDanmuLaneCount = () =>
   useStreamplaceStore((x) => x.danmuLaneCount);
 export const useDanmuMaxMessages = () =>
   useStreamplaceStore((x) => x.danmuMaxMessages);
+export const useSetDanmuUnlocked = () =>
+  useStreamplaceStore((x) => x.setDanmuUnlocked);
 export const useSetDanmuEnabled = () =>
   useStreamplaceStore((x) => x.setDanmuEnabled);
 export const useSetDanmuOpacity = () =>
@@ -344,11 +366,13 @@ export const useSetDanmuMaxMessages = () =>
 
 // Composite hook that calls all individual hooks
 export const useDanmuSettings = () => {
+  const danmuUnlocked = useDanmuUnlocked();
   const danmuEnabled = useDanmuEnabled();
   const danmuOpacity = useDanmuOpacity();
   const danmuSpeed = useDanmuSpeed();
   const danmuLaneCount = useDanmuLaneCount();
   const danmuMaxMessages = useDanmuMaxMessages();
+  const setDanmuUnlocked = useSetDanmuUnlocked();
   const setDanmuEnabled = useSetDanmuEnabled();
   const setDanmuOpacity = useSetDanmuOpacity();
   const setDanmuSpeed = useSetDanmuSpeed();
@@ -356,11 +380,13 @@ export const useDanmuSettings = () => {
   const setDanmuMaxMessages = useSetDanmuMaxMessages();
 
   return {
+    danmuUnlocked,
     danmuEnabled,
     danmuOpacity,
     danmuSpeed,
     danmuLaneCount,
     danmuMaxMessages,
+    setDanmuUnlocked,
     setDanmuEnabled,
     setDanmuOpacity,
     setDanmuSpeed,

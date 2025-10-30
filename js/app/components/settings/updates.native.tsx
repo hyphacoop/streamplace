@@ -5,11 +5,17 @@ import {
   useToast,
   zero,
 } from "@streamplace/components";
+import {
+  useDanmuUnlocked,
+  useSetDanmuUnlocked,
+} from "@streamplace/components/src/streamplace-store";
 import * as ExpoUpdates from "expo-updates";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, TouchableOpacity, View } from "react-native";
+import { Platform, Pressable, TouchableOpacity, View } from "react-native";
 import pkg from "../../package.json";
+
+const UNLOCK_TAP_COUNT = 5;
 
 export function Updates() {
   const theme = useTheme();
@@ -22,12 +28,46 @@ export function Updates() {
   console.log(`updateInfo: ${JSON.stringify(updateInfo)}`);
 
   const [checked, setChecked] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const danmuUnlocked = useDanmuUnlocked();
+  const setDanmuUnlocked = useSetDanmuUnlocked();
+  const t = useToast();
 
   useEffect(() => {
     if (isUpdateAvailable && checked) {
       ExpoUpdates.fetchUpdateAsync();
     }
   }, [isUpdateAvailable, checked]);
+
+  const handleVersionPress = () => {
+    if (danmuUnlocked) {
+      t.show("You are already a developer", undefined, {
+        duration: 2,
+        variant: "info",
+        actionLabel: "Stop being a developer",
+        onAction: () => {
+          setDanmuUnlocked(false);
+          t.show("You are no longer a developer", undefined, {
+            duration: 2,
+            variant: "info",
+          });
+        },
+      });
+      return;
+    }
+
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+
+    if (newCount >= UNLOCK_TAP_COUNT) {
+      setDanmuUnlocked(true);
+      t.show("You are now a developer", "have fun! lol", {
+        duration: 20,
+        variant: "success",
+      });
+      setTapCount(0);
+    }
+  };
 
   // If true, we show the button to download and run the update
   const buttonText = isUpdateAvailable
