@@ -354,6 +354,19 @@ export function ChatBox({
                 k.preventDefault();
                 submit();
               }
+            } else if (k.nativeEvent.key === "Tab") {
+              if (showSuggestions) {
+                k.preventDefault();
+                const handles = Array.from(filteredAuthors.keys());
+                if (handles.length > 0) {
+                  handleMentionSelect(handles[highlightedIndex]);
+                }
+              } else if (showEmojiSuggestions) {
+                k.preventDefault();
+                if (filteredEmojis.length > 0) {
+                  handleEmojiSelect(filteredEmojis[highlightedIndex]);
+                }
+              }
             } else if (k.nativeEvent.key === "ArrowUp") {
               if (showSuggestions || showEmojiSuggestions) {
                 k.preventDefault();
