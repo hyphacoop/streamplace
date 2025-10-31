@@ -9,8 +9,11 @@ import {
   PlayerUI,
   RotationProvider,
   Text,
+  useLivestreamStore,
   usePlayerDimensions,
   usePlayerStore,
+  useSegment,
+  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
@@ -18,16 +21,28 @@ import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
-import { Animated, Platform, ScrollView, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useStore } from "store";
-import { useUserProfile } from "store/hooks";
+import { Platform, ScrollView, StatusBar } from "react-native";
+import Reanimated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useAppSelector } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
 import { DesktopUi } from "./desktop-ui";
 import { OfflineCounter } from "./offline-counter";
 import { MobileUi } from "./ui";
 import { useResponsiveLayout } from "./useResponsiveLayout";
+
+import {
+  setSidebarHidden,
+  setSidebarUnhidden,
+} from "features/base/sidebarSlice";
+import { useDispatch } from "react-redux";
+import { UserOffline } from "src/screens/user-offline";
+
+const SEGMENT_TIMEOUT = 500; // half a sec
 
 export function Player(
   props: Partial<PlayerProps> & {
@@ -37,6 +52,31 @@ export function Player(
   const [showChat, setShowChat] = useState(true);
   const { shouldShowChatSidePanel, chatPanelWidth } = useResponsiveLayout();
   const chatVisible = shouldShowChatSidePanel && showChat;
+
+  const websocketConnected = useLivestreamStore((x) => x.websocketConnected);
+  const hasReceivedSegment = useLivestreamStore((x) => x.hasReceivedSegment);
+  const [showUnavailable, setShowUnavailable] = useState(false);
+  const segs = useSegment();
+  useEffect(() => {
+    if (!websocketConnected) {
+      setShowUnavailable(false);
+      return;
+    }
+
+    const now = new Date().getTime();
+    const then = new Date(segs?.startTime || 0).getTime();
+    const segmentIsStale = segs?.startTime ? then < now - 300_000 : true;
+
+    if (!segmentIsStale) {
+      setShowUnavailable(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowUnavailable(true);
+    }, SEGMENT_TIMEOUT);
+    return () => clearTimeout(timer);
+  }, [websocketConnected, hasReceivedSegment, segs]);
 
   const [isStreamingElsewhere, setIsStreamingElsewhere] = useState<
     boolean | null
@@ -137,6 +177,7 @@ export function Player(
               {...props}
               showChat={showChat}
               setShowChat={setShowChat}
+              showUnavailable={showUnavailable}
             />
             {shouldShowChatSidePanel ? (
               <DesktopChatPanel
@@ -144,7 +185,7 @@ export function Player(
                 chatPanelWidth={chatPanelWidth}
               />
             ) : (
-              <MobileUi />
+              showUnavailable && <MobileUi />
             )}
           </View>
         </PlayerProvider>
@@ -157,6 +198,7 @@ export function PlayerInner(
   props: Partial<PlayerProps> & {
     showChat: boolean;
     setShowChat: (show: boolean) => void;
+    showUnavailable: boolean;
   },
 ) {
   let sb = useSidebarControl();
@@ -174,8 +216,35 @@ export function PlayerInner(
     showChatSidePanelOnLandscape: props.showChat,
   });
 
-  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
-  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
+  // auto-collapse chat once when going offline
+  const hasCollapsedChat = useRef(false);
+  useEffect(() => {
+    if (
+      props.showUnavailable &&
+      shouldShowChatSidePanel &&
+      !hasCollapsedChat.current
+    ) {
+      props.setShowChat(false);
+      hasCollapsedChat.current = true;
+    }
+    if (!props.showUnavailable) {
+      hasCollapsedChat.current = false;
+    }
+  }, [props.showUnavailable, shouldShowChatSidePanel]);
+
+  // animated height for offline state
+  const heightMultiplier = useSharedValue(1);
+
+  useEffect(() => {
+    if (props.showUnavailable) {
+      heightMultiplier.value = withTiming(0.5, { duration: 500 });
+    } else {
+      heightMultiplier.value = withTiming(1, { duration: 500 });
+    }
+  }, [props.showUnavailable]);
+
+  // for hiding sidebar
+  const dispatch = useDispatch();
 
   // content info
   const { width, height } = usePlayerDimensions();
@@ -213,6 +282,15 @@ export function PlayerInner(
   const showFullDesktopMode = aspectRatio > 1 && screenWidth > 1200;
   const isLandscape = aspectRatio > 1;
 
+  // animated style for offline height transition
+  const animatedHeightStyle = useAnimatedStyle(() => {
+    return {
+      height: showFullDesktopMode
+        ? calculatedHeight * heightMultiplier.value
+        : undefined,
+    };
+  });
+
   return (
     <ScrollView
       style={{
@@ -234,12 +312,11 @@ export function PlayerInner(
       bounces={false}
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View
+      <Reanimated.View
         style={[
           showFullDesktopMode
             ? {
                 width: calculatedWidth,
-                height: calculatedHeight,
               }
             : {
                 flex: 1,
@@ -249,9 +326,12 @@ export function PlayerInner(
             // paddingTop:
             //   isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
           },
+          animatedHeightStyle,
         ]}
       >
-        <SafeAreaView edges={["left", "top"]} style={{ flex: 1 }}>
+        {props.showUnavailable ? (
+          <UserOffline />
+        ) : (
           <PlayerInnerInner {...props}>
             {showFullDesktopMode || fullscreen ? (
               <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
@@ -264,7 +344,7 @@ export function PlayerInner(
               )
             )}
             <PlayerUI.ViewerLoadingOverlay />
-            <OfflineCounter isMobile={true} />
+            {!props.showUnavailable && <OfflineCounter isMobile={true} />}
             <View
               ref={dropdownPortalRef}
               style={{
@@ -277,8 +357,8 @@ export function PlayerInner(
               }}
             />
           </PlayerInnerInner>
-        </SafeAreaView>
-      </Animated.View>
+        )}
+      </Reanimated.View>
       {showFullDesktopMode && (
         <BottomMetadata
           setShowChat={props.setShowChat}
