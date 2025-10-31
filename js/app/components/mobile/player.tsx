@@ -57,13 +57,22 @@ export function Player(
   const hasReceivedSegment = useLivestreamStore((x) => x.hasReceivedSegment);
   const [showUnavailable, setShowUnavailable] = useState(false);
   const segs = useSegment();
+
+  // periodically check if segment has become stale
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 15000); // check every 15 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (!websocketConnected) {
       setShowUnavailable(false);
       return;
     }
 
-    const now = new Date().getTime();
     const then = new Date(segs?.startTime || 0).getTime();
     const segmentIsStale = segs?.startTime ? then < now - 300_000 : true;
 
@@ -76,7 +85,7 @@ export function Player(
       setShowUnavailable(true);
     }, SEGMENT_TIMEOUT);
     return () => clearTimeout(timer);
-  }, [websocketConnected, hasReceivedSegment, segs]);
+  }, [websocketConnected, hasReceivedSegment, segs, now]);
 
   const [isStreamingElsewhere, setIsStreamingElsewhere] = useState<
     boolean | null

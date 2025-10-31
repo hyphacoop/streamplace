@@ -109,12 +109,13 @@ export function UserOffline() {
             w.percent[100],
             isSmallScreen
               ? { maxWidth: "100%", aspectRatio: 16 / 9 }
-              : { maxWidth: 650, aspectRatio: 16 / 9 },
+              : { maxWidth: 650, minWidth: 650, aspectRatio: 16 / 9 },
             overflow.hidden,
             r.lg,
             overflow.hidden,
             borders.color.neutral[800],
             borders.width.thin,
+            bg.black,
             gap.row[2],
           ]}
         >
