@@ -237,7 +237,7 @@ export function PlayerInner(
 
   useEffect(() => {
     if (props.showUnavailable) {
-      heightMultiplier.value = withTiming(0.5, { duration: 500 });
+      heightMultiplier.value = withTiming(0.65, { duration: 500 });
     } else {
       heightMultiplier.value = withTiming(1, { duration: 500 });
     }
