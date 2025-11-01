@@ -73,7 +73,6 @@ export function UserOffline() {
         <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
           <Pressable
             onPress={() => {
-              console.log("balls");
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
@@ -110,16 +109,18 @@ export function UserOffline() {
       {detailedProfile?.banner && (
         <Image
           source={{ uri: detailedProfile.banner }}
-          style={{
-            position: "absolute",
-            top: -50,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: "120%",
-            height: "110%",
-            opacity: 0.15,
-          }}
+          style={[
+            {
+              position: "absolute",
+              top: -50,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100%",
+              height: "110%",
+              opacity: 0.15,
+            },
+          ]}
         />
       )}
 
@@ -128,7 +129,7 @@ export function UserOffline() {
           useCompactLayout ? mt[20] : layout.flex.row,
           gap.all[isLandscape && isSmallScreen ? 3 : 6],
           layout.flex.center,
-          useCompactLayout ? px[4] : px[0],
+          px[4],
         ]}
       >
         <View
