@@ -24,6 +24,7 @@ import {
   TopControlBar,
 } from "./desktop-ui/index";
 import { useResponsiveLayout } from "./useResponsiveLayout";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { h, layout, position, w, px, py, r, p } = zero;
 
@@ -59,11 +60,17 @@ export function DesktopUi({
   const { width, height } = usePlayerDimensions();
   const { shouldShowFloatingMetrics } = useResponsiveLayout();
 
+  const originalSafeAreaInsets = useSafeAreaInsets();
+
   const offline = useOffline();
   const showMetrics = usePlayerStore((state) => state.showDebugInfo);
   const pipAction = usePlayerStore((state) => state.pipAction);
   const videoRef = usePlayerStore((state) => state.videoRef);
   const embedded = usePlayerStore((state) => state.embedded);
+
+  const safeAreaInsets = embedded
+    ? { ...originalSafeAreaInsets, top: 0 }
+    : originalSafeAreaInsets;
 
   const segment = useSegment();
 
@@ -188,109 +195,110 @@ export function DesktopUi({
 
   return (
     <GestureDetector gesture={hover}>
-      <>
-        <View
-          style={[layout.position.absolute, h.percent[100], w.percent[100]]}
+      <View
+        style={[layout.position.absolute, h.percent[100], w.percent[100]]}
+        collapsable={false}
+      >
+        <MuteOverlay />
+        <PlayerUI.AutoplayButton />
+        <PlayerUI.ViewerLoadingOverlay />
+        <Animated.View
+          style={[
+            layout.position.absolute,
+            w.percent[100],
+            {
+              top: safeAreaInsets.top,
+              paddingHorizontal: 16,
+              paddingVertical: 16,
+            },
+            animatedFadeStyle,
+          ]}
         >
-          <MuteOverlay />
-          <PlayerUI.AutoplayButton />
-          <PlayerUI.ViewerLoadingOverlay />
-          <Animated.View
+          <TopControlBar
+            offline={offline}
+            isActivelyLive={isActivelyLive}
+            ingest={ingest}
+            isChatOpen={isChatOpen || false}
+            onToggleChat={toggleChat}
+            safeAreaInsets={safeAreaInsets}
+            embedded={embedded}
+          />
+        </Animated.View>
+
+        {isActivelyLive && isControlsVisible && (
+          <View
             style={[
               layout.position.absolute,
-              w.percent[100],
               {
-                paddingHorizontal: 16,
-                paddingVertical: 16,
+                transform: [{ translateX: -100 }, { translateY: -25 }],
               },
-              animatedFadeStyle,
             ]}
           >
-            <TopControlBar
-              offline={offline}
-              isActivelyLive={isActivelyLive}
-              ingest={ingest}
-              isChatOpen={isChatOpen || false}
-              onToggleChat={toggleChat}
-              embedded={embedded}
-            />
-          </Animated.View>
-
-          {isActivelyLive && isControlsVisible && (
-            <View
+            <Animated.View
               style={[
-                layout.position.absolute,
                 {
-                  transform: [{ translateX: -100 }, { translateY: -25 }],
+                  padding: 12,
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
                 },
+                r[3],
+                animatedFadeStyle,
               ]}
             >
-              <Animated.View
-                style={[
-                  {
-                    padding: 12,
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                  },
-                  r[3],
-                  animatedFadeStyle,
-                ]}
-              >
-                <PlayerUI.MetricsPanel showMetrics={isActivelyLive} />
-              </Animated.View>
-            </View>
-          )}
+              <PlayerUI.MetricsPanel showMetrics={isActivelyLive} />
+            </Animated.View>
+          </View>
+        )}
 
-          <Animated.View
-            style={[
-              layout.position.absolute,
-              position.bottom[0],
-              w.percent[100],
-              {
-                backgroundColor: "rgba(0, 0, 0, 0.6)",
-                paddingHorizontal: 16,
-                paddingVertical: 2,
-                paddingBottom: 2,
-              },
-              animatedFadeStyle,
-            ]}
-          >
-            <BottomControlBar
-              ingest={ingest}
-              pipSupported={pipSupported}
-              pipActive={pipActive}
-              onHandlePip={handlePip}
-              dropdownPortalContainer={dropdownPortalContainer}
-              showChat={isChatOpen || false}
-              setShowChat={setIsChatOpen || (() => {})}
-            />
-          </Animated.View>
-
-          {isSelfAndNotLive && (
-            <PlayerUI.InputPanel
-              title={title}
-              setTitle={setTitle}
-              ingestStarting={ingestStarting}
-              toggleGoLive={toggleGoLive}
-            />
-          )}
-
-          <PlayerUI.CountdownOverlay
-            visible={showCountdown}
-            width={width}
-            height={height}
-            onDone={() => {
-              setShowCountdown(false);
-            }}
+        <Animated.View
+          style={[
+            layout.position.absolute,
+            position.bottom[0],
+            w.percent[100],
+            {
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              paddingHorizontal: 16,
+              paddingVertical: 2,
+              paddingBottom: 2,
+            },
+            animatedFadeStyle,
+          ]}
+        >
+          <BottomControlBar
+            ingest={ingest}
+            pipSupported={pipSupported}
+            pipActive={pipActive}
+            onHandlePip={handlePip}
+            dropdownPortalContainer={dropdownPortalContainer}
+            showChat={isChatOpen || false}
+            setShowChat={setIsChatOpen || undefined}
           />
+        </Animated.View>
 
-          <Toast
-            open={recordSubmitted}
-            onOpenChange={setRecordSubmitted}
-            title="You're live!"
-            description="We're notifying your followers that you just went live."
-            duration={5}
+        {isSelfAndNotLive && (
+          <PlayerUI.InputPanel
+            title={title}
+            setTitle={setTitle}
+            ingestStarting={ingestStarting}
+            toggleGoLive={toggleGoLive}
           />
-        </View>
+        )}
+
+        <PlayerUI.CountdownOverlay
+          visible={showCountdown}
+          width={width}
+          height={height}
+          onDone={() => {
+            setShowCountdown(false);
+          }}
+        />
+
+        <Toast
+          open={recordSubmitted}
+          onOpenChange={setRecordSubmitted}
+          title="You're live!"
+          description="We're notifying your followers that you just went live."
+          duration={5}
+        />
         {showMetrics && (
           <View
             style={[
@@ -310,7 +318,7 @@ export function DesktopUi({
             <PlayerUI.MetricsPanel showMetrics={showMetrics} />
           </View>
         )}
-      </>
+      </View>
     </GestureDetector>
   );
 }

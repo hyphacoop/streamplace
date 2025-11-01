@@ -40,7 +40,7 @@ import {
   setSidebarUnhidden,
 } from "features/base/sidebarSlice";
 import { useDispatch } from "react-redux";
-import { UserOffline } from "src/screens/user-offline";
+import { UserOffline } from "./user-offline";
 
 const SEGMENT_TIMEOUT = 500; // half a sec
 
@@ -194,7 +194,7 @@ export function Player(
                 chatPanelWidth={chatPanelWidth}
               />
             ) : (
-              showUnavailable && <MobileUi />
+              !showUnavailable && <MobileUi />
             )}
           </View>
         </PlayerProvider>
@@ -332,8 +332,10 @@ export function PlayerInner(
                 maxHeight: "auto",
               },
           {
-            // paddingTop:
-            //   isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
+            paddingTop:
+              isPlayerRatioGreater && !isLandscape && !props.showUnavailable
+                ? safeAreaInsets.top
+                : 0,
           },
           animatedHeightStyle,
         ]}
