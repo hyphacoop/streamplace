@@ -12,7 +12,7 @@ import {
 import { overflow } from "@streamplace/components/src/lib/theme/atoms";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Image, Pressable, useWindowDimensions } from "react-native";
+import { Image, Platform, Pressable, useWindowDimensions } from "react-native";
 import { DesktopUi } from "./desktop-ui";
 
 const { bg, borders, flex, gap, h, layout, mt, position, px, py, r, text, w } =
@@ -54,57 +54,61 @@ export function UserOffline() {
       ]}
     >
       {/* Back Button and Profile */}
-      <View
-        style={[
-          {
-            padding: 3,
-            paddingRight: 8,
-            backgroundColor: "rgba(90,90,90, 0.25)",
-            borderRadius: 12,
-            alignSelf: "flex-start",
-            zIndex: 100,
-          },
-          r.lg,
-          layout.position.absolute,
-          position.left[4],
-          useCompactLayout ? position.top[4] : position.top[0],
-        ]}
-      >
-        <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
-          <Pressable
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Home", params: { screen: "StreamList" } }],
-                });
+      {Platform.OS !== "web" && (
+        <View
+          style={[
+            {
+              padding: 3,
+              paddingRight: 8,
+              backgroundColor: "rgba(90,90,90, 0.25)",
+              borderRadius: 12,
+              alignSelf: "flex-start",
+              zIndex: 100,
+            },
+            r.lg,
+            layout.position.absolute,
+            position.left[4],
+            useCompactLayout ? position.top[4] : position.top[0],
+          ]}
+        >
+          <View style={[layout.flex.row, layout.flex.center, gap.all[2]]}>
+            <Pressable
+              onPress={() => {
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.reset({
+                    index: 0,
+                    routes: [
+                      { name: "Home", params: { screen: "StreamList" } },
+                    ],
+                  });
+                }
+              }}
+            >
+              <ChevronLeft color="white" />
+            </Pressable>
+            <Image
+              source={
+                profile?.did
+                  ? { uri: detailedProfile?.avatar }
+                  : require("assets/images/goose.png")
               }
-            }}
-          >
-            <ChevronLeft color="white" />
-          </Pressable>
-          <Image
-            source={
-              profile?.did
-                ? { uri: detailedProfile?.avatar }
-                : require("assets/images/goose.png")
-            }
-            style={[
-              {
-                width: 36,
-                height: 36,
-                backgroundColor: "green",
-              },
-              { borderRadius: 999 },
-              borders.width.thin,
-              borders.color.gray[700],
-            ]}
-          />
-          <Text>{profile?.handle}</Text>
+              style={[
+                {
+                  width: 36,
+                  height: 36,
+                  backgroundColor: "green",
+                },
+                { borderRadius: 999 },
+                borders.width.thin,
+                borders.color.gray[700],
+              ]}
+            />
+            <Text>{profile?.handle}</Text>
+          </View>
         </View>
-      </View>
+      )}
       {/* Banner Background */}
       {detailedProfile?.banner && (
         <Image
