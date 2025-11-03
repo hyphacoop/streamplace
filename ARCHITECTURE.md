@@ -314,7 +314,6 @@ Uses cross-compilation toolchains defined in `util/*.ini` files.
 7. Segments stored via `storage` package
 8. `bus` notifies interested services
 9. `replication` distributes segments via Iroh P2P
-10. Segments synced to AT Protocol via `atproto`
 
 ### Playback
 
@@ -328,10 +327,10 @@ Uses cross-compilation toolchains defined in `util/*.ini` files.
 ### AT Protocol Integration
 
 1. User authenticates via OAuth (AT Protocol DID)
-2. Stream metadata stored as AT Protocol records
-3. `atproto` synchronizer replicates data to PDS
-4. AppView indexes Streamplace records
-5. Other clients can discover streams via AT Protocol
+2. Frontend clients publish stream metadata to user's PDS (livestream records, chat messages, keys, etc.)
+3. `atproto` synchronizer consumes AT Protocol firehose events
+4. Records from other users' PDS instances are indexed locally
+5. Other AT Protocol clients can discover streams via the firehose
 
 ## Key Technologies
 
