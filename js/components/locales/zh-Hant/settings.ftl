@@ -1,7 +1,7 @@
 # Settings Page Translations - Chinese Traditional (Taiwan)
 
 ## App Version
-app-version = 直播地 v{ $version }
+app-version = 播家 v{ $version }
 
 download-new-update = 下載新更新
 check-for-updates = 檢查更新
