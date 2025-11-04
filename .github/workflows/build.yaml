@@ -103,7 +103,7 @@ jobs:
             cmd: make ios
             xcode-version: "16.4"
           - name: darwin-amd64
-            runs-on: macos-13
+            runs-on: macos-15-intel
             cmd: make
             xcode-version: "15.2.0"
     steps:
