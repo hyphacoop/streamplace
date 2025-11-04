@@ -1,12 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
-import {
-  Button,
-  Input,
-  Text,
-  useToast,
-  View,
-  zero,
-} from "@streamplace/components";
+import { Button, Input, Text, View, zero } from "@streamplace/components";
 import AQLink from "components/aqlink";
 import {
   createServerSettingsRecord,
@@ -17,6 +9,7 @@ import {
 import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
 import { useAppDispatch, useAppSelector } from "store/hooks";
 import { Updates } from "./updates";
@@ -28,14 +21,12 @@ export function Settings() {
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
-  const t = useToast();
+  const { t } = useTranslation("settings");
 
   // are we logged in?
   const loggedIn = useAppSelector(
     (state) => state.bluesky.status === "loggedIn",
   );
-
-  const navigate = useNavigation();
 
   // Initialize the override state based on current URL
   useEffect(() => {
@@ -59,7 +50,7 @@ export function Settings() {
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[16], zero.py[24]]}>
+      <View style={[zero.layout.flex.align.center, zero.px[8], zero.py[4]]}>
         <View
           style={[
             zero.gap.all[12],
@@ -93,9 +84,9 @@ export function Settings() {
                 ]}
               >
                 <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                  <Text size="xl">Use Custom Node</Text>
+                  <Text size="xl">{t("use-custom-node")}</Text>
                   <Text size="lg" color="muted">
-                    Default: {defaultUrl}
+                    {t("default-url", { url: defaultUrl })}
                   </Text>
                 </View>
                 <Switch
@@ -103,41 +94,44 @@ export function Settings() {
                   onValueChange={handleToggleOverride}
                 />
               </View>
-              <View
-                style={[
-                  {
-                    opacity: overrideEnabled ? 1 : 0,
-                    height: overrideEnabled ? "auto" : 0,
-                  },
-                  zero.gap.all[2],
-                  zero.layout.flex.align.center,
-                  zero.layout.flex.row,
-                ]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Input
-                    value={newUrl}
-                    containerStyle={[
-                      { flex: 1, flexGrow: 1, width: "100%" },
-                      zero.flex.grow[1],
-                    ]}
-                    variant="default"
-                    numberOfLines={1}
-                    multiline={false}
-                    placeholder={url || "Enter custom node URL"}
-                    placeholderTextColor="#999"
-                    onChangeText={setNewUrl}
-                    onSubmitEditing={onSubmitUrl}
-                    textContentType="URL"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="url"
-                  />
+
+              {overrideEnabled && (
+                <View
+                  style={[
+                    {
+                      opacity: overrideEnabled ? 1 : 0,
+                      height: overrideEnabled ? "auto" : 0,
+                    },
+                    zero.gap.all[2],
+                    zero.layout.flex.align.center,
+                    zero.layout.flex.row,
+                  ]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Input
+                      value={newUrl}
+                      containerStyle={[
+                        { flex: 1, flexGrow: 1, width: "100%" },
+                        zero.flex.grow[1],
+                      ]}
+                      variant="default"
+                      numberOfLines={1}
+                      multiline={false}
+                      placeholder={t("enter-custom-node-url")}
+                      placeholderTextColor="#999"
+                      onChangeText={setNewUrl}
+                      onSubmitEditing={onSubmitUrl}
+                      textContentType="URL"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                    />
+                  </View>
+                  <Button size="md" variant="secondary" onPress={onSubmitUrl}>
+                    <Text size="lg">{t("save-button")}</Text>
+                  </Button>
                 </View>
-                <Button size="md" variant="secondary" onPress={onSubmitUrl}>
-                  <Text size="lg">Save</Text>
-                </Button>
-              </View>
+              )}
             </View>
           </View>
 
@@ -164,13 +158,41 @@ export function Settings() {
                     },
                   ]}
                 >
-                  <Text>Manage Keys</Text>
+                  <Text>{t("manage-keys")}</Text>
                   <Text style={[{ fontSize: 16 }]}>→</Text>
                 </View>
               </AQLink>
               <WebhookManager />
             </>
           )}
+
+          <AQLink
+            to={{
+              screen: "Settings",
+              params: {
+                screen: "DeveloperSettings",
+              },
+            }}
+          >
+            <View
+              style={[
+                {
+                  flexDirection: "row",
+                  gap: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: "#333",
+                  padding: 8,
+                  borderRadius: 16,
+                  backgroundColor: "#1a1a1a",
+                },
+              ]}
+            >
+              <Text>Developer Settings</Text>
+              <Text style={[{ fontSize: 16 }]}>→</Text>
+            </View>
+          </AQLink>
         </View>
       </View>
     </ScrollView>
@@ -182,6 +204,7 @@ const DebugRecording = () => {
   const isReady = useAppSelector(selectIsReady);
   const serverSettings = useAppSelector(selectServerSettings);
   const { url } = useStreamplaceNode();
+  const { t } = useTranslation();
   const debugRecordingOn = serverSettings?.debugRecording === true;
 
   useEffect(() => {
@@ -207,12 +230,9 @@ const DebugRecording = () => {
         ]}
       >
         <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-          <Text size="xl">
-            Allow {u.host} to record your livestream for debugging and improving
-            the service
-          </Text>
+          <Text size="xl">{t("debug-recording-title", { host: u.host })}</Text>
           <Text size="lg" color="muted">
-            Optional
+            {t("debug-recording-description")}
           </Text>
         </View>
         <Switch
