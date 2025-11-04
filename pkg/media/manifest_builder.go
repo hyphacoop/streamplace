@@ -48,18 +48,27 @@ func toObj(record any) (obj, error) {
 func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName string, start int64) ([]byte, error) {
 	log.Debug(ctx, "🔍 BuildManifest ENTRY", "streamer", streamerName, "start", start)
 	// Start with base manifest
+	startTime := aqtime.FromMillis(start).String()
 	mani := obj{
-		"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
+		"title": fmt.Sprintf("Livestream Segment at %s", startTime),
 		"assertions": []obj{
+			// Required by spec, just basic info
 			{
 				"label": "c2pa.actions",
 				"data": obj{
 					"actions": []obj{
-						{"action": "c2pa.created"},
-						{"action": "c2pa.published"},
+						{
+							"action": "c2pa.created",
+							"when":   startTime,
+						},
+						{
+							"action": "c2pa.published",
+							"when":   startTime,
+						},
 					},
 				},
 			},
+			// Streamplace metadata, with extra custom fields added later
 			{
 				"label": constants.StreamplaceMetadata,
 				"data": obj{
@@ -70,9 +79,20 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 						"xmpRights":   "http://ns.adobe.com/xap/1.0/rights/",
 					},
 					"dc:creator": streamerName,
-					// TODO: Add the title of the livestream. This should come from the livestream record.
-					"dc:title": []string{"livestream"},
-					"dc:date":  []string{aqtime.FromMillis(start).String()},
+					"dc:title":   []string{"livestream"},
+					"dc:date":    []string{startTime},
+				},
+			},
+			// Generic c2pa metadata assertion for easy parsing by third parties
+			{
+				"label": "c2pa.metadata",
+				"data": obj{
+					"@context": obj{
+						"dc": "http://purl.org/dc/elements/1.1/",
+					},
+					"dc:creator": streamerName,
+					"dc:title":   []string{"livestream"},
+					"dc:date":    []string{startTime},
 				},
 			},
 		},
@@ -135,6 +155,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 
 	// Update the manifest title with the retrieved livestream title
 	mani["assertions"].([]obj)[1]["data"].(obj)["dc:title"] = []string{livestreamTitle}
+	mani["assertions"].([]obj)[2]["data"].(obj)["dc:title"] = []string{livestreamTitle}
 
 	// Convert manifest to JSON bytes for use with Rust c2pa library
 	manifestBs, err := json.Marshal(mani)
