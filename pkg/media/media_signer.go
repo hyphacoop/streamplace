@@ -106,15 +106,22 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 		// Fallback to basic manifest without metadata
 		ctx, span = otel.Tracer("signer").Start(ctx, "SignMP4_BasicManifest")
 		title := "livestream"
+		startTime := aqtime.FromMillis(start).String()
 		mani := obj{
-			"title": fmt.Sprintf("Livestream Segment at %s", aqtime.FromMillis(start)),
+			"title": fmt.Sprintf("Livestream Segment at %s", startTime),
 			"assertions": []obj{
 				{
 					"label": "c2pa.actions",
 					"data": obj{
 						"actions": []obj{
-							{"action": "c2pa.created"},
-							{"action": "c2pa.published"},
+							{
+								"action": "c2pa.created",
+								"when":   startTime,
+							},
+							{
+								"action": "c2pa.published",
+								"when":   startTime,
+							},
 						},
 					},
 				},
@@ -126,7 +133,18 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 						},
 						"dc:creator": ms.StreamerName,
 						"dc:title":   []string{title},
-						"dc:date":    []string{aqtime.FromMillis(start).String()},
+						"dc:date":    []string{startTime},
+					},
+				},
+				{
+					"label": "c2pa.metadata",
+					"data": obj{
+						"@context": obj{
+							"dc": "http://purl.org/dc/elements/1.1/",
+						},
+						"dc:creator": ms.StreamerName,
+						"dc:title":   []string{title},
+						"dc:date":    []string{startTime},
 					},
 				},
 			},
