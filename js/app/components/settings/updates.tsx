@@ -1,9 +1,11 @@
 import { Text } from "@streamplace/components";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import pkg from "../../package.json";
 
 // maybe someday some PWA update stuff will live here
 export function Updates() {
+  const { t } = useTranslation("settings");
   return (
     <View
       style={[
@@ -14,16 +16,16 @@ export function Updates() {
     >
       <View>
         <Text
+          size="2xl"
           style={[
             {
-              fontSize: 24,
               fontWeight: "bold",
               textAlign: "center",
               color: "#fff",
             },
           ]}
         >
-          Streamplace v{pkg.version}
+          {t("app-version", { version: pkg.version })}
         </Text>
       </View>
     </View>
