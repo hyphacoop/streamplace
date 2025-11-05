@@ -68,31 +68,20 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 					},
 				},
 			},
-			// Streamplace metadata, with extra custom fields added later
+			// Content metadata, with extra custom fields added later
 			{
-				"label": constants.StreamplaceMetadata,
+				"label": "cawg.metadata",
 				"data": obj{
 					"@context": obj{
 						"dc":          "http://purl.org/dc/elements/1.1/",
 						"Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
 						"photoshop":   "http://ns.adobe.com/photoshop/1.0/",
 						"xmpRights":   "http://ns.adobe.com/xap/1.0/rights/",
+						"streamplace": "https://ns.stream.place/metadata/0.1",
 					},
 					"dc:creator": streamerName,
-					"dc:title":   []string{"livestream"},
-					"dc:date":    []string{startTime},
-				},
-			},
-			// Generic c2pa metadata assertion for easy parsing by third parties
-			{
-				"label": "c2pa.metadata",
-				"data": obj{
-					"@context": obj{
-						"dc": "http://purl.org/dc/elements/1.1/",
-					},
-					"dc:creator": streamerName,
-					"dc:title":   []string{"livestream"},
-					"dc:date":    []string{startTime},
+					"dc:title":   "livestream",
+					"dc:date":    startTime,
 				},
 			},
 		},
@@ -154,8 +143,7 @@ func (mb *ManifestBuilder) BuildManifest(ctx context.Context, streamerName strin
 	}
 
 	// Update the manifest title with the retrieved livestream title
-	mani["assertions"].([]obj)[1]["data"].(obj)["dc:title"] = []string{livestreamTitle}
-	mani["assertions"].([]obj)[2]["data"].(obj)["dc:title"] = []string{livestreamTitle}
+	mani["assertions"].([]obj)[1]["data"].(obj)["dc:title"] = livestreamTitle
 
 	// Convert manifest to JSON bytes for use with Rust c2pa library
 	manifestBs, err := json.Marshal(mani)
@@ -263,7 +251,7 @@ func (mb *ManifestBuilder) enhanceManifestWithMetadata(mani obj, metadata *strea
 			// Note: In the manifest, we store this in "deleteAfter" field but with timestamp value instead of duration
 			deleteAfterTimestamp := aqtime.FromMillis(expiresAtSeconds * 1000).String()
 
-			mani["assertions"].([]obj)[1]["data"].(obj)["distributionPolicy"] = obj{
+			mani["assertions"].([]obj)[1]["data"].(obj)["streamplace:distributionPolicy"] = obj{
 				"deleteAfter": deleteAfterTimestamp,
 			}
 		}
