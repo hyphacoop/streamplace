@@ -20,6 +20,11 @@
             "format": "did",
             "description": "The DID of the user being blocked from chat."
           },
+          "expiresAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Optional timestamp when this block expires. If omitted, the block is permanent."
+          },
           "reason": {
             "type": "string",
             "maxLength": 300,

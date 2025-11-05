@@ -16,6 +16,8 @@ type ChatBlock struct {
 	LexiconTypeID string `json:"$type,const=place.stream.chat.block" cborgen:"$type,const=place.stream.chat.block"`
 	// createdAt: Client-declared timestamp when this block was created.
 	CreatedAt string `json:"createdAt" cborgen:"createdAt"`
+	// expiresAt: Optional timestamp when this block expires. If omitted, the block is permanent.
+	ExpiresAt *string `json:"expiresAt,omitempty" cborgen:"expiresAt,omitempty"`
 	// reason: Optional reason for the block.
 	Reason *string `json:"reason,omitempty" cborgen:"reason,omitempty"`
 	// streamer: The DID of the streamer whose chat this block applies to.

@@ -18,6 +18,6 @@ type ChatModerator struct {
 	CreatedAt string `json:"createdAt" cborgen:"createdAt"`
 	// moderator: The DID of the user granted moderator permissions.
 	Moderator string `json:"moderator" cborgen:"moderator"`
-	// permissions: Array of permissions granted to this moderator.
+	// permissions: Array of permissions granted to this moderator. Note: 'ban' covers both permanent bans and temporary timeouts (via expiresAt field).
 	Permissions []string `json:"permissions" cborgen:"permissions"`
 }

@@ -19,9 +19,9 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["ban", "hide", "timeout"]
+              "enum": ["ban", "hide"]
             },
-            "description": "Array of permissions granted to this moderator."
+            "description": "Array of permissions granted to this moderator. Note: 'ban' covers both permanent bans and temporary timeouts (via expiresAt field)."
           },
           "createdAt": {
             "type": "string",
