@@ -37,7 +37,7 @@ import (
 const CertFile = "cert.pem"
 const SegmentsDir = "segments"
 
-var StreamplaceMetadata = "place.stream.metadata"
+var StreamplaceMetadata = "cawg.metadata"
 
 type MediaManager struct {
 	cli                 *config.CLI
@@ -381,7 +381,7 @@ func extractDistributionPolicy(mani *c2patypes.Manifest, segmentStart aqtime.AQT
 		return nil
 	}
 
-	policy, ok := data["distributionPolicy"]
+	policy, ok := data["streamplace:distributionPolicy"]
 	if !ok {
 		return nil
 	}

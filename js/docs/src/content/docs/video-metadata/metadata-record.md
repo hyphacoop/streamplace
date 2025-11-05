@@ -11,7 +11,7 @@ lexicon is a starting point for future iterations.
 This record is created by users through the Streamplace frontend and contains
 three main components:
 
-1. **Content Warnings** (`place.stream.metadata.contentWarnings`): Users can
+1. **Content Warnings** (`place.stream.metadata.configuration.contentWarnings`): Users can
    select content warnings to indicate to node operators and viewers what types
    of warnings have been disclosed. The system supports ten predefined warning
    categories including _violence_, _nudity_, _flashing lights_, _language_,
@@ -22,7 +22,7 @@ three main components:
    Each warning provides descriptions to help creators properly categorize their
    content. Streamplace node operators may also configure their nodes to exclude
    certain types of content.
-2. **Content Rights** (`place.stream.metadata.contentRights`): This section
+2. **Content Rights** (`place.stream.metadata.configuration.contentRights`): This section
    captures copyright and attribution information, including the creator’s name,
    copyright notice, publication year, license type, and credit line. The system
    supports various pre-defined licensing options from several Creative Commons

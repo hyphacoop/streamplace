@@ -126,25 +126,14 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 					},
 				},
 				{
-					"label": StreamplaceMetadata,
+					"label": "cawg.metadata",
 					"data": obj{
 						"@context": obj{
 							"dc": "http://purl.org/dc/elements/1.1/",
 						},
 						"dc:creator": ms.StreamerName,
-						"dc:title":   []string{title},
-						"dc:date":    []string{startTime},
-					},
-				},
-				{
-					"label": "c2pa.metadata",
-					"data": obj{
-						"@context": obj{
-							"dc": "http://purl.org/dc/elements/1.1/",
-						},
-						"dc:creator": ms.StreamerName,
-						"dc:title":   []string{title},
-						"dc:date":    []string{startTime},
+						"dc:title":   title,
+						"dc:date":    startTime,
 					},
 				},
 			},
