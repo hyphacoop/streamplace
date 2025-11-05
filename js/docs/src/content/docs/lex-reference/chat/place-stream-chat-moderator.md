@@ -19,11 +19,11 @@ Record granting moderation permissions to a user for this streamer's chat.
 
 **Record Properties:**
 
-| Name          | Type              | Req'd | Description                                              | Constraints        |
-| ------------- | ----------------- | ----- | -------------------------------------------------------- | ------------------ |
-| `moderator`   | `string`          | ✅    | The DID of the user granted moderator permissions.       | Format: `did`      |
-| `permissions` | Array of `string` | ✅    | Array of permissions granted to this moderator.          |                    |
-| `createdAt`   | `string`          | ✅    | Client-declared timestamp when this moderator was added. | Format: `datetime` |
+| Name          | Type              | Req'd | Description                                                                                                                          | Constraints        |
+| ------------- | ----------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `moderator`   | `string`          | ✅    | The DID of the user granted moderator permissions.                                                                                   | Format: `did`      |
+| `permissions` | Array of `string` | ✅    | Array of permissions granted to this moderator. Note: 'ban' covers both permanent bans and temporary timeouts (via expiresAt field). |                    |
+| `createdAt`   | `string`          | ✅    | Client-declared timestamp when this moderator was added.                                                                             | Format: `datetime` |
 
 ---
 
@@ -51,9 +51,9 @@ Record granting moderation permissions to a user for this streamer's chat.
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["ban", "hide", "timeout"]
+              "enum": ["ban", "hide"]
             },
-            "description": "Array of permissions granted to this moderator."
+            "description": "Array of permissions granted to this moderator. Note: 'ban' covers both permanent bans and temporary timeouts (via expiresAt field)."
           },
           "createdAt": {
             "type": "string",

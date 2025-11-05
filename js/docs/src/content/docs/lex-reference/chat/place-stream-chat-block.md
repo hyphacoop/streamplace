@@ -19,12 +19,13 @@ Record blocking a user from a specific streamer's chat.
 
 **Record Properties:**
 
-| Name        | Type     | Req'd | Description                                               | Constraints        |
-| ----------- | -------- | ----- | --------------------------------------------------------- | ------------------ |
-| `streamer`  | `string` | ✅    | The DID of the streamer whose chat this block applies to. | Format: `did`      |
-| `subject`   | `string` | ✅    | The DID of the user being blocked from chat.              | Format: `did`      |
-| `reason`    | `string` | ❌    | Optional reason for the block.                            | Max Length: 300    |
-| `createdAt` | `string` | ✅    | Client-declared timestamp when this block was created.    | Format: `datetime` |
+| Name        | Type     | Req'd | Description                                                                     | Constraints        |
+| ----------- | -------- | ----- | ------------------------------------------------------------------------------- | ------------------ |
+| `streamer`  | `string` | ✅    | The DID of the streamer whose chat this block applies to.                       | Format: `did`      |
+| `subject`   | `string` | ✅    | The DID of the user being blocked from chat.                                    | Format: `did`      |
+| `expiresAt` | `string` | ❌    | Optional timestamp when this block expires. If omitted, the block is permanent. | Format: `datetime` |
+| `reason`    | `string` | ❌    | Optional reason for the block.                                                  | Max Length: 300    |
+| `createdAt` | `string` | ✅    | Client-declared timestamp when this block was created.                          | Format: `datetime` |
 
 ---
 
@@ -52,6 +53,11 @@ Record blocking a user from a specific streamer's chat.
             "type": "string",
             "format": "did",
             "description": "The DID of the user being blocked from chat."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Optional timestamp when this block expires. If omitted, the block is permanent."
           },
           "reason": {
             "type": "string",
