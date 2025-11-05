@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "place.stream.chat.block",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "Record blocking a user from a specific streamer's chat.",
+      "record": {
+        "type": "object",
+        "required": ["streamer", "subject", "createdAt"],
+        "properties": {
+          "streamer": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID of the streamer whose chat this block applies to."
+          },
+          "subject": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID of the user being blocked from chat."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "Optional reason for the block."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Client-declared timestamp when this block was created."
+          }
+        }
+      }
+    }
+  }
+}
