@@ -9,16 +9,11 @@ import {
 } from "@streamplace/components";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
-import {
-  clearStreamKeyRecord,
-  createStreamKeyRecord,
-  selectIsReady,
-  selectUserProfile,
-} from "features/bluesky/blueskySlice";
 import { Clipboard, ClipboardCheck } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { ScrollView, TextInput } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useIsReady, useUserProfile } from "store/hooks";
 
 const FormRow = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -46,18 +41,18 @@ const Content = ({ children }: { children: React.ReactNode }) => {
 
 export function StreamKeyScreen() {
   const [protocol, setProtocol] = useState<"whip" | "rtmp">("rtmp");
-  const isReady = useAppSelector(selectIsReady);
+  const isReady = useIsReady();
 
   if (!isReady) {
     return <Loading />;
   }
 
-  const userProfile = useAppSelector(selectUserProfile);
+  const userProfile = useUserProfile();
   if (!userProfile) {
     return <Redirect to={{ screen: "Login" }} />;
   }
 
-  const url = useAppSelector((state) => state.streamplace.url);
+  const url = useStore((state) => state.url);
 
   return (
     <ScrollView>
@@ -190,11 +185,14 @@ export function StreamKey() {
   const theme = useTheme();
   const toast = useToast();
 
-  const dispatch = useAppDispatch();
+  const createStreamKeyRecord = useStore(
+    (state) => state.createStreamKeyRecord,
+  );
+  const clearStreamKeyRecord = useStore((state) => state.clearStreamKeyRecord);
   const [generating, setGenerating] = useState(false);
   const [hidekey, setHidekey] = useState(true);
   const [didcopy, setDidcopy] = useState(false);
-  const newKey = useAppSelector((state) => state.bluesky.newKey);
+  const newKey = useStore((state) => state.newKey);
 
   let foregroundColor = theme.theme.colors.text || "#fff";
 
@@ -204,9 +202,9 @@ export function StreamKey() {
     }
 
     return () => {
-      dispatch(clearStreamKeyRecord());
+      clearStreamKeyRecord();
     };
-  }, [newKey, dispatch]);
+  }, [newKey]);
 
   const handleCopy = async () => {
     if (!newKey) {
@@ -287,7 +285,7 @@ export function StreamKey() {
         try {
           setGenerating(true);
           setDidcopy(false);
-          await dispatch(createStreamKeyRecord({ store: false }));
+          await createStreamKeyRecord(false);
         } catch (e) {
           console.error("failed to generate stream key", e);
         } finally {
