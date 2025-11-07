@@ -73,8 +73,8 @@ interface WebhookFormData {
 }
 
 const EVENT_OPTIONS = [
-  { value: "livestream", labelKey: "events.livestream" },
-  { value: "chat", labelKey: "events.chat" },
+  { value: "livestream", labelKey: "events-livestream" },
+  { value: "chat", labelKey: "events-chat" },
 ];
 
 function WebhookRow({

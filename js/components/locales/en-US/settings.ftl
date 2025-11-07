@@ -76,9 +76,14 @@ no-webhooks-yet = No webhooks configured yet
 failed-load-webhooks = Failed to load webhooks
 webhook-will-no-longer-receive-events = This webhook will no longer receive events
 create-first-webhook-description = Create your first webhook to start receiving stream events
-example-captain-hook = Example: https://example.com/webhook
+example-captain-hook = Captain Hook
 webhooks-count_one = { $count } webhook
 webhooks-count_other = { $count } webhooks
+
+## Webhook Events
+events-livestream = Livestream Events
+events-chat = Chat Events
+untitled-webhook = Untitled Webhook
 
 ## Debug Recording
 debug-recording = Debug Recording
@@ -91,5 +96,5 @@ name-optional = Name (optional)
 deleting = Deleting...
 saving = Saving...
 go-to-dashboard = Go to Dashboard
-need-setup-live-dashboard = You need to set up a live stream in the dashboard first
+need-setup-live-dashboard = Need to set up streaming first? Visit the live dashboard
 no-languages-found = No languages found

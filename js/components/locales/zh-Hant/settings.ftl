@@ -113,8 +113,13 @@ no-webhooks-yet = 尚未設定 webhook
 failed-load-webhooks = 載入 webhook 失敗
 webhook-will-no-longer-receive-events = 此 webhook 將不再接收事件
 create-first-webhook-description = 建立您的第一個 webhook 以開始接收串流事件
-example-captain-hook = 範例：https://example.com/webhook
+example-captain-hook = 虎克船長
 webhooks-count_other = { $count } 個 webhook
+
+## Webhook 事件
+events-livestream = 直播串流事件
+events-chat = 聊天事件
+untitled-webhook = 未命名的 Webhook
 
 ## 除錯錄製
 debug-recording = 除錯錄製

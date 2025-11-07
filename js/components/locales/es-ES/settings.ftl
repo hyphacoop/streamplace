@@ -116,10 +116,15 @@ no-webhooks-yet = Aún no hay webhooks configurados
 failed-load-webhooks = Error al cargar webhooks
 webhook-will-no-longer-receive-events = Este webhook ya no recibirá eventos
 create-first-webhook-description = Crea tu primer webhook para empezar a recibir eventos de transmisión
-example-captain-hook = Ejemplo: https://ejemplo.com/webhook
+example-captain-hook = Capitán Garfio
 webhooks-count_one = { $count } webhook
 webhooks-count_many = { $count } webhooks
 webhooks-count_other = { $count } webhooks
+
+## Eventos de Webhook
+events-livestream = Eventos de Transmisión en Directo
+events-chat = Eventos de Chat
+untitled-webhook = Webhook Sin Título
 
 ## Grabación de Depuración
 debug-recording = Grabación de Depuración

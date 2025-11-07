@@ -114,10 +114,15 @@ no-webhooks-yet = Aucun webhook configuré pour le moment
 failed-load-webhooks = Échec du chargement des webhooks
 webhook-will-no-longer-receive-events = Ce webhook ne recevra plus d'événements
 create-first-webhook-description = Créez votre premier webhook pour commencer à recevoir des événements de diffusion
-example-captain-hook = Exemple : https://exemple.com/webhook
+example-captain-hook = Capitaine Crochet
 webhooks-count_one = { $count } webhook
 webhooks-count_many = { $count } webhooks
 webhooks-count_other = { $count } webhooks
+
+## Événements de Webhook
+events-livestream = Événements de Diffusion en Direct
+events-chat = Événements de Chat
+untitled-webhook = Webhook Sans Titre
 
 ## Enregistrement de Débogage
 debug-recording = Enregistrement de Débogage
