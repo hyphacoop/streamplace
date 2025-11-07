@@ -86,16 +86,16 @@ function ProviderInner({
   return (
     <SafeAreaProvider>
       <ThemeProvider forcedTheme="dark">
-        <I18nProvider i18n={i18n}>
-          <NavigationContainer theme={SPDarkTheme} linking={linking}>
-              <StreamplaceProvider>
-              <BlueskyProvider>
-                <NewStreamplaceProvider>
-                  <FontProvider>{children}</FontProvider>
-                </NewStreamplaceProvider>
-              </BlueskyProvider>
-            </StreamplaceProvider>
-            </NavigationContainer>
+         <I18nProvider i18n={i18n}>
+            <NavigationContainer theme={SPDarkTheme} linking={linking}>
+                <StreamplaceProvider>
+                <BlueskyProvider>
+                  <NewStreamplaceProvider>
+                    <FontProvider>{children}</FontProvider>
+                  </NewStreamplaceProvider>
+                </BlueskyProvider>
+              </StreamplaceProvider>
+              </NavigationContainer>
         </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
