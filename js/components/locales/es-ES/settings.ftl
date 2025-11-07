@@ -77,3 +77,60 @@ continue = Continuar
 back = Volver
 next = Siguiente
 finish = Finalizar
+
+## Categorías de Navegación
+about = Acerca de
+advanced = Avanzado
+developer = Desarrollador
+privacy-security = Privacidad y Seguridad
+streaming = Transmisión
+
+## Acciones Comunes
+cancel = Cancelar
+create = Crear
+delete = Eliminar
+refresh = Actualizar
+save-button = Guardar
+sign-in = Iniciar Sesión
+update = Actualizar
+
+## Gestión de Claves
+key-management = Gestión de Claves
+key-manager = Gestor de Claves
+manage-keys = Gestionar Claves
+your-stream-pubkeys = Tus Claves Públicas de Transmisión
+no-keys = No hay claves configuradas
+pubkey-description = Las claves públicas se utilizan para verificar la identidad de tu transmisión
+keys-count_one = { $count } clave
+keys-count_many = { $count } claves
+keys-count_other = { $count } claves
+
+## Gestión de Webhooks
+webhooks = Webhooks
+webhook-integrations = Integraciones de Webhook
+webhook-integrations-description = Conecta servicios externos para recibir actualizaciones en tiempo real sobre tus transmisiones
+create-webhook = Crear Webhook
+edit-webhook = Editar Webhook
+delete-webhook = Eliminar Webhook
+no-webhooks-yet = Aún no hay webhooks configurados
+failed-load-webhooks = Error al cargar webhooks
+webhook-will-no-longer-receive-events = Este webhook ya no recibirá eventos
+create-first-webhook-description = Crea tu primer webhook para empezar a recibir eventos de transmisión
+example-captain-hook = Ejemplo: https://ejemplo.com/webhook
+webhooks-count_one = { $count } webhook
+webhooks-count_many = { $count } webhooks
+webhooks-count_other = { $count } webhooks
+
+## Grabación de Depuración
+debug-recording = Grabación de Depuración
+
+## General
+app-version-description = Información de la versión actual
+confirm-delete = ¿Estás seguro de que quieres eliminar esto?
+action-cannot-be-undone = Esta acción no se puede deshacer
+name-optional = Nombre (opcional)
+deleting = Eliminando...
+saving = Guardando...
+go-to-dashboard = Ir al Panel
+need-setup-live-dashboard = Primero necesitas configurar una transmisión en directo en el panel
+no-languages-found = No se encontraron idiomas

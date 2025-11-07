@@ -75,3 +75,60 @@ continue = Continuer
 back = Retour
 next = Suivant
 finish = Terminer
+
+## Catégories de Navigation
+about = À propos
+advanced = Avancé
+developer = Développeur
+privacy-security = Confidentialité et Sécurité
+streaming = Diffusion
+
+## Actions Courantes
+cancel = Annuler
+create = Créer
+delete = Supprimer
+refresh = Actualiser
+save-button = Enregistrer
+sign-in = Se connecter
+update = Mettre à jour
+
+## Gestion des Clés
+key-management = Gestion des Clés
+key-manager = Gestionnaire de Clés
+manage-keys = Gérer les Clés
+your-stream-pubkeys = Vos Clés Publiques de Diffusion
+no-keys = Aucune clé configurée
+pubkey-description = Les clés publiques sont utilisées pour vérifier l'identité de votre diffusion
+keys-count_one = { $count } clé
+keys-count_many = { $count } clés
+keys-count_other = { $count } clés
+
+## Gestion des Webhooks
+webhooks = Webhooks
+webhook-integrations = Intégrations de Webhook
+webhook-integrations-description = Connectez des services externes pour recevoir des mises à jour en temps réel sur vos diffusions
+create-webhook = Créer un Webhook
+edit-webhook = Modifier le Webhook
+delete-webhook = Supprimer le Webhook
+no-webhooks-yet = Aucun webhook configuré pour le moment
+failed-load-webhooks = Échec du chargement des webhooks
+webhook-will-no-longer-receive-events = Ce webhook ne recevra plus d'événements
+create-first-webhook-description = Créez votre premier webhook pour commencer à recevoir des événements de diffusion
+example-captain-hook = Exemple : https://exemple.com/webhook
+webhooks-count_one = { $count } webhook
+webhooks-count_many = { $count } webhooks
+webhooks-count_other = { $count } webhooks
+
+## Enregistrement de Débogage
+debug-recording = Enregistrement de Débogage
+
+## Général
+app-version-description = Informations sur la version actuelle
+confirm-delete = Êtes-vous sûr de vouloir supprimer ceci ?
+action-cannot-be-undone = Cette action ne peut pas être annulée
+name-optional = Nom (optionnel)
+deleting = Suppression...
+saving = Enregistrement...
+go-to-dashboard = Aller au Tableau de Bord
+need-setup-live-dashboard = Vous devez d'abord configurer une diffusion en direct dans le tableau de bord
+no-languages-found = Aucune langue trouvée

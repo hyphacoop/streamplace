@@ -76,3 +76,56 @@ continue = 繼續
 back = 返回
 next = 下一步
 finish = 完成
+
+## 導航類別
+about = 關於
+advanced = 進階
+developer = 開發者
+privacy-security = 隱私與安全
+streaming = 串流
+
+## 常用動作
+cancel = 取消
+create = 建立
+delete = 刪除
+refresh = 重新整理
+save-button = 儲存
+sign-in = 登入
+update = 更新
+
+## 金鑰管理
+key-management = 金鑰管理
+key-manager = 金鑰管理器
+manage-keys = 管理金鑰
+your-stream-pubkeys = 您的串流公開金鑰
+no-keys = 尚未設定金鑰
+pubkey-description = 公開金鑰用於驗證您的串流身份
+keys-count_other = { $count } 個金鑰
+
+## Webhook 管理
+webhooks = Webhooks
+webhook-integrations = Webhook 整合
+webhook-integrations-description = 連接外部服務以即時接收有關您串流的更新
+create-webhook = 建立 Webhook
+edit-webhook = 編輯 Webhook
+delete-webhook = 刪除 Webhook
+no-webhooks-yet = 尚未設定 webhook
+failed-load-webhooks = 載入 webhook 失敗
+webhook-will-no-longer-receive-events = 此 webhook 將不再接收事件
+create-first-webhook-description = 建立您的第一個 webhook 以開始接收串流事件
+example-captain-hook = 範例：https://example.com/webhook
+webhooks-count_other = { $count } 個 webhook
+
+## 除錯錄製
+debug-recording = 除錯錄製
+
+## 一般
+app-version-description = 目前版本資訊
+confirm-delete = 您確定要刪除嗎？
+action-cannot-be-undone = 此動作無法復原
+name-optional = 名稱（選填）
+deleting = 刪除中...
+saving = 儲存中...
+go-to-dashboard = 前往控制台
+need-setup-live-dashboard = 您需要先在控制台中設定直播串流
+no-languages-found = 找不到語言

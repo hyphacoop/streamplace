@@ -3,13 +3,24 @@
 /**
  * i18n key extraction script
  * 1. Scans the codebase for i18n keys (t('key'), Trans components, etc)
- * 2. ExtractsJSONmessages.json
- * 3. Migrates new keys to json files for translation
+ * 2. Extracts keys into namespace JSON files (common.json, settings.json, etc)
+ * 3. Migrates new keys to corresponding .ftl files for translation
+ *
+ * Usage:
+ *   node extract-i18n.js                    # Extract keys and report new ones
+ *   node extract-i18n.js --add-to=common    # Add new keys to common.ftl
+ *   node extract-i18n.js --add-to=settings  # Add new keys to settings.ftl
  */
 
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const addToNamespace = args
+  .find((arg) => arg.startsWith("--add-to="))
+  ?.split("=")[1];
 
 // Paths
 const COMPONENTS_ROOT = path.join(__dirname, "..");
@@ -91,12 +102,13 @@ function extractKeys() {
 
 /**
  * Read existing keys from .ftl files in a locale directory
+ * Returns a map of namespace -> Set of keys
  */
 function getExistingFtlKeys(localeDir) {
-  const existingKeys = new Set();
+  const keysByNamespace = {};
 
   if (!fs.existsSync(localeDir)) {
-    return existingKeys;
+    return keysByNamespace;
   }
 
   const ftlFiles = fs
@@ -104,6 +116,9 @@ function getExistingFtlKeys(localeDir) {
     .filter((file) => file.endsWith(".ftl"));
 
   for (const file of ftlFiles) {
+    const namespace = path.basename(file, ".ftl");
+    const keys = new Set();
+
     const content = fs.readFileSync(path.join(localeDir, file), "utf8");
     const lines = content.split("\n");
 
@@ -111,19 +126,35 @@ function getExistingFtlKeys(localeDir) {
       const trimmed = line.trim();
       const keyMatch = trimmed.match(/^([a-zA-Z][a-zA-Z0-9_-]*)\s*=/);
       if (keyMatch) {
-        existingKeys.add(keyMatch[1]);
+        keys.add(keyMatch[1]);
       }
     }
+
+    keysByNamespace[namespace] = keys;
   }
 
-  return existingKeys;
+  return keysByNamespace;
+}
+
+/**
+ * Get all namespaces (json files) in the locale directory
+ */
+function getNamespaces(localeJsonDir) {
+  if (!fs.existsSync(localeJsonDir)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(localeJsonDir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => path.basename(file, ".json"));
 }
 
 /**
  * Add new keys to a .ftl file
  */
-function addKeysToFtlFile(localeDir, newKeys, locale) {
-  const targetFile = path.join(localeDir, "common.ftl");
+function addKeysToFtlFile(localeDir, namespace, newKeys, locale) {
+  const targetFile = path.join(localeDir, `${namespace}.ftl`);
 
   // Create file with header if it doesn't exist
   if (!fs.existsSync(localeDir)) {
@@ -132,7 +163,9 @@ function addKeysToFtlFile(localeDir, newKeys, locale) {
 
   if (!fs.existsSync(targetFile)) {
     const languageName = manifest.languages[locale]?.name || locale;
-    const header = `# Common translations - ${languageName}\n\n`;
+    const namespaceName =
+      namespace.charAt(0).toUpperCase() + namespace.slice(1);
+    const header = `# ${namespaceName} translations - ${languageName}\n\n`;
     fs.writeFileSync(targetFile, header);
   }
 
@@ -155,60 +188,138 @@ function addKeysToFtlFile(localeDir, newKeys, locale) {
  * Migrate extracted JSON keys to .ftl files
  */
 function migrateKeysToFtl() {
-  console.log("\n🔄 Migrating extracted keys to .ftl files...");
+  console.log("\n🔄 Analyzing extracted keys...");
 
-  let totalNewKeys = 0;
-  const processedFiles = [];
+  const newKeysByLocaleAndNamespace = {}; // locale -> namespace -> [keys]
 
+  // Process each locale
   for (const locale of manifest.supportedLocales) {
     const localeJsonDir = path.join(LOCALES_JSON_DIR, locale);
     const localeFtlDir = path.join(LOCALES_FTL_DIR, locale);
-    const messagesJsonPath = path.join(localeJsonDir, "messages.json");
 
-    if (!fs.existsSync(messagesJsonPath)) {
-      console.log(
-        `⚠️  No messages.json found for ${locale}! You may need to run pnpm i18n:compile first!`,
-      );
+    if (!fs.existsSync(localeJsonDir)) {
+      console.log(`⚠️  No JSON files found for ${locale}`);
       continue;
     }
 
-    // Read extracted keys
-    const messagesJson = JSON.parse(fs.readFileSync(messagesJsonPath, "utf8"));
-    const extractedKeys = Object.keys(messagesJson);
+    // Get all namespaces (json files)
+    const namespaces = getNamespaces(localeJsonDir);
+
+    if (namespaces.length === 0) {
+      console.log(`⚠️  No namespace files found for ${locale}`);
+      continue;
+    }
 
     // Get existing keys from .ftl files
-    const existingKeys = getExistingFtlKeys(localeFtlDir);
+    const existingKeysByNamespace = getExistingFtlKeys(localeFtlDir);
 
-    // Find new keys
-    const newKeys = extractedKeys.filter((key) => !existingKeys.has(key));
+    // Process each namespace
+    for (const namespace of namespaces) {
+      const jsonPath = path.join(localeJsonDir, `${namespace}.json`);
+      const jsonContent = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+      const extractedKeys = Object.keys(jsonContent);
 
-    if (newKeys.length === 0) {
-      console.log(`✅ ${locale}: Found 0 keys to migrate.`);
-      continue;
+      // Get existing keys for this namespace
+      const existingKeys = existingKeysByNamespace[namespace] || new Set();
+
+      // Find new keys
+      const newKeys = extractedKeys.filter((key) => !existingKeys.has(key));
+
+      if (newKeys.length > 0) {
+        if (!newKeysByLocaleAndNamespace[locale]) {
+          newKeysByLocaleAndNamespace[locale] = {};
+        }
+        newKeysByLocaleAndNamespace[locale][namespace] = newKeys;
+      }
     }
-
-    console.log(`📝 ${locale}: Found ${newKeys.length} new keys to migrate:`);
-    newKeys.forEach((key) => console.log(`   - ${key}`));
-
-    // Add to .ftl file
-    const targetFile = addKeysToFtlFile(localeFtlDir, newKeys, locale);
-    processedFiles.push(path.relative(process.cwd(), targetFile));
-    totalNewKeys += newKeys.length;
   }
 
-  // Summary
-  if (totalNewKeys === 0) {
-    console.log("\n🎉 No new keys found.");
-  } else {
+  // Check if there are any new keys
+  const hasNewKeys = Object.keys(newKeysByLocaleAndNamespace).length > 0;
+
+  if (!hasNewKeys) {
     console.log(
-      `\n🎉 Migration complete! Added ${totalNewKeys} new keys to .ftl files:`,
+      "\n🎉 No new keys found. All extracted keys already exist in .ftl files.",
     );
+    return;
+  }
+
+  // Display found keys
+  console.log("\n📊 New keys found:");
+  for (const locale of Object.keys(newKeysByLocaleAndNamespace)) {
+    console.log(`\n${locale}:`);
+    for (const namespace of Object.keys(newKeysByLocaleAndNamespace[locale])) {
+      const keys = newKeysByLocaleAndNamespace[locale][namespace];
+      console.log(`  📝 ${namespace} (${keys.length} new keys):`);
+      keys.forEach((key) => console.log(`     - ${key}`));
+    }
+  }
+
+  // If --add-to flag is provided, add keys to that namespace
+  if (addToNamespace) {
+    console.log(`\n✍️  Adding new keys to ${addToNamespace}.ftl files...`);
+
+    let totalAdded = 0;
+    const processedFiles = [];
+
+    for (const locale of Object.keys(newKeysByLocaleAndNamespace)) {
+      const localeFtlDir = path.join(LOCALES_FTL_DIR, locale);
+      const namespacesForLocale = newKeysByLocaleAndNamespace[locale];
+
+      // Collect all new keys across all namespaces for this locale
+      const allNewKeys = [];
+      for (const namespace of Object.keys(namespacesForLocale)) {
+        allNewKeys.push(...namespacesForLocale[namespace]);
+      }
+
+      if (allNewKeys.length === 0) continue;
+
+      // Add all keys to the specified namespace
+      const targetFile = addKeysToFtlFile(
+        localeFtlDir,
+        addToNamespace,
+        allNewKeys,
+        locale,
+      );
+      processedFiles.push(path.relative(process.cwd(), targetFile));
+      totalAdded += allNewKeys.length;
+
+      console.log(
+        `✅ ${locale}: Added ${allNewKeys.length} keys to ${addToNamespace}.ftl`,
+      );
+    }
+
+    console.log(
+      `\n🎉 Migration complete! Added ${totalAdded} new keys to ${addToNamespace}.ftl files.`,
+    );
+    console.log("\nModified files:");
     processedFiles.forEach((file) => console.log(`   📄 ${file}`));
 
     console.log("\n💡 Next steps:");
     console.log("   1. Review the new keys in your .ftl files");
     console.log("   2. Replace placeholder values with actual translations");
     console.log("   3. Run `pnpm i18n:compile` to update compiled JSON files");
+  } else {
+    // Just report
+    let totalNewKeys = 0;
+    const namespaceSet = new Set();
+
+    for (const locale of Object.keys(newKeysByLocaleAndNamespace)) {
+      for (const namespace of Object.keys(
+        newKeysByLocaleAndNamespace[locale],
+      )) {
+        namespaceSet.add(namespace);
+        totalNewKeys += newKeysByLocaleAndNamespace[locale][namespace].length;
+      }
+    }
+
+    console.log(
+      `\n💡 Found ${totalNewKeys} new keys across ${namespaceSet.size} namespace(s).`,
+    );
+    console.log("\nTo add these keys to a specific namespace file, run:");
+    Array.from(namespaceSet).forEach((ns) => {
+      console.log(`   node extract-i18n.js --add-to=${ns}`);
+    });
   }
 }
 
