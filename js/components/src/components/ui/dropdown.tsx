@@ -648,7 +648,7 @@ export const ResponsiveDropdownMenuContent = forwardRef<
     return (
       <DropdownMenuContent align="start" ref={ref} {...props}>
         {children}
-      </DropdownMenuBottomSheet>
+      </DropdownMenuContent>
     );
   }
   return (
