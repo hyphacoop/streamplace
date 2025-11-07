@@ -19,16 +19,20 @@ export function ViewerCount({
     return new Intl.NumberFormat(locales, numberFormat).format(count || 0);
   }, [numberFormat, count]);
 
-  return <Text style={[styles.label, style]}>{formattedNumber}</Text>;
+  return (
+    <Text leading="snug" style={[styles.label, style]}>
+      {formattedNumber}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({
   label: {
     color: "#fd5050",
     textShadowColor: "black",
-    textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 3,
     fontSize: 16,
+    lineHeight: 24,
   },
 });
 
