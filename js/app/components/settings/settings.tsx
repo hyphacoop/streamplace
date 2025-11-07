@@ -305,7 +305,7 @@ const DanmuSettings = () => {
         ]}
       >
         <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-          <Text size="xl">Enable Danmaku</Text>
+          <Text size="xl">Enable Danmu</Text>
           <Text size="lg" color="muted">
             Show "bullet comments" flying across the video.
           </Text>

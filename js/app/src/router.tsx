@@ -84,6 +84,7 @@ import {
   ReanimatedLogLevel,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import DanmuOBSScreen from "./screens/danmu-obs";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
 store.dispatch(loadStateFromStorage());
@@ -125,6 +126,7 @@ type RootStackParamList = {
   InfoWidgetEmbed: undefined;
   LegacyStream: { user: string };
   MobileGoLive: undefined;
+  DanmuOBS: { user: string };
 };
 
 declare global {
@@ -166,6 +168,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       InfoWidgetEmbed: "info-widget",
       LegacyStream: "legacy/:user",
       MobileGoLive: "mobile-golive",
+      DanmuOBS: "widgets/:user/danmu",
     },
   },
 };
@@ -592,6 +595,15 @@ export function StreamplaceDrawer() {
         <Drawer.Screen
           name="InfoWidgetEmbed"
           component={InfoWidgetEmbed}
+          options={{
+            drawerLabel: () => null,
+            drawerItemStyle: { display: "none" },
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="DanmuOBS"
+          component={DanmuOBSScreen}
           options={{
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
