@@ -1,5 +1,12 @@
-import { Text } from "@streamplace/components";
-import { View } from "react-native";
+import {
+  Text,
+  useDanmuUnlocked,
+  useSetDanmuUnlocked,
+  useToast,
+  useTranslation,
+} from "@streamplace/components";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
 import pkg from "../../package.json";
 
 const UNLOCK_TAP_COUNT = 5;
@@ -10,11 +17,11 @@ export function Updates() {
   const [tapCount, setTapCount] = useState(0);
   const danmuUnlocked = useDanmuUnlocked();
   const setDanmuUnlocked = useSetDanmuUnlocked();
-  const t = useToast();
+  const toast = useToast();
 
   const handlePress = () => {
     if (danmuUnlocked) {
-      t.show("You are already a developer", "what are you doing???");
+      toast.show("You are already a developer", "what are you doing???");
       return;
     }
 
@@ -24,7 +31,7 @@ export function Updates() {
 
     if (newCount >= UNLOCK_TAP_COUNT) {
       setDanmuUnlocked(true);
-      t.show("You are now a developer", "have fun! lol", {
+      toast.show("You are now a developer", "have fun! lol", {
         duration: 20,
         variant: "success",
       });

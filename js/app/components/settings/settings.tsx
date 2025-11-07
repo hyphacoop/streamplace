@@ -1,14 +1,12 @@
-import { useNavigation } from "@react-navigation/native";
 import {
   Button,
   Input,
   Slider,
   Text,
-  useToast,
+  useDanmuSettings,
   View,
   zero,
 } from "@streamplace/components";
-import { useDanmuSettings } from "@streamplace/components/src/streamplace-store";
 import AQLink from "components/aqlink";
 import {
   createServerSettingsRecord,
@@ -23,7 +21,6 @@ import { useTranslation } from "react-i18next";
 import {
   Platform,
   ScrollView,
- 
   Switch,
   useWindowDimensions,
 } from "react-native";
@@ -693,34 +690,3 @@ const DanmuSettings = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  buttonRow: {
-    flexDirection: "row",
-    gap: 8,
-    flexWrap: "wrap",
-    justifyContent: "flex-end",
-  },
-  buttonColumn: {
-    flexDirection: "column",
-    gap: 8,
-    alignItems: "stretch",
-  },
-  optionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: "#374151",
-    borderRadius: 6,
-    minWidth: 50,
-    alignItems: "center",
-  },
-  optionButtonActive: {
-    backgroundColor: "#3b82f6",
-  },
-  optionButtonText: {
-    color: "#9ca3af",
-  },
-  optionButtonTextActive: {
-    color: "white",
-  },
-});
