@@ -19,9 +19,25 @@ import { Text, useTheme, useToast } from "@streamplace/components";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
 import Login from "components/login/login";
+import { AboutCategorySettings } from "components/settings/about-category-settings";
+import { AdvancedCategorySettings } from "components/settings/advanced-category-settings";
+import { DebugRecordingSettings } from "components/settings/debug-recording-settings";
 import { DeveloperSettings } from "components/settings/developer";
+import { PrivacyCategorySettings } from "components/settings/privacy-category-settings";
+import { StreamingCategorySettings } from "components/settings/streaming-category-settings";
+import WebhookManager from "components/settings/webhook-manager";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 import * as ExpoLinking from "expo-linking";
+import { hydrate, selectHydrated } from "features/base/baseSlice";
+import { selectUserProfile } from "features/bluesky/blueskySlice";
+import {
+  clearNotification,
+  initPushNotifications,
+  registerNotificationToken,
+  selectNotificationDestination,
+  selectNotificationToken,
+} from "features/platform/platformSlice.native";
+import { pollMySegments } from "features/streamplace/streamplaceSlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import usePlatform from "hooks/usePlatform";
 import { useSidebarControl } from "hooks/useSidebarControl";
@@ -50,13 +66,7 @@ import {
   StatusBar,
   View,
 } from "react-native";
-import { useStore } from "store";
-import {
-  useHydrated,
-  useNotificationDestination,
-  useNotificationToken,
-  useUserProfile,
-} from "store/hooks";
+import { useAppDispatch, useAppSelector } from "store/hooks";
 import AboutScreen from "./screens/about";
 import AppReturnScreen from "./screens/app-return";
 import PopoutChat from "./screens/chat-popout";
@@ -68,6 +78,9 @@ import MultiScreen from "./screens/multi";
 import SupportScreen from "./screens/support";
 
 import KeyManager from "components/settings/key-manager";
+
+import { loadStateFromStorage } from "features/base/sidebarSlice";
+import { store } from "store/store";
 import HomeScreen from "./screens/home";
 
 import { useUrl } from "@streamplace/components";
@@ -78,12 +91,9 @@ import {
   ReanimatedLogLevel,
   useAnimatedStyle,
 } from "react-native-reanimated";
-import DanmuOBSScreen from "./screens/danmu-obs";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
-
-// Initialize sidebar state on app load
-useStore.getState().loadStateFromStorage();
+store.dispatch(loadStateFromStorage());
 
 const Stack = createNativeStackNavigator();
 
@@ -101,7 +111,14 @@ type HomeStackParamList = {
 
 type SettingsStackParamList = {
   MainSettings: undefined;
+  AboutCategory: undefined;
+  StreamingCategory: undefined;
+  WebhooksSettings: undefined;
+  PrivacyCategory: undefined;
+  DebugRecordingSettings: undefined;
+  AdvancedCategory: undefined;
   DeveloperSettings: undefined;
+  KeyManagement: undefined;
 };
 
 type RootStackParamList = {
@@ -122,7 +139,6 @@ type RootStackParamList = {
   InfoWidgetEmbed: undefined;
   LegacyStream: { user: string };
   MobileGoLive: undefined;
-  DanmuOBS: { user: string };
 };
 
 declare global {
@@ -148,6 +164,12 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Settings: {
         screens: {
           MainSettings: "settings",
+          AboutCategory: "settings/about",
+          StreamingCategory: "settings/streaming",
+          WebhooksSettings: "settings/streaming/webhooks",
+          PrivacyCategory: "settings/privacy",
+          DebugRecordingSettings: "settings/privacy/debug-recording",
+          AdvancedCategory: "settings/advanced",
           DeveloperSettings: "settings/developer",
         },
       },
@@ -164,7 +186,6 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       InfoWidgetEmbed: "info-widget",
       LegacyStream: "legacy/:user",
       MobileGoLive: "mobile-golive",
-      DanmuOBS: "widgets/:user/danmu",
     },
   },
 };
@@ -239,7 +260,7 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
 };
 
 const AvatarButton = () => {
-  const userProfile = useUserProfile();
+  const userProfile = useAppSelector(selectUserProfile);
   let source: ImageSourcePropType | undefined = undefined;
   let opacity = 1;
   if (userProfile) {
@@ -340,6 +361,7 @@ export function StreamplaceDrawer() {
   const theme = useTheme();
   const { isWeb, isElectron, isNative, isBrowser } = usePlatform();
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const [livePopup, setLivePopup] = useState(false);
 
   const sidebar = useSidebarControl();
@@ -349,31 +371,22 @@ export function StreamplaceDrawer() {
   SystemBars.setStyle("dark");
 
   // Top-level stuff to handle push notification registration
-  const hydrate = useStore((state) => state.hydrate);
-  const initPushNotifications = useStore(
-    (state) => state.initPushNotifications,
-  );
-  const registerNotificationToken = useStore(
-    (state) => state.registerNotificationToken,
-  );
-
   useEffect(() => {
-    hydrate();
-    initPushNotifications();
+    dispatch(hydrate());
+    dispatch(initPushNotifications());
   }, []);
-  const notificationToken = useNotificationToken();
-  const userProfile = useUserProfile();
-  const hydrated = useHydrated();
+  const notificationToken = useAppSelector(selectNotificationToken);
+  const userProfile = useAppSelector(selectUserProfile);
+  const hydrated = useAppSelector(selectHydrated);
   useEffect(() => {
     if (notificationToken) {
-      registerNotificationToken();
+      dispatch(registerNotificationToken());
     }
   }, [notificationToken, userProfile]);
 
   // Stuff to handle incoming push notification routing
-  const notificationDestination = useNotificationDestination();
+  const notificationDestination = useAppSelector(selectNotificationDestination);
   const linkTo = useLinkTo();
-  const clearNotification = useStore((state) => state.clearNotification);
 
   const animatedDrawerStyle = useAnimatedStyle(() => {
     return {
@@ -384,18 +397,17 @@ export function StreamplaceDrawer() {
   useEffect(() => {
     if (notificationDestination) {
       linkTo(notificationDestination);
-      clearNotification();
+      dispatch(clearNotification());
     }
   }, [notificationDestination]);
 
   // Top-level stuff to handle polling for live streamers
-  const pollMySegments = useStore((state) => state.pollMySegments);
   useEffect(() => {
     let handle: NodeJS.Timeout;
     handle = setInterval(() => {
-      pollMySegments();
+      dispatch(pollMySegments());
     }, 2500);
-    pollMySegments();
+    dispatch(pollMySegments());
     return () => clearInterval(handle);
   }, []);
 
@@ -529,14 +541,6 @@ export function StreamplaceDrawer() {
         />
 
         <Drawer.Screen
-          name="KeyManagement"
-          component={KeyManager}
-          options={{
-            drawerLabel: () => <Text variant="h5">Key Manager</Text>,
-            drawerItemStyle: { display: "none" },
-          }}
-        />
-        <Drawer.Screen
           name="Support"
           component={SupportScreen}
           options={{
@@ -600,15 +604,6 @@ export function StreamplaceDrawer() {
         <Drawer.Screen
           name="InfoWidgetEmbed"
           component={InfoWidgetEmbed}
-          options={{
-            drawerLabel: () => null,
-            drawerItemStyle: { display: "none" },
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
-          name="DanmuOBS"
-          component={DanmuOBSScreen}
           options={{
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
@@ -698,9 +693,47 @@ const SettingsStack = () => {
         options={{ headerTitle: "Settings", title: "Settings" }}
       />
       <Stack.Screen
+        name="AboutCategory"
+        component={AboutCategorySettings}
+        options={{ headerTitle: "About", title: "About" }}
+      />
+      <Stack.Screen
+        name="StreamingCategory"
+        component={StreamingCategorySettings}
+        options={{ headerTitle: "Streaming", title: "Streaming" }}
+      />
+      <Stack.Screen
+        name="WebhooksSettings"
+        component={WebhookManager}
+        options={{ headerTitle: "Webhooks", title: "Webhooks" }}
+      />
+      <Stack.Screen
+        name="PrivacyCategory"
+        component={PrivacyCategorySettings}
+        options={{
+          headerTitle: "Privacy & Security",
+          title: "Privacy & Security",
+        }}
+      />
+      <Stack.Screen
+        name="DebugRecordingSettings"
+        component={DebugRecordingSettings}
+        options={{ headerTitle: "Debug Recording", title: "Debug Recording" }}
+      />
+      <Stack.Screen
+        name="AdvancedCategory"
+        component={AdvancedCategorySettings}
+        options={{ headerTitle: "Advanced", title: "Advanced" }}
+      />
+      <Stack.Screen
         name="DeveloperSettings"
         component={DeveloperSettings}
         options={{ headerTitle: "Developer", title: "Developer" }}
+      />
+      <Stack.Screen
+        name="KeyManagement"
+        component={KeyManager}
+        options={{ headerTitle: "Key Manager", title: "Key Manager" }}
       />
     </Stack.Navigator>
   );

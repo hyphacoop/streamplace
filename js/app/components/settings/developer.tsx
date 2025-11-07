@@ -171,7 +171,7 @@ export function DeveloperSettings() {
                   {filteredLanguages.length === 0 && (
                     <View style={{ padding: 12 }}>
                       <Text style={{ opacity: 0.7, textAlign: "center" }}>
-                        No languages found
+                        {t("no-languages-found")}
                       </Text>
                     </View>
                   )}

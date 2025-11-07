@@ -80,21 +80,16 @@ export function Updates() {
   }
 
   return (
-    <View
-      style={[
-        zero.layout.flex.align.center,
-        zero.layout.flex.justify.center,
-        zero.gap.all[4],
-      ]}
-    >
-      <View style={[zero.gap.all[2], zero.layout.flex.align.center]}>
-        <Text size="2xl" center style={[{ fontWeight: "bold", color: "#fff" }]}>
+    <View style={[zero.gap.all[3]]}>
+      <View style={[zero.gap.all[1]]}>
+        <Text size="2xl" style={[{ fontWeight: "bold", color: "#fff" }]}>
           Streamplace v{version}
         </Text>
         <View
           style={[
+            { alignSelf: "flex-start" },
             theme.zero.bg.muted,
-            zero.w.percent[100],
+            zero.layout.flex.wrap,
             zero.px[2],
             { borderRadius: 999 },
           ]}
