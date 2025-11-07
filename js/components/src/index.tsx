@@ -37,6 +37,9 @@ export * from "./components/chat/system-message";
 export { default as VideoRetry } from "./components/mobile-player/video-retry";
 export * from "./lib/system-messages";
 
+export { DanmuOverlay } from "./components/danmu/danmu-overlay";
+export { DanmuOverlayOBS } from "./components/danmu/danmu-overlay-obs";
+
 // Rotation lock system exports
 export {
   RotationProvider,
