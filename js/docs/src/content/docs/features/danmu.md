@@ -3,8 +3,6 @@ title: Danmu Overlay
 description: Add flying bullet-style chat comments to the player, or your stream
 ---
 
-# Danmu Overlay
-
 [Danmu (or Danmaku)](https://en.wikipedia.org/wiki/Danmaku_subtitling) (弹幕,
 "bullet curtain") is a comment style where messages fly across the video
 horizontally. Originating from Niconico and Bilibili, it's a fun way to display
