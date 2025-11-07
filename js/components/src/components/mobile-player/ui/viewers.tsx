@@ -1,5 +1,4 @@
 import { Eye } from "lucide-react-native";
-import { StyleSheet } from "react-native";
 import * as atoms from "../../../lib/theme/atoms";
 import { useViewers } from "../../../livestream-store";
 import { View } from "../../ui";
