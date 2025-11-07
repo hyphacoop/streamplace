@@ -19,6 +19,7 @@ import { Text, useTheme, useToast } from "@streamplace/components";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
 import Login from "components/login/login";
+import { DeveloperSettings } from "components/settings/developer";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 import * as ExpoLinking from "expo-linking";
 import { hydrate, selectHydrated } from "features/base/baseSlice";
@@ -83,6 +84,7 @@ import {
   ReanimatedLogLevel,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import DanmuOBSScreen from "./screens/danmu-obs";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
 store.dispatch(loadStateFromStorage());
@@ -101,11 +103,16 @@ type HomeStackParamList = {
   Stream: { user: string };
 };
 
+type SettingsStackParamList = {
+  MainSettings: undefined;
+  DeveloperSettings: undefined;
+};
+
 type RootStackParamList = {
   Home: NavigatorScreenParams<HomeStackParamList>;
   Multi: { config: string };
   Support: undefined;
-  Settings: undefined;
+  Settings: NavigatorScreenParams<SettingsStackParamList>;
   KeyManagement: undefined;
   GoLive: undefined;
   LiveDashboard: undefined;
@@ -119,6 +126,7 @@ type RootStackParamList = {
   InfoWidgetEmbed: undefined;
   LegacyStream: { user: string };
   MobileGoLive: undefined;
+  DanmuOBS: { user: string };
 };
 
 declare global {
@@ -141,7 +149,12 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       },
       Multi: "multi/:config",
       Support: "support",
-      Settings: "settings",
+      Settings: {
+        screens: {
+          MainSettings: "settings",
+          DeveloperSettings: "settings/developer",
+        },
+      },
       KeyManagement: "key-management",
       GoLive: "golive",
       LiveDashboard: "live",
@@ -155,6 +168,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       InfoWidgetEmbed: "info-widget",
       LegacyStream: "legacy/:user",
       MobileGoLive: "mobile-golive",
+      DanmuOBS: "widgets/:user/danmu",
     },
   },
 };
@@ -499,12 +513,13 @@ export function StreamplaceDrawer() {
         />
         <Drawer.Screen
           name="Settings"
-          component={Settings}
+          component={SettingsStack}
           options={{
             drawerIcon: () => (
               <SettingsIcon color={foregroundColor} size={24} />
             ),
             drawerLabel: () => <Text variant="h5">Settings</Text>,
+            headerShown: false,
           }}
         />
 
@@ -587,6 +602,15 @@ export function StreamplaceDrawer() {
           }}
         />
         <Drawer.Screen
+          name="DanmuOBS"
+          component={DanmuOBSScreen}
+          options={{
+            drawerLabel: () => null,
+            drawerItemStyle: { display: "none" },
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
           name="MobileGoLive"
           component={MobileGoLive}
           options={{
@@ -646,6 +670,32 @@ const MainTab = () => {
           title: "Streamplace Stream",
           headerShown: false,
         }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const SettingsStack = () => {
+  const { isWeb } = usePlatform();
+  return (
+    <Stack.Navigator
+      initialRouteName="MainSettings"
+      screenOptions={{
+        headerLeft: ({ canGoBack }) => (
+          <NavigationButton canGoBack={canGoBack} />
+        ),
+        headerRight: () => <AvatarButton />,
+      }}
+    >
+      <Stack.Screen
+        name="MainSettings"
+        component={Settings}
+        options={{ headerTitle: "Settings", title: "Settings" }}
+      />
+      <Stack.Screen
+        name="DeveloperSettings"
+        component={DeveloperSettings}
+        options={{ headerTitle: "Developer", title: "Developer" }}
       />
     </Stack.Navigator>
   );

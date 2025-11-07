@@ -5,6 +5,7 @@ import {
 } from "@react-navigation/native";
 import * as Sentry from "@sentry/react-native";
 import {
+  I18nProvider,
   ThemeProvider,
   StreamplaceProvider as ZustandStreamplaceProvider,
 } from "@streamplace/components";
@@ -20,6 +21,7 @@ import { store } from "store/store";
 
 export default Sentry.wrap(ProviderInner);
 
+import { i18n } from "@streamplace/components";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
@@ -87,17 +89,19 @@ function ProviderInner({
   return (
     <SafeAreaProvider>
       <ThemeProvider forcedTheme="dark">
-        <NavigationContainer theme={SPDarkTheme} linking={linking}>
-          <ReduxProvider store={store}>
-            <StreamplaceProvider>
-              <BlueskyProvider>
-                <NewStreamplaceProvider>
-                  <FontProvider>{children}</FontProvider>
-                </NewStreamplaceProvider>
-              </BlueskyProvider>
-            </StreamplaceProvider>
-          </ReduxProvider>
-        </NavigationContainer>
+        <I18nProvider i18n={i18n}>
+          <NavigationContainer theme={SPDarkTheme} linking={linking}>
+            <ReduxProvider store={store}>
+              <StreamplaceProvider>
+                <BlueskyProvider>
+                  <NewStreamplaceProvider>
+                    <FontProvider>{children}</FontProvider>
+                  </NewStreamplaceProvider>
+                </BlueskyProvider>
+              </StreamplaceProvider>
+            </ReduxProvider>
+          </NavigationContainer>
+        </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

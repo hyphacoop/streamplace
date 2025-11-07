@@ -646,7 +646,7 @@ export const ResponsiveDropdownMenuContent = forwardRef<
 
   if (isBottomSheet) {
     return (
-      <DropdownMenuBottomSheet ref={ref} {...props}>
+      <DropdownMenuContent align="start" ref={ref} {...props}>
         {children}
       </DropdownMenuBottomSheet>
     );
