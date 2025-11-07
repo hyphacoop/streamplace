@@ -4,13 +4,9 @@ import {
   PlayerProvider,
   usePlayerStore,
 } from "@streamplace/components";
-import {
-  setSidebarHidden,
-  setSidebarUnhidden,
-} from "features/base/sidebarSlice";
 import { useEffect } from "react";
 import { Platform, View } from "react-native";
-import { useAppDispatch } from "store/hooks";
+import { useStore } from "store";
 
 const isWeb = Platform.OS === "web";
 
@@ -45,7 +41,8 @@ const parseDanmuParams = (query: URLSearchParams): DanmuParams => {
 
 export default function DanmuOBSScreen({ route }) {
   const user = route.params?.user;
-  const dispatch = useAppDispatch();
+  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
+  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
 
   let danmuParams: DanmuParams = {};
   if (isWeb) {
@@ -57,10 +54,10 @@ export default function DanmuOBSScreen({ route }) {
   }
 
   useEffect(() => {
-    dispatch(setSidebarHidden());
+    setSidebarHidden();
     () => {
       // on unmount, unhide the sidebar
-      dispatch(setSidebarUnhidden());
+      setSidebarUnhidden();
     };
   }, []);
 
