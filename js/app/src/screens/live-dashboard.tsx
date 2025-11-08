@@ -13,7 +13,6 @@ import {
 } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useCallback, useState } from "react";
-import { View } from "react-native";
 import { useAppSelector } from "store/hooks";
 
 const { flex, bg } = zero;
@@ -44,9 +43,7 @@ export default function LiveDashboard() {
     <LivestreamProvider src={userProfile.did}>
       <VideoElementProvider videoElement={videoElement}>
         <PlayerProvider>
-          <View style={[flex.values[1], bg.gray[900]]}>
-            <BentoGrid isLive={isLive} videoRef={videoRef} />
-          </View>
+          <BentoGrid isLive={isLive} videoRef={videoRef} />
         </PlayerProvider>
       </VideoElementProvider>
     </LivestreamProvider>

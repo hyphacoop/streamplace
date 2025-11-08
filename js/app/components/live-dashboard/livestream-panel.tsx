@@ -161,7 +161,7 @@ const ImageUploadComponent = ({
   );
 };
 
-function LivestreamPanel() {
+function LivestreamPanel({ scrollable = true }: { scrollable?: boolean }) {
   const toast = useToast();
   const userIsLive = useLiveUser();
   const captureFrame = useCaptureVideoFrame();
@@ -327,14 +327,19 @@ function LivestreamPanel() {
     return mode === "create" ? "Announce Livestream!" : "Update Livestream!";
   }, [loading, userIsLive, mode]);
 
+  const Wrapper = scrollable ? ScrollView : View;
+  const wrapperProps = scrollable
+    ? {
+        contentContainerStyle: {
+          flexGrow: 1,
+        },
+        showsVerticalScrollIndicator: false,
+      }
+    : {};
+
   return (
     <>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
+      <Wrapper {...wrapperProps}>
         <View
           style={[
             flex.values[1],
@@ -574,7 +579,7 @@ function LivestreamPanel() {
             </View>
           )}
         </View>
-      </ScrollView>
+      </Wrapper>
     </>
   );
 }
