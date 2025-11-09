@@ -1,12 +1,19 @@
-import { Text, useTranslation, View, zero } from "@streamplace/components";
+import {
+  Text,
+  useDanmuUnlocked,
+  useTranslation,
+  View,
+  zero,
+} from "@streamplace/components";
 import AQLink from "components/aqlink";
 import { SettingsNavigationItem } from "components/settings/settings-navigation-item";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { Code, Info, Lock, LogIn, Shield, Video } from "lucide-react-native";
 import { ImageBackground, Pressable, ScrollView } from "react-native";
-import { useAppSelector } from "store/hooks";
 
 import { ml, mt } from "@streamplace/components/src/ui";
+import Mu from "components/mobile/desktop-ui/mu";
+import { useStore } from "store";
+import { useUserProfile } from "store/hooks";
 import pkg from "../../package.json";
 
 function HorizontalBar() {
@@ -23,10 +30,9 @@ function HorizontalBar() {
 
 export function Settings() {
   // are we logged in?
-  const loggedIn = useAppSelector(
-    (state) => state.bluesky.status === "loggedIn",
-  );
-  const userProfile = useAppSelector(selectUserProfile);
+  const loggedIn = useStore((state) => state.authStatus === "loggedIn");
+  const userProfile = useUserProfile();
+  const danmuUnlocked = useDanmuUnlocked();
   const { t } = useTranslation("settings");
 
   return (
@@ -109,6 +115,16 @@ export function Settings() {
                 title={t("privacy-security")}
                 screen="PrivacyCategory"
                 icon={Shield}
+              />
+              <HorizontalBar />
+            </>
+          )}
+          {danmuUnlocked && (
+            <>
+              <SettingsNavigationItem
+                title={t("danmu")}
+                screen="DanmuCategory"
+                icon={Mu as any}
               />
               <HorizontalBar />
             </>

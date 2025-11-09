@@ -1,27 +1,26 @@
 import { Text, View, zero } from "@streamplace/components";
-import {
-  createServerSettingsRecord,
-  getServerSettingsFromPDS,
-  selectIsReady,
-  selectServerSettings,
-} from "features/bluesky/blueskySlice";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useIsReady, useServerSettings, useStreamplaceUrl } from "store/hooks";
 
 export function DebugRecordingSettings() {
-  const dispatch = useAppDispatch();
-  const isReady = useAppSelector(selectIsReady);
-  const serverSettings = useAppSelector(selectServerSettings);
-  const { url } = useStreamplaceNode();
+  const isReady = useIsReady();
+  const serverSettings = useServerSettings();
+  const url = useStreamplaceUrl();
+  const getServerSettingsFromPDS = useStore(
+    (state) => state.getServerSettingsFromPDS,
+  );
+  const createServerSettingsRecord = useStore(
+    (state) => state.createServerSettingsRecord,
+  );
   const { t } = useTranslation("settings");
   const debugRecordingOn = serverSettings?.debugRecording === true;
 
   useEffect(() => {
     if (isReady) {
-      dispatch(getServerSettingsFromPDS());
+      getServerSettingsFromPDS();
     }
   }, [isReady]);
 
@@ -55,19 +54,9 @@ export function DebugRecordingSettings() {
               value={debugRecordingOn}
               onValueChange={(value) => {
                 if (value === true) {
-                  dispatch(
-                    createServerSettingsRecord({
-                      ...serverSettings,
-                      debugRecording: true,
-                    }),
-                  );
+                  createServerSettingsRecord(true);
                 } else {
-                  dispatch(
-                    createServerSettingsRecord({
-                      ...serverSettings,
-                      debugRecording: false,
-                    }),
-                  );
+                  createServerSettingsRecord(false);
                 }
               }}
             />

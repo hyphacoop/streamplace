@@ -1,14 +1,13 @@
 import { Button, Input, Text, View, zero } from "@streamplace/components";
-import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, Switch } from "react-native";
-import { useAppDispatch } from "store/hooks";
+import { useStore } from "store";
+import { DEFAULT_URL } from "store/slices/streamplaceSlice";
 
 export function AdvancedCategorySettings() {
-  const dispatch = useAppDispatch();
-  const { url } = useStreamplaceNode();
+  const url = useStore((state) => state.url);
+  const setURL = useStore((state) => state.setURL);
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
   const [overrideEnabled, setOverrideEnabled] = useState(false);
@@ -21,7 +20,7 @@ export function AdvancedCategorySettings() {
   const onSubmitUrl = () => {
     if (newUrl) {
       let trimmedUrl = newUrl.endsWith("/") ? newUrl.slice(0, -1) : newUrl;
-      dispatch(setURL(trimmedUrl));
+      setURL(trimmedUrl);
       setNewUrl("");
     }
   };
@@ -29,7 +28,7 @@ export function AdvancedCategorySettings() {
   const handleToggleOverride = (enabled: boolean) => {
     setOverrideEnabled(enabled);
     if (!enabled) {
-      dispatch(setURL(defaultUrl));
+      setURL(defaultUrl);
     }
   };
 

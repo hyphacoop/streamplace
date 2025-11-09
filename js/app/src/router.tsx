@@ -28,16 +28,6 @@ import { StreamingCategorySettings } from "components/settings/streaming-categor
 import WebhookManager from "components/settings/webhook-manager";
 import Sidebar, { ExternalDrawerItem } from "components/sidebar/sidebar";
 import * as ExpoLinking from "expo-linking";
-import { hydrate, selectHydrated } from "features/base/baseSlice";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
-import {
-  clearNotification,
-  initPushNotifications,
-  registerNotificationToken,
-  selectNotificationDestination,
-  selectNotificationToken,
-} from "features/platform/platformSlice.native";
-import { pollMySegments } from "features/streamplace/streamplaceSlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import usePlatform from "hooks/usePlatform";
 import { useSidebarControl } from "hooks/useSidebarControl";
@@ -66,7 +56,6 @@ import {
   StatusBar,
   View,
 } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
 import AboutScreen from "./screens/about";
 import AppReturnScreen from "./screens/app-return";
 import PopoutChat from "./screens/chat-popout";
@@ -79,11 +68,10 @@ import SupportScreen from "./screens/support";
 
 import KeyManager from "components/settings/key-manager";
 
-import { loadStateFromStorage } from "features/base/sidebarSlice";
-import { store } from "store/store";
 import HomeScreen from "./screens/home";
 
 import { useUrl } from "@streamplace/components";
+import { DanmuCategorySettings } from "components/settings/danmu-category-settings";
 import Constants from "expo-constants";
 import { SystemBars } from "react-native-edge-to-edge";
 import {
@@ -91,9 +79,18 @@ import {
   ReanimatedLogLevel,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { useStore } from "store";
+import {
+  useHydrated,
+  useNotificationDestination,
+  useNotificationToken,
+  useUserProfile,
+} from "store/hooks";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
-store.dispatch(loadStateFromStorage());
+
+// Initialize sidebar state on app load
+useStore.getState().loadStateFromStorage();
 
 const Stack = createNativeStackNavigator();
 
@@ -116,6 +113,7 @@ type SettingsStackParamList = {
   WebhooksSettings: undefined;
   PrivacyCategory: undefined;
   DebugRecordingSettings: undefined;
+  DanmuCategory: undefined;
   AdvancedCategory: undefined;
   DeveloperSettings: undefined;
   KeyManagement: undefined;
@@ -169,6 +167,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
           WebhooksSettings: "settings/streaming/webhooks",
           PrivacyCategory: "settings/privacy",
           DebugRecordingSettings: "settings/privacy/debug-recording",
+          DanmuCategory: "settings/danmu",
           AdvancedCategory: "settings/advanced",
           DeveloperSettings: "settings/developer",
         },
@@ -260,7 +259,7 @@ const NavigationButton = ({ canGoBack }: { canGoBack?: boolean }) => {
 };
 
 const AvatarButton = () => {
-  const userProfile = useAppSelector(selectUserProfile);
+  const userProfile = useUserProfile();
   let source: ImageSourcePropType | undefined = undefined;
   let opacity = 1;
   if (userProfile) {
@@ -361,7 +360,15 @@ export function StreamplaceDrawer() {
   const theme = useTheme();
   const { isWeb, isElectron, isNative, isBrowser } = usePlatform();
   const navigation = useNavigation();
-  const dispatch = useAppDispatch();
+  const hydrate = useStore((state) => state.hydrate);
+  const initPushNotifications = useStore(
+    (state) => state.initPushNotifications,
+  );
+  const registerNotificationToken = useStore(
+    (state) => state.registerNotificationToken,
+  );
+  const clearNotification = useStore((state) => state.clearNotification);
+  const pollMySegments = useStore((state) => state.pollMySegments);
   const [livePopup, setLivePopup] = useState(false);
 
   const sidebar = useSidebarControl();
@@ -372,20 +379,20 @@ export function StreamplaceDrawer() {
 
   // Top-level stuff to handle push notification registration
   useEffect(() => {
-    dispatch(hydrate());
-    dispatch(initPushNotifications());
+    hydrate();
+    initPushNotifications();
   }, []);
-  const notificationToken = useAppSelector(selectNotificationToken);
-  const userProfile = useAppSelector(selectUserProfile);
-  const hydrated = useAppSelector(selectHydrated);
+  const notificationToken = useNotificationToken();
+  const userProfile = useUserProfile();
+  const hydrated = useHydrated();
   useEffect(() => {
     if (notificationToken) {
-      dispatch(registerNotificationToken());
+      registerNotificationToken();
     }
   }, [notificationToken, userProfile]);
 
   // Stuff to handle incoming push notification routing
-  const notificationDestination = useAppSelector(selectNotificationDestination);
+  const notificationDestination = useNotificationDestination();
   const linkTo = useLinkTo();
 
   const animatedDrawerStyle = useAnimatedStyle(() => {
@@ -397,7 +404,7 @@ export function StreamplaceDrawer() {
   useEffect(() => {
     if (notificationDestination) {
       linkTo(notificationDestination);
-      dispatch(clearNotification());
+      clearNotification();
     }
   }, [notificationDestination]);
 
@@ -405,9 +412,9 @@ export function StreamplaceDrawer() {
   useEffect(() => {
     let handle: NodeJS.Timeout;
     handle = setInterval(() => {
-      dispatch(pollMySegments());
+      pollMySegments();
     }, 2500);
-    dispatch(pollMySegments());
+    pollMySegments();
     return () => clearInterval(handle);
   }, []);
 
@@ -719,6 +726,11 @@ const SettingsStack = () => {
         name="DebugRecordingSettings"
         component={DebugRecordingSettings}
         options={{ headerTitle: "Debug Recording", title: "Debug Recording" }}
+      />
+      <Stack.Screen
+        name="DanmuCategory"
+        component={DanmuCategorySettings}
+        options={{ headerTitle: "Danmu", title: "Danmu" }}
       />
       <Stack.Screen
         name="AdvancedCategory"
