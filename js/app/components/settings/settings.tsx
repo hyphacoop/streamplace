@@ -16,7 +16,7 @@ import { useStore } from "store";
 import { useUserProfile } from "store/hooks";
 import pkg from "../../package.json";
 
-function HorizontalBar() {
+export function HorizontalBar() {
   return (
     <View
       style={{

@@ -21,7 +21,6 @@ import AQLink from "components/aqlink";
 import Login from "components/login/login";
 import { AboutCategorySettings } from "components/settings/about-category-settings";
 import { AdvancedCategorySettings } from "components/settings/advanced-category-settings";
-import { DebugRecordingSettings } from "components/settings/debug-recording-settings";
 import { DeveloperSettings } from "components/settings/developer";
 import { PrivacyCategorySettings } from "components/settings/privacy-category-settings";
 import { StreamingCategorySettings } from "components/settings/streaming-category-settings";
@@ -112,7 +111,6 @@ type SettingsStackParamList = {
   StreamingCategory: undefined;
   WebhooksSettings: undefined;
   PrivacyCategory: undefined;
-  DebugRecordingSettings: undefined;
   DanmuCategory: undefined;
   AdvancedCategory: undefined;
   DeveloperSettings: undefined;
@@ -166,7 +164,6 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
           StreamingCategory: "settings/streaming",
           WebhooksSettings: "settings/streaming/webhooks",
           PrivacyCategory: "settings/privacy",
-          DebugRecordingSettings: "settings/privacy/debug-recording",
           DanmuCategory: "settings/danmu",
           AdvancedCategory: "settings/advanced",
           DeveloperSettings: "settings/developer",
@@ -721,11 +718,6 @@ const SettingsStack = () => {
           headerTitle: "Privacy & Security",
           title: "Privacy & Security",
         }}
-      />
-      <Stack.Screen
-        name="DebugRecordingSettings"
-        component={DebugRecordingSettings}
-        options={{ headerTitle: "Debug Recording", title: "Debug Recording" }}
       />
       <Stack.Screen
         name="DanmuCategory"
