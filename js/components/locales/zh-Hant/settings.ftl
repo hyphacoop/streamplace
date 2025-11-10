@@ -99,7 +99,7 @@ key-manager = 金鑰管理器
 manage-keys = 管理金鑰
 your-stream-pubkeys = 您的串流公開金鑰
 no-keys = 尚未設定金鑰
-pubkey-description = 公開金鑰用於驗證您的串流身份
+pubkey-description = 公開金鑰與串流金鑰（用於串流軟體）配對以簽署和驗證您的串流
 keys-count_other = { $count } 個金鑰
 
 ## Webhook 管理

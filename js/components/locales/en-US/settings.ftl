@@ -61,7 +61,7 @@ key-manager = Key Manager
 manage-keys = Manage Keys
 your-stream-pubkeys = Your Stream Public Keys
 no-keys = No keys configured
-pubkey-description = Public keys are used to verify your stream identity
+pubkey-description = Public keys are paired with stream keys (used in streaming software) to sign and verify your stream
 keys-count_one = { $count } key
 keys-count_other = { $count } keys
 
