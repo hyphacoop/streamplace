@@ -8,13 +8,6 @@ import {
   zero,
 } from "@streamplace/components";
 import AQLink from "components/aqlink";
-import {
-  createServerSettingsRecord,
-  getServerSettingsFromPDS,
-  selectIsReady,
-  selectServerSettings,
-} from "features/bluesky/blueskySlice";
-import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
 import useStreamplaceNode from "hooks/useStreamplaceNode";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,12 +17,14 @@ import {
   Switch,
   useWindowDimensions,
 } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useIsReady, useServerSettings } from "store/hooks";
+import { DEFAULT_URL } from "store/slices/streamplaceSlice";
 import { Updates } from "./updates";
 import WebhookManager from "./webhook-manager";
 
 export function Settings() {
-  const dispatch = useAppDispatch();
+  const setURL = useStore((state) => state.setURL);
   const { url } = useStreamplaceNode();
   const defaultUrl = DEFAULT_URL;
   const [newUrl, setNewUrl] = useState("");
@@ -37,9 +32,7 @@ export function Settings() {
   const { t } = useTranslation("settings");
 
   // are we logged in?
-  const loggedIn = useAppSelector(
-    (state) => state.bluesky.status === "loggedIn",
-  );
+  const loggedIn = useStore((state) => state.authStatus === "loggedIn");
 
   // Initialize the override state based on current URL
   useEffect(() => {
@@ -49,7 +42,7 @@ export function Settings() {
   const onSubmitUrl = () => {
     if (newUrl) {
       let trimmedUrl = newUrl.endsWith("/") ? newUrl.slice(0, -1) : newUrl;
-      dispatch(setURL(trimmedUrl));
+      setURL(trimmedUrl);
       setNewUrl("");
     }
   };
@@ -57,7 +50,7 @@ export function Settings() {
   const handleToggleOverride = (enabled: boolean) => {
     setOverrideEnabled(enabled);
     if (!enabled) {
-      dispatch(setURL(defaultUrl));
+      setURL(defaultUrl);
     }
   };
 
@@ -215,16 +208,21 @@ export function Settings() {
 }
 
 const DebugRecording = () => {
-  const dispatch = useAppDispatch();
-  const isReady = useAppSelector(selectIsReady);
-  const serverSettings = useAppSelector(selectServerSettings);
+  const getServerSettingsFromPDS = useStore(
+    (state) => state.getServerSettingsFromPDS,
+  );
+  const createServerSettingsRecord = useStore(
+    (state) => state.createServerSettingsRecord,
+  );
+  const isReady = useIsReady();
+  const serverSettings = useServerSettings();
   const { url } = useStreamplaceNode();
   const { t } = useTranslation("settings");
   const debugRecordingOn = serverSettings?.debugRecording === true;
 
   useEffect(() => {
     if (isReady) {
-      dispatch(getServerSettingsFromPDS());
+      getServerSettingsFromPDS();
     }
   }, [isReady]);
 
@@ -254,19 +252,9 @@ const DebugRecording = () => {
           value={debugRecordingOn}
           onValueChange={(value) => {
             if (value === true) {
-              dispatch(
-                createServerSettingsRecord({
-                  ...serverSettings,
-                  debugRecording: true,
-                }),
-              );
+              createServerSettingsRecord(true);
             } else {
-              dispatch(
-                createServerSettingsRecord({
-                  ...serverSettings,
-                  debugRecording: false,
-                }),
-              );
+              createServerSettingsRecord(false);
             }
           }}
         />

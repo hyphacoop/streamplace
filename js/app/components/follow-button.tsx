@@ -2,9 +2,8 @@ import { Button, Icon, Text, zero } from "@streamplace/components";
 import { Plus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
-import { followUser, unfollowUser } from "../features/bluesky/blueskySlice";
-import { selectStreamplace } from "../features/streamplace/streamplaceSlice";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { useStore } from "store";
+import { useStreamplaceUrl } from "store/hooks";
 
 /**
  * FollowButton component for following/unfollowing a streamer.
@@ -28,8 +27,9 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [followUri, setFollowUri] = useState<string | null>(null);
-  const { url: streamplaceUrl } = useAppSelector(selectStreamplace);
-  const dispatch = useAppDispatch();
+  const streamplaceUrl = useStreamplaceUrl();
+  const followUser = useStore((state) => state.followUser);
+  const unfollowUser = useStore((state) => state.unfollowUser);
 
   // Hide button if not logged in or viewing own stream
   if (!currentUserDID || currentUserDID === streamerDID) return null;
@@ -74,13 +74,13 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [currentUserDID, streamerDID, streamplaceUrl]);
+  }, [currentUserDID, streamerDID]);
 
   const handleFollow = async () => {
     setError(null);
     setIsFollowing(true); // Optimistic
     try {
-      await dispatch(followUser(streamerDID)).unwrap();
+      await followUser(streamerDID);
       setIsFollowing(true);
       onFollowChange?.(true);
     } catch (err) {
@@ -95,12 +95,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     setError(null);
     setIsFollowing(false); // Optimistic
     try {
-      await dispatch(
-        unfollowUser({
-          subjectDID: streamerDID,
-          ...(followUri ? { followUri } : {}),
-        }),
-      ).unwrap();
+      await unfollowUser(streamerDID, followUri ?? undefined);
       setIsFollowing(false);
       setFollowUri(null);
       onFollowChange?.(false);

@@ -7,19 +7,16 @@ import { Redirect } from "components/aqlink";
 import BentoGrid from "components/live-dashboard/bento-grid";
 import Loading from "components/loading/loading";
 import { VideoElementProvider } from "contexts/VideoElementContext";
-import {
-  selectIsReady,
-  selectUserProfile,
-} from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useCallback, useState } from "react";
-import { useAppSelector } from "store/hooks";
+import { View } from "react-native";
+import { useIsReady, useUserProfile } from "store/hooks";
 
 const { flex, bg } = zero;
 
 export default function LiveDashboard() {
-  const isReady = useAppSelector(selectIsReady);
-  const userProfile = useAppSelector(selectUserProfile);
+  const isReady = useIsReady();
+  const userProfile = useUserProfile();
   const isLive = useLiveUser();
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null,

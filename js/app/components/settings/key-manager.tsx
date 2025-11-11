@@ -1,11 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
-import {
-  deleteStreamKeyRecord,
-  getStreamKeyRecords,
-  selectKeyRecords,
-} from "features/bluesky/blueskySlice";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useKeyRecords } from "store/hooks";
 import { PlaceStreamKey } from "streamplace";
 import { timeAgo } from "utils/timeAgo";
 
@@ -98,8 +94,11 @@ function KeyRow({
 }
 
 export default function KeyManager() {
-  const dispatch = useAppDispatch();
-  const keyObj = useAppSelector(selectKeyRecords);
+  const deleteStreamKeyRecord = useStore(
+    (state) => state.deleteStreamKeyRecord,
+  );
+  const getStreamKeyRecords = useStore((state) => state.getStreamKeyRecords);
+  const keyObj = useKeyRecords();
   const keyRecords = keyObj?.records || null;
   const navigation = useNavigation();
 
@@ -107,7 +106,7 @@ export default function KeyManager() {
   const deleteKeyRecord = (rkey: string) => {
     if (deletingKeys.has(rkey)) return; // Prevent double deletes
     setDeletingKeys((prev) => new Set(prev).add(rkey));
-    dispatch(deleteStreamKeyRecord({ rkey })).finally(() => {
+    deleteStreamKeyRecord(rkey).finally(() => {
       setDeletingKeys((prev) => {
         const newSet = new Set(prev);
         newSet.delete(rkey);
@@ -119,7 +118,7 @@ export default function KeyManager() {
   useEffect(() => {
     // delay 500ms to allow the screen to render
     setTimeout(() => {
-      dispatch(getStreamKeyRecords());
+      getStreamKeyRecords();
     }, 500);
   }, []);
 
@@ -157,7 +156,7 @@ export default function KeyManager() {
                   justifyContent: "center",
                 },
               ]}
-              onPress={() => dispatch(getStreamKeyRecords())}
+              onPress={() => getStreamKeyRecords()}
             >
               <Text style={[{ fontSize: 16, color: "#fff" }]}>↻</Text>
             </TouchableOpacity>

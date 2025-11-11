@@ -13,12 +13,11 @@ import {
 } from "@streamplace/components";
 import emojiData from "assets/emoji-data.json";
 import LiveDot from "components/home/live-dot";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { ArrowLeft } from "lucide-react-native";
 import { useCallback, useEffect, useRef } from "react";
 import { KeyboardAvoidingView, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppSelector } from "store/hooks";
+import { useUserProfile } from "store/hooks";
 
 export default function PopoutChat({ route }) {
   const user = route.params?.user;
@@ -47,7 +46,7 @@ export default function PopoutChat({ route }) {
 
 export function PopoutChatInner({ user }: { user: string }) {
   const setSrc = usePlayerStore((x) => x.setSrc);
-  const profile = useAppSelector(selectUserProfile);
+  const profile = useUserProfile();
   const navigation = useNavigation();
   const { ingest, profile: streamProfile } = useLivestreamInfo();
   const status = usePlayerStore((x) => x.status);

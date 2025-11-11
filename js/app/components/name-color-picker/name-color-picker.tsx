@@ -1,10 +1,4 @@
 import { Button, zero } from "@streamplace/components";
-import {
-  createChatProfileRecord,
-  getChatProfileRecordFromPDS,
-  selectChatProfile,
-  selectUserProfile,
-} from "features/bluesky/blueskySlice";
 import { Palette, SwatchBook, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
@@ -22,7 +16,8 @@ import ColorPicker, {
   Preview,
   Swatches,
 } from "reanimated-color-picker";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useChatProfile, useUserProfile } from "store/hooks";
 import { PlaceStreamChatProfile } from "streamplace";
 
 /**
@@ -61,9 +56,14 @@ export default function NameColorPicker({
 }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [tempColor, setTempColor] = useState("#bd6e86");
-  const dispatch = useAppDispatch();
-  const chatProfile = useAppSelector(selectChatProfile);
-  const profile = useAppSelector(selectUserProfile);
+  const createChatProfileRecord = useStore(
+    (state) => state.createChatProfileRecord,
+  );
+  const getChatProfileRecordFromPDS = useStore(
+    (state) => state.getChatProfileRecordFromPDS,
+  );
+  const chatProfile = useChatProfile();
+  const profile = useUserProfile();
   const isWeb = Platform.OS === "web";
 
   const currentColor = chatProfile?.profile?.color
@@ -72,7 +72,7 @@ export default function NameColorPicker({
 
   useEffect(() => {
     if (profile?.did && !chatProfile?.profile) {
-      dispatch(getChatProfileRecordFromPDS());
+      getChatProfileRecordFromPDS();
     }
     setTempColor(currentColor);
   }, [profile?.did, chatProfile?.profile?.color, currentColor]);
@@ -92,7 +92,8 @@ export default function NameColorPicker({
 
   const handleSaveColor = () => {
     setModalVisible(false);
-    dispatch(createChatProfileRecord(parseRgbString(tempColor)));
+    const parsed = parseRgbString(tempColor);
+    createChatProfileRecord(parsed.red, parsed.green, parsed.blue);
   };
 
   return (
