@@ -31,14 +31,9 @@ export function DanmuCategorySettings() {
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[8], zero.py[4]]}>
-        <View
-          style={[
-            zero.gap.all[12],
-            { paddingVertical: 24, maxWidth: 500, width: "100%" },
-          ]}
-        >
-          <View style={[{ alignItems: "stretch" }, zero.gap.all[4]]}>
+      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[4]]}>
+        <View style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}>
+          <View style={[{ alignItems: "stretch" }, zero.gap.all[12]]}>
             {/* Enable/Disable Danmu */}
             <SettingToggle
               title={t("danmu-enabled")}

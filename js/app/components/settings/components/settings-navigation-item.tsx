@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
-import { Text, View } from "@streamplace/components";
-import { ChevronRight, LucideIcon } from "lucide-react-native";
-import { Pressable } from "react-native";
+import { Text, View, zero } from "@streamplace/components";
+import { ChevronRight, ExternalLink, LucideIcon } from "lucide-react-native";
+import { Linking, Pressable } from "react-native";
 
 interface SettingsNavigationItemProps {
   title: string;
@@ -21,12 +21,13 @@ export function SettingsNavigationItem({
       {({ pressed }) => (
         <View
           style={[
+            zero.px[3],
+            zero.py[2],
+            zero.layout.flex.row,
+            zero.layout.flex.justify.between,
+            zero.layout.flex.align.center,
+            zero.r.md,
             {
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
               backgroundColor: pressed ? "#ffffff08" : "transparent",
             },
           ]}
@@ -36,6 +37,64 @@ export function SettingsNavigationItem({
             <Text size="lg">{title}</Text>
           </View>
           <ChevronRight size={20} color="#666" />
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+interface SettingsRowItemProps {
+  children?: React.ReactNode;
+}
+
+export function SettingsRowItem({ children }: SettingsRowItemProps) {
+  const navigation = useNavigation();
+
+  return (
+    <View
+      style={[
+        zero.px[3],
+        zero.py[2],
+        zero.layout.flex.row,
+        zero.layout.flex.justify.between,
+        zero.layout.flex.align.center,
+        zero.r.md,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+interface SettingsExternalItemProps {
+  title: string;
+  link: string;
+}
+
+export function SettingsExternalItem({
+  title,
+  link,
+}: SettingsExternalItemProps) {
+  return (
+    <Pressable onPress={() => Linking.openURL(link)}>
+      {({ pressed }) => (
+        <View
+          style={[
+            zero.px[3],
+            zero.py[2],
+            zero.layout.flex.row,
+            zero.layout.flex.justify.between,
+            zero.layout.flex.align.center,
+            zero.r.md,
+            {
+              backgroundColor: pressed ? "#ffffff08" : "transparent",
+            },
+          ]}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Text size="lg">{title}</Text>
+          </View>
+          <ExternalLink size={20} color="#666" />
         </View>
       )}
     </Pressable>

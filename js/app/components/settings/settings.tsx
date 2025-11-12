@@ -1,4 +1,9 @@
 import {
+  MenuContainer,
+  MenuGroup,
+  MenuInfo,
+  MenuItem,
+  MenuSeparator,
   Text,
   useDanmuUnlocked,
   useTranslation,
@@ -10,26 +15,12 @@ import { SettingsNavigationItem } from "components/settings/components/settings-
 import { Globe, Info, Lock, LogIn, Shield, Video } from "lucide-react-native";
 import { ImageBackground, Pressable, ScrollView } from "react-native";
 
-import { ml, mt } from "@streamplace/components/src/ui";
 import Mu from "components/mobile/desktop-ui/mu";
 import { useStore } from "store";
 import { useUserProfile } from "store/hooks";
 import pkg from "../../package.json";
 
-export function HorizontalBar() {
-  return (
-    <View
-      style={{
-        height: 1,
-        backgroundColor: "#ffffff11",
-        alignSelf: "stretch",
-      }}
-    />
-  );
-}
-
 export function Settings() {
-  // are we logged in?
   const loggedIn = useStore((state) => state.authStatus === "loggedIn");
   const userProfile = useUserProfile();
   const danmuUnlocked = useDanmuUnlocked();
@@ -38,117 +29,120 @@ export function Settings() {
   return (
     <ScrollView>
       <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[2]]}>
-        <View style={[{ paddingVertical: 0, maxWidth: 500, width: "100%" }]}>
-          {loggedIn && userProfile ? (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 12,
-                paddingVertical: 16,
-                paddingHorizontal: 16,
-              }}
-            >
-              <ImageBackground
-                source={{ uri: userProfile.avatar }}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  overflow: "hidden",
-                }}
-              />
-              <View style={{ flex: 1 }}>
-                <Text size="2xl" leading="tight">
-                  @{userProfile.handle}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <AQLink to={{ screen: "Login" }}>
-              <Pressable>
-                {({ pressed }) => (
+        <View style={[{ maxWidth: 500, width: "100%" }]}>
+          <MenuContainer>
+            <MenuGroup>
+              {loggedIn && userProfile ? (
+                <MenuItem>
                   <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      paddingVertical: 16,
-                      paddingHorizontal: 16,
-                      backgroundColor: pressed ? "#ffffff08" : "transparent",
-                    }}
+                    style={[
+                      zero.layout.flex.row,
+                      zero.layout.flex.align.center,
+                      zero.gap.all[4],
+                      zero.py[2],
+                    ]}
                   >
-                    <View
+                    <ImageBackground
+                      source={{ uri: userProfile.avatar }}
                       style={{
                         width: 48,
                         height: 48,
                         borderRadius: 24,
-                        backgroundColor: "#333",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        overflow: "hidden",
                       }}
-                    >
-                      <LogIn size={24} color="#999" />
-                    </View>
+                    />
                     <View style={{ flex: 1 }}>
-                      <Text size="xl" style={{ fontWeight: "600" }}>
-                        {t("sign-in")}
+                      <Text size="2xl" leading="tight">
+                        @{userProfile.handle}
                       </Text>
                     </View>
                   </View>
-                )}
-              </Pressable>
-            </AQLink>
-          )}
+                </MenuItem>
+              ) : (
+                <AQLink to={{ screen: "Login" }}>
+                  <Pressable>
+                    {({ pressed }) => (
+                      <MenuItem>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 12,
+                            flex: 1,
+                          }}
+                        >
+                          <View
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 24,
+                              backgroundColor: "#333",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <LogIn size={24} color="#999" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text size="xl" style={{ fontWeight: "600" }}>
+                              {t("sign-in")}
+                            </Text>
+                          </View>
+                        </View>
+                      </MenuItem>
+                    )}
+                  </Pressable>
+                </AQLink>
+              )}
+            </MenuGroup>
 
-          <HorizontalBar />
-
-          {loggedIn && (
-            <>
+            {loggedIn && (
+              <MenuGroup>
+                <SettingsNavigationItem
+                  title={t("streaming")}
+                  screen="StreamingCategory"
+                  icon={Video}
+                />
+                <MenuSeparator />
+                <SettingsNavigationItem
+                  title={t("privacy-security")}
+                  screen="PrivacyCategory"
+                  icon={Shield}
+                />
+              </MenuGroup>
+            )}
+            {danmuUnlocked && (
+              <MenuGroup>
+                <SettingsNavigationItem
+                  title={t("danmu")}
+                  screen="DanmuCategory"
+                  icon={Mu as any}
+                />
+              </MenuGroup>
+            )}
+            <MenuGroup>
               <SettingsNavigationItem
-                title={t("streaming")}
-                screen="StreamingCategory"
-                icon={Video}
+                title={t("languages")}
+                screen="LanguagesCategory"
+                icon={Globe}
               />
-              <HorizontalBar />
+              <MenuSeparator />
               <SettingsNavigationItem
-                title={t("privacy-security")}
-                screen="PrivacyCategory"
-                icon={Shield}
+                title={t("advanced")}
+                screen="AdvancedCategory"
+                icon={Lock}
               />
-              <HorizontalBar />
-            </>
-          )}
-          {danmuUnlocked && (
-            <>
+              <MenuSeparator />
               <SettingsNavigationItem
-                title={t("danmu")}
-                screen="DanmuCategory"
-                icon={Mu as any}
+                title={t("about")}
+                screen="AboutCategory"
+                icon={Info}
               />
-              <HorizontalBar />
-            </>
-          )}
-          <SettingsNavigationItem
-            title={t("advanced")}
-            screen="AdvancedCategory"
-            icon={Lock}
-          />
-          <HorizontalBar />
-          <SettingsNavigationItem
-            title={t("languages")}
-            screen="LanguagesCategory"
-            icon={Globe}
-          />
-          <HorizontalBar />
-          <SettingsNavigationItem
-            title={t("about")}
-            screen="AboutCategory"
-            icon={Info}
-          />
-          <Text muted style={[mt[2], ml[4]]}>
-            {t("app-version", { version: pkg.version })}
-          </Text>
+            </MenuGroup>
+            <MenuInfo
+              description={t("app-version", { version: pkg.version })}
+            />
+          </MenuContainer>
         </View>
       </View>
     </ScrollView>

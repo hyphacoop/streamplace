@@ -6,8 +6,9 @@ import {
 } from "@streamplace/components";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable } from "react-native-gesture-handler";
+import { Pressable } from "react-native";
 import pkg from "../../package.json";
+import { SettingsRowItem } from "./components/settings-navigation-item";
 
 const UNLOCK_TAP_COUNT = 5;
 
@@ -52,7 +53,9 @@ export function Updates() {
 
   return (
     <Pressable onPress={handleVersionPress}>
-      <Text size="xl">{t("app-version", { version: pkg.version })}</Text>
+      <SettingsRowItem>
+        <Text size="lg">{t("app-version", { version: pkg.version })}</Text>
+      </SettingsRowItem>
     </Pressable>
   );
 }

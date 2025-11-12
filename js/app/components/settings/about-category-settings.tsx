@@ -1,6 +1,18 @@
-import { Text, View, zero } from "@streamplace/components";
+import {
+  MenuContainer,
+  MenuGroup,
+  MenuSeparator,
+  Text,
+  useTheme,
+  View,
+  zero,
+} from "@streamplace/components";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
+import {
+  SettingsExternalItem,
+  SettingsRowItem,
+} from "./components/settings-navigation-item";
 import { Updates } from "./updates";
 
 let buildInfo: {
@@ -18,8 +30,20 @@ try {
   // build-info.json doesn't exist in dev mode
 }
 
+const VERSION_REGEX = /^v?(\d+\.\d+\.\d+)(-.+)?$/;
+function cutVersionPrefix(version: string) {
+  if (VERSION_REGEX.test(version)) {
+    const match = VERSION_REGEX.exec(version);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return version;
+}
+
 export function AboutCategorySettings() {
   const { t } = useTranslation("settings");
+  const theme = useTheme();
 
   const getBuildStatus = () => {
     if (!buildInfo) {
@@ -35,35 +59,37 @@ export function AboutCategorySettings() {
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[4], zero.py[4]]}>
-        <View
-          style={[
-            zero.gap.all[4],
-            { paddingVertical: 24, maxWidth: 500, width: "100%" },
-          ]}
+      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[4]]}>
+        <MenuContainer
+          style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}
         >
-          <View>
-            <Text>This version is </Text>
+          <MenuGroup>
             <Updates />
-          </View>
+          </MenuGroup>
 
-          <View
-            style={[
-              { flexDirection: "row" },
-              { alignItems: "flex-start" },
-              { justifyContent: "flex-start" },
-            ]}
-          >
-            <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-              <Text size="lg">Build</Text>
-            </View>
-            <View style={{ alignItems: "flex-end" }}>
-              <Text size="lg" color="muted">
-                {buildLabel} ({buildStatus})
-              </Text>
-            </View>
-          </View>
-        </View>
+          <MenuGroup>
+            <SettingsRowItem>
+              <View style={{ flex: 1 }}>
+                <Text size="lg">Build</Text>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text size="lg" color="muted">
+                  {buildLabel} ({buildStatus})
+                </Text>
+              </View>
+            </SettingsRowItem>
+            <MenuSeparator />
+            <SettingsExternalItem
+              title="Terms of Service"
+              link="OpenSourceLicenses"
+            />
+            <MenuSeparator />
+            <SettingsExternalItem
+              title="Privacy Policy"
+              link="OpenSourceLicenses"
+            />
+          </MenuGroup>
+        </MenuContainer>
       </View>
     </ScrollView>
   );

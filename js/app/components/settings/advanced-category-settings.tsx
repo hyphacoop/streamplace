@@ -1,4 +1,11 @@
-import { Button, Input, Text, View, zero } from "@streamplace/components";
+import {
+  Button,
+  Input,
+  MenuGroup,
+  Text,
+  View,
+  zero,
+} from "@streamplace/components";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
@@ -35,80 +42,61 @@ export function AdvancedCategorySettings() {
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[8], zero.py[4]]}>
-        <View
-          style={[
-            zero.gap.all[12],
-            { paddingVertical: 24, maxWidth: 500, width: "100%" },
-          ]}
-        >
-          <View
-            style={[
-              { alignItems: "stretch" },
-              zero.layout.flex.justify.center,
-              zero.gap.all[8],
-            ]}
-          >
+      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[4]]}>
+        <View style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}>
+          <MenuGroup>
+            <SettingToggle
+              title={t("use-custom-node")}
+              description={t("default-url", { url: defaultUrl })}
+              value={overrideEnabled}
+              onValueChange={handleToggleOverride}
+            />
+          </MenuGroup>
+
+          {overrideEnabled && (
             <View
               style={[
-                { alignItems: "stretch" },
-                zero.layout.flex.justify.start,
-                zero.w.percent[100],
-                zero.gap.all[4],
+                {
+                  opacity: overrideEnabled ? 1 : 0,
+                  height: overrideEnabled ? "auto" : 0,
+                },
+                zero.gap.all[2],
+                zero.layout.flex.align.center,
+                zero.layout.flex.row,
+                { marginTop: 12 },
               ]}
             >
-              <SettingToggle
-                title={t("use-custom-node")}
-                description={t("default-url", { url: defaultUrl })}
-                value={overrideEnabled}
-                onValueChange={handleToggleOverride}
-              />
-
-              {overrideEnabled && (
-                <View
-                  style={[
-                    {
-                      opacity: overrideEnabled ? 1 : 0,
-                      height: overrideEnabled ? "auto" : 0,
-                    },
-                    zero.gap.all[2],
-                    zero.layout.flex.align.center,
-                    zero.layout.flex.row,
+              <View style={{ flex: 1 }}>
+                <Input
+                  value={newUrl}
+                  containerStyle={[
+                    { flex: 1, flexGrow: 1, width: "100%" },
+                    zero.flex.grow[1],
                   ]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Input
-                      value={newUrl}
-                      containerStyle={[
-                        { flex: 1, flexGrow: 1, width: "100%" },
-                        zero.flex.grow[1],
-                      ]}
-                      variant="default"
-                      numberOfLines={1}
-                      multiline={false}
-                      placeholder={t("enter-custom-node-url")}
-                      placeholderTextColor="#999"
-                      onChangeText={setNewUrl}
-                      onSubmitEditing={onSubmitUrl}
-                      textContentType="URL"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="url"
-                    />
-                  </View>
-                  <Button
-                    size="md"
-                    width="min"
-                    variant="secondary"
-                    onPress={onSubmitUrl}
-                    style={{ paddingVertical: 10 }}
-                  >
-                    <Text size="lg">{t("save-button")}</Text>
-                  </Button>
-                </View>
-              )}
+                  variant="default"
+                  numberOfLines={1}
+                  multiline={false}
+                  placeholder={t("enter-custom-node-url")}
+                  placeholderTextColor="#999"
+                  onChangeText={setNewUrl}
+                  onSubmitEditing={onSubmitUrl}
+                  textContentType="URL"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+              </View>
+              <Button
+                size="md"
+                width="min"
+                variant="secondary"
+                onPress={onSubmitUrl}
+                style={{ paddingVertical: 10 }}
+              >
+                <Text size="lg">{t("save-button")}</Text>
+              </Button>
             </View>
-          </View>
+          )}
         </View>
       </View>
     </ScrollView>

@@ -1,16 +1,18 @@
 import {
   Button,
+  MenuItem,
   Text,
   useDanmuUnlocked,
   useSetDanmuUnlocked,
   useTheme,
   useToast,
+  View,
   zero,
 } from "@streamplace/components";
 import * as ExpoUpdates from "expo-updates";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, Pressable, TouchableOpacity, View } from "react-native";
+import { Platform, TouchableOpacity } from "react-native";
 import pkg from "../../package.json";
 
 const UNLOCK_TAP_COUNT = 5;
@@ -80,27 +82,18 @@ export function Updates() {
   }
 
   return (
-    <View style={[zero.gap.all[3]]}>
-      <View style={[zero.gap.all[1]]}>
-        <Text size="2xl" style={[{ fontWeight: "bold", color: "#fff" }]}>
-          Streamplace v{version}
-        </Text>
-        <Pressable
-          onPress={handleVersionPress}
-          style={[
-            { alignSelf: "flex-start" },
-            theme.zero.bg.muted,
-            zero.layout.flex.wrap,
-            zero.px[2],
-            { borderRadius: 999 },
-          ]}
-        >
-          <Text size="base" center>
+    <>
+      <MenuItem onPress={handleVersionPress}>
+        <View style={[zero.gap.all[1], { flex: 1 }]}>
+          <Text size="base" style={[{ fontWeight: "bold" }]}>
+            Streamplace v{version}
+          </Text>
+          <Text size="sm" color="muted">
             {runTypeMessage}
           </Text>
-        </Pressable>
-      </View>
-      <View>
+        </View>
+      </MenuItem>
+      <View style={[zero.mt[3]]}>
         <Button
           variant="secondary"
           width="full"
@@ -131,7 +124,7 @@ export function Updates() {
             }
           }}
         >
-          {buttonText}
+          <Text>{buttonText}</Text>
         </Button>
         {isUpdatePending && (
           <TouchableOpacity
@@ -149,12 +142,12 @@ export function Updates() {
               ExpoUpdates.reloadAsync();
             }}
           >
-            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+            <Text color="secondary" style={[{ fontWeight: "600" }]}>
               {t("button-reload-app-on-update")}
             </Text>
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </>
   );
 }
