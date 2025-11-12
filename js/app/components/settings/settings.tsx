@@ -64,12 +64,12 @@ export function Settings() {
                     {({ pressed }) => (
                       <MenuItem>
                         <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 12,
-                            flex: 1,
-                          }}
+                          style={[
+                            zero.layout.flex.row,
+                            zero.layout.flex.align.center,
+                            zero.gap.all[4],
+                            zero.py[2],
+                          ]}
                         >
                           <View
                             style={{
