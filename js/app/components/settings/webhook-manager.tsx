@@ -508,7 +508,7 @@ function WebhookForm({
             <Text style={[text.gray[300], { fontSize: 14, fontWeight: "500" }]}>
               Text Replacements
             </Text>
-            <Button size="pill" onPress={addReplacement}>
+            <Button width="min" size="pill" onPress={addReplacement}>
               <Text style={[text.white, { fontSize: 12 }]}>+ Add</Text>
             </Button>
           </View>
@@ -830,11 +830,17 @@ export default function WebhookManager() {
             </Text>
 
             <View
-              style={[layout.flex.row, layout.flex.justify.between, gap.all[3]]}
+              style={[
+                layout.flex.row,
+                layout.flex.justify.between,
+                gap.all[3],
+                w.percent[100],
+              ]}
             >
               <Button
                 onPress={handleCreate}
                 size="pill"
+                width="min"
                 leftIcon={<Plus color={theme.colors.text} />}
               >
                 <Text>{t("create-webhook")}</Text>
@@ -845,6 +851,7 @@ export default function WebhookManager() {
                 disabled={loading}
                 leftIcon={<RefreshCw color={theme.colors.text} />}
                 size="pill"
+                width="min"
                 variant="secondary"
               >
                 <Text>{t("refresh")}</Text>
@@ -938,6 +945,7 @@ export default function WebhookManager() {
         <View style={[layout.flex.row, layout.flex.justify.end, gap.all[3]]}>
           <Button
             variant="secondary"
+            width="full"
             onPress={() => setDeleteDialog({ isVisible: false, webhook: null })}
             disabled={
               deleteDialog.webhook
@@ -949,6 +957,7 @@ export default function WebhookManager() {
           </Button>
           <Button
             variant="destructive"
+            width="full"
             onPress={confirmDelete}
             disabled={
               deleteDialog.webhook

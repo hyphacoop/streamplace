@@ -1,9 +1,10 @@
 import { Button, Input, Text, View, zero } from "@streamplace/components";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, Switch } from "react-native";
+import { ScrollView } from "react-native";
 import { useStore } from "store";
 import { DEFAULT_URL } from "store/slices/streamplaceSlice";
+import { SettingToggle } from "./components/setting-toggle";
 
 export function AdvancedCategorySettings() {
   const url = useStore((state) => state.url);
@@ -56,24 +57,12 @@ export function AdvancedCategorySettings() {
                 zero.gap.all[4],
               ]}
             >
-              <View
-                style={[
-                  { flexDirection: "row" },
-                  { alignItems: "flex-start" },
-                  { justifyContent: "flex-start" },
-                ]}
-              >
-                <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                  <Text size="xl">{t("use-custom-node")}</Text>
-                  <Text size="lg" color="muted">
-                    {t("default-url", { url: defaultUrl })}
-                  </Text>
-                </View>
-                <Switch
-                  value={overrideEnabled}
-                  onValueChange={handleToggleOverride}
-                />
-              </View>
+              <SettingToggle
+                title={t("use-custom-node")}
+                description={t("default-url", { url: defaultUrl })}
+                value={overrideEnabled}
+                onValueChange={handleToggleOverride}
+              />
 
               {overrideEnabled && (
                 <View

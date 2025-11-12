@@ -8,12 +8,8 @@ import {
 } from "@streamplace/components";
 import { useDanmuSettings } from "@streamplace/components/src/streamplace-store";
 import { useTranslation } from "react-i18next";
-import {
-  Platform,
-  ScrollView,
-  Switch,
-  useWindowDimensions,
-} from "react-native";
+import { Platform, ScrollView, useWindowDimensions } from "react-native";
+import { SettingToggle } from "./components/setting-toggle";
 
 export function DanmuCategorySettings() {
   const { t } = useTranslation("settings");
@@ -44,21 +40,12 @@ export function DanmuCategorySettings() {
         >
           <View style={[{ alignItems: "stretch" }, zero.gap.all[4]]}>
             {/* Enable/Disable Danmu */}
-            <View
-              style={[
-                { flexDirection: "row" },
-                { alignItems: "flex-start" },
-                { justifyContent: "flex-start" },
-              ]}
-            >
-              <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                <Text size="xl">{t("danmu-enabled")}</Text>
-                <Text size="lg" color="muted">
-                  {t("danmu-enabled-description")}
-                </Text>
-              </View>
-              <Switch value={danmuEnabled} onValueChange={setDanmuEnabled} />
-            </View>
+            <SettingToggle
+              title={t("danmu-enabled")}
+              description={t("danmu-enabled-description")}
+              value={danmuEnabled}
+              onValueChange={setDanmuEnabled}
+            />
 
             {/* Opacity */}
             <View style={[zero.gap.all[6]]}>

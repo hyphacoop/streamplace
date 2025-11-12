@@ -1,9 +1,10 @@
-import { Text, View, zero } from "@streamplace/components";
+import { View, zero } from "@streamplace/components";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, Switch } from "react-native";
+import { ScrollView } from "react-native";
 import { useStore } from "store";
 import { useIsReady, useServerSettings, useStreamplaceUrl } from "store/hooks";
+import { SettingToggle } from "./components/setting-toggle";
 
 export function PrivacyCategorySettings() {
   const { t } = useTranslation("settings");
@@ -35,33 +36,18 @@ export function PrivacyCategorySettings() {
             { paddingVertical: 24, maxWidth: 500, width: "100%" },
           ]}
         >
-          <View
-            style={[
-              zero.layout.flex.row,
-              zero.layout.flex.align.center,
-              zero.layout.flex.justify.between,
-              { width: "100%" },
-            ]}
-          >
-            <View style={[zero.flex.values[1], { paddingRight: 12 }]}>
-              <Text size="xl">
-                {t("debug-recording-title", { host: u.host })}
-              </Text>
-              <Text size="lg" color="muted">
-                {t("debug-recording-description")}
-              </Text>
-            </View>
-            <Switch
-              value={debugRecordingOn}
-              onValueChange={(value) => {
-                if (value === true) {
-                  createServerSettingsRecord(true);
-                } else {
-                  createServerSettingsRecord(false);
-                }
-              }}
-            />
-          </View>
+          <SettingToggle
+            title={t("debug-recording-title", { host: u.host })}
+            description={t("debug-recording-description")}
+            value={debugRecordingOn}
+            onValueChange={(value) => {
+              if (value === true) {
+                createServerSettingsRecord(true);
+              } else {
+                createServerSettingsRecord(false);
+              }
+            }}
+          />
         </View>
       </View>
     </ScrollView>

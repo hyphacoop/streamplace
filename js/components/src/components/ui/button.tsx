@@ -39,6 +39,7 @@ export interface ButtonProps
   rightIcon?: React.ReactNode;
   loading?: boolean;
   loadingText?: string;
+  width?: "full" | "min" | number;
 }
 
 export const Button = forwardRef<any, ButtonProps>(
@@ -53,6 +54,7 @@ export const Button = forwardRef<any, ButtonProps>(
       loadingText,
       disabled,
       style,
+      width = "full",
       ...props
     },
     ref,
@@ -198,11 +200,21 @@ export const Button = forwardRef<any, ButtonProps>(
       }
     }, [variant, icons]);
 
+    const widthStyle = useMemo(() => {
+      if (width === "full") {
+        return { width: "100%" };
+      } else if (width === "min") {
+        return { alignSelf: "flex-start" as const };
+      } else {
+        return { width };
+      }
+    }, [width]);
+
     return (
       <ButtonPrimitive.Root
         ref={ref}
         disabled={disabled || loading}
-        style={[buttonStyle, sizeStyles.button, style]}
+        style={[buttonStyle, sizeStyles.button, widthStyle, style]}
         {...props}
       >
         <ButtonPrimitive.Content style={sizeStyles.inner}>

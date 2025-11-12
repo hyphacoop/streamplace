@@ -10,7 +10,7 @@ import {
 import * as ExpoUpdates from "expo-updates";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, TouchableOpacity, View } from "react-native";
+import { Platform, Pressable, TouchableOpacity, View } from "react-native";
 import pkg from "../../package.json";
 
 const UNLOCK_TAP_COUNT = 5;
@@ -85,7 +85,8 @@ export function Updates() {
         <Text size="2xl" style={[{ fontWeight: "bold", color: "#fff" }]}>
           Streamplace v{version}
         </Text>
-        <View
+        <Pressable
+          onPress={handleVersionPress}
           style={[
             { alignSelf: "flex-start" },
             theme.zero.bg.muted,
@@ -97,59 +98,63 @@ export function Updates() {
           <Text size="base" center>
             {runTypeMessage}
           </Text>
-        </View>
+        </Pressable>
       </View>
-      <Button
-        onPress={async () => {
-          try {
-            setChecked(true);
-            const res = await ExpoUpdates.checkForUpdateAsync();
-            if (!res.isAvailable) {
+      <View>
+        <Button
+          variant="secondary"
+          width="full"
+          onPress={async () => {
+            try {
+              setChecked(true);
+              const res = await ExpoUpdates.checkForUpdateAsync();
+              if (!res.isAvailable) {
+                toast.show(
+                  t("modal-latest-version"),
+                  t("modal-no-update-available"),
+                  { duration: 2000 },
+                );
+              } else {
+                toast.show(
+                  t("modal-update-available-title"),
+                  t("modal-update-available-description"),
+                  { duration: 2000 },
+                );
+              }
+            } catch (e) {
               toast.show(
-                t("modal-latest-version"),
-                t("modal-no-update-available"),
-                { duration: 2000 },
-              );
-            } else {
-              toast.show(
-                t("modal-update-available-title"),
-                t("modal-update-available-description"),
-                { duration: 2000 },
+                t("modal-update-failed-title"),
+                t("modal-update-failed-description", {
+                  store: Platform.OS === "ios" ? "App Store" : "Play Store",
+                }),
               );
             }
-          } catch (e) {
-            toast.show(
-              t("modal-update-failed-title"),
-              t("modal-update-failed-description", {
-                store: Platform.OS === "ios" ? "App Store" : "Play Store",
-              }),
-            );
-          }
-        }}
-      >
-        <Text style={[{ color: "#fff", fontWeight: "600" }]}>{buttonText}</Text>
-      </Button>
-      {isUpdatePending && (
-        <TouchableOpacity
-          style={[
-            {
-              marginTop: 8,
-              backgroundColor: "#007AFF",
-              borderRadius: 8,
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              alignItems: "center",
-            },
-          ]}
-          onPress={() => {
-            ExpoUpdates.reloadAsync();
           }}
         >
-          <Text style={[{ color: "#fff", fontWeight: "600" }]}>
-            {t("button-reload-app-on-update")}
-          </Text>
-        </TouchableOpacity>
-      )}
+          {buttonText}
+        </Button>
+        {isUpdatePending && (
+          <TouchableOpacity
+            style={[
+              {
+                marginTop: 8,
+                backgroundColor: "#007AFF",
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                alignItems: "center",
+              },
+            ]}
+            onPress={() => {
+              ExpoUpdates.reloadAsync();
+            }}
+          >
+            <Text style={[{ color: "#fff", fontWeight: "600" }]}>
+              {t("button-reload-app-on-update")}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
