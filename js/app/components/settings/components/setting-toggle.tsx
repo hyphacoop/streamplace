@@ -1,4 +1,4 @@
-import { Text, View } from "@streamplace/components";
+import { Text, View, zero } from "@streamplace/components";
 import { mergeStyles } from "@streamplace/components/src/ui";
 import { Switch, ViewStyle } from "react-native";
 
@@ -18,23 +18,24 @@ export function SettingToggle({
   style,
 }: SettingToggleProps) {
   return (
-    <View
-      style={mergeStyles(
-        { flexDirection: "row" },
-        { alignItems: "flex-start" },
-        { justifyContent: "flex-start" },
-        style,
-      )}
-    >
-      <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-        <Text size="xl">{title}</Text>
-        {description && (
-          <Text size="lg" color="muted">
-            {description}
-          </Text>
+    <View>
+      <View
+        style={mergeStyles(
+          zero.layout.flex.row,
+          zero.layout.flex.alignCenter,
+          style,
         )}
+      >
+        <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
+          <Text size="xl">{title}</Text>
+        </View>
+        <Switch value={value} onValueChange={onValueChange} />
       </View>
-      <Switch value={value} onValueChange={onValueChange} />
+      {description && (
+        <Text size="lg" color="muted">
+          {description}
+        </Text>
+      )}
     </View>
   );
 }
