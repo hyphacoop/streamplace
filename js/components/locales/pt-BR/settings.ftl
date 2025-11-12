@@ -127,6 +127,14 @@ untitled-webhook = Webhook Sem Título
 ## Gravação de Depuração
 debug-recording = Gravação de Depuração
 
+## Configurações de Danmu
+danmu-enabled = Ativar Danmu
+danmu-enabled-description = Exibir mensagens de chat ao vivo como comentários flutuantes na sua tela
+danmu-opacity = Opacidade
+danmu-speed = Velocidade
+danmu-lane-count = Número de Faixas
+danmu-max-messages = Mensagens Máximas
+
 ## Geral
 app-version-description = Informações da versão atual
 confirm-delete = Tem certeza de que deseja excluir isso?

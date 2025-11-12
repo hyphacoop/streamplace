@@ -124,6 +124,14 @@ untitled-webhook = 未命名的 Webhook
 ## 除錯錄製
 debug-recording = 除錯錄製
 
+## 彈幕設定
+danmu-enabled = 啟用彈幕
+danmu-enabled-description = 將即時聊天訊息以浮動評論的形式顯示在您的螢幕上
+danmu-opacity = 不透明度
+danmu-speed = 速度
+danmu-lane-count = 軌道數量
+danmu-max-messages = 最大訊息數
+
 ## 一般
 app-version-description = 目前版本資訊
 confirm-delete = 您確定要刪除嗎？

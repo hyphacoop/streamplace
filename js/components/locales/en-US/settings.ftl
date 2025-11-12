@@ -88,6 +88,14 @@ untitled-webhook = Untitled Webhook
 ## Debug Recording
 debug-recording = Debug Recording
 
+## Danmu Settings
+danmu-enabled = Enable Danmu
+danmu-enabled-description = Display live chat messages as floating comments on your screen
+danmu-opacity = Opacity
+danmu-speed = Speed
+danmu-lane-count = Lane Count
+danmu-max-messages = Max Messages
+
 ## General
 app-version-description = No updates are available at this time
 confirm-delete = Are you sure you want to delete this?

@@ -127,6 +127,14 @@ untitled-webhook = Webhook Sans Titre
 ## Enregistrement de Débogage
 debug-recording = Enregistrement de Débogage
 
+## Paramètres Danmu
+danmu-enabled = Activer Danmu
+danmu-enabled-description = Afficher les messages de chat en direct sous forme de commentaires flottants sur votre écran
+danmu-opacity = Opacité
+danmu-speed = Vitesse
+danmu-lane-count = Nombre de Voies
+danmu-max-messages = Messages Maximum
+
 ## Général
 app-version-description = Informations sur la version actuelle
 confirm-delete = Êtes-vous sûr de vouloir supprimer ceci ?

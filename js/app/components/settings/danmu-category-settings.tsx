@@ -96,6 +96,7 @@ export function DanmuCategorySettings() {
                       onPress={() => setDanmuOpacity(value)}
                       variant={danmuOpacity === value ? "primary" : "secondary"}
                       size="pill"
+                      width="min"
                     >
                       <Text size="lg">{value}</Text>
                     </Button>
@@ -192,6 +193,7 @@ export function DanmuCategorySettings() {
                       onPress={() => setDanmuSpeed(value)}
                       variant={danmuSpeed === value ? "primary" : "secondary"}
                       size="pill"
+                      width="min"
                     >
                       <Text size="lg">{label}</Text>
                     </Button>
@@ -284,6 +286,7 @@ export function DanmuCategorySettings() {
                         danmuLaneCount === value ? "primary" : "secondary"
                       }
                       size="pill"
+                      width="min"
                     >
                       <Text size="lg">{value}</Text>
                     </Button>
@@ -376,6 +379,7 @@ export function DanmuCategorySettings() {
                         danmuMaxMessages === value ? "primary" : "secondary"
                       }
                       size="pill"
+                      width="min"
                     >
                       <Text size="lg">{value}</Text>
                     </Button>
