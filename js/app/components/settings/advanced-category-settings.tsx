@@ -96,7 +96,13 @@ export function AdvancedCategorySettings() {
                       keyboardType="url"
                     />
                   </View>
-                  <Button size="md" variant="secondary" onPress={onSubmitUrl}>
+                  <Button
+                    size="md"
+                    width="min"
+                    variant="secondary"
+                    onPress={onSubmitUrl}
+                    style={{ paddingVertical: 10 }}
+                  >
                     <Text size="lg">{t("save-button")}</Text>
                   </Button>
                 </View>
