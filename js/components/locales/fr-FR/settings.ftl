@@ -27,6 +27,10 @@ save-button = ENREGISTRER
 ## Language Settings
 language-selection = Langue
 language-selection-description = Choisissez votre langue préférée
+help-translate = Aidez-nous à traduire Streamplace
+help-translate-description = Nous recherchons des bénévoles pour aider à traduire Streamplace dans plus de langues. Si vous êtes intéressé, contactez-nous sur Discord ou GitHub !
+currently-translating = Les traductions sont en cours
+currently-translating-description = Certaines parties de l'application peuvent sembler incomplètes. Merci pour votre patience !
 
 ## Debug Recording
 debug-recording-title = Autoriser { $host } à enregistrer votre diffusion en direct pour le débogage et l'amélioration du service
@@ -79,7 +83,9 @@ finish = Terminer
 ## Catégories de Navigation
 about = À propos
 advanced = Avancé
+danmu = Danmu
 developer = Développeur
+languages = Langues
 privacy-security = Confidentialité et Sécurité
 streaming = Diffusion
 

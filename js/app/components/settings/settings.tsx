@@ -7,7 +7,7 @@ import {
 } from "@streamplace/components";
 import AQLink from "components/aqlink";
 import { SettingsNavigationItem } from "components/settings/components/settings-navigation-item";
-import { Code, Info, Lock, LogIn, Shield, Video } from "lucide-react-native";
+import { Globe, Info, Lock, LogIn, Shield, Video } from "lucide-react-native";
 import { ImageBackground, Pressable, ScrollView } from "react-native";
 
 import { ml, mt } from "@streamplace/components/src/ui";
@@ -136,9 +136,9 @@ export function Settings() {
           />
           <HorizontalBar />
           <SettingsNavigationItem
-            title={t("developer")}
-            screen="DeveloperSettings"
-            icon={Code}
+            title={t("languages")}
+            screen="LanguagesCategory"
+            icon={Globe}
           />
           <HorizontalBar />
           <SettingsNavigationItem

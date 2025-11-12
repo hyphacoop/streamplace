@@ -28,6 +28,10 @@ save-button = 儲存
 ## Language Settings
 language-selection = 語言
 language-selection-description = 選擇您偏好的語言
+help-translate = 幫助我們翻譯播家
+help-translate-description = 我們正在尋找志願者協助將播家翻譯成更多語言。如果您有興趣，請在 Discord 或 GitHub 上與我們聯繫！
+currently-translating = 翻譯正在進行中
+currently-translating-description = 應用程式的某些部分可能看起來不完整。感謝您的耐心等待！
 
 ## Debug Recording
 debug-recording-title = 允許 { $host } 錄製您的直播串流以進行除錯和服務改善
@@ -80,7 +84,9 @@ finish = 完成
 ## 導航類別
 about = 關於
 advanced = 進階
+danmu = 彈幕
 developer = 開發者
+languages = 語言
 privacy-security = 隱私與安全
 streaming = 串流
 

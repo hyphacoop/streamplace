@@ -28,6 +28,10 @@ save-button = SAVE
 language-selection = Language
 language-selection-description = Choose your preferred language
 input-search-languages = Search languages...
+help-translate = Help us translate Streamplace
+help-translate-description = We're looking for volunteers to help translate Streamplace into more languages. If you're interested, please reach out to us on Discord or GitHub!
+currently-translating = Translations are on the way
+currently-translating-description = Some parts of the app may look incomplete. Thank you for your patience!
 
 ## Debug Recording
 debug-recording-title = Allow { $host } to record your livestream for debugging and improving the service
@@ -42,7 +46,9 @@ settings-title = Settings
 ## Navigation Categories
 about = About
 advanced = Advanced
+danmu = Danmu
 developer = Developer
+languages = Languages
 privacy-security = Privacy & Security
 streaming = Streaming
 
@@ -89,6 +95,7 @@ untitled-webhook = Untitled Webhook
 debug-recording = Debug Recording
 
 ## Danmu Settings
+danmu = Danmu
 danmu-enabled = Enable Danmu
 danmu-enabled-description = Display live chat messages as floating comments on your screen
 danmu-opacity = Opacity

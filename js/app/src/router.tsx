@@ -21,6 +21,7 @@ import AQLink from "components/aqlink";
 import Login from "components/login/login";
 import { AboutCategorySettings } from "components/settings/about-category-settings";
 import { AdvancedCategorySettings } from "components/settings/advanced-category-settings";
+import { DanmuCategorySettings } from "components/settings/danmu-category-settings";
 import { DeveloperSettings } from "components/settings/developer";
 import { PrivacyCategorySettings } from "components/settings/privacy-category-settings";
 import { StreamingCategorySettings } from "components/settings/streaming-category-settings";
@@ -70,7 +71,7 @@ import KeyManager from "components/settings/key-manager";
 import HomeScreen from "./screens/home";
 
 import { useUrl } from "@streamplace/components";
-import { DanmuCategorySettings } from "components/settings/danmu-category-settings";
+import { LanguagesCategorySettings } from "components/settings/languages-category-settings";
 import Constants from "expo-constants";
 import { SystemBars } from "react-native-edge-to-edge";
 import {
@@ -113,6 +114,7 @@ type SettingsStackParamList = {
   PrivacyCategory: undefined;
   DanmuCategory: undefined;
   AdvancedCategory: undefined;
+  LanguagesCategory: undefined;
   DeveloperSettings: undefined;
   KeyManagement: undefined;
 };
@@ -738,6 +740,11 @@ const SettingsStack = () => {
         name="AdvancedCategory"
         component={AdvancedCategorySettings}
         options={{ headerTitle: "Advanced", title: "Advanced" }}
+      />
+      <Stack.Screen
+        name="LanguagesCategory"
+        component={LanguagesCategorySettings}
+        options={{ headerTitle: "Languages", title: "Languages" }}
       />
       <Stack.Screen
         name="DeveloperSettings"
