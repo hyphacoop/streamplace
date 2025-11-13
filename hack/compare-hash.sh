@@ -8,8 +8,8 @@ BASE_ONE="$(basename "$ONE")"
 BASE_TWO="$(basename "$TWO")"
 
 if [[ -d "$ONE" && -d "$TWO" ]]; then
-  FILES_ONE=$(find "$ONE" -maxdepth 1 -mindepth 1 -type f | xargs -L 1 basename | sort)
-  FILES_TWO=$(find "$TWO" -maxdepth 1 -mindepth 1 -type f | xargs -L 1 basename | sort)
+  FILES_ONE=$(find "$ONE" -maxdepth 1 -mindepth 1 -type f -name '*.mp4' | xargs -L 1 basename | sort)
+  FILES_TWO=$(find "$TWO" -maxdepth 1 -mindepth 1 -type f -name '*.mp4' | xargs -L 1 basename | sort)
 
   NUM_FILES_ONE=$(echo "$FILES_ONE" | wc -l)
   NUM_FILES_TWO=$(echo "$FILES_TWO" | wc -l)
@@ -20,18 +20,15 @@ if [[ -d "$ONE" && -d "$TWO" ]]; then
     exit 1
   fi
 
-  if ! diff <(echo "$FILES_ONE") <(echo "$FILES_TWO") >/dev/null; then
-    echo "Directory contents differ (filenames not matching):"
-    comm -3 <(echo "$FILES_ONE") <(echo "$FILES_TWO")
-    exit 1
-  fi
-
-  # Iterate by filename
-  while read -r f; do
-    [ -n "$f" ] || continue
-    "$0" "$ONE/$f" "$TWO/$f"
-  done <<< "$FILES_ONE"
-  # after all sub-comparisons
+  # Compare files by their order in the sorted lists, regardless of filenames
+  paste <(echo "$FILES_ONE") <(echo "$FILES_TWO") | while read -r file_one file_two; do
+    # skip if either file entry is empty (may only occur if line counts mismatched, but that's handled above)
+    [ -n "$file_one" ] && [ -n "$file_two" ] || continue
+    echo "Comparing $file_one <=> $file_two"
+    set +e
+    "$0" "$ONE/$file_one" "$TWO/$file_two"
+    set -e
+  done
   exit 0
 fi
 
@@ -49,15 +46,30 @@ echo "Hash for $TWO: $HASH_TWO"
 
 xxd "$ONE" > "1.xxd"
 xxd "$TWO" > "2.xxd"
-(diff --color=always "1.xxd" "2.xxd" || true) | head -n 20
+(diff --color=always "1.xxd" "2.xxd" || true) | head -n 5
 
 ffmpeg -y -loglevel fatal -i "$ONE" -c copy -f framemd5 "1.md5"
 ffmpeg -y -loglevel fatal -i "$TWO" -c copy -f framemd5 "2.md5"
-(diff --color=always "1.md5" "2.md5" || true) | head -n 20
+(diff --color=always "1.md5" "2.md5" || true) | head -n 5
 
 ffprobe -loglevel fatal -show_frames "$ONE" > "1.frames"
 ffprobe -loglevel fatal -show_frames "$TWO" > "2.frames"
-(diff --color=always "1.frames" "2.frames" || true) | head -n 20
+(diff --color=always "1.frames" "2.frames" || true) | head -n 5
+
+echo -e "\033[0m"
+video_frames_one="$(cat 1.frames | grep media_type=video | wc -l | xargs)"
+video_frames_two="$(cat 2.frames | grep media_type=video | wc -l | xargs)"
+if [[ "$video_frames_one" -ne "$video_frames_two" ]]; then
+  echo "Video frame count mismatch: $video_frames_one -> $video_frames_two"
+  exit 1
+fi
+
+audio_frames_one="$(cat 1.frames | grep media_type=video | wc -l | xargs)"
+audio_frames_two="$(cat 2.frames | grep media_type=video | wc -l | xargs)"
+if [[ "$audio_frames_one" -ne "$audio_frames_two" ]]; then
+  echo "Audio frame count mismatch: $audio_frames_one -> $audio_frames_two"
+  exit 1
+fi
 
 # ffmpeg -y -loglevel fatal -i "$ONE" -frames:v 1 -c copy -an 1frame.h264
 # ffmpeg -y -loglevel fatal -i "$TWO" -frames:v 1 -c copy -an 2frame.h264
