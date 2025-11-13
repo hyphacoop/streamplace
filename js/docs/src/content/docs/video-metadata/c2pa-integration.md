@@ -17,9 +17,9 @@ manifest, extracted from the MP4 segment using
 
 ```json
 {
-  "active_manifest": "urn:c2pa:bb3d7649-9cab-49b9-aaa5-635193c10015",
+  "active_manifest": "urn:c2pa:66130743-a4cd-4f73-a4c7-201079ef127a",
   "manifests": {
-    "urn:c2pa:bb3d7649-9cab-49b9-aaa5-635193c10015": {
+    "urn:c2pa:66130743-a4cd-4f73-a4c7-201079ef127a": {
       "claim_generator_info": [
         {
           "name": "c2pa-rs",
@@ -27,8 +27,8 @@ manifest, extracted from the MP4 segment using
           "org.contentauth.c2pa_rs": "0.58.0"
         }
       ],
-      "title": "Livestream Segment at 2025-11-05T16:08:56.428Z",
-      "instance_id": "xmp:iid:013f5406-2e1e-4459-be38-ee9bb13d97b7",
+      "title": "Livestream Segment at 2025-11-13T20:41:30.499Z",
+      "instance_id": "xmp:iid:a031a30d-e1eb-4548-a20f-6453e15c2ace",
       "ingredients": [],
       "assertions": [
         {
@@ -37,11 +37,11 @@ manifest, extracted from the MP4 segment using
             "actions": [
               {
                 "action": "c2pa.created",
-                "when": "2025-11-05T16:08:56.428Z"
+                "when": "2025-11-13T20:41:30.499Z"
               },
               {
                 "action": "c2pa.published",
-                "when": "2025-11-05T16:08:56.428Z"
+                "when": "2025-11-13T20:41:30.499Z"
               }
             ],
             "allActionsIncluded": false
@@ -85,7 +85,7 @@ manifest, extracted from the MP4 segment using
               }
             ],
             "alg": "sha256",
-            "hash": "Uj/4bjqYZpu9ks+tSJ5F0inOE/E9gnnflyrT2m3a7n8=",
+            "hash": "ZHobn5CtL1NsTLAMMPT8D7koSrMr2Ijm5eJt73ED4HA=",
             "name": "jumbf manifest"
           }
         },
@@ -93,22 +93,18 @@ manifest, extracted from the MP4 segment using
           "label": "cawg.metadata",
           "data": {
             "@context": {
-              "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
               "photoshop": "http://ns.adobe.com/photoshop/1.0/",
-              "dc": "http://purl.org/dc/elements/1.1/",
               "xmpRights": "http://ns.adobe.com/xap/1.0/rights/",
-              "streamplace": "https://ns.stream.place/metadata/0.1"
+              "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/",
+              "dc": "http://purl.org/dc/elements/1.1/"
             },
             "xmpRights:UsageTerms": "All rights reserved",
-            "dc:title": "Test",
-            "streamplace:distributionPolicy": {
-              "deleteAfter": "2025-11-05T16:13:56.000Z"
-            },
-            "dc:date": "2025-11-05T16:08:56.428Z",
             "dc:creator": "did:plc:2j2ounbiyi3ftihronlw5qhj",
+            "dc:date": "2025-11-13T20:41:30.499Z",
             "Iptc4xmpExt:ContentWarning": [
               "cwarn:flashingLights"
-            ]
+            ],
+            "dc:title": "Test"
           },
           "kind": "Json"
         },
@@ -156,11 +152,11 @@ manifest, extracted from the MP4 segment using
       "signature_info": {
         "issuer": "Streamplace",
         "common_name": "did:key:zQ3shiYS17LRhT7x6mfd6HfsHHzz1aD9DpGJUP3aT5f2ghdAy",
-        "cert_serial_number": "154067456662585157774248475905339097818"
+        "cert_serial_number": "34409281865771434870888029768053492928"
       },
-      "label": "urn:c2pa:bb3d7649-9cab-49b9-aaa5-635193c10015"
+      "label": "urn:c2pa:66130743-a4cd-4f73-a4c7-201079ef127a"
     }
-  },
+  }
 }
 ```
 
