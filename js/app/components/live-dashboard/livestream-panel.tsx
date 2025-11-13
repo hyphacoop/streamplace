@@ -50,6 +50,7 @@ const ButtonSelector = ({
         key={value}
         variant={selectedValue === value ? "primary" : "secondary"}
         size="pill"
+        width="min"
         disabled={disabledValues.includes(value)}
         onPress={() => setSelectedValue(value)}
         style={[
