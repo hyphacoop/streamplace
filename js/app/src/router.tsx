@@ -22,7 +22,6 @@ import Login from "components/login/login";
 import { AboutCategorySettings } from "components/settings/about-category-settings";
 import { AdvancedCategorySettings } from "components/settings/advanced-category-settings";
 import { DanmuCategorySettings } from "components/settings/danmu-category-settings";
-import { DeveloperSettings } from "components/settings/developer";
 import { PrivacyCategorySettings } from "components/settings/privacy-category-settings";
 import { StreamingCategorySettings } from "components/settings/streaming-category-settings";
 import WebhookManager from "components/settings/webhook-manager";
@@ -745,11 +744,6 @@ const SettingsStack = () => {
         name="LanguagesCategory"
         component={LanguagesCategorySettings}
         options={{ headerTitle: "Languages", title: "Languages" }}
-      />
-      <Stack.Screen
-        name="DeveloperSettings"
-        component={DeveloperSettings}
-        options={{ headerTitle: "Developer", title: "Developer" }}
       />
       <Stack.Screen
         name="KeyManagement"
