@@ -59,7 +59,7 @@ export function AboutCategorySettings() {
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[4]]}>
+      <View style={[zero.layout.flex.align.center]}>
         <MenuContainer
           style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}
         >

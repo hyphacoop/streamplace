@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
   Input,
   manifest,
+  MenuContainer,
   MenuGroup,
   ResponsiveDropdownMenuContent,
   Text,
@@ -37,7 +38,7 @@ export function LanguagesCategorySettings() {
     <ScrollView>
       <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[4]]}>
         <View style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}>
-          <View style={[zero.gap.all[12]]}>
+          <MenuContainer>
             <View>
               <Text size="xl" style={{ marginBottom: 4 }}>
                 {t("language-selection")}
@@ -187,40 +188,38 @@ export function LanguagesCategorySettings() {
               </MenuGroup>
             </View>
 
-            <View style={[zero.gap.all[12]]}>
-              <View style={[zero.gap.all[1]]}>
-                <View
-                  style={[
-                    zero.layout.flex.row,
-                    zero.gap.all[2],
-                    zero.layout.flex.alignCenter,
-                  ]}
-                >
-                  <HardHat size={24} color={theme.colors.mutedForeground} />
-                  <Text size="xl">{t("currently-translating")}</Text>
-                </View>
-                <Text size="lg" color="muted">
-                  {t("currently-translating-description")}
-                </Text>
+            <View style={[zero.gap.all[1]]}>
+              <View
+                style={[
+                  zero.layout.flex.row,
+                  zero.gap.all[2],
+                  zero.layout.flex.alignCenter,
+                ]}
+              >
+                <HardHat size={24} color={theme.colors.mutedForeground} />
+                <Text size="xl">{t("currently-translating")}</Text>
               </View>
-
-              <View style={[zero.gap.all[1]]}>
-                <View
-                  style={[
-                    zero.layout.flex.row,
-                    zero.gap.all[2],
-                    zero.layout.flex.alignCenter,
-                  ]}
-                >
-                  <Handshake size={24} color="#999" />
-                  <Text size="xl">{t("help-translate")}</Text>
-                </View>
-                <Text size="lg" color="muted">
-                  {t("help-translate-description")}
-                </Text>
-              </View>
+              <Text size="lg" color="muted">
+                {t("currently-translating-description")}
+              </Text>
             </View>
-          </View>
+
+            <View style={[zero.gap.all[1]]}>
+              <View
+                style={[
+                  zero.layout.flex.row,
+                  zero.gap.all[2],
+                  zero.layout.flex.alignCenter,
+                ]}
+              >
+                <Handshake size={24} color="#999" />
+                <Text size="xl">{t("help-translate")}</Text>
+              </View>
+              <Text size="lg" color="muted">
+                {t("help-translate-description")}
+              </Text>
+            </View>
+          </MenuContainer>
         </View>
       </View>
     </ScrollView>

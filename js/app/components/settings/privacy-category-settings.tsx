@@ -1,4 +1,4 @@
-import { MenuGroup, View, zero } from "@streamplace/components";
+import { MenuContainer, MenuGroup, View, zero } from "@streamplace/components";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
@@ -29,22 +29,24 @@ export function PrivacyCategorySettings() {
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[4]]}>
+      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[2]]}>
         <View style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}>
-          <MenuGroup>
-            <SettingToggle
-              title={t("debug-recording-title", { host: u.host })}
-              description={t("debug-recording-description")}
-              value={debugRecordingOn}
-              onValueChange={(value) => {
-                if (value === true) {
-                  createServerSettingsRecord(true);
-                } else {
-                  createServerSettingsRecord(false);
-                }
-              }}
-            />
-          </MenuGroup>
+          <MenuContainer>
+            <MenuGroup>
+              <SettingToggle
+                title={t("debug-recording-title", { host: u.host })}
+                description={t("debug-recording-description")}
+                value={debugRecordingOn}
+                onValueChange={(value) => {
+                  if (value === true) {
+                    createServerSettingsRecord(true);
+                  } else {
+                    createServerSettingsRecord(false);
+                  }
+                }}
+              />
+            </MenuGroup>
+          </MenuContainer>
         </View>
       </View>
     </ScrollView>

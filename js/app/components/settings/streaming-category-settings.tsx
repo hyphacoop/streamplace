@@ -1,4 +1,10 @@
-import { MenuGroup, MenuSeparator, View, zero } from "@streamplace/components";
+import {
+  MenuContainer,
+  MenuGroup,
+  MenuSeparator,
+  View,
+  zero,
+} from "@streamplace/components";
 import { Key, Webhook } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
@@ -10,19 +16,21 @@ export function StreamingCategorySettings() {
     <ScrollView>
       <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[2]]}>
         <View style={{ paddingVertical: 0, maxWidth: 500, width: "100%" }}>
-          <MenuGroup>
-            <SettingsNavigationItem
-              title={t("key-management")}
-              screen="KeyManagement"
-              icon={Key}
-            />
-            <MenuSeparator />
-            <SettingsNavigationItem
-              title={t("webhooks")}
-              screen="WebhooksSettings"
-              icon={Webhook}
-            />
-          </MenuGroup>
+          <MenuContainer>
+            <MenuGroup>
+              <SettingsNavigationItem
+                title={t("key-management")}
+                screen="KeyManagement"
+                icon={Key}
+              />
+              <MenuSeparator />
+              <SettingsNavigationItem
+                title={t("webhooks")}
+                screen="WebhooksSettings"
+                icon={Webhook}
+              />
+            </MenuGroup>
+          </MenuContainer>
         </View>
       </View>
     </ScrollView>
