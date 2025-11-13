@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pion/interceptor"
@@ -37,7 +36,7 @@ import (
 const CertFile = "cert.pem"
 const SegmentsDir = "segments"
 
-var StreamplaceMetadata = "cawg.metadata"
+const StreamplaceMetadata = "cawg.metadata"
 
 type MediaManager struct {
 	cli                 *config.CLI
@@ -372,48 +371,28 @@ func extractContentRights(mani *c2patypes.Manifest) *model.ContentRights {
 
 // extractDistributionPolicy extracts distribution policy from the C2PA manifest
 func extractDistributionPolicy(mani *c2patypes.Manifest, segmentStart aqtime.AQTime) *model.DistributionPolicy {
-	ass := findAssertion(mani, StreamplaceMetadata)
-	if ass == nil {
+	metadataConfig := extractMetadataConfiguration(mani)
+	if metadataConfig == nil {
 		return nil
 	}
 
-	data, ok := ass.Data.(map[string]interface{})
-	if !ok {
+	if metadataConfig.DistributionPolicy == nil {
 		return nil
 	}
 
-	policy, ok := data["streamplace:distributionPolicy"]
-	if !ok {
+	if metadataConfig.DistributionPolicy.DeleteAfter == nil {
 		return nil
 	}
 
-	policyMap, ok := policy.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	expiry, ok := policyMap["deleteAfter"]
-	if !ok {
-		return nil
-	}
-
-	// deleteAfter now contains a timestamp string (RFC3339/ISO 8601 format)
-	expiryStr, ok := expiry.(string)
-	if !ok {
-		return nil
-	}
-
-	expiryTime, err := time.Parse(time.RFC3339, expiryStr)
-	if err != nil {
-		return nil
-	}
+	// deleteAfter contains an offset in seconds from creation time
+	deleteAfterSeconds := *metadataConfig.DistributionPolicy.DeleteAfter
 
 	return &model.DistributionPolicy{
-		ExpiresAt: &expiryTime,
+		DeleteAfterSeconds: &deleteAfterSeconds,
 	}
 }
 
-// extractDistributionPolicy extracts the place.stream.metadata.configuration from the C2PA manifest
+// extractMetadataConfiguration extracts the place.stream.metadata.configuration from the C2PA manifest
 func extractMetadataConfiguration(mani *c2patypes.Manifest) *streamplace.MetadataConfiguration {
 	ass := findAssertion(mani, "place.stream.metadata.configuration")
 	if ass == nil {
