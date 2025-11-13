@@ -60,36 +60,36 @@ export function AboutCategorySettings() {
   return (
     <ScrollView>
       <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[2]]}>
-        <MenuContainer
-          style={{ paddingVertical: 24, maxWidth: 500, width: "100%" }}
-        >
-          <MenuGroup>
-            <Updates />
-          </MenuGroup>
+        <View style={{ maxWidth: 500, width: "100%" }}>
+          <MenuContainer>
+            <MenuGroup>
+              <Updates />
+            </MenuGroup>
 
-          <MenuGroup>
-            <SettingsRowItem>
-              <View style={{ flex: 1 }}>
-                <Text size="lg">Build</Text>
-              </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text size="lg" color="muted">
-                  {buildLabel} ({buildStatus})
-                </Text>
-              </View>
-            </SettingsRowItem>
-            <MenuSeparator />
-            <SettingsExternalItem
-              title="Terms of Service"
-              link="OpenSourceLicenses"
-            />
-            <MenuSeparator />
-            <SettingsExternalItem
-              title="Privacy Policy"
-              link="OpenSourceLicenses"
-            />
-          </MenuGroup>
-        </MenuContainer>
+            <MenuGroup>
+              <SettingsRowItem>
+                <View style={{ flex: 1 }}>
+                  <Text size="lg">Build</Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text size="lg" color="muted">
+                    {buildLabel} ({buildStatus})
+                  </Text>
+                </View>
+              </SettingsRowItem>
+              <MenuSeparator />
+              <SettingsExternalItem
+                title="Terms of Service"
+                link="OpenSourceLicenses"
+              />
+              <MenuSeparator />
+              <SettingsExternalItem
+                title="Privacy Policy"
+                link="OpenSourceLicenses"
+              />
+            </MenuGroup>
+          </MenuContainer>
+        </View>
       </View>
     </ScrollView>
   );
