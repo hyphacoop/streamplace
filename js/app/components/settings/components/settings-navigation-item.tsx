@@ -45,24 +45,30 @@ export function SettingsNavigationItem({
 
 interface SettingsRowItemProps {
   children?: React.ReactNode;
+  onPress?: () => void;
 }
 
-export function SettingsRowItem({ children }: SettingsRowItemProps) {
-  const navigation = useNavigation();
-
+export function SettingsRowItem({ children, onPress }: SettingsRowItemProps) {
   return (
-    <View
-      style={[
-        zero.px[3],
-        zero.py[2],
-        zero.layout.flex.row,
-        zero.layout.flex.justify.between,
-        zero.layout.flex.align.center,
-        zero.r.md,
-      ]}
-    >
-      {children}
-    </View>
+    <Pressable onPress={onPress}>
+      {({ pressed }) => (
+        <View
+          style={[
+            zero.px[3],
+            zero.py[2],
+            zero.layout.flex.row,
+            zero.layout.flex.justify.between,
+            zero.layout.flex.align.center,
+            zero.r.md,
+            {
+              backgroundColor: pressed && onPress ? "#ffffff08" : "transparent",
+            },
+          ]}
+        >
+          {children}
+        </View>
+      )}
+    </Pressable>
   );
 }
 

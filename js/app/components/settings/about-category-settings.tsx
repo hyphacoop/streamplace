@@ -3,17 +3,21 @@ import {
   MenuGroup,
   MenuSeparator,
   Text,
+  useDanmuUnlocked,
+  useSetDanmuUnlocked,
   useTheme,
+  useToast,
   View,
   zero,
 } from "@streamplace/components";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
 import {
   SettingsExternalItem,
   SettingsRowItem,
 } from "./components/settings-navigation-item";
-import { Updates } from "./updates";
+import { StreamplaceUpdatesRow, StreamplaceVersionRow } from "./updates";
 
 let buildInfo: {
   hash: string;
@@ -34,16 +38,53 @@ const VERSION_REGEX = /^v?(\d+\.\d+\.\d+)(-.+)?$/;
 function cutVersionPrefix(version: string) {
   if (VERSION_REGEX.test(version)) {
     const match = VERSION_REGEX.exec(version);
-    if (match && match[1]) {
-      return match[1];
+    if (match && match[2]) {
+      return match[2].replace(/^-/, "");
     }
   }
   return version;
 }
 
+const UNLOCK_TAP_COUNT = 5;
 export function AboutCategorySettings() {
   const { t } = useTranslation("settings");
   const theme = useTheme();
+  const toast = useToast();
+
+  const [checked, setChecked] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const danmuUnlocked = useDanmuUnlocked();
+  const setDanmuUnlocked = useSetDanmuUnlocked();
+
+  const handleVersionPress = () => {
+    if (danmuUnlocked) {
+      toast.show("You are already a developer", undefined, {
+        duration: 2,
+        variant: "info",
+        actionLabel: "Stop being a developer",
+        onAction: () => {
+          setDanmuUnlocked(false);
+          toast.show("You are no longer a developer", undefined, {
+            duration: 2,
+            variant: "info",
+          });
+        },
+      });
+      return;
+    }
+
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+
+    if (newCount >= UNLOCK_TAP_COUNT) {
+      setDanmuUnlocked(true);
+      toast.show("You are now a developer", "have fun! lol", {
+        duration: 20,
+        variant: "success",
+      });
+      setTapCount(0);
+    }
+  };
 
   const getBuildStatus = () => {
     if (!buildInfo) {
@@ -63,21 +104,37 @@ export function AboutCategorySettings() {
         <View style={{ maxWidth: 500, width: "100%" }}>
           <MenuContainer>
             <MenuGroup>
-              <Updates />
-            </MenuGroup>
-
-            <MenuGroup>
-              <SettingsRowItem>
+              <StreamplaceVersionRow />
+              <MenuSeparator />
+              <SettingsRowItem onPress={handleVersionPress}>
                 <View style={{ flex: 1 }}>
                   <Text size="lg">Build</Text>
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
                   <Text size="lg" color="muted">
-                    {buildLabel} ({buildStatus})
+                    {cutVersionPrefix(buildLabel)} ({buildStatus})
                   </Text>
                 </View>
               </SettingsRowItem>
-              <MenuSeparator />
+              {buildInfo && buildInfo.branch !== "main" && (
+                <>
+                  <MenuSeparator />
+                  <SettingsRowItem onPress={handleVersionPress}>
+                    <View style={{ flex: 1 }}>
+                      <Text size="lg">Branch</Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text size="lg" color="muted">
+                        {buildInfo ? buildInfo.branch : "development"}
+                      </Text>
+                    </View>
+                  </SettingsRowItem>
+                </>
+              )}
+              <StreamplaceUpdatesRow />
+            </MenuGroup>
+
+            <MenuGroup>
               <SettingsExternalItem
                 title="Terms of Service"
                 link="OpenSourceLicenses"
