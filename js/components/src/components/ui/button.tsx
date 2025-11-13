@@ -228,9 +228,15 @@ export const Button = forwardRef<any, ButtonProps>(
             </ButtonPrimitive.Icon>
           ) : null}
 
-          <TextPrimitive.Root style={[textStyle as any, sizeStyles.text]}>
-            {loading && loadingText ? loadingText : children}
-          </TextPrimitive.Root>
+          {typeof children === "string" ? (
+            <TextPrimitive.Root style={[textStyle as any, sizeStyles.text]}>
+              {loading && loadingText ? loadingText : children}
+            </TextPrimitive.Root>
+          ) : loading && loadingText ? (
+            loadingText
+          ) : (
+            children
+          )}
 
           {loading && rightIcon ? (
             <ButtonPrimitive.Icon position="right">
