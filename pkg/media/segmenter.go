@@ -6,19 +6,17 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
-	"stream.place/streamplace/pkg/aqtime"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 )
 
 // element that takes the input stream, muxes to mp4, and signs the result
-func SegmentElem(ctx context.Context, cb func(ctx context.Context, buf []byte, now int64) error) (*gst.Element, error) {
+func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(ctx context.Context, buf []byte, now int64) error) (*gst.Element, error) {
 	// elem, err := gst.NewElement("splitmuxsink name=splitter async-finalize=true sink-factory=appsink muxer-factory=matroskamux max-size-bytes=1")
 	elem, err := gst.NewElementWithProperties("splitmuxsink", map[string]any{
 		"name":           "signer",
@@ -121,7 +119,13 @@ func SegmentElem(ctx context.Context, cb func(ctx context.Context, buf []byte, n
 				if previousSegCh != nil {
 					<-previousSegCh
 				}
-				err := cb(ctx, bs, now)
+				bs, err := ConvergeSegment(ctx, cli, bs, now, streamer)
+				if err != nil {
+					log.Error(ctx, "error converging segment", "error", err)
+					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "Error converging segment", err.Error())
+					return
+				}
+				err = cb(ctx, bs, now)
 				if err != nil {
 					log.Error(ctx, "error signing segment", "error", err)
 					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "Error signing segment", err.Error())
@@ -142,45 +146,7 @@ func SegmentElem(ctx context.Context, cb func(ctx context.Context, buf []byte, n
 var MaxSegmentTries = 10
 
 func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) (*gst.Element, error) {
-	return SegmentElem(ctx, func(ctx context.Context, bs []byte, now int64) error {
-		signedBs, err := ms.SignMP4(ctx, bytes.NewReader(bs), now)
-		if err != nil {
-			return fmt.Errorf("error calling SignMP4: %w", err)
-		}
-		previousBs := []byte{}
-		currentBs := signedBs
-		i := 0
-		for i = 0; i <= MaxSegmentTries; i++ {
-			if slices.Compare(previousBs, currentBs) == 0 {
-				break
-			}
-			if mm.cli.SegmentDebugDir != "" {
-				mydir := filepath.Join(mm.cli.SegmentDebugDir, ms.Streamer())
-				err := os.MkdirAll(mydir, 0755)
-				if err != nil {
-					return fmt.Errorf("failed to create debug directory: %w", err)
-				}
-				aqt := aqtime.FromMillis(now)
-				outFile := filepath.Join(mm.cli.SegmentDebugDir, fmt.Sprintf("%s-attempt-%03d.mp4", aqt.FileSafeString(), i))
-				err = os.WriteFile(outFile, currentBs, 0644)
-				if err != nil {
-					return fmt.Errorf("failed to write debug file: %w", err)
-				}
-				log.Log(ctx, "wrote debug file", "path", outFile)
-			}
-			buf := bytes.Buffer{}
-			err := CombineSegmentsUnsigned(ctx, []io.ReadSeeker{bytes.NewReader(currentBs)}, &buf)
-			if err != nil {
-				return fmt.Errorf("failed to attempt segment convergence: %w", err)
-			}
-			previousBs = currentBs
-			currentBs = buf.Bytes()
-		}
-		if slices.Compare(previousBs, currentBs) != 0 {
-			return fmt.Errorf("failed to converge segment after %d tries", MaxSegmentTries)
-		}
-		bs = currentBs
-		log.Log(ctx, "converged segments", "tries", i, "size", len(bs))
+	return SegmentElem(ctx, mm.cli, ms.Streamer(), func(ctx context.Context, bs []byte, now int64) error {
 		if mm.cli.SmearAudio {
 			smearedBuf := &bytes.Buffer{}
 			err := SmearAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf)
@@ -189,7 +155,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 			}
 			bs = smearedBuf.Bytes()
 		}
-		signedBs, err = ms.SignMP4(ctx, bytes.NewReader(bs), now)
+		signedBs, err := ms.SignMP4(ctx, bytes.NewReader(bs), now)
 		if err != nil {
 			return fmt.Errorf("error calling SignMP4: %w", err)
 		}
@@ -202,17 +168,17 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 	})
 }
 
-func SegmentFileUnsigned(ctx context.Context, input string, ch chan *SplitSegment) error {
+func SegmentFileUnsigned(ctx context.Context, cli *config.CLI, streamer string, input string, ch chan *SplitSegment) error {
 	fd, err := os.OpenFile(input, os.O_RDONLY, 0644)
 	log.Log(ctx, "reading file", "file", input)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 	defer fd.Close()
-	return SegmentUnsigned(ctx, fd, ch)
+	return SegmentUnsigned(ctx, cli, streamer, fd, ch)
 }
 
-func SegmentUnsigned(ctx context.Context, input io.Reader, ch chan *SplitSegment) error {
+func SegmentUnsigned(ctx context.Context, cli *config.CLI, streamer string, input io.Reader, ch chan *SplitSegment) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	pipelineSlice := []string{
@@ -238,7 +204,7 @@ func SegmentUnsigned(ctx context.Context, input io.Reader, ch chan *SplitSegment
 		return err
 	}
 
-	segmenter, err := SegmentElem(ctx, func(ctx context.Context, buf []byte, now int64) error {
+	segmenter, err := SegmentElem(ctx, cli, streamer, func(ctx context.Context, buf []byte, now int64) error {
 		ch <- &SplitSegment{
 			Filename: fmt.Sprintf("%d.mp4", now),
 			Data:     buf,

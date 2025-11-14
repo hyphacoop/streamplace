@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqio"
 	c2patypes "stream.place/streamplace/pkg/c2patypes"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/iroh/generated/iroh_streamplace"
 	"stream.place/streamplace/pkg/log"
 )
@@ -95,7 +96,7 @@ func (m *ManySegmentsToSign) Next() *iroh_streamplace.SegmentToSign {
 }
 
 // split a signed concatenated mp4 into its constituent signed segments
-func SplitSegments(ctx context.Context, input io.ReadSeeker, cb func(fname string) ReadWriteSeekCloser) error {
+func SplitSegments(ctx context.Context, cli *config.CLI, input io.ReadSeeker, cb func(fname string) ReadWriteSeekCloser) error {
 	manifestsStr, err := iroh_streamplace.GetManifests(c2patypes.NewReader(input))
 	if err != nil {
 		return fmt.Errorf("failed to get manifests: %w", err)
@@ -142,6 +143,7 @@ func SplitSegments(ctx context.Context, input io.ReadSeeker, cb func(fname strin
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	unsignedCh := make(chan *SplitSegment)
+	streamer := manifestList[0].SegmentMetadata.Creator
 
 	// note: we're passing the input to two places here and need to make sure
 	// they're not running into problems with concurrent seeking. so we use
@@ -162,7 +164,7 @@ func SplitSegments(ctx context.Context, input io.ReadSeeker, cb func(fname strin
 		if err != nil {
 			return fmt.Errorf("failed to seek to start: %w", err)
 		}
-		err = SegmentUnsigned(ctx, input, unsignedCh)
+		err = SegmentUnsigned(ctx, cli, streamer, input, unsignedCh)
 		if err != nil {
 			return fmt.Errorf("failed to segment file: %w", err)
 		}

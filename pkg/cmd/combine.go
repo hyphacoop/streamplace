@@ -62,19 +62,19 @@ func Combine(ctx context.Context, build *config.BuildFlags, allArgs []string) er
 	if err != nil {
 		return err
 	}
-	err = CheckCombined(ctx, outFd, *debugDir)
+	err = CheckCombined(ctx, cli, outFd, *debugDir)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func CheckCombined(ctx context.Context, inFD io.ReadWriteSeeker, debugDir string) error {
+func CheckCombined(ctx context.Context, cli *config.CLI, inFD io.ReadWriteSeeker, debugDir string) error {
 	_, err := inFD.Seek(0, io.SeekStart)
 	if err != nil {
 		return err
 	}
-	err = media.SplitSegments(ctx, inFD, func(fname string) media.ReadWriteSeekCloser {
+	err = media.SplitSegments(ctx, cli, inFD, func(fname string) media.ReadWriteSeekCloser {
 		if debugDir == "" {
 			return aqio.NewReadWriteSeeker([]byte{})
 		}

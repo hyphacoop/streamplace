@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 )
@@ -24,7 +25,7 @@ func Split(ctx context.Context, inFile, outDir string) error {
 
 	names := []string{}
 
-	err = media.SplitSegments(ctx, inFD, func(fname string) media.ReadWriteSeekCloser {
+	err = media.SplitSegments(ctx, &config.CLI{}, inFD, func(fname string) media.ReadWriteSeekCloser {
 		fullPath := filepath.Join(outDir, fname)
 		names = append(names, fullPath)
 		log.Log(ctx, "creating segment file", "path", fullPath)
