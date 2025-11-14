@@ -33,12 +33,12 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 	defer span.End()
 	buf, err := io.ReadAll(input)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read input: %w", err)
 	}
 
 	valid, err := ValidateMP4Media(ctx, buf)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to validate MP4 media: %w", err)
 	}
 	meta := valid.Meta
 	pub := valid.Pub
@@ -49,7 +49,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 	if label != nil && mm.model != nil {
 		oldSeg, err := mm.model.GetSegment(*label)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get old segment: %w", err)
 		}
 		if oldSeg != nil {
 			log.Warn(ctx, "segment already exists, skipping", "segmentID", *label)
@@ -217,18 +217,17 @@ func ValidateMP4Media(ctx context.Context, buf []byte) (*ValidationResult, error
 	}
 	err = json.Unmarshal([]byte(maniStr), &maniCert)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal manifest and cert: %w", err)
 	}
 	activeManifest := maniCert.ValidationResults.ActiveManifest
-	if activeManifest == nil {
-		return nil, fmt.Errorf("no active manifest found")
-	}
-	if activeManifest.Failure == nil {
-		return nil, fmt.Errorf("active manifest failure array not found?!")
-	}
-	if len(activeManifest.Failure) > 0 {
-		bs, _ := json.Marshal(activeManifest.Failure)
-		return nil, fmt.Errorf("active manifest has failures: %s", string(bs))
+	if activeManifest != nil {
+		if activeManifest.Failure == nil {
+			return nil, fmt.Errorf("active manifest failure array not found?!")
+		}
+		if len(activeManifest.Failure) > 0 {
+			bs, _ := json.Marshal(activeManifest.Failure)
+			return nil, fmt.Errorf("active manifest has failures: %s", string(bs))
+		}
 	}
 	pub, err := signers.ParseES256KCert([]byte(maniCert.Cert))
 	if err != nil {

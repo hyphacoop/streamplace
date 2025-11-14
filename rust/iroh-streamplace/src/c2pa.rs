@@ -32,6 +32,7 @@ pub fn get_manifest_and_cert(data: &dyn Stream) -> Result<String, SPError> {
             "manifest": manifest,
             "cert": cert_chain,
             "validation_results": reader.validation_results(),
+            "validation_state": reader.validation_state(),
         });
 
         return Ok(result.to_string());

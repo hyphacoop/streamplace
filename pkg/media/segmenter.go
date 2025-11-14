@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
+	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/log"
 )
 
@@ -70,6 +73,18 @@ func SegmentElem(ctx context.Context, cb func(ctx context.Context, buf []byte, n
 		if err != nil {
 			panic("error setting interleave-time" + err.Error())
 		}
+		err = muxEle.SetProperty("faststart", true)
+		if err != nil {
+			panic("error setting faststart" + err.Error())
+		}
+		err = muxEle.SetProperty("movie-timescale", uint(60000))
+		if err != nil {
+			panic("error setting movie-timescale" + err.Error())
+		}
+		err = muxEle.SetProperty("trak-timescale", uint(60000))
+		if err != nil {
+			panic("error setting trak-timescale" + err.Error())
+		}
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect muxer-added handler: %w", err)
@@ -109,6 +124,7 @@ func SegmentElem(ctx context.Context, cb func(ctx context.Context, buf []byte, n
 				err := cb(ctx, bs, now)
 				if err != nil {
 					log.Error(ctx, "error signing segment", "error", err)
+					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "Error signing segment", err.Error())
 					return
 				}
 				close(mySegCh)
@@ -123,8 +139,48 @@ func SegmentElem(ctx context.Context, cb func(ctx context.Context, buf []byte, n
 	return elem, nil
 }
 
+var MaxSegmentTries = 10
+
 func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) (*gst.Element, error) {
 	return SegmentElem(ctx, func(ctx context.Context, bs []byte, now int64) error {
+		signedBs, err := ms.SignMP4(ctx, bytes.NewReader(bs), now)
+		if err != nil {
+			return fmt.Errorf("error calling SignMP4: %w", err)
+		}
+		previousBs := []byte{}
+		currentBs := signedBs
+		i := 0
+		for i = 0; i <= MaxSegmentTries; i++ {
+			if slices.Compare(previousBs, currentBs) == 0 {
+				break
+			}
+			if mm.cli.SegmentDebugDir != "" {
+				mydir := filepath.Join(mm.cli.SegmentDebugDir, ms.Streamer())
+				err := os.MkdirAll(mydir, 0755)
+				if err != nil {
+					return fmt.Errorf("failed to create debug directory: %w", err)
+				}
+				aqt := aqtime.FromMillis(now)
+				outFile := filepath.Join(mm.cli.SegmentDebugDir, fmt.Sprintf("%s-attempt-%03d.mp4", aqt.FileSafeString(), i))
+				err = os.WriteFile(outFile, currentBs, 0644)
+				if err != nil {
+					return fmt.Errorf("failed to write debug file: %w", err)
+				}
+				log.Log(ctx, "wrote debug file", "path", outFile)
+			}
+			buf := bytes.Buffer{}
+			err := CombineSegmentsUnsigned(ctx, []io.ReadSeeker{bytes.NewReader(currentBs)}, &buf)
+			if err != nil {
+				return fmt.Errorf("failed to attempt segment convergence: %w", err)
+			}
+			previousBs = currentBs
+			currentBs = buf.Bytes()
+		}
+		if slices.Compare(previousBs, currentBs) != 0 {
+			return fmt.Errorf("failed to converge segment after %d tries", MaxSegmentTries)
+		}
+		bs = currentBs
+		log.Log(ctx, "converged segments", "tries", i, "size", len(bs))
 		if mm.cli.SmearAudio {
 			smearedBuf := &bytes.Buffer{}
 			err := SmearAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf)
@@ -133,11 +189,16 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 			}
 			bs = smearedBuf.Bytes()
 		}
-		signedBs, err := ms.SignMP4(ctx, bytes.NewReader(bs), now)
+		signedBs, err = ms.SignMP4(ctx, bytes.NewReader(bs), now)
 		if err != nil {
-			return err
+			return fmt.Errorf("error calling SignMP4: %w", err)
 		}
-		return mm.ValidateMP4(ctx, bytes.NewReader(signedBs), true)
+		log.Log(ctx, "signed segment", "size", len(signedBs))
+		err = mm.ValidateMP4(ctx, bytes.NewReader(signedBs), true)
+		if err != nil {
+			return fmt.Errorf("error validating just-signed segment: %w", err)
+		}
+		return nil
 	})
 }
 

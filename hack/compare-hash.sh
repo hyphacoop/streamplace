@@ -107,4 +107,8 @@ echo "Compare ffprobe -show_frames data:"
 echo "  meld $(realpath 1.frames) $(realpath 2.frames)"
 echo "Compare frame headers:"
 echo "  meld $(realpath 1.trace_headers) $(realpath 2.trace_headers)"
+echo "Compare hex hashes:"
+echo "  meld $(realpath 1.xxd) $(realpath 2.xxd)"
+echo "Compare framemd5 hashes:"
+echo "  meld $(realpath 1.md5) $(realpath 2.md5)"
 exit 1

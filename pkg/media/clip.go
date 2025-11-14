@@ -18,8 +18,8 @@ func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.
 	defer cancel()
 
 	pipelineSlice := []string{
-		fmt.Sprintf("mp4mux name=muxer faststart=true interleave-bytes=%d interleave-time=%d ! appsink sync=false name=mp4sink", InterleaveBytes, InterleaveTime),
-		"capsfilter caps=video/x-h264,parsed=true name=videoqueue ! queue  ! muxer.",
+		fmt.Sprintf("mp4mux name=muxer faststart=true interleave-bytes=%d interleave-time=%d movie-timescale=60000 trak-timescale=60000 ! appsink sync=false name=mp4sink", InterleaveBytes, InterleaveTime),
+		"capsfilter caps=video/x-h264,parsed=true name=videoqueue ! queue ! muxer.",
 		"opusparse name=audioparse ! queue ! muxer.",
 	}
 
@@ -93,14 +93,9 @@ func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.
 		return fmt.Errorf("failed to get mp4sink element: %w", err)
 	}
 
-	eos := make(chan struct{})
-
 	appSink := app.SinkFromElement(mp4Sink)
 	appSink.SetCallbacks(&app.SinkCallbacks{
 		NewSampleFunc: WriterNewSample(ctx, w),
-		EOSFunc: func(sink *app.Sink) {
-			close(eos)
-		},
 	})
 
 	// Start the pipeline
@@ -117,8 +112,9 @@ func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.
 
 	// Handle bus messages
 	err = HandleBusMessages(ctx, pipeline)
-
-	<-eos
+	if err != nil {
+		return fmt.Errorf("failed to handle bus messages: %w", err)
+	}
 
 	if err != nil {
 		return fmt.Errorf("pipeline error: %w", err)
