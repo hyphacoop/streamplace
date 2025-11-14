@@ -263,11 +263,11 @@ func Log(ctx context.Context, message string, args ...any) {
 }
 
 func Debug(ctx context.Context, message string, args ...any) {
-	V(debugLogLevel).log(ctx, message, slog.Debug, args...)
+	V(debugLogLevel).log(ctx, message, slog.Info, args...)
 }
 
 func Trace(ctx context.Context, message string, args ...any) {
-	V(traceLogLevel).log(ctx, message, slog.Debug, args...)
+	V(traceLogLevel).log(ctx, message, slog.Info, args...)
 }
 
 // returns true if we are at least the given level

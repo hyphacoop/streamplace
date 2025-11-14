@@ -88,7 +88,7 @@ func TestIngredientConcat(t *testing.T) {
 		require.NoError(t, err)
 		splitSegsCh := make(chan *SplitSegment)
 		go func() {
-			err := SegmentFileUnsigned(context.Background(), concatSegment, splitSegsCh)
+			err := SegmentFileUnsigned(context.Background(), &config.CLI{}, "test-streamer", concatSegment, splitSegsCh)
 			require.NoError(t, err)
 			close(splitSegsCh)
 		}()
@@ -106,7 +106,7 @@ func TestIngredientConcat(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, splitReport.CheckEquals(firstReport), "split segments are not equal to original segments")
 		signedSplitSegDir := makeTestSubdir(t, tempDir, "signed-split-segments")
-		err = SplitSegments(context.Background(), bytes.NewReader(signedConcatBS), func(fname string) ReadWriteSeekCloser {
+		err = SplitSegments(context.Background(), &config.CLI{}, bytes.NewReader(signedConcatBS), func(fname string) ReadWriteSeekCloser {
 			fd, err := os.Create(filepath.Join(signedSplitSegDir, fname))
 			require.NoError(t, err)
 			return fd

@@ -16,7 +16,7 @@ import (
 )
 
 // This function remains in scope for the duration of a single users' playback
-func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionDescription, signer MediaSigner, peerConnection rtcrec.PeerConnection, done chan struct{}) (*webrtc.SessionDescription, error) {
+func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionDescription, signer MediaSigner, peerConnection rtcrec.PeerConnection, done chan error) (*webrtc.SessionDescription, error) {
 	uu, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -127,8 +127,9 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 
 	// Setup complete! Now we boot up streaming in the background while returning the SDP offer to the user.
 	go func() {
+		var pipelineError error
 		defer cancel()
-		defer func() { close(done) }()
+		defer func() { done <- pipelineError }()
 
 		go func() {
 			ticker := time.NewTicker(time.Second * 1)
@@ -145,6 +146,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 
 		go func() {
 			if err := HandleBusMessages(ctx, pipeline); err != nil {
+				pipelineError = err
 				log.Log(ctx, "pipeline error", "error", err)
 			}
 			cancel()

@@ -15,6 +15,13 @@ import (
 	"stream.place/streamplace/pkg/log"
 )
 
+// For testing. Normally,  We don't want to stop the pipeline upon a
+// segmentation error because we want to keep the stream alive. Lots
+// of weird invalid data coming in from WebRTC connections on phones.
+// Better we drop one weird segment than force the stream to restart.
+// But for tests, we want (sometimes) to know if there's a problem.
+var FatalSegmentationErrors = false
+
 // element that takes the input stream, muxes to mp4, and signs the result
 func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(ctx context.Context, buf []byte, now int64) error) (*gst.Element, error) {
 	// elem, err := gst.NewElement("splitmuxsink name=splitter async-finalize=true sink-factory=appsink muxer-factory=matroskamux max-size-bytes=1")
@@ -119,20 +126,25 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 				if previousSegCh != nil {
 					<-previousSegCh
 				}
-				bs, err := ConvergeSegment(ctx, cli, bs, now, streamer)
-				if err != nil {
-					log.Error(ctx, "error converging segment", "error", err)
-					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "Error converging segment", err.Error())
-					return
-				}
-				err = cb(ctx, bs, now)
-				if err != nil {
-					log.Error(ctx, "error signing segment", "error", err)
-					elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "Error signing segment", err.Error())
-					return
-				}
+				err := func() error {
+					bs, err := ConvergeSegment(ctx, cli, bs, now, streamer)
+					if err != nil {
+						return fmt.Errorf("error converging segment: %w", err)
+					}
+					err = cb(ctx, bs, now)
+					if err != nil {
+						return fmt.Errorf("error signing segment: %w", err)
+					}
+					return nil
+				}()
 				close(mySegCh)
-
+				if err != nil {
+					log.Error(ctx, "error in segmenter", "error", err)
+					if FatalSegmentationErrors {
+						elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "error in segmenter", err.Error())
+						return
+					}
+				}
 			},
 		})
 	})
@@ -142,8 +154,6 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 
 	return elem, nil
 }
-
-var MaxSegmentTries = 10
 
 func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) (*gst.Element, error) {
 	return SegmentElem(ctx, mm.cli, ms.Streamer(), func(ctx context.Context, bs []byte, now int64) error {

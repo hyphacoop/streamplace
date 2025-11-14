@@ -114,6 +114,7 @@ func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
 			select {
 			case seg := <-segCh:
 				if seg == nil {
+
 					ok := syncPadVideoSrc.PushEvent(gst.NewEOSEvent())
 					if !ok {
 						log.Error(ctx, "failed to post EOS message", "error", ok)
@@ -123,6 +124,7 @@ func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
 						log.Error(ctx, "failed to post EOS message", "error", ok)
 					}
 					log.Debug(ctx, "concat completed")
+
 					return
 				}
 				err := addConcatDemuxer(ctx, bin, seg, syncPadVideoSink, syncPadAudioSink)
@@ -144,6 +146,7 @@ func addConcatDemuxer(ctx context.Context, bin *gst.Bin, seg *bus.Seg, syncPadVi
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
+	ctx = log.WithLogValues(ctx, "func", "ConcatBin")
 
 	log.Debug(ctx, "adding concat demuxer", "seg", seg.Filepath)
 	demuxBin, err := ConcatDemuxBin(ctx, seg)

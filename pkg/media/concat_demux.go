@@ -19,7 +19,7 @@ func doNothing(self *gst.Element, pad *gst.Pad) {}
 // In particular: users of this MUST cancel the passed context when they're
 // done with the bin.
 func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
-	ctx = log.WithLogValues(ctx, "func", "SegDemuxBin")
+	ctx = log.WithLogValues(ctx, "func", "ConcatDemuxBin")
 	bin := gst.NewBin("seg-demux-bin")
 
 	appSrc, err := gst.NewElementWithProperties("appsrc", map[string]interface{}{
@@ -86,6 +86,26 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 		return nil, fmt.Errorf("failed to get h264parse source pad")
 	}
 
+	opusparse, err := gst.NewElementWithProperties("opusparse", map[string]interface{}{
+		"name": "concat-demux-opusparse",
+		// "disable-passthrough": true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create opusparse element: %w", err)
+	}
+	err = bin.Add(opusparse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add opusparse to bin: %w", err)
+	}
+	opusparseSinkPad := opusparse.GetStaticPad("sink")
+	if opusparseSinkPad == nil {
+		return nil, fmt.Errorf("failed to get opusparse sink pad")
+	}
+	opusparseSrcPad := opusparse.GetStaticPad("src")
+	if opusparseSrcPad == nil {
+		return nil, fmt.Errorf("failed to get opusparse source pad")
+	}
+
 	mqVideoSink := mq.GetRequestPad("sink_%u")
 	if mqVideoSink == nil {
 		return nil, fmt.Errorf("video sink pad not found")
@@ -111,12 +131,17 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 		return nil, fmt.Errorf("failed to link h264parse sink pad to mq video sink pad")
 	}
 
+	linked = mqAudioSrc.Link(opusparseSinkPad)
+	if linked != gst.PadLinkOK {
+		return nil, fmt.Errorf("failed to link opusparse sink pad to mq audio sink pad")
+	}
+
 	videoGhost := gst.NewGhostPad("video_0", h264parseSrcPad)
 	if videoGhost == nil {
 		return nil, fmt.Errorf("failed to create video ghost pad")
 	}
 
-	audioGhost := gst.NewGhostPad("audio_0", mqAudioSrc)
+	audioGhost := gst.NewGhostPad("audio_0", opusparseSrcPad)
 	if audioGhost == nil {
 		return nil, fmt.Errorf("failed to create audio ghost pad")
 	}
@@ -177,7 +202,7 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 
 	src := app.SrcFromElement(appSrc)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: ReaderNeedData(ctx, bytes.NewReader(seg.Data)),
+		NeedDataFunc: ReaderNeedDataIncremental(ctx, bytes.NewReader(seg.Data)),
 	})
 
 	return bin, nil

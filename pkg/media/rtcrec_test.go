@@ -16,6 +16,11 @@ import (
 
 func TestRTCRecording(t *testing.T) {
 	withNoGSTLeaks(t, func() {
+		// previous := FatalSegmentationErrors
+		// FatalSegmentationErrors = true
+		// defer func() {
+		// 	FatalSegmentationErrors = previous
+		// }()
 		globalerror.GlobalErrors = []error{}
 		ctx := context.Background()
 		dir, err := os.MkdirTemp("", "rtcrec-test-*")
@@ -40,11 +45,12 @@ func TestRTCRecording(t *testing.T) {
 		defer fd.Close()
 		pc, err := rtcrec.NewReplayPeerConnection(ctx, fd)
 		require.NoError(t, err)
-		done := make(chan struct{})
-		answer, err := mm.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, done)
+		done := make(chan error)
+		_, err = mm.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, done)
 		require.NoError(t, err)
-		fmt.Println(answer.SDP)
-		<-done
+		// fmt.Println(answer.SDP)
+		pipelineError := <-done
+		require.NoError(t, pipelineError)
 		for _, err := range globalerror.GlobalErrors {
 			fmt.Printf("got error, non-fatal for now: %v\n", err)
 		}

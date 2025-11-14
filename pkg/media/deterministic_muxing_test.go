@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/test/remote"
 )
@@ -42,7 +43,7 @@ func TestDeterministicMuxing(t *testing.T) {
 func splitToUnsignedDir(t *testing.T, tempDir string, inputFile string) string {
 	splitSegsCh := make(chan *SplitSegment)
 	go func() {
-		err := SegmentFileUnsigned(context.Background(), inputFile, splitSegsCh)
+		err := SegmentFileUnsigned(context.Background(), &config.CLI{}, "test-streamer", inputFile, splitSegsCh)
 		require.NoError(t, err)
 		close(splitSegsCh)
 	}()
@@ -97,7 +98,7 @@ func splitAndCombineTest(t *testing.T, tempDir string, inputDir string) string {
 		require.NoError(t, err)
 		splitSegsCh := make(chan *SplitSegment)
 		go func() {
-			err := SegmentFileUnsigned(context.Background(), combinedFiles[0], splitSegsCh)
+			err := SegmentFileUnsigned(context.Background(), &config.CLI{}, "test-streamer", combinedFiles[0], splitSegsCh)
 			require.NoError(t, err)
 			close(splitSegsCh)
 		}()
