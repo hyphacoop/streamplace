@@ -78,6 +78,11 @@ bash -c "ffmpeg -y -bsf:v trace_headers -i \"$ONE\" -c copy -f null /dev/null 2>
 bash -c "ffmpeg -y -bsf:v trace_headers -i \"$TWO\" -c copy -f null /dev/null 2>&1" | sed 's/\[trace_headers @ 0x[0-9a-f]*\]//' > 2.trace_headers
 (diff --color=always "1.trace_headers" "2.trace_headers" || true) | head -n 5
 
+go install github.com/Eyevinn/mp4ff/cmd/mp4ff-info@latest || true
+mp4ff-info "$ONE" > 1.mp4ff-info
+mp4ff-info "$TWO" > 2.mp4ff-info
+(diff --color=always "1.mp4ff-info" "2.mp4ff-info" || true) | head -n 5
+
 # ffmpeg -y -loglevel fatal -i "$ONE" -c copy 1tweaked.mp4
 # ffmpeg -y -loglevel fatal -i "$TWO" -c copy 2tweaked.mp4
 
@@ -111,4 +116,6 @@ echo "Compare hex hashes:"
 echo "  meld $(realpath 1.xxd) $(realpath 2.xxd)"
 echo "Compare framemd5 hashes:"
 echo "  meld $(realpath 1.md5) $(realpath 2.md5)"
+echo "Compare mp4ff-info data:"
+echo "  meld $(realpath 1.mp4ff-info) $(realpath 2.mp4ff-info)"
 exit 1
