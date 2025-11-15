@@ -16,14 +16,17 @@ import (
 )
 
 var RTCRecTestCases = []struct {
+	name        string
 	fatalErrors bool
 	fixture     string
 }{
 	{
+		name:        "IntermittentTracks",
 		fatalErrors: false,
 		fixture:     getFixture("intermittent-tracks.cbor"),
 	},
 	{
+		name:        "SegmentConvergenceIssues",
 		fatalErrors: true,
 		fixture:     remote.RemoteFixture("6a1fb84e3c23405fc53161f59d5b837839c4889fc1a96533c82fb44fafc51d27/2025-11-14T22-41-20-399Z.cbor"),
 	},
@@ -55,21 +58,23 @@ func TestRTCRecording(t *testing.T) {
 		// ctx := context.Background()
 		// mm, ms := getStaticTestMediaManager(t)
 		for _, testCase := range RTCRecTestCases {
-			FatalSegmentationErrors = testCase.fatalErrors
-			fd, err := os.Open(testCase.fixture)
-			require.NoError(t, err)
-			defer fd.Close()
-			pc, err := rtcrec.NewReplayPeerConnection(ctx, fd)
-			require.NoError(t, err)
-			done := make(chan error)
-			_, err = mm.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, done)
-			require.NoError(t, err)
-			// fmt.Println(answer.SDP)
-			pipelineError := <-done
-			require.NoError(t, pipelineError)
-			for _, err := range globalerror.GlobalErrors {
-				fmt.Printf("got error, non-fatal for now: %v\n", err)
-			}
+			t.Run(testCase.name, func(t *testing.T) {
+				FatalSegmentationErrors = testCase.fatalErrors
+				fd, err := os.Open(testCase.fixture)
+				require.NoError(t, err)
+				defer fd.Close()
+				pc, err := rtcrec.NewReplayPeerConnection(ctx, fd)
+				require.NoError(t, err)
+				done := make(chan error)
+				_, err = mm.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, done)
+				require.NoError(t, err)
+				// fmt.Println(answer.SDP)
+				pipelineError := <-done
+				require.NoError(t, pipelineError)
+				for _, err := range globalerror.GlobalErrors {
+					fmt.Printf("got error, non-fatal for now: %v\n", err)
+				}
+			})
 		}
 	})
 }
