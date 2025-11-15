@@ -67,6 +67,6 @@ func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64,
 		return nil, fmt.Errorf("failed to converge segment after %d tries", MaxSegmentTries)
 	}
 	bs = currentBs
-	log.Log(ctx, "converged segments", "tries", i, "size", len(bs))
+	log.Debug(ctx, "converged segments", "tries", i, "size", len(bs))
 	return currentBs, nil
 }

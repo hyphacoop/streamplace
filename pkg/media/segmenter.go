@@ -178,7 +178,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 		if err != nil {
 			return fmt.Errorf("error calling SignMP4: %w", err)
 		}
-		log.Log(ctx, "signed segment", "size", len(signedBs))
+		log.Debug(ctx, "signed segment", "size", len(signedBs))
 		err = mm.ValidateMP4(ctx, bytes.NewReader(signedBs), true)
 		if err != nil {
 			return fmt.Errorf("error validating just-signed segment: %w", err)
