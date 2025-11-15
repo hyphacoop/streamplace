@@ -202,7 +202,7 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 
 	src := app.SrcFromElement(appSrc)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: ReaderNeedDataIncremental(ctx, bytes.NewReader(seg.Data)),
+		NeedDataFunc: ReaderNeedData(ctx, bytes.NewReader(seg.Data)),
 	})
 
 	return bin, nil
