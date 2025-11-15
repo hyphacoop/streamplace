@@ -12,15 +12,29 @@ import (
 	"stream.place/streamplace/pkg/crypto/spkey"
 	"stream.place/streamplace/pkg/globalerror"
 	"stream.place/streamplace/pkg/rtcrec"
+	"stream.place/streamplace/test/remote"
 )
+
+var RTCRecTestCases = []struct {
+	fatalErrors bool
+	fixture     string
+}{
+	{
+		fatalErrors: false,
+		fixture:     getFixture("intermittent-tracks.cbor"),
+	},
+	{
+		fatalErrors: true,
+		fixture:     remote.RemoteFixture("6a1fb84e3c23405fc53161f59d5b837839c4889fc1a96533c82fb44fafc51d27/2025-11-14T22-41-20-399Z.cbor"),
+	},
+}
 
 func TestRTCRecording(t *testing.T) {
 	withNoGSTLeaks(t, func() {
-		// previous := FatalSegmentationErrors
-		// FatalSegmentationErrors = true
-		// defer func() {
-		// 	FatalSegmentationErrors = previous
-		// }()
+		previous := FatalSegmentationErrors
+		defer func() {
+			FatalSegmentationErrors = previous
+		}()
 		globalerror.GlobalErrors = []error{}
 		ctx := context.Background()
 		dir, err := os.MkdirTemp("", "rtcrec-test-*")
@@ -40,19 +54,22 @@ func TestRTCRecording(t *testing.T) {
 		require.NoError(t, err)
 		// ctx := context.Background()
 		// mm, ms := getStaticTestMediaManager(t)
-		fd, err := os.Open(getFixture("intermittent-tracks.cbor"))
-		require.NoError(t, err)
-		defer fd.Close()
-		pc, err := rtcrec.NewReplayPeerConnection(ctx, fd)
-		require.NoError(t, err)
-		done := make(chan error)
-		_, err = mm.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, done)
-		require.NoError(t, err)
-		// fmt.Println(answer.SDP)
-		pipelineError := <-done
-		require.NoError(t, pipelineError)
-		for _, err := range globalerror.GlobalErrors {
-			fmt.Printf("got error, non-fatal for now: %v\n", err)
+		for _, testCase := range RTCRecTestCases {
+			FatalSegmentationErrors = testCase.fatalErrors
+			fd, err := os.Open(testCase.fixture)
+			require.NoError(t, err)
+			defer fd.Close()
+			pc, err := rtcrec.NewReplayPeerConnection(ctx, fd)
+			require.NoError(t, err)
+			done := make(chan error)
+			_, err = mm.WebRTCIngest(ctx, &webrtc.SessionDescription{SDP: "placeholder"}, mediaSigner, pc, done)
+			require.NoError(t, err)
+			// fmt.Println(answer.SDP)
+			pipelineError := <-done
+			require.NoError(t, pipelineError)
+			for _, err := range globalerror.GlobalErrors {
+				fmt.Printf("got error, non-fatal for now: %v\n", err)
+			}
 		}
 	})
 }
