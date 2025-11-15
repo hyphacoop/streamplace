@@ -127,6 +127,15 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 					<-previousSegCh
 				}
 				err := func() error {
+					// rewrite segmented audio timestamps to work around bug where the last
+					// audio segment gets no duration and then gets dropped upon rewrite
+					smearedBuf := &bytes.Buffer{}
+					err := RewriteAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf, false)
+					if err != nil {
+						return fmt.Errorf("error smearing audio timestamps: %w", err)
+					}
+					bs = smearedBuf.Bytes()
+
 					bs, err := ConvergeSegment(ctx, cli, bs, now, streamer)
 					if err != nil {
 						return fmt.Errorf("error converging segment: %w", err)
@@ -159,7 +168,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 	return SegmentElem(ctx, mm.cli, ms.Streamer(), func(ctx context.Context, bs []byte, now int64) error {
 		if mm.cli.SmearAudio {
 			smearedBuf := &bytes.Buffer{}
-			err := SmearAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf)
+			err := RewriteAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf, true)
 			if err != nil {
 				return fmt.Errorf("error smearing audio timestamps: %w", err)
 			}

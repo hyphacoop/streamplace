@@ -8,6 +8,7 @@ import (
 
 	"github.com/pion/webrtc/v4"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/spkey"
 	"stream.place/streamplace/pkg/globalerror"
@@ -59,6 +60,8 @@ func TestRTCRecording(t *testing.T) {
 		// mm, ms := getStaticTestMediaManager(t)
 		for _, testCase := range RTCRecTestCases {
 			t.Run(testCase.name, func(t *testing.T) {
+				cur := goleak.IgnoreCurrent()
+				defer goleak.VerifyNone(t, cur)
 				FatalSegmentationErrors = testCase.fatalErrors
 				fd, err := os.Open(testCase.fixture)
 				require.NoError(t, err)

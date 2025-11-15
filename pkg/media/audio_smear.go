@@ -28,7 +28,7 @@ type SegmentData struct {
 	VideoCaps string
 }
 
-func SmearAudioTimestamps(ctx context.Context, input io.Reader, output io.Writer) error {
+func RewriteAudioTimestamps(ctx context.Context, input io.Reader, output io.Writer, doSmear bool) error {
 	bs, err := io.ReadAll(input)
 	if err != nil {
 		return err
@@ -46,9 +46,11 @@ func SmearAudioTimestamps(ctx context.Context, input io.Reader, output io.Writer
 		return err
 	}
 
-	err = seg.Normalize(ctx)
-	if err != nil {
-		return err
+	if doSmear {
+		err = seg.Normalize(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return JoinAudioVideo(ctx, seg, output)
