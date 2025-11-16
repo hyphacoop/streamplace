@@ -127,10 +127,14 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 					<-previousSegCh
 				}
 				err := func() error {
+					_, err := ParseSegmentMediaData(ctx, bs)
+					if err != nil {
+						return fmt.Errorf("error parsing segment media data: %w", err)
+					}
 					// rewrite segmented audio timestamps to work around bug where the last
 					// audio segment gets no duration and then gets dropped upon rewrite
 					smearedBuf := &bytes.Buffer{}
-					err := RewriteAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf, false)
+					err = RewriteAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf, false)
 					if err != nil {
 						return fmt.Errorf("error smearing audio timestamps: %w", err)
 					}

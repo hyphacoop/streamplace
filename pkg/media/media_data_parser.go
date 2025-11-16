@@ -44,16 +44,30 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 
 	src := app.SrcFromElement(appsrc)
 	src.SetCallbacks(&app.SourceCallbacks{
-		NeedDataFunc: ReaderNeedData(ctx, bytes.NewReader(mp4bs)),
+		NeedDataFunc: ReaderNeedDataIncremental(ctx, bytes.NewReader(mp4bs)),
 	})
 
+	padsAdded := 0
+
 	onPadAdded := func(element *gst.Element, pad *gst.Pad) {
+		padsAdded += 1
 		caps := pad.GetCurrentCaps()
 		if caps == nil {
 			log.Warn(ctx, "Unable to get pad caps")
 			cancel()
 			return
 		}
+
+		pad.AddProbe(gst.PadProbeTypeEventBoth, func(pad *gst.Pad, info *gst.PadProbeInfo) gst.PadProbeReturn {
+			if info.GetEvent().Type() != gst.EventTypeEOS {
+				return gst.PadProbeOK
+			}
+			if padsAdded != 2 {
+				err := fmt.Errorf("expected 2 tracks in input, got %d", padsAdded)
+				pipeline.Error(err.Error(), err)
+			}
+			return gst.PadProbeRemove
+		})
 
 		structure := caps.GetStructureAt(0)
 		if structure == nil {
