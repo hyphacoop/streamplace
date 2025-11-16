@@ -40,48 +40,64 @@ func makeServerMediaSigner(t *testing.T) *MediaSignerLocal {
 }
 
 func TestSegmentRoundtrip(t *testing.T) {
-	withNoGSTLeaks(t, func() {
-		tempDir, err := os.MkdirTemp("", "ingredient_test")
-		require.NoError(t, err)
-		segments := remote.RemoteArchive("4563c7b48c0ca02c3fc87bbe6f1e63a743656e465a82bec0af75ef7eead04a23/1-minute-of-signed-segments.tar.gz")
-		getTestVids := func() []io.ReadSeeker {
-			testVids := []io.ReadSeeker{}
-			segEntries, err := os.ReadDir(segments)
-			require.NoError(t, err)
-			for _, segEntry := range segEntries {
-				if segEntry.Type().IsRegular() {
-					if !strings.HasSuffix(segEntry.Name(), ".mp4") {
-						continue
-					}
-					fd, err := os.Open(filepath.Join(segments, segEntry.Name()))
+	testCases := []struct {
+		name    string
+		fixture string
+	}{
+		{
+			name:    "OneMinute",
+			fixture: remote.RemoteArchive("4563c7b48c0ca02c3fc87bbe6f1e63a743656e465a82bec0af75ef7eead04a23/1-minute-of-signed-segments.tar.gz"),
+		},
+		{
+			name:    "ThreeSegs",
+			fixture: remote.RemoteArchive("c21e9352e72ca0729c66af2fcabec1b8997b509601241e8d38d5728f9687386b/threesegs.tar.gz"),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			withNoGSTLeaks(t, func() {
+				tempDir, err := os.MkdirTemp("", "ingredient_test")
+				require.NoError(t, err)
+				getTestVids := func() []io.ReadSeeker {
+					testVids := []io.ReadSeeker{}
+					segEntries, err := os.ReadDir(testCase.fixture)
 					require.NoError(t, err)
-					testVids = append(testVids, fd)
+					for _, segEntry := range segEntries {
+						if segEntry.Type().IsRegular() {
+							if !strings.HasSuffix(segEntry.Name(), ".mp4") {
+								continue
+							}
+							fd, err := os.Open(filepath.Join(testCase.fixture, segEntry.Name()))
+							require.NoError(t, err)
+							testVids = append(testVids, fd)
+						}
+					}
+					return testVids
 				}
-			}
-			return testVids
-		}
 
-		firstReport, err := makeSegDirReport(t, segments)
-		require.NoError(t, err)
-		ms := makeServerMediaSigner(t)
-		rws := aqio.NewReadWriteSeeker([]byte{})
-		err = CombineSegments(context.Background(), getTestVids(), ms, rws)
-		require.NoError(t, err)
+				firstReport, err := makeSegDirReport(t, testCase.fixture)
+				require.NoError(t, err)
+				ms := makeServerMediaSigner(t)
+				rws := aqio.NewReadWriteSeeker([]byte{})
+				err = CombineSegments(context.Background(), getTestVids(), ms, rws)
+				require.NoError(t, err)
 
-		_, err = rws.Seek(0, io.SeekStart)
-		require.NoError(t, err)
+				_, err = rws.Seek(0, io.SeekStart)
+				require.NoError(t, err)
 
-		signedSplitSegDir := makeTestSubdir(t, tempDir, "signed-split-segments")
-		err = SplitSegments(context.Background(), &config.CLI{}, rws, func(fname string) ReadWriteSeekCloser {
-			fd, err := os.Create(filepath.Join(signedSplitSegDir, fname))
-			require.NoError(t, err)
-			return fd
+				signedSplitSegDir := makeTestSubdir(t, tempDir, "signed-split-segments")
+				err = SplitSegments(context.Background(), &config.CLI{}, rws, func(fname string) ReadWriteSeekCloser {
+					fd, err := os.Create(filepath.Join(signedSplitSegDir, fname))
+					require.NoError(t, err)
+					return fd
+				})
+				require.NoError(t, err)
+				secondReport, err := makeSegDirReport(t, signedSplitSegDir)
+				require.NoError(t, err)
+				require.NoError(t, firstReport.CheckEquals(secondReport), "signed split segments are not equal to original segments")
+			})
 		})
-		require.NoError(t, err)
-		secondReport, err := makeSegDirReport(t, signedSplitSegDir)
-		require.NoError(t, err)
-		require.NoError(t, firstReport.CheckEquals(secondReport), "signed split segments are not equal to original segments")
-	})
+	}
 }
 
 func makeTestSubdir(t *testing.T, tempDir, subdir string) string {

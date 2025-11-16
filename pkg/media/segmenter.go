@@ -150,7 +150,7 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 				if err != nil {
 					log.Error(ctx, "error in segmenter", "error", err)
 					if FatalSegmentationErrors {
-						elem.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "error in segmenter", err.Error())
+						sink.ErrorMessage(gst.DomainCore, gst.CoreErrorFailed, "error in segmenter", err.Error())
 						return
 					}
 				}
