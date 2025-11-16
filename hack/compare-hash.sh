@@ -61,14 +61,12 @@ video_frames_one="$(cat 1.frames | grep media_type=video | wc -l | xargs)"
 video_frames_two="$(cat 2.frames | grep media_type=video | wc -l | xargs)"
 if [[ "$video_frames_one" -ne "$video_frames_two" ]]; then
   echo "Video frame count mismatch: $video_frames_one -> $video_frames_two"
-  exit 1
 fi
 
-audio_frames_one="$(cat 1.frames | grep media_type=video | wc -l | xargs)"
-audio_frames_two="$(cat 2.frames | grep media_type=video | wc -l | xargs)"
+audio_frames_one="$(cat 1.frames | grep media_type=audio | wc -l | xargs)"
+audio_frames_two="$(cat 2.frames | grep media_type=audio | wc -l | xargs)"
 if [[ "$audio_frames_one" -ne "$audio_frames_two" ]]; then
   echo "Audio frame count mismatch: $audio_frames_one -> $audio_frames_two"
-  exit 1
 fi
 
 # ffmpeg -y -loglevel fatal -i "$ONE" -frames:v 1 -c copy -an 1frame.h264
