@@ -2,6 +2,7 @@ package media
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/rtcrec"
 )
+
+var ErrPeerConnectionClosed = errors.New("peer connection closed")
 
 // This function remains in scope for the duration of a single users' playback
 func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionDescription, signer MediaSigner, peerConnection rtcrec.PeerConnection, done chan error) (*webrtc.SessionDescription, error) {
@@ -182,8 +185,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 				// Use webrtc.PeerConnectionStateDisconnected if you are interested in detecting faster timeout.
 				// Note that the PeerConnection may come back from PeerConnectionStateDisconnected.
 				log.Log(ctx, "Peer Connection has ended, exiting", "state", s.String())
-				err := fmt.Errorf("Peer Connection has ended, exiting: %s", s.String())
-				pipeline.Error(err.Error(), err)
+				pipeline.Error(ErrPeerConnectionClosed.Error(), ErrPeerConnectionClosed)
 			}
 		})
 
