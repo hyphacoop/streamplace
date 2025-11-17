@@ -684,17 +684,19 @@ export const ContentMetadataForm = forwardRef<any, ContentMetadataFormProps>(
                       ]}
                     >
                       <Text
+                        leading="tight"
                         style={[
                           text.neutral[300],
                           {
                             minWidth: 100,
+                            maxWidth: 100,
                             textAlign: "left",
                             paddingBottom: 8,
                             fontSize: 14,
                           },
                         ]}
                       >
-                        Allowed<br></br>Broadcasters
+                        Allowed Broadcasters
                       </Text>
                       <View style={[flex.values[1]]}>
                         <Text

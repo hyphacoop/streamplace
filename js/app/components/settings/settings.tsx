@@ -217,7 +217,7 @@ const DebugRecording = () => {
   const isReady = useIsReady();
   const serverSettings = useServerSettings();
   const { url } = useStreamplaceNode();
-  const { t } = useTranslation();
+  const { t } = useTranslation("settings");
   const debugRecordingOn = serverSettings?.debugRecording === true;
 
   useEffect(() => {

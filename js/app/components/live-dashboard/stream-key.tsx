@@ -3,9 +3,10 @@ import {
   Button,
   Code,
   Row,
-  View,
+  Text,
   useTheme,
   useToast,
+  View,
 } from "@streamplace/components";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
@@ -85,13 +86,13 @@ export function StreamKeyScreen() {
           <FormRow>
             <Label>Output Settings</Label>
             <Content>
-              <Body>
-                Output mode: Advanced
-                <br />
+              <Text>Output mode: Advanced</Text>
+              <Text>
                 Keyframe Interval: <Code>1s</Code>
-                <br />
+              </Text>
+              <Text>
                 x264 Options: <Code>bframes=0</Code>
-              </Body>
+              </Text>
             </Content>
           </FormRow>
         </View>
