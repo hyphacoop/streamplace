@@ -2,7 +2,6 @@ package media
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -15,8 +14,6 @@ import (
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/rtcrec"
 )
-
-var ErrPeerConnectionClosed = errors.New("peer connection closed")
 
 // This function remains in scope for the duration of a single users' playback
 func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionDescription, signer MediaSigner, peerConnection rtcrec.PeerConnection, done chan error) (*webrtc.SessionDescription, error) {
@@ -130,8 +127,18 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 
 	// Setup complete! Now we boot up streaming in the background while returning the SDP offer to the user.
 	go func() {
-		pipelineErrorChan := make(chan error)
+		busErrorChan := make(chan error)
+		go func() {
+			err := HandleBusMessages(ctx, pipeline)
+			if err != nil {
+				log.Log(ctx, "pipeline error", "error", err)
+			}
+			busErrorChan <- err
+			cancel()
+		}()
+
 		defer cancel()
+		defer func() { done <- <-busErrorChan }()
 
 		go func() {
 			ticker := time.NewTicker(time.Second * 1)
@@ -144,10 +151,6 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 					log.Debug(ctx, "pipeline state", "state", state)
 				}
 			}
-		}()
-
-		go func() {
-			pipelineErrorChan <- HandleBusMessages(ctx, pipeline)
 		}()
 
 		// subscription to bus messages for key revocation
@@ -166,7 +169,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 		err = pipeline.SetState(gst.StatePlaying)
 		if err != nil {
 			log.Log(ctx, "failed to set pipeline state", "error", err)
-			return
+			cancel()
 		}
 
 		// Set the handler for ICE connection state
@@ -180,12 +183,12 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 		peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
 			log.Log(ctx, "Peer Connection State has changed", "state", s.String())
 
-			if s == webrtc.PeerConnectionStateFailed || s == webrtc.PeerConnectionStateDisconnected || s == webrtc.PeerConnectionStateClosed {
+			if s == webrtc.PeerConnectionStateFailed || s == webrtc.PeerConnectionStateDisconnected {
 				// Wait until PeerConnection has had no network activity for 30 seconds or another failure. It may be reconnected using an ICE Restart.
 				// Use webrtc.PeerConnectionStateDisconnected if you are interested in detecting faster timeout.
 				// Note that the PeerConnection may come back from PeerConnectionStateDisconnected.
 				log.Log(ctx, "Peer Connection has ended, exiting", "state", s.String())
-				pipeline.Error(ErrPeerConnectionClosed.Error(), ErrPeerConnectionClosed)
+				cancel()
 			}
 		})
 
@@ -206,7 +209,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 							rtcpSendErr := peerConnection.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(track.SSRC())}})
 							if rtcpSendErr != nil {
 								log.Log(ctx, "failed to send rtcp packet", "error", rtcpSendErr)
-								pipeline.Error(fmt.Sprintf("failed to send rtcp packet: %s", rtcpSendErr.Error()), nil)
+								cancel()
 								return
 							}
 						}
@@ -220,13 +223,12 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 				buf := make([]byte, 1400)
 				for {
 					i, _, readErr := track.Read(buf)
-					if ctx.Err() != nil {
-						return
-					}
 					if readErr != nil {
 						log.Log(ctx, "failed to read track", "error", readErr)
-						err := fmt.Errorf("failed to read track: %s", readErr.Error())
-						pipeline.Error(err.Error(), err)
+						cancel()
+						return
+					}
+					if ctx.Err() != nil {
 						return
 					}
 					if !videoFirst {
@@ -241,8 +243,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 					ret := videoSrc.PushBuffer(gbuf)
 					if ret != gst.FlowOK {
 						log.Log(ctx, "failed to push buffer", "error", ret)
-						err := fmt.Errorf("failed to push buffer: %s", ret.String())
-						pipeline.Error(err.Error(), err)
+						cancel()
 						return
 					}
 					// state := pipeline.GetCurrentState()
@@ -261,13 +262,12 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 				buf := make([]byte, 1400)
 				for {
 					i, _, readErr := track.Read(buf)
-					if ctx.Err() != nil {
-						return
-					}
 					if readErr != nil {
 						log.Log(ctx, "failed to read track", "error", readErr)
-						err := fmt.Errorf("failed to read track: %s", readErr.Error())
-						pipeline.Error(err.Error(), err)
+						cancel()
+						return
+					}
+					if ctx.Err() != nil {
 						return
 					}
 					if !audioFirst {
@@ -281,8 +281,7 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 					ret := audioSrc.PushBuffer(gbuf)
 					if ret != gst.FlowOK {
 						log.Log(ctx, "failed to push buffer", "error", ret)
-						err := fmt.Errorf("failed to push buffer: %s", ret.String())
-						pipeline.Error(err.Error(), err)
+						cancel()
 						return
 					}
 					// state := pipeline.GetCurrentState()
@@ -295,34 +294,22 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 			}
 		})
 
-		defer func() {
-			err = pipeline.Remove(signerElem)
-			if err != nil {
-				log.Log(ctx, "failed to remove signer element from pipeline", "error", err)
-			}
-			if err := pipeline.BlockSetState(gst.StateNull); err != nil {
-				log.Log(ctx, "failed to set pipeline state to null", "error", err)
-			}
+		<-ctx.Done()
 
-			if err := audioSrcElem.SetState(gst.StateNull); err != nil {
-				log.Log(ctx, "failed to set audioSrcElem state to null", "error", err)
-			}
+		if err := pipeline.BlockSetState(gst.StateNull); err != nil {
+			log.Log(ctx, "failed to set pipeline state to null", "error", err)
+		}
 
-			if err := videoSrcElem.SetState(gst.StateNull); err != nil {
-				log.Log(ctx, "failed to set videoSrcElem state to null", "error", err)
-			}
-			err = signerElem.BlockSetState(gst.StateNull)
-			if err != nil {
-				log.Log(ctx, "failed to set signer element state to null", "error", err)
-			}
-			signerElem = nil
-		}()
+		if err := audioSrcElem.SetState(gst.StateNull); err != nil {
+			log.Log(ctx, "failed to set audioSrcElem state to null", "error", err)
+		}
 
-		pipelineErr := <-pipelineErrorChan
+		if err := videoSrcElem.SetState(gst.StateNull); err != nil {
+			log.Log(ctx, "failed to set videoSrcElem state to null", "error", err)
+		}
 
 		log.Log(ctx, "webrtc ingest pipeline done")
 
-		done <- pipelineErr
 	}()
 	select {
 	case <-gatherComplete:

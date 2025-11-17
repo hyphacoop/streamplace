@@ -2,7 +2,6 @@ package media
 
 import (
 	"context"
-	"errors"
 	"os"
 	"testing"
 
@@ -26,7 +25,7 @@ var RTCRecTestCases = []struct {
 		name:             "IntermittentTracks",
 		fatalErrors:      false,
 		fixture:          getFixture("intermittent-tracks.cbor"),
-		expectedSegments: 2,
+		expectedSegments: 1,
 	},
 	{
 		name:             "SegmentConvergenceIssues",
@@ -90,9 +89,8 @@ func TestRTCRecording(t *testing.T) {
 				require.NoError(t, err)
 				// fmt.Println(answer.SDP)
 				pipelineError := <-done
-				if err != nil && !errors.Is(err, ErrPeerConnectionClosed) {
-					require.NoError(t, pipelineError)
-				}
+				require.ErrorIs(t, pipelineError, context.Canceled)
+
 				// the segment getting ingested is ever so slightly after the done, which doesn't matter except in tests, just do a backoff for checking
 				require.Equal(t, testCase.expectedSegments, segCount)
 				ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
