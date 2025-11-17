@@ -54,7 +54,7 @@ func TestMediaDataParserBFrames(t *testing.T) {
 
 func TestMediaDataParserVideoHeaderWithNoVideo(t *testing.T) {
 	withNoGSTLeaks(t, func() {
-		inputFile, err := os.Open("/Users/iameli/testvids/stuck-converge/2025-11-16T23-05-04-512Z-converge-segment-did-key-zQ3shkzEYN8UrJoRAGS6pgPodXjdg8kF2fXQNGfJhpg3x4KJT.mp4")
+		inputFile, err := os.Open(remote.RemoteFixture("0aa38ed08bb6b6b0ae5f4891a97244717e2c952d5ca878e34450729770f7ca53/2025-11-16T23-05-04-512Z-converge-segment-did-key-zQ3shkzEYN8UrJoRAGS6pgPodXjdg8kF2fXQNGfJhpg3x4KJT.mp4"))
 		require.NoError(t, err)
 		defer inputFile.Close()
 		bs, err := io.ReadAll(inputFile)

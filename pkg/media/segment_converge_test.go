@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/test/remote"
 )
 
 type ConvergeCase struct {
@@ -18,16 +19,20 @@ type ConvergeCase struct {
 var ConvergeCases = []ConvergeCase{
 	{
 		Name: "Good",
-		File: "/Users/iameli/testvids/determinism/2025-11-14T21-10-51-750Z-attempt-000.mp4",
+		File: remote.RemoteFixture("dbce5682132f9f1a8d92e1dcd66da99e4ae6eefd7429e4b168ed05d721a80379/2025-11-14T21-10-51-750Z-attempt-000.mp4"),
 	},
 	{
 		Name: "Evil",
-		File: "/Users/iameli/testvids/determinism/2025-11-14T21-10-57-754Z-attempt-000.mp4",
+		File: remote.RemoteFixture("d81395168f8b2f3361d8e6d3443eeb678285a1973dc0b31e966cb81f5916db48/2025-11-14T21-10-57-754Z-attempt-000.mp4"),
 	},
 	{
 		Name: "Stuck",
-		File: "/Users/iameli/testvids/stuck-converge/2025-11-17T00-06-43-011Z-converge-segment-did-key-zQ3shfWQC2f6ZT2HV8GgF2tPqXnJy782WEpEDb4BGeaFWcT17.mp4",
+		File: remote.RemoteFixture("77e32825eaa9dfb8f6c7bbe3cb21213ffa01c1dc0d041f8e3e9cc4d107c95f16/2025-11-17T01-08-56-070Z-converge-segment-did-key-zQ3shX7nQpEqXEp3XFSPkS7mtUjQ3S1MNvxrEP2HeiwyPqmoz.mp4"),
 	},
+	// {
+	// 	Name: "CrashedPipeline",
+	// 	File: "/Users/iameli/testvids/stuck-converge/2025-11-17T01-08-56-070Z-converge-segment-did-key-zQ3shX7nQpEqXEp3XFSPkS7mtUjQ3S1MNvxrEP2HeiwyPqmoz.mp4",
+	// },
 }
 
 func TestConvergeSegment(t *testing.T) {
