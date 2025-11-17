@@ -233,7 +233,20 @@ func ToBuffers(ctx context.Context, input io.Reader) (*SegmentData, error) {
 		return nil, fmt.Errorf("failed to set pipeline state: %w", err)
 	}
 
-	return &seg, <-errCh
+	pipelineErr := <-errCh
+
+	if pipelineErr != nil {
+		return nil, fmt.Errorf("pipeline error: %w", pipelineErr)
+	}
+
+	if len(seg.Video) == 0 {
+		return nil, fmt.Errorf("no video segments")
+	}
+	if len(seg.Audio) == 0 {
+		return nil, fmt.Errorf("no audio segments")
+	}
+
+	return &seg, nil
 }
 
 func JoinAudioVideo(ctx context.Context, seg *SegmentData, output io.Writer) error {

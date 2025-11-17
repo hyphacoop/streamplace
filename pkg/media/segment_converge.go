@@ -20,6 +20,7 @@ var MaxSegmentTries = 10
 // run this segment through the segmenter/splitter until it comes out the
 // same, meaning we can cleanly get it in and out of a concatenated mp4 file
 func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64, streamer string) ([]byte, error) {
+	cli.DumpDebugSegment(ctx, fmt.Sprintf("converge-segment-%s.mp4", streamer), bytes.NewReader(bs))
 	previousBs := []byte{}
 	currentBs := bs
 	i := 0

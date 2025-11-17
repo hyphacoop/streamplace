@@ -647,3 +647,31 @@ func (cli *CLI) MyDID() string {
 func (cli *CLI) HasHTTPS() bool {
 	return cli.Secure || cli.BehindHTTPSProxy
 }
+
+func (cli *CLI) DumpDebugSegment(ctx context.Context, name string, r io.Reader) {
+	if cli.SegmentDebugDir == "" {
+		return
+	}
+	go func() {
+		err := os.MkdirAll(cli.SegmentDebugDir, 0755)
+		if err != nil {
+			log.Error(ctx, "failed to create debug directory", "error", err)
+			return
+		}
+		now := aqtime.FromTime(time.Now())
+		outFile := filepath.Join(cli.SegmentDebugDir, fmt.Sprintf("%s-%s", now.FileSafeString(), strings.ReplaceAll(name, ":", "-")))
+		fd, err := os.Create(outFile)
+		if err != nil {
+			log.Error(ctx, "failed to create debug file", "error", err)
+			return
+		}
+		defer fd.Close()
+		log.Log(ctx, "writing debug file", "path", outFile)
+		_, err = io.Copy(fd, r)
+		if err != nil {
+			log.Error(ctx, "failed to copy debug file", "error", err)
+			return
+		}
+		log.Log(ctx, "wrote debug file", "path", outFile)
+	}()
+}

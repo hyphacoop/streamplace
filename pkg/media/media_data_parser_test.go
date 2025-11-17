@@ -51,3 +51,18 @@ func TestMediaDataParserBFrames(t *testing.T) {
 		require.Greater(t, mediaData.Duration, int64(0), "Video duration should not be empty")
 	})
 }
+
+func TestMediaDataParserVideoHeaderWithNoVideo(t *testing.T) {
+	withNoGSTLeaks(t, func() {
+		inputFile, err := os.Open("/Users/iameli/testvids/stuck-converge/2025-11-16T23-05-04-512Z-converge-segment-did-key-zQ3shkzEYN8UrJoRAGS6pgPodXjdg8kF2fXQNGfJhpg3x4KJT.mp4")
+		require.NoError(t, err)
+		defer inputFile.Close()
+		bs, err := io.ReadAll(inputFile)
+		require.NoError(t, err)
+
+		ctx := log.WithDebugValue(context.Background(), map[string]map[string]int{"GStreamerFunc": {"ParseSegmentMediaData": 9}})
+		mediaData, err := ParseSegmentMediaData(ctx, bs)
+		require.ErrorContains(t, err, "no video in segment")
+		require.Nil(t, mediaData)
+	})
+}

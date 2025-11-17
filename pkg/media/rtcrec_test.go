@@ -51,7 +51,7 @@ func TestRTCRecording(t *testing.T) {
 				defer os.RemoveAll(dir)
 				cli := &config.CLI{}
 				fs := cli.NewFlagSet("rtcrec-test")
-				err = cli.Parse(fs, []string{"--data-dir", dir, "-wide-open=true"})
+				err = cli.Parse(fs, []string{"--data-dir", dir, "-wide-open=true", "--segment-debug-dir", "/Users/iameli/testvids/stuck-converge"})
 				require.NoError(t, err)
 				mm, err := MakeMediaManager(context.Background(), cli, nil, nil, nil, nil)
 				require.NoError(t, err)

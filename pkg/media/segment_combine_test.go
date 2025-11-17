@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqio"
+	"stream.place/streamplace/pkg/log"
 )
 
 func TestClip(t *testing.T) {
@@ -26,6 +27,7 @@ func TestClip(t *testing.T) {
 }
 
 func innerTestClip(t *testing.T) error {
+	ctx := log.WithDebugValue(context.Background(), map[string]map[string]int{"func": {"ConcatDemuxBin": 9, "ConcatBin": 9}})
 	fName := getFixture("sample-segment.mp4")
 	inputFiles := []string{fName, fName, fName}
 	inputFds := make([]io.ReadSeeker, len(inputFiles))
@@ -37,7 +39,7 @@ func innerTestClip(t *testing.T) error {
 		inputFds[i] = fd
 	}
 	buf := aqio.NewReadWriteSeeker([]byte{})
-	err := CombineSegmentsUnsigned(context.Background(), inputFds, buf)
+	err := CombineSegmentsUnsigned(ctx, inputFds, buf)
 	require.NoError(t, err)
 	slice, err := buf.Bytes()
 	require.NoError(t, err)
