@@ -56,6 +56,9 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 
 	mq, err := gst.NewElementWithProperties("multiqueue", map[string]interface{}{
 		"name": "concat-demux-multiqueue",
+		// "max-size-time":    uint(0), // default: 2000000000, 2 seconds
+		// "max-size-bytes":   uint(0), // default: 10485760, 10MiB
+		// "max-size-buffers": uint(0), // default: 5, 5 buffers
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create multiqueue element: %w", err)
@@ -64,6 +67,18 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to add multiqueue to bin: %w", err)
 	}
+	// err = mq.SetProperty("max-size-time", uint64(200000000000))
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to set max-size-time: %w", err)
+	// }
+	// err = mq.SetProperty("max-size-bytes", uint(1048576000))
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to set max-size-bytes: %w", err)
+	// }
+	// err = mq.SetProperty("max-size-buffers", uint(500))
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to set max-size-buffers: %w", err)
+	// }
 
 	h264parse, err := gst.NewElementWithProperties("h264parse", map[string]interface{}{
 		"name":                "concat-demux-h264parse",
@@ -87,8 +102,8 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 	}
 
 	opusparse, err := gst.NewElementWithProperties("opusparse", map[string]interface{}{
-		"name": "concat-demux-opusparse",
-		// "disable-passthrough": true,
+		"name":                "concat-demux-opusparse",
+		"disable-passthrough": true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create opusparse element: %w", err)

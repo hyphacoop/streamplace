@@ -59,6 +59,20 @@ func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
 		return nil, fmt.Errorf("failed to add multiqueue to bin: %w", err)
 	}
 
+	// 10x default multiqueue size
+	err = mq.SetProperty("max-size-time", uint64(200000000000))
+	if err != nil {
+		return nil, fmt.Errorf("failed to set max-size-time: %w", err)
+	}
+	err = mq.SetProperty("max-size-bytes", uint(1048576000))
+	if err != nil {
+		return nil, fmt.Errorf("failed to set max-size-bytes: %w", err)
+	}
+	err = mq.SetProperty("max-size-buffers", uint(500))
+	if err != nil {
+		return nil, fmt.Errorf("failed to set max-size-buffers: %w", err)
+	}
+
 	mqVideoSink := mq.GetRequestPad("sink_%u")
 	if mqVideoSink == nil {
 		return nil, fmt.Errorf("video sink pad not found")
