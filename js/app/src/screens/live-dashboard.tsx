@@ -9,7 +9,6 @@ import Loading from "components/loading/loading";
 import { VideoElementProvider } from "contexts/VideoElementContext";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useCallback, useState } from "react";
-import { View } from "react-native";
 import { useIsReady, useUserProfile } from "store/hooks";
 
 const { flex, bg } = zero;
