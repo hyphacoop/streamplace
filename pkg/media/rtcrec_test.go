@@ -47,8 +47,6 @@ func TestRTCRecording(t *testing.T) {
 	for _, testCase := range RTCRecTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			withNoGSTLeaks(t, func() {
-				cur := goleak.IgnoreCurrent()
-				defer goleak.VerifyNone(t, cur)
 				ctx := context.Background()
 				dir, err := os.MkdirTemp("", "rtcrec-test-*")
 				require.NoError(t, err)
@@ -78,6 +76,9 @@ func TestRTCRecording(t *testing.T) {
 					}
 				}()
 
+				cur := goleak.IgnoreCurrent()
+				defer goleak.VerifyNone(t, cur)
+
 				FatalSegmentationErrors = testCase.fatalErrors
 				fd, err := os.Open(testCase.fixture)
 				require.NoError(t, err)
@@ -95,6 +96,7 @@ func TestRTCRecording(t *testing.T) {
 				// the segment getting ingested is ever so slightly after the done, which doesn't matter except in tests, just do a backoff for checking
 				require.Equal(t, testCase.expectedSegments, segCount)
 				ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+				defer ticker.Stop()
 				for i := 0; i < 10; i++ {
 					if segCount == testCase.expectedSegments {
 						break

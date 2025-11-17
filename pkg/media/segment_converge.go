@@ -21,6 +21,23 @@ var MaxSegmentTries = 10
 // same, meaning we can cleanly get it in and out of a concatenated mp4 file
 func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64, streamer string) ([]byte, error) {
 	cli.DumpDebugSegment(ctx, fmt.Sprintf("converge-segment-%s.mp4", streamer), bytes.NewReader(bs))
+
+	log.Debug(ctx, "parsing segment media data", "size", len(bs))
+	_, err := ParseSegmentMediaData(ctx, bs)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing segment media data: %w", err)
+	}
+	// rewrite segmented audio timestamps to work around bug where the last
+	// audio segment gets no duration and then gets dropped upon rewrite
+	smearedBuf := &bytes.Buffer{}
+	log.Debug(ctx, "rewriting audio timestamps", "size", len(bs))
+	err = RewriteAudioTimestamps(ctx, cli, bytes.NewReader(bs), smearedBuf, false)
+	if err != nil {
+		return nil, fmt.Errorf("error rewriting audio timestamps: %w", err)
+	}
+	bs = smearedBuf.Bytes()
+	log.Debug(ctx, "converging segment", "size", len(bs))
+
 	previousBs := []byte{}
 	currentBs := bs
 	i := 0
