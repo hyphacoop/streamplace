@@ -136,7 +136,7 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 					// audio segment gets no duration and then gets dropped upon rewrite
 					smearedBuf := &bytes.Buffer{}
 					log.Debug(ctx, "rewriting audio timestamps", "size", len(bs))
-					err = RewriteAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf, false)
+					err = RewriteAudioTimestamps(ctx, cli, bytes.NewReader(bs), smearedBuf, false)
 					if err != nil {
 						return fmt.Errorf("error rewriting audio timestamps: %w", err)
 					}
@@ -175,7 +175,7 @@ func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) 
 	return SegmentElem(ctx, mm.cli, ms.Streamer(), func(ctx context.Context, bs []byte, now int64) error {
 		if mm.cli.SmearAudio {
 			smearedBuf := &bytes.Buffer{}
-			err := RewriteAudioTimestamps(ctx, bytes.NewReader(bs), smearedBuf, true)
+			err := RewriteAudioTimestamps(ctx, mm.cli, bytes.NewReader(bs), smearedBuf, true)
 			if err != nil {
 				return fmt.Errorf("error smearing audio timestamps: %w", err)
 			}

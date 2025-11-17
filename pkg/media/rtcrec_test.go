@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pion/webrtc/v4"
 	"github.com/stretchr/testify/require"
 	"stream.place/streamplace/pkg/config"
@@ -89,6 +90,17 @@ func TestRTCRecording(t *testing.T) {
 				pipelineError := <-done
 				if err != nil && !errors.Is(err, ErrPeerConnectionClosed) {
 					require.NoError(t, pipelineError)
+				}
+				// the segment getting ingested is ever so slightly after the done, which doesn't matter except in tests, just do a backoff for checking
+				require.Equal(t, testCase.expectedSegments, segCount)
+				ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+				for i := 0; i < 10; i++ {
+					if segCount == testCase.expectedSegments {
+						break
+					}
+					if i < 9 {
+						<-ticker.C
+					}
 				}
 				require.Equal(t, testCase.expectedSegments, segCount)
 			})

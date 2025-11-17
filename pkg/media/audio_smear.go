@@ -5,13 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
 	"github.com/google/uuid"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 )
 
@@ -28,21 +28,14 @@ type SegmentData struct {
 	VideoCaps string
 }
 
-func RewriteAudioTimestamps(ctx context.Context, input io.Reader, output io.Writer, doSmear bool) error {
+func RewriteAudioTimestamps(ctx context.Context, cli *config.CLI, input io.Reader, output io.Writer, doSmear bool) error {
 	bs, err := io.ReadAll(input)
 	if err != nil {
 		return err
 	}
 	seg, err := ToBuffers(ctx, bytes.NewReader(bs))
 	if err != nil {
-		// Write the input bytes to a file for debugging
-		debugFile := fmt.Sprintf("audio_smear_debug_%s.mp4", uuid.New().String())
-		err = os.WriteFile(debugFile, bs, 0644)
-		if err != nil {
-			log.Log(ctx, "failed to write debug file", "error", err, "path", debugFile)
-		} else {
-			log.Log(ctx, "wrote debug file", "path", debugFile)
-		}
+		cli.DumpDebugSegment(ctx, "audio_smear_input", bytes.NewReader(bs))
 		return err
 	}
 
