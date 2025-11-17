@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"stream.place/streamplace/pkg/aqio"
 	"stream.place/streamplace/pkg/log"
+	"stream.place/streamplace/test/remote"
 )
 
 func TestCombineSegmentsUnsigned(t *testing.T) {
@@ -28,8 +29,12 @@ func TestCombineSegmentsUnsigned(t *testing.T) {
 
 func innerTestClip(t *testing.T) error {
 	ctx := log.WithDebugValue(context.Background(), map[string]map[string]int{"func": {"ConcatDemuxBin": 9, "ConcatBin": 9}})
-	fName := getFixture("sample-segment.mp4")
-	inputFiles := []string{fName, fName, fName}
+	dirname := remote.RemoteArchive("c21e9352e72ca0729c66af2fcabec1b8997b509601241e8d38d5728f9687386b/threesegs.tar.gz")
+	inputFiles := []string{
+		fmt.Sprintf("%s/2025-11-15T21-05-00-399Z.mp4", dirname),
+		fmt.Sprintf("%s/2025-11-15T21-05-01-385Z.mp4", dirname),
+		fmt.Sprintf("%s/2025-11-15T21-05-02-393Z.mp4", dirname),
+	}
 	inputFds := make([]io.ReadSeeker, len(inputFiles))
 	for i, fName := range inputFiles {
 		fd, err := os.Open(fName)
@@ -43,7 +48,6 @@ func innerTestClip(t *testing.T) error {
 	require.NoError(t, err)
 	slice, err := buf.Bytes()
 	require.NoError(t, err)
-	require.Greater(t, len(slice), 2900000)
-	require.Less(t, len(slice), 3100000)
+	require.Equal(t, 4725181, len(slice))
 	return nil
 }
