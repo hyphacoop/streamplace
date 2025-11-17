@@ -9,6 +9,7 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/pion/webrtc/v4"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/crypto/spkey"
 	"stream.place/streamplace/pkg/rtcrec"
@@ -46,6 +47,8 @@ func TestRTCRecording(t *testing.T) {
 	for _, testCase := range RTCRecTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			withNoGSTLeaks(t, func() {
+				cur := goleak.IgnoreCurrent()
+				defer goleak.VerifyNone(t, cur)
 				ctx := context.Background()
 				dir, err := os.MkdirTemp("", "rtcrec-test-*")
 				require.NoError(t, err)
@@ -75,8 +78,6 @@ func TestRTCRecording(t *testing.T) {
 					}
 				}()
 
-				// cur := goleak.IgnoreCurrent()
-				// defer goleak.VerifyNone(t, cur)
 				FatalSegmentationErrors = testCase.fatalErrors
 				fd, err := os.Open(testCase.fixture)
 				require.NoError(t, err)

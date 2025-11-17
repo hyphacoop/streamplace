@@ -13,7 +13,7 @@ import (
 	"stream.place/streamplace/pkg/log"
 )
 
-func TestClip(t *testing.T) {
+func TestCombineSegmentsUnsigned(t *testing.T) {
 	withNoGSTLeaks(t, func() {
 		g, _ := errgroup.WithContext(context.Background())
 		for range streamplaceTestCount {
