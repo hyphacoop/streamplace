@@ -125,9 +125,11 @@ webhooks-count = { $count ->
 }
 
 ## Webhook 事件
+activates-on = 觸發於：
 events-livestream = 直播串流事件
 events-chat = 聊天事件
 untitled-webhook = 未命名的 Webhook
+inactive = 停用
 
 ## 除錯錄製
 debug-recording = 除錯錄製

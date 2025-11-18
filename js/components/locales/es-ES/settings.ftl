@@ -132,9 +132,11 @@ webhooks-count = { $count ->
 }
 
 ## Eventos de Webhook
+activates-on = Activa en:
 events-livestream = Eventos de Transmisión en Directo
 events-chat = Eventos de Chat
 untitled-webhook = Webhook Sin Título
+inactive = Inactivo
 
 ## Grabación de Depuración
 debug-recording = Grabación de Depuración

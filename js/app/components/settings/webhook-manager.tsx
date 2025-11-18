@@ -3,6 +3,9 @@ import {
   Dialog,
   DialogFooter,
   Input,
+  MenuContainer,
+  MenuGroup,
+  MenuSeparator,
   ResponsiveDialog,
   Text,
   zero,
@@ -10,11 +13,18 @@ import {
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
 import AQLink from "components/aqlink";
 import Loading from "components/loading/loading";
-import { Edit3, Plus, RefreshCw, Trash2, X } from "lucide-react-native";
+import { Edit2, Plus, RefreshCw, Trash2, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, ScrollView, Switch, View } from "react-native";
-import { timeAgo } from "utils/timeAgo";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  Switch,
+  View,
+  VirtualizedList,
+} from "react-native";
+import { SettingsRowItem } from "./components/settings-navigation-item";
 
 const {
   atoms,
@@ -88,148 +98,103 @@ function WebhookRow({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
-  const { theme } = zero.useTheme();
+  const { theme, zero: z } = zero.useTheme();
   const { t } = useTranslation("settings");
   const isDiscord = webhook.url
     .toLowerCase()
     .startsWith("https://discord.com/api/webhooks");
 
   return (
-    <View
-      style={[
-        flex.shrink[1],
-        borders.width.thin,
-        borders.color.gray[200],
-        bg.neutral[800],
-        r.xl,
-        p[4],
-        mb[3],
-        layout.flex.column,
-        gap.all[3],
-        { opacity: isDeleting ? 0.5 : webhook.active ? 1 : 0.7 },
-      ]}
-    >
-      {/* Header */}
-      <View
-        style={[
-          layout.flex.row,
-          layout.flex.spaceBetween,
-          layout.flex.alignCenter,
-        ]}
-      >
-        <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
-          <View
-            style={[
-              w[3],
-              h[3],
-              r.full,
-              { backgroundColor: webhook.active ? "#22c55e" : "#6b7280" },
-            ]}
-          />
-          <Text style={[{ fontSize: 16, fontWeight: "600" }]}>
-            {webhook.name || "Untitled Webhook"}
-          </Text>
-          {isDiscord && (
-            <View style={[bg.indigo[800], px[2], r.full]}>
-              <Text style={[text.indigo[300], { fontSize: 12 }]}>Discord</Text>
+    <SettingsRowItem>
+      <View style={[zero.gap.row[1], zero.flex.values[1]]}>
+        {/* Name and Active Status */}
+        <View style={[zero.layout.flex.row, zero.layout.flex.alignCenter]}>
+          <Text size="lg">{webhook.name || t("untitled-webhook")}</Text>
+          {!webhook.active && (
+            <View style={[z.bg.muted, zero.px[2], zero.r.full, zero.ml[2]]}>
+              <Text size="sm" muted>
+                {t("inactive")}
+              </Text>
             </View>
           )}
         </View>
 
-        <View style={[layout.flex.row, gap.all[2]]}>
-          <Pressable
-            style={[
-              bg.blue[600],
-              p[2],
-              r.md,
-              layout.flex.center,
-              { minWidth: 32, minHeight: 32 },
-            ]}
-            onPress={() => onEdit(webhook)}
-            disabled={isDeleting}
-          >
-            <Edit3 size={16} color={theme.colors.text} />
-          </Pressable>
+        {/* Description */}
+        {webhook.description && (
+          <Text size="sm" color="muted">
+            {webhook.description}
+          </Text>
+        )}
 
-          <Pressable
-            style={[
-              bg.red[800],
-              p[2],
-              r.md,
-              layout.flex.center,
-              { minWidth: 32, minHeight: 32 },
-            ]}
-            onPress={() => onDelete(webhook.id)}
-            disabled={isDeleting}
-          >
-            <Trash2 size={16} color={theme.colors.text} />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Description */}
-      {webhook.description && (
-        <Text style={[text.gray[300], { fontSize: 14 }]}>
-          {webhook.description}
-        </Text>
-      )}
-
-      {/* URL */}
-      <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
-        <Text style={[text.gray[300], { fontSize: 12 }]}>URL:</Text>
-        <Text
-          style={[text.gray[400], { fontSize: 12, fontFamily: "monospace" }]}
-          numberOfLines={1}
+        {/* URL */}
+        <View
+          style={[
+            zero.layout.flex.row,
+            zero.layout.flex.alignCenter,
+            zero.gap.column[1],
+          ]}
         >
-          {webhook.url.length > 50
-            ? webhook.url.slice(0, 45) +
-              "..." +
-              webhook.url.slice(webhook.url.length - 5)
-            : webhook.url}
-        </Text>
-      </View>
+          <Text muted size="sm">
+            URL:
+          </Text>
+          <Text numberOfLines={1} ellipsizeMode="middle">
+            {webhook.url}
+          </Text>
+        </View>
 
-      {/* Events */}
-      <View style={[layout.flex.row, layout.flex.alignCenter, gap.all[2]]}>
-        <Text style={[text.gray[300], { fontSize: 12 }]}>Events:</Text>
-        {webhook.events.map((event, index) => (
-          <View key={event} style={[bg.blue[700], px[2], r.full]}>
-            <Text style={[text.blue[300], { fontSize: 11 }]}>
-              {EVENT_OPTIONS.find((opt) => opt.value === event)?.labelKey
-                ? t(EVENT_OPTIONS.find((opt) => opt.value === event)!.labelKey)
-                : event}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Status info */}
-      <View
-        style={[
-          layout.flex.row,
-          layout.flex.spaceBetween,
-          pt[2],
-          borders.top.width.thin,
-          borders.top.color.gray[100],
-        ]}
-      >
-        <Text style={[text.gray[400], { fontSize: 11 }]}>
-          Created {timeAgo(new Date(webhook.createdAt))}
-        </Text>
-        <View style={[layout.flex.row, gap.all[4]]}>
-          {webhook.errorCount !== undefined && webhook.errorCount > 0 && (
-            <Text style={[text.red[600], { fontSize: 11 }]}>
-              {webhook.errorCount} errors
-            </Text>
-          )}
-          {webhook.lastTriggered && (
-            <Text style={[text.gray[400], { fontSize: 11 }]}>
-              Last triggered {timeAgo(new Date(webhook.lastTriggered))}
-            </Text>
-          )}
+        {/* Events */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 8,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <Text size="sm" color="muted">
+            {t("activates-on")}
+          </Text>
+          {webhook.events.map((event) => (
+            <View
+              key={event}
+              style={[z.bg.muted, zero.px[2], zero.py[1], zero.r.full]}
+            >
+              <Text size="sm">{t(`events-${event}`)}</Text>
+            </View>
+          ))}
         </View>
       </View>
-    </View>
+
+      {/* Actions */}
+      <View style={{ flexDirection: "row", gap: 8, marginLeft: 12 }}>
+        <Pressable
+          onPress={() => onEdit(webhook)}
+          style={({ pressed }) => [
+            {
+              padding: 8,
+              borderRadius: 6,
+              backgroundColor: pressed ? "#ffffff08" : "transparent",
+            },
+          ]}
+        >
+          <Edit2 size={18} color={theme.colors.textMuted} />
+        </Pressable>
+        <Pressable
+          onPress={() => onDelete(webhook.id)}
+          disabled={isDeleting}
+          style={({ pressed }) => [
+            {
+              padding: 8,
+              borderRadius: 6,
+              backgroundColor: pressed ? "#ffffff08" : "transparent",
+              opacity: isDeleting ? 0.5 : 1,
+            },
+          ]}
+        >
+          <Trash2 size={18} color={theme.colors.destructive} />
+        </Pressable>
+      </View>
+    </SettingsRowItem>
   );
 }
 
@@ -819,91 +784,104 @@ export default function WebhookManager() {
   }
 
   return (
-    <View style={[flex.values[1], p[8]]}>
-      <ScrollView style={[flex.values[1]]}>
-        <View style={[{ maxWidth: 800 }, mx.auto]}>
-          {/* Header */}
-          <View style={[mb[6]]}>
-            <Text size="xl">{t("webhook-integrations")}</Text>
-            <Text size="lg" style={[text.gray[400], mb[4]]}>
-              {t("webhook-integrations-description")}
-            </Text>
-
-            <View
-              style={[
-                layout.flex.row,
-                layout.flex.justify.between,
-                gap.all[3],
-                w.percent[100],
-              ]}
-            >
-              <Button
-                onPress={handleCreate}
-                size="pill"
-                width="min"
-                leftIcon={<Plus color={theme.colors.text} />}
-              >
-                <Text>{t("create-webhook")}</Text>
-              </Button>
-
-              <Button
-                onPress={loadWebhooks}
-                disabled={loading}
-                leftIcon={<RefreshCw color={theme.colors.text} />}
-                size="pill"
-                width="min"
-                variant="secondary"
-              >
-                <Text>{t("refresh")}</Text>
-              </Button>
-            </View>
-          </View>
-
-          {/* Content */}
-          {loading ? (
-            <Loading />
-          ) : webhooks === null ? (
-            <View style={[layout.flex.center, mt[8]]}>
-              <Text style={[text.gray[600]]}>{t("failed-load-webhooks")}</Text>
-            </View>
-          ) : webhooks.length === 0 ? (
-            <View style={[layout.flex.center, mt[8]]}>
-              <Text style={[text.gray[600], mb[4], { fontSize: 16 }]}>
-                {t("no-webhooks-yet")}
-              </Text>
-              <Text
-                style={[
-                  text.gray[500],
-                  mb[6],
-                  { fontSize: 14, textAlign: "center" },
-                ]}
-              >
-                {t("create-first-webhook-description")}
-              </Text>
-              <AQLink to={{ screen: "LiveDashboard" }}>
-                <Text style={[text.blue[600], { fontSize: 14 }]}>
-                  {t("need-setup-live-dashboard")}
+    <>
+      <ScrollView>
+        <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[2]]}>
+          <View style={{ maxWidth: 800, width: "100%" }}>
+            {/* Header */}
+            <MenuContainer>
+              <View>
+                <Text size="xl">{t("webhook-integrations")}</Text>
+                <Text size="lg" style={[text.gray[400], { marginTop: 4 }]}>
+                  {t("webhook-integrations-description")}
                 </Text>
-              </AQLink>
-            </View>
-          ) : (
-            <>
-              <View style={[mb[4]]}>
-                <Text style={[text.gray[600], { fontSize: 14 }]}>
-                  {t("webhooks-count", { count: webhooks.length })}
+
+                <View
+                  style={[
+                    layout.flex.row,
+                    layout.flex.justify.start,
+                    gap.all[3],
+                    w.percent[100],
+                    mt[2],
+                  ]}
+                >
+                  <Button
+                    onPress={handleCreate}
+                    size="pill"
+                    width="min"
+                    leftIcon={<Plus color={theme.colors.text} />}
+                  >
+                    <Text>{t("create-webhook")}</Text>
+                  </Button>
+
+                  <Button
+                    onPress={loadWebhooks}
+                    disabled={loading}
+                    leftIcon={<RefreshCw color={theme.colors.text} />}
+                    size="pill"
+                    width="min"
+                    variant="secondary"
+                  >
+                    <Text>{t("refresh")}</Text>
+                  </Button>
+                </View>
+              </View>
+            </MenuContainer>
+
+            {/* Content */}
+            {loading ? (
+              <Loading />
+            ) : webhooks === null ? (
+              <View style={[layout.flex.center, mt[8]]}>
+                <Text style={[text.gray[600]]}>
+                  {t("failed-load-webhooks")}
                 </Text>
               </View>
-              {webhooks.map((webhook) => (
-                <WebhookRow
-                  key={webhook.id}
-                  webhook={webhook}
-                  onEdit={handleEdit}
-                  onDelete={deleteWebhook}
-                  isDeleting={deletingWebhooks.has(webhook.id)}
-                />
-              ))}
-            </>
-          )}
+            ) : webhooks.length === 0 ? (
+              <View style={[layout.flex.center, mt[8]]}>
+                <Text style={[text.gray[600], mb[4], { fontSize: 16 }]}>
+                  {t("no-webhooks-yet")}
+                </Text>
+                <Text
+                  style={[
+                    text.gray[500],
+                    mb[6],
+                    { fontSize: 14, textAlign: "center" },
+                  ]}
+                >
+                  {t("create-first-webhook-description")}
+                </Text>
+                <AQLink to={{ screen: "LiveDashboard" }}>
+                  <Text style={[text.blue[600], { fontSize: 14 }]}>
+                    {t("need-setup-live-dashboard")}
+                  </Text>
+                </AQLink>
+              </View>
+            ) : (
+              <MenuContainer>
+                <MenuGroup>
+                  <VirtualizedList
+                    data={webhooks}
+                    getItemCount={(data) => data.length}
+                    getItem={(data, index) => data[index]}
+                    keyExtractor={(item) => item.id}
+                    ItemSeparatorComponent={MenuSeparator}
+                    renderItem={(ri) => {
+                      let webhook = ri.item;
+                      return (
+                        <WebhookRow
+                          webhook={webhook}
+                          onEdit={handleEdit}
+                          onDelete={deleteWebhook}
+                          isDeleting={deletingWebhooks.has(webhook.id)}
+                        />
+                      );
+                    }}
+                  />
+                </MenuGroup>
+              </MenuContainer>
+            )}
+          </View>
         </View>
       </ScrollView>
 
@@ -974,6 +952,6 @@ export default function WebhookManager() {
           </Button>
         </View>
       </Dialog>
-    </View>
+    </>
   );
 }
