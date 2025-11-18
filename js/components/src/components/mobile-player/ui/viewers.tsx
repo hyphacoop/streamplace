@@ -1,7 +1,8 @@
 import { Eye } from "lucide-react-native";
 import * as atoms from "../../../lib/theme/atoms";
 import { useViewers } from "../../../livestream-store";
-import { Text, View } from "../../ui";
+import { View } from "../../ui";
+import ViewerCount from "./viewer-count";
 
 export function Viewers() {
   const viewers = useViewers();
@@ -19,21 +20,9 @@ export function DehydratedViewers({ viewers }: { viewers: number }) {
       ]}
     >
       <Eye color="#fd5050" />
-      <Text
-        leading="snug"
-        style={[
-          { color: "#fd5050" },
-          {
-            textShadowColor: "black",
-            textShadowRadius: 3,
-            lineHeight: 24,
-          },
-        ]}
-      >
-        {new Intl.NumberFormat(undefined, { notation: "compact" }).format(
-          viewers || 0,
-        )}
-      </Text>
+      <ViewerCount count={viewers} />
     </View>
   );
 }
+
+export default Viewers;
