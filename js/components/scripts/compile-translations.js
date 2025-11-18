@@ -101,7 +101,7 @@ function serializePlaceable(placeable) {
     for (const variant of expr.variants) {
       const key =
         variant.key.type === "Identifier"
-          ? variant.key.name
+          ? `[${variant.key.name}]`
           : `[${variant.key.value}]`;
 
       result += `\n   ${variant.default ? "*" : ""}${key} ${serializePattern(variant.value)}`;

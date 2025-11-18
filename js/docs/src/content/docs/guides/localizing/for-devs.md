@@ -340,4 +340,6 @@ const translationMap: Record<string, any> = {
 
 You can also
 [view the official Fluent docs](https://github.com/projectfluent/fluent/wiki/Good-Practices-for-Developers)
+and
+[the official syntax guide](https://projectfluent.org/fluent/guide/index.html)
 to learn how to write better Fluent messages.

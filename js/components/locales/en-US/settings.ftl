@@ -68,8 +68,10 @@ manage-keys = Manage Keys
 your-stream-pubkeys = Your Stream Public Keys
 no-keys = No keys configured
 pubkey-description = Public keys are paired with stream keys (used in streaming software) to sign and verify your stream
-keys-count_one = { $count } key
-keys-count_other = { $count } keys
+keys-count = { $count ->
+    [one] { $count } key
+   *[other] { $count } keys
+}
 
 ## Webhook Management
 webhooks = Webhooks
@@ -83,8 +85,10 @@ failed-load-webhooks = Failed to load webhooks
 webhook-will-no-longer-receive-events = This webhook will no longer receive events
 create-first-webhook-description = Create your first webhook to start receiving stream events
 example-captain-hook = Captain Hook
-webhooks-count_one = { $count } webhook
-webhooks-count_other = { $count } webhooks
+webhooks-count = { $count ->
+    [one] { $count } webhook
+   *[other] { $count } webhooks
+}
 
 ## Webhook Events
 events-livestream = Livestream Events

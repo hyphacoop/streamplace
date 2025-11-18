@@ -105,9 +105,12 @@ manage-keys = Gerenciar Chaves
 your-stream-pubkeys = Suas Chaves Públicas de Transmissão
 no-keys = Nenhuma chave configurada
 pubkey-description = Chaves públicas são emparelhadas com chaves de transmissão (usadas em software de streaming) para assinar e verificar sua transmissão
-keys-count_one = { $count } chave
-keys-count_many = { $count } chaves
-keys-count_other = { $count } chaves
+
+keys-count = { $count ->
+    [one] { $count } chave
+    [many] { $count } chaves
+   *[other] { $count } chaves
+}
 
 ## Gerenciamento de Webhooks
 webhooks = Webhooks
@@ -121,9 +124,10 @@ failed-load-webhooks = Falha ao carregar webhooks
 webhook-will-no-longer-receive-events = Este webhook não receberá mais eventos
 create-first-webhook-description = Crie seu primeiro webhook para começar a receber eventos de transmissão
 example-captain-hook = Capitão Gancho
-webhooks-count_one = { $count } webhook
-webhooks-count_many = { $count } webhooks
-webhooks-count_other = { $count } webhooks
+webhooks-count = { $count ->
+    [one] { $count } webhook
+   *[other] { $count } webhooks
+}
 
 ## Eventos de Webhook
 events-livestream = Eventos de Transmissão ao Vivo

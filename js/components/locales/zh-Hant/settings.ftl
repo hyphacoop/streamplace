@@ -106,7 +106,7 @@ manage-keys = 管理金鑰
 your-stream-pubkeys = 您的串流公開金鑰
 no-keys = 尚未設定金鑰
 pubkey-description = 公開金鑰與串流金鑰（用於串流軟體）配對以簽署和驗證您的串流
-keys-count_other = { $count } 個金鑰
+keys-count = { $count } 個金鑰
 
 ## Webhook 管理
 webhooks = Webhooks
@@ -120,7 +120,9 @@ failed-load-webhooks = 載入 webhook 失敗
 webhook-will-no-longer-receive-events = 此 webhook 將不再接收事件
 create-first-webhook-description = 建立您的第一個 webhook 以開始接收串流事件
 example-captain-hook = 虎克船長
-webhooks-count_other = { $count } 個 webhook
+webhooks-count = { $count ->
+   *[other] { $count } 個 webhook
+}
 
 ## Webhook 事件
 events-livestream = 直播串流事件

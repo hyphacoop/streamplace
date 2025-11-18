@@ -105,9 +105,11 @@ manage-keys = Gérer les Clés
 your-stream-pubkeys = Vos Clés Publiques de Diffusion
 no-keys = Aucune clé configurée
 pubkey-description = Les clés publiques sont associées aux clés de diffusion (utilisées dans le logiciel de streaming) pour signer et vérifier votre diffusion
-keys-count_one = { $count } clé
-keys-count_many = { $count } clés
-keys-count_other = { $count } clés
+keys-count = { $count ->
+    [one] { $count } clé
+    [many] { $count } clés
+   *[other] { $count } clés
+}
 
 ## Gestion des Webhooks
 webhooks = Webhooks
@@ -121,9 +123,10 @@ failed-load-webhooks = Échec du chargement des webhooks
 webhook-will-no-longer-receive-events = Ce webhook ne recevra plus d'événements
 create-first-webhook-description = Créez votre premier webhook pour commencer à recevoir des événements de diffusion
 example-captain-hook = Capitaine Crochet
-webhooks-count_one = { $count } webhook
-webhooks-count_many = { $count } webhooks
-webhooks-count_other = { $count } webhooks
+webhooks-count = { $count ->
+    [one] { $count } webhook
+   *[other] { $count } webhooks
+}
 
 ## Événements de Webhook
 events-livestream = Événements de Diffusion en Direct
