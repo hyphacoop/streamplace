@@ -78,7 +78,9 @@ export function AdvancedCategorySettings() {
                     variant="default"
                     numberOfLines={1}
                     multiline={false}
-                    placeholder={t("enter-custom-node-url")}
+                    placeholder={
+                      url != defaultUrl ? url : t("enter-custom-node-url")
+                    }
                     placeholderTextColor="#999"
                     onChangeText={setNewUrl}
                     onSubmitEditing={onSubmitUrl}
