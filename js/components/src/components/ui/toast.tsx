@@ -880,13 +880,18 @@ export function Toast({
                     width: "100%",
                   }}
                 >
-                  <Button variant={buttonTypeMap[variant]} onPress={onAction}>
+                  <Button
+                    width="min"
+                    variant={buttonTypeMap[variant]}
+                    onPress={onAction}
+                  >
                     <Text style={{ color: theme.colors.foreground }}>
                       {actionLabel}
                     </Text>
                   </Button>
                   <Button
                     variant="secondary"
+                    width="min"
                     onPress={() => onOpenChange(false)}
                   >
                     <Text style={{ color: theme.colors.foreground }}>

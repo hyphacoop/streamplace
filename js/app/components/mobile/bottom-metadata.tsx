@@ -114,22 +114,26 @@ export function BottomMetadata({
         </View>
 
         {/* Right side - Viewer count and collapse chat */}
-        <View style={[layout.flex.row, layout.flex.center, gap.all[4]]}>
+        <View style={[layout.flex.row, layout.flex.align.center, gap.all[4]]}>
           <PlayerUI.Viewers />
           <ShareSheet />
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={() => {
-              setShowChat(!showChat);
-            }}
-          >
-            {showChat ? (
-              <ChevronRight color="white" size={16} />
-            ) : (
-              <ChevronLeft color="white" size={16} />
-            )}
-          </Button>
+          <View>
+            <Button
+              variant="outline"
+              size="sm"
+              width="min"
+              style={{ aspectRatio: 1 }}
+              onPress={() => {
+                setShowChat(!showChat);
+              }}
+            >
+              {showChat ? (
+                <ChevronRight color="white" size={16} />
+              ) : (
+                <ChevronLeft color="white" size={16} />
+              )}
+            </Button>
+          </View>
         </View>
       </View>
 

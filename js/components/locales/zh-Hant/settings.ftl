@@ -28,6 +28,10 @@ save-button = 儲存
 ## Language Settings
 language-selection = 語言
 language-selection-description = 選擇您偏好的語言
+help-translate = 幫助我們翻譯播家
+help-translate-description = 我們正在尋找志願者協助將播家翻譯成更多語言。如果您有興趣，請在 Discord 或 GitHub 上與我們聯繫！
+currently-translating = 翻譯正在進行中
+currently-translating-description = 應用程式的某些部分可能看起來不完整。感謝您的耐心等待！
 
 ## Debug Recording
 debug-recording-title = 允許 { $host } 錄製您的直播串流以進行除錯和服務改善
@@ -76,3 +80,75 @@ continue = 繼續
 back = 返回
 next = 下一步
 finish = 完成
+
+## 導航類別
+about = 關於
+advanced = 進階
+danmu = 彈幕
+developer = 開發者
+languages = 語言
+privacy-security = 隱私與安全
+streaming = 串流
+
+## 常用動作
+cancel = 取消
+create = 建立
+delete = 刪除
+refresh = 重新整理
+save-button = 儲存
+sign-in = 登入
+update = 更新
+
+## 金鑰管理
+key-management = 金鑰管理
+key-manager = 金鑰管理器
+manage-keys = 管理金鑰
+your-stream-pubkeys = 您的串流公開金鑰
+no-keys = 尚未設定金鑰
+pubkey-description = 公開金鑰與串流金鑰（用於串流軟體）配對以簽署和驗證您的串流
+keys-count = { $count } 個金鑰
+
+## Webhook 管理
+webhooks = Webhooks
+webhook-integrations = Webhook 整合
+webhook-integrations-description = 連接外部服務以即時接收有關您串流的更新
+create-webhook = 建立 Webhook
+edit-webhook = 編輯 Webhook
+delete-webhook = 刪除 Webhook
+no-webhooks-yet = 尚未設定 webhook
+failed-load-webhooks = 載入 webhook 失敗
+webhook-will-no-longer-receive-events = 此 webhook 將不再接收事件
+create-first-webhook-description = 建立您的第一個 webhook 以開始接收串流事件
+example-captain-hook = 虎克船長
+webhooks-count = { $count ->
+   *[other] { $count } 個 webhook
+}
+
+## Webhook 事件
+activates-on = 觸發於：
+events-livestream = 直播串流事件
+events-chat = 聊天事件
+untitled-webhook = 未命名的 Webhook
+inactive = 停用
+
+## 除錯錄製
+debug-recording = 除錯錄製
+
+## 彈幕設定
+danmu-enabled = 啟用彈幕
+danmu-enabled-description = 將即時聊天訊息以浮動評論的形式顯示在您的螢幕上
+danmu-opacity = 不透明度
+danmu-speed = 速度
+danmu-lane-count = 軌道數量
+danmu-max-messages = 最大訊息數
+
+## 一般
+app-version-description = 目前版本資訊
+confirm-delete = 您確定要刪除嗎？
+action-cannot-be-undone = 此動作無法復原
+name-optional = 名稱（選填）
+deleting = 刪除中...
+saving = 儲存中...
+go-to-dashboard = 前往控制台
+need-setup-live-dashboard = 您需要先在控制台中設定直播串流
+no-languages-found = 找不到語言
