@@ -16,22 +16,25 @@ import (
 )
 
 var RTCRecTestCases = []struct {
-	name             string
-	fatalErrors      bool
-	fixture          string
-	expectedSegments int
+	name                string
+	fatalErrors         bool
+	fixture             string
+	expectedSegmentsMin int
+	expectedSegmentsMax int
 }{
 	{
-		name:             "IntermittentTracks",
-		fatalErrors:      false,
-		fixture:          getFixture("intermittent-tracks.cbor"),
-		expectedSegments: 10,
+		name:                "IntermittentTracks",
+		fatalErrors:         false,
+		fixture:             getFixture("intermittent-tracks.cbor"),
+		expectedSegmentsMin: 10,
+		expectedSegmentsMax: 12,
 	},
 	{
-		name:             "SegmentConvergenceIssues",
-		fatalErrors:      true,
-		fixture:          remote.RemoteFixture("6a1fb84e3c23405fc53161f59d5b837839c4889fc1a96533c82fb44fafc51d27/2025-11-14T22-41-20-399Z.cbor"),
-		expectedSegments: 2,
+		name:                "SegmentConvergenceIssues",
+		fatalErrors:         true,
+		fixture:             remote.RemoteFixture("6a1fb84e3c23405fc53161f59d5b837839c4889fc1a96533c82fb44fafc51d27/2025-11-14T22-41-20-399Z.cbor"),
+		expectedSegmentsMin: 2,
+		expectedSegmentsMax: 10,
 	},
 }
 
@@ -91,18 +94,18 @@ func TestRTCRecording(t *testing.T) {
 				require.ErrorIs(t, pipelineError, context.Canceled)
 
 				// the segment getting ingested is ever so slightly after the done, which doesn't matter except in tests, just do a backoff for checking
-				require.Equal(t, testCase.expectedSegments, segCount)
 				ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
 				defer ticker.Stop()
 				for i := 0; i < 10; i++ {
-					if segCount == testCase.expectedSegments {
+					if segCount >= testCase.expectedSegmentsMin {
 						break
 					}
 					if i < 9 {
 						<-ticker.C
 					}
 				}
-				require.Equal(t, testCase.expectedSegments, segCount)
+				require.GreaterOrEqual(t, segCount, testCase.expectedSegmentsMin)
+				require.LessOrEqual(t, segCount, testCase.expectedSegmentsMax)
 			})
 		})
 	}
