@@ -39,7 +39,7 @@ func ClipUser(ctx context.Context, mod model.Model, cli *config.CLI, user string
 		defer fd.Close()
 		segmentFiles = append(segmentFiles, fd)
 	}
-	err = CombineSegmentsUnsigned(ctx, segmentFiles, writer)
+	err = CombineSegmentsUnsigned(ctx, segmentFiles, writer, false)
 	if err != nil {
 		return fmt.Errorf("unable to clip segments: %w", err)
 	}

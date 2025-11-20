@@ -18,7 +18,7 @@ func doNothing(self *gst.Element, pad *gst.Pad) {}
 // Function for demuxing a single segment. Needs to be handled very carefully.
 // In particular: users of this MUST cancel the passed context when they're
 // done with the bin.
-func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
+func ConcatDemuxBin(ctx context.Context, seg *bus.Seg, doH264Parse bool) (*gst.Bin, error) {
 	ctx = log.WithLogValues(ctx, "func", "ConcatDemuxBin")
 	bin := gst.NewBin("seg-demux-bin")
 
@@ -80,27 +80,6 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 	// 	return nil, fmt.Errorf("failed to set max-size-buffers: %w", err)
 	// }
 
-	h264parse, err := gst.NewElementWithProperties("h264parse", map[string]interface{}{
-		"name":                "concat-demux-h264parse",
-		"config-interval":     -1,
-		"disable-passthrough": true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create h264parse element: %w", err)
-	}
-	err = bin.Add(h264parse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to add h264parse to bin: %w", err)
-	}
-	h264parseSinkPad := h264parse.GetStaticPad("sink")
-	if h264parseSinkPad == nil {
-		return nil, fmt.Errorf("failed to get h264parse sink pad")
-	}
-	h264parseSrcPad := h264parse.GetStaticPad("src")
-	if h264parseSrcPad == nil {
-		return nil, fmt.Errorf("failed to get h264parse source pad")
-	}
-
 	opusparse, err := gst.NewElementWithProperties("opusparse", map[string]interface{}{
 		"name":                "concat-demux-opusparse",
 		"disable-passthrough": true,
@@ -141,19 +120,47 @@ func ConcatDemuxBin(ctx context.Context, seg *bus.Seg) (*gst.Bin, error) {
 		return nil, fmt.Errorf("audio source pad not found")
 	}
 
-	linked := mqVideoSrc.Link(h264parseSinkPad)
-	if linked != gst.PadLinkOK {
-		return nil, fmt.Errorf("failed to link h264parse sink pad to mq video sink pad")
-	}
-
-	linked = mqAudioSrc.Link(opusparseSinkPad)
+	linked := mqAudioSrc.Link(opusparseSinkPad)
 	if linked != gst.PadLinkOK {
 		return nil, fmt.Errorf("failed to link opusparse sink pad to mq audio sink pad")
 	}
 
-	videoGhost := gst.NewGhostPad("video_0", h264parseSrcPad)
-	if videoGhost == nil {
-		return nil, fmt.Errorf("failed to create video ghost pad")
+	var videoGhost *gst.GhostPad
+	if doH264Parse {
+		h264parse, err := gst.NewElementWithProperties("h264parse", map[string]interface{}{
+			"name":                "concat-demux-h264parse",
+			"config-interval":     -1,
+			"disable-passthrough": true,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create h264parse element: %w", err)
+		}
+		err = bin.Add(h264parse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add h264parse to bin: %w", err)
+		}
+		h264parseSinkPad := h264parse.GetStaticPad("sink")
+		if h264parseSinkPad == nil {
+			return nil, fmt.Errorf("failed to get h264parse sink pad")
+		}
+		h264parseSrcPad := h264parse.GetStaticPad("src")
+		if h264parseSrcPad == nil {
+			return nil, fmt.Errorf("failed to get h264parse source pad")
+		}
+		linked := mqVideoSrc.Link(h264parseSinkPad)
+		if linked != gst.PadLinkOK {
+			return nil, fmt.Errorf("failed to link h264parse sink pad to mq video sink pad")
+		}
+
+		videoGhost = gst.NewGhostPad("video_0", h264parseSrcPad)
+		if videoGhost == nil {
+			return nil, fmt.Errorf("failed to create video ghost pad")
+		}
+	} else {
+		videoGhost = gst.NewGhostPad("video_0", mqVideoSrc)
+		if videoGhost == nil {
+			return nil, fmt.Errorf("failed to create video ghost pad")
+		}
 	}
 
 	audioGhost := gst.NewGhostPad("audio_0", opusparseSrcPad)

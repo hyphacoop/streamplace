@@ -12,7 +12,7 @@ import (
 
 var ErrConcatDone = errors.New("concat done")
 
-func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
+func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg, doH264Parse bool) (*gst.Bin, error) {
 	ctx = log.WithLogValues(ctx, "func", "ConcatBin")
 	bin := gst.NewBin("concat-bin")
 
@@ -141,7 +141,7 @@ func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
 
 					return
 				}
-				err := addConcatDemuxer(ctx, bin, seg, syncPadVideoSink, syncPadAudioSink)
+				err := addConcatDemuxer(ctx, bin, seg, syncPadVideoSink, syncPadAudioSink, doH264Parse)
 				if err != nil {
 					log.Error(ctx, "failed to add concat demuxer", "error", err)
 					bin.Error(err.Error(), err)
@@ -156,14 +156,14 @@ func ConcatBin(ctx context.Context, segCh <-chan *bus.Seg) (*gst.Bin, error) {
 	return bin, nil
 }
 
-func addConcatDemuxer(ctx context.Context, bin *gst.Bin, seg *bus.Seg, syncPadVideoSink *gst.Pad, syncPadAudioSink *gst.Pad) error {
+func addConcatDemuxer(ctx context.Context, bin *gst.Bin, seg *bus.Seg, syncPadVideoSink *gst.Pad, syncPadAudioSink *gst.Pad, doH264Parse bool) error {
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
 	ctx = log.WithLogValues(ctx, "func", "ConcatBin")
 
 	log.Debug(ctx, "adding concat demuxer", "seg", seg.Filepath)
-	demuxBin, err := ConcatDemuxBin(ctx, seg)
+	demuxBin, err := ConcatDemuxBin(ctx, seg, doH264Parse)
 	if err != nil {
 		return fmt.Errorf("failed to create demux bin: %w", err)
 	}

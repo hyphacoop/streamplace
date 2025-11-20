@@ -31,7 +31,12 @@ var ConvergeCases = []ConvergeCase{
 	{
 		Name:    "Stuck",
 		File:    remote.RemoteFixture("77e32825eaa9dfb8f6c7bbe3cb21213ffa01c1dc0d041f8e3e9cc4d107c95f16/2025-11-17T01-08-56-070Z-converge-segment-did-key-zQ3shX7nQpEqXEp3XFSPkS7mtUjQ3S1MNvxrEP2HeiwyPqmoz.mp4"),
-		Success: false,
+		Success: true,
+	},
+	{
+		Name:    "CouldNotMultiplex",
+		File:    "/Users/iameli/testvids/thursday/2025-11-20T18-02-37-957Z-attempt-000.mp4",
+		Success: true,
 	},
 	// {
 	// 	Name: "CrashedPipeline",
@@ -49,7 +54,7 @@ func TestConvergeSegment(t *testing.T) {
 				t.Logf("test case: %s", tc.File)
 				bs, err := os.ReadFile(tc.File)
 				require.NoError(t, err)
-				bs, err = ConvergeSegment(ctx, &config.CLI{}, bs, 0, "test-streamer")
+				bs, err = ConvergeSegment(ctx, &config.CLI{}, bs, 0, "test-streamer", true)
 				if tc.Success {
 					require.NoError(t, err)
 					require.Greater(t, len(bs), 0)

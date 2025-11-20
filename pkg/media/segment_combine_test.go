@@ -44,7 +44,7 @@ func innerTestClip(t *testing.T) error {
 		inputFds[i] = fd
 	}
 	buf := aqio.NewReadWriteSeeker([]byte{})
-	err := CombineSegmentsUnsigned(ctx, inputFds, buf)
+	err := CombineSegmentsUnsigned(ctx, inputFds, buf, true)
 	require.NoError(t, err)
 	slice, err := buf.Bytes()
 	require.NoError(t, err)

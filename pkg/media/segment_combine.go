@@ -17,7 +17,7 @@ import (
 // CombineSegments combines a list of segments into a single segment that maintains all of the manifests
 func CombineSegments(ctx context.Context, inputFds []io.ReadSeeker, ms MediaSigner, output io.ReadWriteSeeker) error {
 	rws := aqio.NewReadWriteSeeker([]byte{})
-	err := CombineSegmentsUnsigned(ctx, inputFds, rws)
+	err := CombineSegmentsUnsigned(ctx, inputFds, rws, true)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func CombineSegments(ctx context.Context, inputFds []io.ReadSeeker, ms MediaSign
 	return nil
 }
 
-func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.Writer) error {
+func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.Writer, doH264Parse bool) error {
 	ctx = log.WithLogValues(ctx, "mediafunc", "CombineSegmentsUnsigned")
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -72,7 +72,7 @@ func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.
 		close(segCh)
 	}()
 
-	concatBin, err := ConcatBin(ctx, segCh)
+	concatBin, err := ConcatBin(ctx, segCh, doH264Parse)
 	if err != nil {
 		return fmt.Errorf("failed to create concat bin: %w", err)
 	}

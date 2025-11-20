@@ -25,7 +25,7 @@ var RTCRecTestCases = []struct {
 		name:             "IntermittentTracks",
 		fatalErrors:      false,
 		fixture:          getFixture("intermittent-tracks.cbor"),
-		expectedSegments: 1,
+		expectedSegments: 10,
 	},
 	{
 		name:             "SegmentConvergenceIssues",
@@ -55,7 +55,6 @@ func TestRTCRecording(t *testing.T) {
 				err = cli.Parse(fs, []string{
 					"--data-dir", dir,
 					"-wide-open=true",
-					// "--segment-debug-dir", "/Users/iameli/testvids/stuck-converge",
 				})
 				require.NoError(t, err)
 				mm, err := MakeMediaManager(context.Background(), cli, nil, nil, nil, nil)

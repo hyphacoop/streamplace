@@ -19,7 +19,7 @@ var MaxSegmentTries = 10
 
 // run this segment through the segmenter/splitter until it comes out the
 // same, meaning we can cleanly get it in and out of a concatenated mp4 file
-func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64, streamer string) ([]byte, error) {
+func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64, streamer string, doH264Parse bool) ([]byte, error) {
 	cli.DumpDebugSegment(ctx, fmt.Sprintf("converge-segment-%s.mp4", streamer), bytes.NewReader(bs))
 
 	log.Debug(ctx, "parsing segment media data", "size", len(bs))
@@ -60,7 +60,7 @@ func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64,
 			log.Log(ctx, "wrote debug file", "path", outFile)
 		}
 		buf := bytes.Buffer{}
-		err := CombineSegmentsUnsigned(ctx, []io.ReadSeeker{bytes.NewReader(currentBs)}, &buf)
+		err := CombineSegmentsUnsigned(ctx, []io.ReadSeeker{bytes.NewReader(currentBs)}, &buf, doH264Parse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to attempt segment convergence: %w", err)
 		}

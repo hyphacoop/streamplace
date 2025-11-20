@@ -56,12 +56,14 @@ ffprobe -loglevel fatal -show_frames "$ONE" > "1.frames"
 ffprobe -loglevel fatal -show_frames "$TWO" > "2.frames"
 (diff --color=always "1.frames" "2.frames" || true) | head -n 5
 
+set +e
 echo -e "\033[0m"
 video_frames_one="$(cat 1.frames | grep media_type=video | wc -l | xargs)"
 video_frames_two="$(cat 2.frames | grep media_type=video | wc -l | xargs)"
 if [[ "$video_frames_one" -ne "$video_frames_two" ]]; then
   echo "Video frame count mismatch: $video_frames_one -> $video_frames_two"
 fi
+set -e
 
 audio_frames_one="$(cat 1.frames | grep media_type=audio | wc -l | xargs)"
 audio_frames_two="$(cat 2.frames | grep media_type=audio | wc -l | xargs)"

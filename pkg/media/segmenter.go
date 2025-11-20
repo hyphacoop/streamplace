@@ -23,7 +23,7 @@ import (
 var FatalSegmentationErrors = false
 
 // element that takes the input stream, muxes to mp4, and signs the result
-func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(ctx context.Context, buf []byte, now int64) error) (*gst.Element, error) {
+func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, doH264Parse bool, cb func(ctx context.Context, buf []byte, now int64) error) (*gst.Element, error) {
 	// elem, err := gst.NewElement("splitmuxsink name=splitter async-finalize=true sink-factory=appsink muxer-factory=matroskamux max-size-bytes=1")
 	elem, err := gst.NewElementWithProperties("splitmuxsink", map[string]any{
 		"name":           "signer",
@@ -127,7 +127,7 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 					<-previousSegCh
 				}
 				err := func() error {
-					bs, err := ConvergeSegment(ctx, cli, bs, now, streamer)
+					bs, err := ConvergeSegment(ctx, cli, bs, now, streamer, doH264Parse)
 					if err != nil {
 						return fmt.Errorf("error converging segment: %w", err)
 					}
@@ -157,7 +157,7 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, cb func(
 }
 
 func (mm *MediaManager) SegmentAndSignElem(ctx context.Context, ms MediaSigner) (*gst.Element, error) {
-	return SegmentElem(ctx, mm.cli, ms.Streamer(), func(ctx context.Context, bs []byte, now int64) error {
+	return SegmentElem(ctx, mm.cli, ms.Streamer(), false, func(ctx context.Context, bs []byte, now int64) error {
 		if mm.cli.SmearAudio {
 			smearedBuf := &bytes.Buffer{}
 			err := RewriteAudioTimestamps(ctx, mm.cli, bytes.NewReader(bs), smearedBuf, true)
@@ -187,10 +187,10 @@ func SegmentFileUnsigned(ctx context.Context, cli *config.CLI, streamer string, 
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 	defer fd.Close()
-	return SegmentUnsigned(ctx, cli, streamer, fd, ch)
+	return SegmentUnsigned(ctx, cli, streamer, fd, false, ch)
 }
 
-func SegmentUnsigned(ctx context.Context, cli *config.CLI, streamer string, input io.Reader, ch chan *SplitSegment) error {
+func SegmentUnsigned(ctx context.Context, cli *config.CLI, streamer string, input io.Reader, doH264Parse bool, ch chan *SplitSegment) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	pipelineSlice := []string{
@@ -216,7 +216,7 @@ func SegmentUnsigned(ctx context.Context, cli *config.CLI, streamer string, inpu
 		return err
 	}
 
-	segmenter, err := SegmentElem(ctx, cli, streamer, func(ctx context.Context, buf []byte, now int64) error {
+	segmenter, err := SegmentElem(ctx, cli, streamer, doH264Parse, func(ctx context.Context, buf []byte, now int64) error {
 		ch <- &SplitSegment{
 			Filename: fmt.Sprintf("%d.mp4", now),
 			Data:     buf,

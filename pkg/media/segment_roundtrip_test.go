@@ -86,7 +86,11 @@ func TestSegmentRoundtrip(t *testing.T) {
 				require.NoError(t, err)
 
 				signedSplitSegDir := makeTestSubdir(t, tempDir, "signed-split-segments")
-				err = SplitSegments(context.Background(), &config.CLI{}, rws, func(fname string) ReadWriteSeekCloser {
+				cli := &config.CLI{}
+				fs := cli.NewFlagSet("rtcrec-test")
+				err = cli.Parse(fs, []string{})
+				require.NoError(t, err)
+				err = SplitSegments(context.Background(), cli, rws, func(fname string) ReadWriteSeekCloser {
 					fd, err := os.Create(filepath.Join(signedSplitSegDir, fname))
 					require.NoError(t, err)
 					return fd

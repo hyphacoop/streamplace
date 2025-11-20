@@ -666,7 +666,6 @@ func (cli *CLI) DumpDebugSegment(ctx context.Context, name string, r io.Reader) 
 			return
 		}
 		defer fd.Close()
-		log.Log(ctx, "writing debug file", "path", outFile)
 		_, err = io.Copy(fd, r)
 		if err != nil {
 			log.Error(ctx, "failed to copy debug file", "error", err)

@@ -92,7 +92,7 @@ func ToBuffers(ctx context.Context, input io.Reader) (*SegmentData, error) {
 
 	pipelineSlice := []string{
 		"appsrc name=mp4src ! qtdemux name=demux",
-		"demux.video_0 ! queue ! h264parse name=videoparse disable-passthrough=true config-interval=-1 ! appsink sync=false name=videoappsink",
+		"demux.video_0 ! queue ! appsink sync=false name=videoappsink",
 		"demux.audio_0 ! queue ! opusparse name=audioparse ! appsink sync=false name=audioappsink",
 	}
 
@@ -233,10 +233,10 @@ func ToBuffers(ctx context.Context, input io.Reader) (*SegmentData, error) {
 	}
 
 	if len(seg.Video) == 0 {
-		return nil, fmt.Errorf("no video segments")
+		return nil, fmt.Errorf("no video segments when rewriting audio")
 	}
 	if len(seg.Audio) == 0 {
-		return nil, fmt.Errorf("no audio segments")
+		return nil, fmt.Errorf("no audio segments when rewriting audio")
 	}
 
 	return &seg, nil

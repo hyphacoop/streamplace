@@ -29,7 +29,7 @@ func ParseSegmentMediaData(ctx context.Context, mp4bs []byte) (*model.SegmentMed
 	defer cancel()
 	pipelineSlice := []string{
 		"appsrc name=appsrc ! qtdemux name=demux",
-		"demux.video_0 ! queue ! h264parse name=videoparse disable-passthrough=true config-interval=-1 ! tee name=videotee",
+		"demux.video_0 ! queue ! tee name=videotee",
 		"videotee. ! queue ! h2642json ! appsink sync=false name=jsonappsink",
 		"videotee. ! queue ! appsink sync=false name=videoappsink",
 		"demux.audio_0 ! queue ! opusparse name=audioparse ! appsink sync=false name=audioappsink",
@@ -303,6 +303,8 @@ func ParseSegmentMediaDataSinkNewSampleFunc(ctx context.Context, foundThisTrack 
 		dur := buf.Duration().AsDuration()
 		if dur != nil && *dur > 0 {
 			*foundThisTrack = true
+		} else {
+			log.Warn(ctx, "no duration found for track", "track", sink.GetName())
 		}
 		return gst.FlowOK
 	}
