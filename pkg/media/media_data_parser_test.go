@@ -13,9 +13,9 @@ import (
 
 func TestMediaDataParser(t *testing.T) {
 	segmentsWithoutBFrames := []string{
-		// remote.RemoteFixture("d63d26050db9a60c0944b4c2e2b1d052c4350a2a8a877324c7b0b7e7a0c1ae27/bframe-false-positive.mp4"),
-		// getFixture("sample-segment.mp4"),
-		"/Users/iameli/testvids/no-video-or-whatever/2025-11-18T01-10-56-292Z-signed-segment.mp4",
+		remote.RemoteFixture("d63d26050db9a60c0944b4c2e2b1d052c4350a2a8a877324c7b0b7e7a0c1ae27/bframe-false-positive.mp4"),
+		getFixture("sample-segment.mp4"),
+		remote.RemoteFixture("604bebf51c97f27aa07a8952462ac9885dd963f7a88375154217f59db32e1573/2025-11-18T01-10-56-292Z-signed-segment.mp4"),
 	}
 	withNoGSTLeaks(t, func() {
 		for _, segment := range segmentsWithoutBFrames {

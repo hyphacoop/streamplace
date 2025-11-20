@@ -39,7 +39,7 @@ var ConvergeCases = []ConvergeCase{
 	},
 	{
 		Name:        "CouldNotMultiplex",
-		File:        "/Users/iameli/testvids/thursday/2025-11-20T18-02-37-957Z-attempt-000.mp4",
+		File:        remote.RemoteFixture("c12696bde28c5ab3ffd7040fd7da2ca6d871bb73b40fc2310dece0f6a082ee8a/2025-11-20T18-02-37-957Z-attempt-000.mp4"),
 		Success:     true,
 		DoH264Parse: false,
 	},
