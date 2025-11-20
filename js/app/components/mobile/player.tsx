@@ -20,6 +20,7 @@ import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
 import { Animated, Platform, ScrollView, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "store";
 import { useUserProfile } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
@@ -35,8 +36,7 @@ export function Player(
   },
 ) {
   const [showChat, setShowChat] = useState(true);
-  const { shouldShowChatSidePanel, chatPanelWidth, safeAreaInsets } =
-    useResponsiveLayout();
+  const { shouldShowChatSidePanel, chatPanelWidth } = useResponsiveLayout();
   const chatVisible = shouldShowChatSidePanel && showChat;
 
   const [isStreamingElsewhere, setIsStreamingElsewhere] = useState<
@@ -128,14 +128,13 @@ export function Player(
       <LivestreamProvider src={props.src ?? ""}>
         <StatusBar hidden={true} />
         <PlayerProvider defaultId={props.playerId || undefined}>
-          <View
+          <SafeAreaView
+            edges={["right", "top", "left"]}
             style={{
               flexDirection: chatVisible ? "row" : "column",
               flex: 1,
               width: "100%",
               height: "100%",
-              paddingLeft: safeAreaInsets.left,
-              paddingRight: safeAreaInsets.right,
             }}
           >
             <PlayerInner
@@ -147,12 +146,11 @@ export function Player(
               <DesktopChatPanel
                 chatVisible={chatVisible}
                 chatPanelWidth={chatPanelWidth}
-                safeAreaInsets={safeAreaInsets}
               />
             ) : (
               <MobileUi />
             )}
-          </View>
+          </SafeAreaView>
         </PlayerProvider>
       </LivestreamProvider>
     </RotationProvider>
@@ -174,7 +172,6 @@ export function PlayerInner(
     screenWidth,
     contentWidth,
     availableHeight,
-    safeAreaInsets,
   } = useResponsiveLayout({
     sidebarWidth: sb.animatedWidth,
     sidebarHidden: !sb.isActive,
@@ -255,8 +252,8 @@ export function PlayerInner(
                 maxHeight: "auto",
               },
           {
-            paddingTop:
-              isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
+            // paddingTop:
+            //   isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
           },
         ]}
       >

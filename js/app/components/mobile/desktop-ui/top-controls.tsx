@@ -28,7 +28,6 @@ interface TopControlBarProps {
   ingest: string | null;
   isChatOpen: boolean;
   onToggleChat: () => void;
-  safeAreaInsets: { top: number };
   embedded?: boolean;
 }
 
@@ -38,7 +37,6 @@ export function TopControlBar({
   ingest,
   isChatOpen,
   onToggleChat,
-  safeAreaInsets,
   embedded = false,
 }: TopControlBarProps) {
   const navigation = useNavigation();

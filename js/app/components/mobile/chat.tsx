@@ -22,57 +22,75 @@ import { useNavigation } from "@react-navigation/native";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
 import emojiData from "assets/emoji-data.json";
 import { ArrowRight } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
-export function DesktopChatPanel({
-  chatVisible,
-  chatPanelWidth,
-  safeAreaInsets,
-}) {
-  const sidebarOffset = useSharedValue(chatVisible ? 0 : chatPanelWidth);
+export function DesktopChatPanel({ chatVisible, chatPanelWidth }) {
+  let insets = useSafeAreaInsets();
+  let panelWidthWithInsets = chatPanelWidth + insets.right;
+  const sidebarOffset = useSharedValue(chatVisible ? 0 : panelWidthWithInsets);
+  const sidebarOpacity = useSharedValue(chatVisible ? 1 : 0);
 
   const kb = useKeyboard();
 
   useEffect(() => {
     console.log(
       "Setting sidebar offset x to",
-      chatVisible ? 0 : chatPanelWidth,
+      chatVisible ? 0 : panelWidthWithInsets,
     );
-    sidebarOffset.value = withSpring(chatVisible ? 0 : chatPanelWidth + 64, {
+    sidebarOffset.value = withSpring(chatVisible ? 0 : panelWidthWithInsets, {
       damping: 100,
       stiffness: 1000,
     });
-  }, [chatVisible, chatPanelWidth, sidebarOffset]);
+    sidebarOpacity.value = withSpring(chatVisible ? 1 : 0, {
+      damping: 100,
+      stiffness: 1000,
+    });
+  }, [chatVisible, panelWidthWithInsets, sidebarOffset]);
 
   const animatedSidebarStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: sidebarOffset.value },
       { translateY: -kb.keyboardHeight },
     ],
+    opacity: sidebarOpacity.value,
   }));
 
   return (
-    <Animated.View
-      style={[
-        layout.position.absolute,
-        position.right[0],
-        {
-          top: safeAreaInsets.top,
-          bottom: safeAreaInsets.bottom,
-          right: safeAreaInsets.right / 2,
-          width: chatPanelWidth,
-          backgroundColor: "rgba(0, 0, 0, 0.85)",
-          borderLeftWidth: 1,
-          borderLeftColor: "rgba(255, 255, 255, 0.1)",
-          zIndex: 999,
-        },
-        animatedSidebarStyle,
-      ]}
-    >
-      <View style={{ flex: 1, position: "relative" }}>
-        <ChatPanel />
-      </View>
-    </Animated.View>
+    <>
+      <Animated.View
+        style={[
+          {
+            width: chatPanelWidth,
+            flexShrink: 0,
+          },
+          animatedSidebarStyle,
+        ]}
+      />
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            right: 0,
+            // attempt to lessen the impact of the safe area inset on the chat panel?
+            paddingRight: insets.right > 0 ? insets.right - 20 : 0,
+            top: 0,
+            bottom: 0,
+            width: panelWidthWithInsets,
+            flexShrink: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            borderLeftWidth: 1,
+            borderLeftColor: "rgba(255, 255, 255, 0.1)",
+            zIndex: 999,
+          },
+          animatedSidebarStyle,
+        ]}
+      >
+        <View style={{ flex: 1, position: "relative" }}>
+          <ChatPanel />
+        </View>
+      </Animated.View>
+    </>
   );
 }
 
