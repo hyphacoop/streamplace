@@ -43,7 +43,6 @@ func NewDoHResolver(server string) *DoHResolver {
 	ipv6Bogons := []string{
 		"::/128",        // Unspecified
 		"::1/128",       // Loopback
-		"::ffff:0:0/96", // IPv4-mapped addresses
 		"100::/64",      // Discard prefix
 		"2001::/32",     // TEREDO
 		"2001:10::/28",  // Deprecated (ORCHID)

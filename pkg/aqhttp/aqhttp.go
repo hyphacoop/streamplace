@@ -20,6 +20,14 @@ var Client http.Client
 // where the validation overhead is problematic.
 var TrustedClient http.Client
 
+type ClientOptions struct {
+	OverrideInTest bool
+}
+
+var defaultClientOptions = ClientOptions{
+	OverrideInTest: true,
+}
+
 func init() {
 	// Initialize the trusted client first.
 	TrustedClient = http.Client{
@@ -38,7 +46,7 @@ func init() {
 
 	// When running under `go test` the test binary name typically ends with ".test".
 	// In that case, use the trusted client to avoid SSRF blocking for localhost tests.
-	if len(os.Args) > 0 && strings.HasSuffix(os.Args[0], ".test") {
+	if defaultClientOptions.OverrideInTest && len(os.Args) > 0 && strings.HasSuffix(os.Args[0], ".test") {
 		Client = TrustedClient
 	}
 }
