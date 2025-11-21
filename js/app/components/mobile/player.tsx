@@ -11,7 +11,6 @@ import {
   Text,
   usePlayerDimensions,
   usePlayerStore,
-  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
@@ -181,8 +180,6 @@ export function PlayerInner(
   // content info
   const { width, height } = usePlayerDimensions();
 
-  const { isPlayerRatioGreater } = useSegmentDimensions();
-
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
 
@@ -254,7 +251,7 @@ export function PlayerInner(
           },
         ]}
       >
-        <SafeAreaView edges={["left", "right", "top"]} style={{ flex: 1 }}>
+        <SafeAreaView edges={["left", "top"]} style={{ flex: 1 }}>
           <PlayerInnerInner {...props}>
             {showFullDesktopMode || fullscreen ? (
               <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />

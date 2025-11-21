@@ -27,7 +27,7 @@ const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
 export function DesktopChatPanel({ chatVisible, chatPanelWidth }) {
   let insets = useSafeAreaInsets();
-  let panelWidthWithInsets = chatPanelWidth + insets.right;
+  let panelWidthWithInsets = chatPanelWidth;
   const sidebarOffset = useSharedValue(chatVisible ? 0 : panelWidthWithInsets);
   const sidebarOpacity = useSharedValue(chatVisible ? 1 : 0);
 
