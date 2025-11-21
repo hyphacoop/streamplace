@@ -55,8 +55,6 @@ export function Player(
   }, [userIsLive]);
 
   const navigation = useNavigation();
-  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
-  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
 
   useEffect(() => {
     return () => {
@@ -128,8 +126,7 @@ export function Player(
       <LivestreamProvider src={props.src ?? ""}>
         <StatusBar hidden={true} />
         <PlayerProvider defaultId={props.playerId || undefined}>
-          <SafeAreaView
-            edges={["right", "top", "left"]}
+          <View
             style={{
               flexDirection: chatVisible ? "row" : "column",
               flex: 1,
@@ -150,7 +147,7 @@ export function Player(
             ) : (
               <MobileUi />
             )}
-          </SafeAreaView>
+          </View>
         </PlayerProvider>
       </LivestreamProvider>
     </RotationProvider>
@@ -257,31 +254,33 @@ export function PlayerInner(
           },
         ]}
       >
-        <PlayerInnerInner {...props}>
-          {showFullDesktopMode || fullscreen ? (
-            <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
-          ) : (
-            isLandscape && (
-              <MobileUi
-                setShowChat={props.setShowChat}
-                showChat={props.showChat}
-              />
-            )
-          )}
-          <PlayerUI.ViewerLoadingOverlay />
-          <OfflineCounter isMobile={true} />
-          <View
-            ref={dropdownPortalRef}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              pointerEvents: "none",
-            }}
-          />
-        </PlayerInnerInner>
+        <SafeAreaView edges={["left", "right", "top"]} style={{ flex: 1 }}>
+          <PlayerInnerInner {...props}>
+            {showFullDesktopMode || fullscreen ? (
+              <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
+            ) : (
+              isLandscape && (
+                <MobileUi
+                  setShowChat={props.setShowChat}
+                  showChat={props.showChat}
+                />
+              )
+            )}
+            <PlayerUI.ViewerLoadingOverlay />
+            <OfflineCounter isMobile={true} />
+            <View
+              ref={dropdownPortalRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: "none",
+              }}
+            />
+          </PlayerInnerInner>
+        </SafeAreaView>
       </Animated.View>
       {showFullDesktopMode && (
         <BottomMetadata
