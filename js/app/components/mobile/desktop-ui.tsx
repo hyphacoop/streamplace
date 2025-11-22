@@ -57,7 +57,7 @@ export function DesktopUi({
     toggleGoLive,
   } = useLivestreamInfo();
   const { width, height } = usePlayerDimensions();
-  const { safeAreaInsets, shouldShowFloatingMetrics } = useResponsiveLayout();
+  const { shouldShowFloatingMetrics } = useResponsiveLayout();
 
   const offline = useOffline();
   const showMetrics = usePlayerStore((state) => state.showDebugInfo);
@@ -200,7 +200,6 @@ export function DesktopUi({
               layout.position.absolute,
               w.percent[100],
               {
-                top: safeAreaInsets.top,
                 paddingHorizontal: 16,
                 paddingVertical: 16,
               },
@@ -213,7 +212,6 @@ export function DesktopUi({
               ingest={ingest}
               isChatOpen={isChatOpen || false}
               onToggleChat={toggleChat}
-              safeAreaInsets={safeAreaInsets}
               embedded={embedded}
             />
           </Animated.View>
