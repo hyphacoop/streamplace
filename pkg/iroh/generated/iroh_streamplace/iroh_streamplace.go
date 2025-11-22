@@ -338,6 +338,10 @@ func init() {
 
 	FfiConverterDataHandlerINSTANCE.register()
 	FfiConverterGoSignerINSTANCE.register()
+	FfiConverterManySegmentsToSignINSTANCE.register()
+	FfiConverterManyStreamsINSTANCE.register()
+	FfiConverterSegmentToSignINSTANCE.register()
+	FfiConverterStreamINSTANCE.register()
 	uniffiCheckChecksums()
 }
 
@@ -356,9 +360,18 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert()
 		})
-		if checksum != 17550 {
+		if checksum != 36028 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_get_manifests()
+		})
+		if checksum != 2548 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_get_manifests: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -390,11 +403,29 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_resign()
+		})
+		if checksum != 34597 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_resign: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_sign()
 		})
-		if checksum != 23786 {
+		if checksum != 41179 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_sign: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_func_sign_with_ingredients()
+		})
+		if checksum != 15411 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_sign_with_ingredients: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -530,6 +561,24 @@ func uniffiCheckChecksums() {
 		if checksum != 50597 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_gosigner_sign: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_manysegmentstosign_next()
+		})
+		if checksum != 53885 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_manysegmentstosign_next: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_manystreams_next()
+		})
+		if checksum != 50757 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_manystreams_next: UniFFI API checksum mismatch")
 		}
 	}
 	{
@@ -687,6 +736,78 @@ func uniffiCheckChecksums() {
 	}
 	{
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_segmenttosign_unsigned_seg_stream()
+		})
+		if checksum != 25252 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_segmenttosign_unsigned_seg_stream: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_segmenttosign_manifest_id()
+		})
+		if checksum != 60736 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_segmenttosign_manifest_id: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_segmenttosign_cert()
+		})
+		if checksum != 51060 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_segmenttosign_cert: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_segmenttosign_output_seg_stream()
+		})
+		if checksum != 6113 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_segmenttosign_output_seg_stream: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_segmenttosign_close()
+		})
+		if checksum != 39185 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_segmenttosign_close: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_stream_read_stream()
+		})
+		if checksum != 62815 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_stream_read_stream: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_stream_seek_stream()
+		})
+		if checksum != 56397 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_stream_seek_stream: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
+			return C.uniffi_iroh_streamplace_checksum_method_stream_write_stream()
+		})
+		if checksum != 59847 {
+			// If this happens try cleaning and rebuilding your project
+			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_method_stream_write_stream: UniFFI API checksum mismatch")
+		}
+	}
+	{
+		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_method_subscriberesponse_next_raw()
 		})
 		if checksum != 55650 {
@@ -791,6 +912,30 @@ func (FfiConverterUint64) Read(reader io.Reader) uint64 {
 type FfiDestroyerUint64 struct{}
 
 func (FfiDestroyerUint64) Destroy(_ uint64) {}
+
+type FfiConverterInt64 struct{}
+
+var FfiConverterInt64INSTANCE = FfiConverterInt64{}
+
+func (FfiConverterInt64) Lower(value int64) C.int64_t {
+	return C.int64_t(value)
+}
+
+func (FfiConverterInt64) Write(writer io.Writer, value int64) {
+	writeInt64(writer, value)
+}
+
+func (FfiConverterInt64) Lift(value C.int64_t) int64 {
+	return int64(value)
+}
+
+func (FfiConverterInt64) Read(reader io.Reader) int64 {
+	return readInt64(reader)
+}
+
+type FfiDestroyerInt64 struct{}
+
+func (FfiDestroyerInt64) Destroy(_ int64) {}
 
 type FfiConverterBool struct{}
 
@@ -1655,6 +1800,212 @@ func (c FfiConverterGoSigner) register() {
 	C.uniffi_iroh_streamplace_fn_init_callback_vtable_gosigner(&UniffiVTableCallbackInterfaceGoSignerINSTANCE)
 }
 
+type ManySegmentsToSign interface {
+	Next() *SegmentToSign
+}
+type ManySegmentsToSignImpl struct {
+	ffiObject FfiObject
+}
+
+func (_self *ManySegmentsToSignImpl) Next() *SegmentToSign {
+	_pointer := _self.ffiObject.incrementPointer("ManySegmentsToSign")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalSegmentToSignINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_method_manysegmentstosign_next(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+func (object *ManySegmentsToSignImpl) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterManySegmentsToSign struct {
+	handleMap *concurrentHandleMap[ManySegmentsToSign]
+}
+
+var FfiConverterManySegmentsToSignINSTANCE = FfiConverterManySegmentsToSign{
+	handleMap: newConcurrentHandleMap[ManySegmentsToSign](),
+}
+
+func (c FfiConverterManySegmentsToSign) Lift(pointer unsafe.Pointer) ManySegmentsToSign {
+	result := &ManySegmentsToSignImpl{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_iroh_streamplace_fn_clone_manysegmentstosign(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_iroh_streamplace_fn_free_manysegmentstosign(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*ManySegmentsToSignImpl).Destroy)
+	return result
+}
+
+func (c FfiConverterManySegmentsToSign) Read(reader io.Reader) ManySegmentsToSign {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterManySegmentsToSign) Lower(value ManySegmentsToSign) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := unsafe.Pointer(uintptr(c.handleMap.insert(value)))
+	return pointer
+
+}
+
+func (c FfiConverterManySegmentsToSign) Write(writer io.Writer, value ManySegmentsToSign) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerManySegmentsToSign struct{}
+
+func (_ FfiDestroyerManySegmentsToSign) Destroy(value ManySegmentsToSign) {
+	if val, ok := value.(*ManySegmentsToSignImpl); ok {
+		val.Destroy()
+	} else {
+		panic("Expected *ManySegmentsToSignImpl")
+	}
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignMethod0
+func iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignMethod0(uniffiHandle C.uint64_t, uniffiOutReturn *C.RustBuffer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterManySegmentsToSignINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res :=
+		uniffiObj.Next()
+
+	*uniffiOutReturn = FfiConverterOptionalSegmentToSignINSTANCE.Lower(res)
+}
+
+var UniffiVTableCallbackInterfaceManySegmentsToSignINSTANCE = C.UniffiVTableCallbackInterfaceManySegmentsToSign{
+	next: (C.UniffiCallbackInterfaceManySegmentsToSignMethod0)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignMethod0),
+
+	uniffiFree: (C.UniffiCallbackInterfaceFree)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignFree),
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignFree
+func iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignFree(handle C.uint64_t) {
+	FfiConverterManySegmentsToSignINSTANCE.handleMap.remove(uint64(handle))
+}
+
+func (c FfiConverterManySegmentsToSign) register() {
+	C.uniffi_iroh_streamplace_fn_init_callback_vtable_manysegmentstosign(&UniffiVTableCallbackInterfaceManySegmentsToSignINSTANCE)
+}
+
+type ManyStreams interface {
+	// Get the next stream from the many streams
+	Next() *Stream
+}
+type ManyStreamsImpl struct {
+	ffiObject FfiObject
+}
+
+// Get the next stream from the many streams
+func (_self *ManyStreamsImpl) Next() *Stream {
+	_pointer := _self.ffiObject.incrementPointer("ManyStreams")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterOptionalStreamINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_method_manystreams_next(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+func (object *ManyStreamsImpl) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterManyStreams struct {
+	handleMap *concurrentHandleMap[ManyStreams]
+}
+
+var FfiConverterManyStreamsINSTANCE = FfiConverterManyStreams{
+	handleMap: newConcurrentHandleMap[ManyStreams](),
+}
+
+func (c FfiConverterManyStreams) Lift(pointer unsafe.Pointer) ManyStreams {
+	result := &ManyStreamsImpl{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_iroh_streamplace_fn_clone_manystreams(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_iroh_streamplace_fn_free_manystreams(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*ManyStreamsImpl).Destroy)
+	return result
+}
+
+func (c FfiConverterManyStreams) Read(reader io.Reader) ManyStreams {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterManyStreams) Lower(value ManyStreams) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := unsafe.Pointer(uintptr(c.handleMap.insert(value)))
+	return pointer
+
+}
+
+func (c FfiConverterManyStreams) Write(writer io.Writer, value ManyStreams) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerManyStreams struct{}
+
+func (_ FfiDestroyerManyStreams) Destroy(value ManyStreams) {
+	if val, ok := value.(*ManyStreamsImpl); ok {
+		val.Destroy()
+	} else {
+		panic("Expected *ManyStreamsImpl")
+	}
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsMethod0
+func iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsMethod0(uniffiHandle C.uint64_t, uniffiOutReturn *C.RustBuffer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterManyStreamsINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res :=
+		uniffiObj.Next()
+
+	*uniffiOutReturn = FfiConverterOptionalStreamINSTANCE.Lower(res)
+}
+
+var UniffiVTableCallbackInterfaceManyStreamsINSTANCE = C.UniffiVTableCallbackInterfaceManyStreams{
+	next: (C.UniffiCallbackInterfaceManyStreamsMethod0)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsMethod0),
+
+	uniffiFree: (C.UniffiCallbackInterfaceFree)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsFree),
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsFree
+func iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsFree(handle C.uint64_t) {
+	FfiConverterManyStreamsINSTANCE.handleMap.remove(uint64(handle))
+}
+
+func (c FfiConverterManyStreams) register() {
+	C.uniffi_iroh_streamplace_fn_init_callback_vtable_manystreams(&UniffiVTableCallbackInterfaceManyStreamsINSTANCE)
+}
+
 // Iroh-streamplace node that can send, forward or receive stream segments.
 type NodeInterface interface {
 	// Add tickets for remote peers
@@ -2364,6 +2715,450 @@ type FfiDestroyerPublicKey struct{}
 
 func (_ FfiDestroyerPublicKey) Destroy(value *PublicKey) {
 	value.Destroy()
+}
+
+type SegmentToSign interface {
+	UnsignedSegStream() Stream
+	ManifestId() string
+	Cert() []byte
+	OutputSegStream() Stream
+	Close()
+}
+type SegmentToSignImpl struct {
+	ffiObject FfiObject
+}
+
+func (_self *SegmentToSignImpl) UnsignedSegStream() Stream {
+	_pointer := _self.ffiObject.incrementPointer("SegmentToSign")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStreamINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_iroh_streamplace_fn_method_segmenttosign_unsigned_seg_stream(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *SegmentToSignImpl) ManifestId() string {
+	_pointer := _self.ffiObject.incrementPointer("SegmentToSign")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStringINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_method_segmenttosign_manifest_id(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (_self *SegmentToSignImpl) Cert() []byte {
+	_pointer := _self.ffiObject.incrementPointer("SegmentToSign")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterBytesINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_method_segmenttosign_cert(
+				_pointer, _uniffiStatus),
+		}
+	}))
+}
+
+func (_self *SegmentToSignImpl) OutputSegStream() Stream {
+	_pointer := _self.ffiObject.incrementPointer("SegmentToSign")
+	defer _self.ffiObject.decrementPointer()
+	return FfiConverterStreamINSTANCE.Lift(rustCall(func(_uniffiStatus *C.RustCallStatus) unsafe.Pointer {
+		return C.uniffi_iroh_streamplace_fn_method_segmenttosign_output_seg_stream(
+			_pointer, _uniffiStatus)
+	}))
+}
+
+func (_self *SegmentToSignImpl) Close() {
+	_pointer := _self.ffiObject.incrementPointer("SegmentToSign")
+	defer _self.ffiObject.decrementPointer()
+	rustCall(func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_iroh_streamplace_fn_method_segmenttosign_close(
+			_pointer, _uniffiStatus)
+		return false
+	})
+}
+func (object *SegmentToSignImpl) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterSegmentToSign struct {
+	handleMap *concurrentHandleMap[SegmentToSign]
+}
+
+var FfiConverterSegmentToSignINSTANCE = FfiConverterSegmentToSign{
+	handleMap: newConcurrentHandleMap[SegmentToSign](),
+}
+
+func (c FfiConverterSegmentToSign) Lift(pointer unsafe.Pointer) SegmentToSign {
+	result := &SegmentToSignImpl{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_iroh_streamplace_fn_clone_segmenttosign(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_iroh_streamplace_fn_free_segmenttosign(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*SegmentToSignImpl).Destroy)
+	return result
+}
+
+func (c FfiConverterSegmentToSign) Read(reader io.Reader) SegmentToSign {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterSegmentToSign) Lower(value SegmentToSign) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := unsafe.Pointer(uintptr(c.handleMap.insert(value)))
+	return pointer
+
+}
+
+func (c FfiConverterSegmentToSign) Write(writer io.Writer, value SegmentToSign) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerSegmentToSign struct{}
+
+func (_ FfiDestroyerSegmentToSign) Destroy(value SegmentToSign) {
+	if val, ok := value.(*SegmentToSignImpl); ok {
+		val.Destroy()
+	} else {
+		panic("Expected *SegmentToSignImpl")
+	}
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod0
+func iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod0(uniffiHandle C.uint64_t, uniffiOutReturn *unsafe.Pointer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterSegmentToSignINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res :=
+		uniffiObj.UnsignedSegStream()
+
+	*uniffiOutReturn = FfiConverterStreamINSTANCE.Lower(res)
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod1
+func iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod1(uniffiHandle C.uint64_t, uniffiOutReturn *C.RustBuffer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterSegmentToSignINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res :=
+		uniffiObj.ManifestId()
+
+	*uniffiOutReturn = FfiConverterStringINSTANCE.Lower(res)
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod2
+func iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod2(uniffiHandle C.uint64_t, uniffiOutReturn *C.RustBuffer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterSegmentToSignINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res :=
+		uniffiObj.Cert()
+
+	*uniffiOutReturn = FfiConverterBytesINSTANCE.Lower(res)
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod3
+func iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod3(uniffiHandle C.uint64_t, uniffiOutReturn *unsafe.Pointer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterSegmentToSignINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res :=
+		uniffiObj.OutputSegStream()
+
+	*uniffiOutReturn = FfiConverterStreamINSTANCE.Lower(res)
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod4
+func iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod4(uniffiHandle C.uint64_t, uniffiOutReturn *C.void, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterSegmentToSignINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	uniffiObj.Close()
+
+}
+
+var UniffiVTableCallbackInterfaceSegmentToSignINSTANCE = C.UniffiVTableCallbackInterfaceSegmentToSign{
+	unsignedSegStream: (C.UniffiCallbackInterfaceSegmentToSignMethod0)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod0),
+	manifestId:        (C.UniffiCallbackInterfaceSegmentToSignMethod1)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod1),
+	cert:              (C.UniffiCallbackInterfaceSegmentToSignMethod2)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod2),
+	outputSegStream:   (C.UniffiCallbackInterfaceSegmentToSignMethod3)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod3),
+	close:             (C.UniffiCallbackInterfaceSegmentToSignMethod4)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod4),
+
+	uniffiFree: (C.UniffiCallbackInterfaceFree)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignFree),
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignFree
+func iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignFree(handle C.uint64_t) {
+	FfiConverterSegmentToSignINSTANCE.handleMap.remove(uint64(handle))
+}
+
+func (c FfiConverterSegmentToSign) register() {
+	C.uniffi_iroh_streamplace_fn_init_callback_vtable_segmenttosign(&UniffiVTableCallbackInterfaceSegmentToSignINSTANCE)
+}
+
+// This allows for a callback stream over the Uniffi interface.
+// Implement these stream functions in the foreign language
+// and this will provide Rust Stream trait implementations
+// This is necessary since the Rust traits cannot be implemented directly
+// as uniffi callbacks
+type Stream interface {
+	// Read a stream of bytes from the stream
+	ReadStream(length uint64) ([]byte, error)
+	// Seek to a position in the stream
+	SeekStream(pos int64, mode uint64) (uint64, error)
+	// Write a stream of bytes to the stream
+	WriteStream(data []byte) (uint64, error)
+}
+
+// This allows for a callback stream over the Uniffi interface.
+// Implement these stream functions in the foreign language
+// and this will provide Rust Stream trait implementations
+// This is necessary since the Rust traits cannot be implemented directly
+// as uniffi callbacks
+type StreamImpl struct {
+	ffiObject FfiObject
+}
+
+// Read a stream of bytes from the stream
+func (_self *StreamImpl) ReadStream(length uint64) ([]byte, error) {
+	_pointer := _self.ffiObject.incrementPointer("Stream")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_method_stream_read_stream(
+				_pointer, FfiConverterUint64INSTANCE.Lower(length), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue []byte
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterBytesINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Seek to a position in the stream
+func (_self *StreamImpl) SeekStream(pos int64, mode uint64) (uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("Stream")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_iroh_streamplace_fn_method_stream_seek_stream(
+			_pointer, FfiConverterInt64INSTANCE.Lower(pos), FfiConverterUint64INSTANCE.Lower(mode), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+// Write a stream of bytes to the stream
+func (_self *StreamImpl) WriteStream(data []byte) (uint64, error) {
+	_pointer := _self.ffiObject.incrementPointer("Stream")
+	defer _self.ffiObject.decrementPointer()
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) C.uint64_t {
+		return C.uniffi_iroh_streamplace_fn_method_stream_write_stream(
+			_pointer, FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus)
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue uint64
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterUint64INSTANCE.Lift(_uniffiRV), nil
+	}
+}
+func (object *StreamImpl) Destroy() {
+	runtime.SetFinalizer(object, nil)
+	object.ffiObject.destroy()
+}
+
+type FfiConverterStream struct {
+	handleMap *concurrentHandleMap[Stream]
+}
+
+var FfiConverterStreamINSTANCE = FfiConverterStream{
+	handleMap: newConcurrentHandleMap[Stream](),
+}
+
+func (c FfiConverterStream) Lift(pointer unsafe.Pointer) Stream {
+	result := &StreamImpl{
+		newFfiObject(
+			pointer,
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) unsafe.Pointer {
+				return C.uniffi_iroh_streamplace_fn_clone_stream(pointer, status)
+			},
+			func(pointer unsafe.Pointer, status *C.RustCallStatus) {
+				C.uniffi_iroh_streamplace_fn_free_stream(pointer, status)
+			},
+		),
+	}
+	runtime.SetFinalizer(result, (*StreamImpl).Destroy)
+	return result
+}
+
+func (c FfiConverterStream) Read(reader io.Reader) Stream {
+	return c.Lift(unsafe.Pointer(uintptr(readUint64(reader))))
+}
+
+func (c FfiConverterStream) Lower(value Stream) unsafe.Pointer {
+	// TODO: this is bad - all synchronization from ObjectRuntime.go is discarded here,
+	// because the pointer will be decremented immediately after this function returns,
+	// and someone will be left holding onto a non-locked pointer.
+	pointer := unsafe.Pointer(uintptr(c.handleMap.insert(value)))
+	return pointer
+
+}
+
+func (c FfiConverterStream) Write(writer io.Writer, value Stream) {
+	writeUint64(writer, uint64(uintptr(c.Lower(value))))
+}
+
+type FfiDestroyerStream struct{}
+
+func (_ FfiDestroyerStream) Destroy(value Stream) {
+	if val, ok := value.(*StreamImpl); ok {
+		val.Destroy()
+	} else {
+		panic("Expected *StreamImpl")
+	}
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod0
+func iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod0(uniffiHandle C.uint64_t, length C.uint64_t, uniffiOutReturn *C.RustBuffer, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterStreamINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res, err :=
+		uniffiObj.ReadStream(
+			FfiConverterUint64INSTANCE.Lift(length),
+		)
+
+	if err != nil {
+		var actualError *SpError
+		if errors.As(err, &actualError) {
+			*callStatus = C.RustCallStatus{
+				code:     C.int8_t(uniffiCallbackResultError),
+				errorBuf: FfiConverterSpErrorINSTANCE.Lower(actualError),
+			}
+		} else {
+			*callStatus = C.RustCallStatus{
+				code: C.int8_t(uniffiCallbackUnexpectedResultError),
+			}
+		}
+		return
+	}
+
+	*uniffiOutReturn = FfiConverterBytesINSTANCE.Lower(res)
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod1
+func iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod1(uniffiHandle C.uint64_t, pos C.int64_t, mode C.uint64_t, uniffiOutReturn *C.uint64_t, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterStreamINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res, err :=
+		uniffiObj.SeekStream(
+			FfiConverterInt64INSTANCE.Lift(pos),
+			FfiConverterUint64INSTANCE.Lift(mode),
+		)
+
+	if err != nil {
+		var actualError *SpError
+		if errors.As(err, &actualError) {
+			*callStatus = C.RustCallStatus{
+				code:     C.int8_t(uniffiCallbackResultError),
+				errorBuf: FfiConverterSpErrorINSTANCE.Lower(actualError),
+			}
+		} else {
+			*callStatus = C.RustCallStatus{
+				code: C.int8_t(uniffiCallbackUnexpectedResultError),
+			}
+		}
+		return
+	}
+
+	*uniffiOutReturn = FfiConverterUint64INSTANCE.Lower(res)
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod2
+func iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod2(uniffiHandle C.uint64_t, data C.RustBuffer, uniffiOutReturn *C.uint64_t, callStatus *C.RustCallStatus) {
+	handle := uint64(uniffiHandle)
+	uniffiObj, ok := FfiConverterStreamINSTANCE.handleMap.tryGet(handle)
+	if !ok {
+		panic(fmt.Errorf("no callback in handle map: %d", handle))
+	}
+
+	res, err :=
+		uniffiObj.WriteStream(
+			FfiConverterBytesINSTANCE.Lift(GoRustBuffer{
+				inner: data,
+			}),
+		)
+
+	if err != nil {
+		var actualError *SpError
+		if errors.As(err, &actualError) {
+			*callStatus = C.RustCallStatus{
+				code:     C.int8_t(uniffiCallbackResultError),
+				errorBuf: FfiConverterSpErrorINSTANCE.Lower(actualError),
+			}
+		} else {
+			*callStatus = C.RustCallStatus{
+				code: C.int8_t(uniffiCallbackUnexpectedResultError),
+			}
+		}
+		return
+	}
+
+	*uniffiOutReturn = FfiConverterUint64INSTANCE.Lower(res)
+}
+
+var UniffiVTableCallbackInterfaceStreamINSTANCE = C.UniffiVTableCallbackInterfaceStream{
+	readStream:  (C.UniffiCallbackInterfaceStreamMethod0)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod0),
+	seekStream:  (C.UniffiCallbackInterfaceStreamMethod1)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod1),
+	writeStream: (C.UniffiCallbackInterfaceStreamMethod2)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod2),
+
+	uniffiFree: (C.UniffiCallbackInterfaceFree)(C.iroh_streamplace_cgo_dispatchCallbackInterfaceStreamFree),
+}
+
+//export iroh_streamplace_cgo_dispatchCallbackInterfaceStreamFree
+func iroh_streamplace_cgo_dispatchCallbackInterfaceStreamFree(handle C.uint64_t) {
+	FfiConverterStreamINSTANCE.handleMap.remove(uint64(handle))
+}
+
+func (c FfiConverterStream) register() {
+	C.uniffi_iroh_streamplace_fn_init_callback_vtable_stream(&UniffiVTableCallbackInterfaceStreamINSTANCE)
 }
 
 // A response to a subscribe request.
@@ -3586,6 +4381,7 @@ func (err SpError) Unwrap() error {
 // Err* are used for checking error type with `errors.Is`
 var ErrSpErrorNoCertificateChainFound = fmt.Errorf("SpErrorNoCertificateChainFound")
 var ErrSpErrorC2paError = fmt.Errorf("SpErrorC2paError")
+var ErrSpErrorIoError = fmt.Errorf("SpErrorIoError")
 
 // Variant structs
 type SpErrorNoCertificateChainFound struct {
@@ -3626,6 +4422,25 @@ func (self SpErrorC2paError) Is(target error) bool {
 	return target == ErrSpErrorC2paError
 }
 
+type SpErrorIoError struct {
+	message string
+}
+
+func NewSpErrorIoError() *SpError {
+	return &SpError{err: &SpErrorIoError{}}
+}
+
+func (e SpErrorIoError) destroy() {
+}
+
+func (err SpErrorIoError) Error() string {
+	return fmt.Sprintf("IoError: %s", err.message)
+}
+
+func (self SpErrorIoError) Is(target error) bool {
+	return target == ErrSpErrorIoError
+}
+
 type FfiConverterSpError struct{}
 
 var FfiConverterSpErrorINSTANCE = FfiConverterSpError{}
@@ -3647,6 +4462,8 @@ func (c FfiConverterSpError) Read(reader io.Reader) *SpError {
 		return &SpError{&SpErrorNoCertificateChainFound{message}}
 	case 2:
 		return &SpError{&SpErrorC2paError{message}}
+	case 3:
+		return &SpError{&SpErrorIoError{message}}
 	default:
 		panic(fmt.Sprintf("Unknown error code %d in FfiConverterSpError.Read()", errorID))
 	}
@@ -3659,6 +4476,8 @@ func (c FfiConverterSpError) Write(writer io.Writer, value *SpError) {
 		writeInt32(writer, 1)
 	case *SpErrorC2paError:
 		writeInt32(writer, 2)
+	case *SpErrorIoError:
+		writeInt32(writer, 3)
 	default:
 		_ = variantValue
 		panic(fmt.Sprintf("invalid error value `%v` in FfiConverterSpError.Write", value))
@@ -3672,6 +4491,8 @@ func (_ FfiDestroyerSpError) Destroy(value *SpError) {
 	case SpErrorNoCertificateChainFound:
 		variantValue.destroy()
 	case SpErrorC2paError:
+		variantValue.destroy()
+	case SpErrorIoError:
 		variantValue.destroy()
 	default:
 		_ = variantValue
@@ -4460,6 +5281,80 @@ func (_ FfiDestroyerOptionalBytes) Destroy(value *[]byte) {
 	}
 }
 
+type FfiConverterOptionalSegmentToSign struct{}
+
+var FfiConverterOptionalSegmentToSignINSTANCE = FfiConverterOptionalSegmentToSign{}
+
+func (c FfiConverterOptionalSegmentToSign) Lift(rb RustBufferI) *SegmentToSign {
+	return LiftFromRustBuffer[*SegmentToSign](c, rb)
+}
+
+func (_ FfiConverterOptionalSegmentToSign) Read(reader io.Reader) *SegmentToSign {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterSegmentToSignINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalSegmentToSign) Lower(value *SegmentToSign) C.RustBuffer {
+	return LowerIntoRustBuffer[*SegmentToSign](c, value)
+}
+
+func (_ FfiConverterOptionalSegmentToSign) Write(writer io.Writer, value *SegmentToSign) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterSegmentToSignINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalSegmentToSign struct{}
+
+func (_ FfiDestroyerOptionalSegmentToSign) Destroy(value *SegmentToSign) {
+	if value != nil {
+		FfiDestroyerSegmentToSign{}.Destroy(*value)
+	}
+}
+
+type FfiConverterOptionalStream struct{}
+
+var FfiConverterOptionalStreamINSTANCE = FfiConverterOptionalStream{}
+
+func (c FfiConverterOptionalStream) Lift(rb RustBufferI) *Stream {
+	return LiftFromRustBuffer[*Stream](c, rb)
+}
+
+func (_ FfiConverterOptionalStream) Read(reader io.Reader) *Stream {
+	if readInt8(reader) == 0 {
+		return nil
+	}
+	temp := FfiConverterStreamINSTANCE.Read(reader)
+	return &temp
+}
+
+func (c FfiConverterOptionalStream) Lower(value *Stream) C.RustBuffer {
+	return LowerIntoRustBuffer[*Stream](c, value)
+}
+
+func (_ FfiConverterOptionalStream) Write(writer io.Writer, value *Stream) {
+	if value == nil {
+		writeInt8(writer, 0)
+	} else {
+		writeInt8(writer, 1)
+		FfiConverterStreamINSTANCE.Write(writer, *value)
+	}
+}
+
+type FfiDestroyerOptionalStream struct{}
+
+func (_ FfiDestroyerOptionalStream) Destroy(value *Stream) {
+	if value != nil {
+		FfiDestroyerStream{}.Destroy(*value)
+	}
+}
+
 type FfiConverterOptionalSubscribeItem struct{}
 
 var FfiConverterOptionalSubscribeItemINSTANCE = FfiConverterOptionalSubscribeItem{}
@@ -4689,10 +5584,24 @@ func iroh_streamplace_uniffiFreeGorutine(data C.uint64_t) {
 	guard <- struct{}{}
 }
 
-func GetManifestAndCert(data []byte) (string, error) {
+func GetManifestAndCert(data Stream) (string, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
-			inner: C.uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(FfiConverterBytesINSTANCE.Lower(data), _uniffiStatus),
+			inner: C.uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(FfiConverterStreamINSTANCE.Lower(data), _uniffiStatus),
+		}
+	})
+	if _uniffiErr != nil {
+		var _uniffiDefaultValue string
+		return _uniffiDefaultValue, _uniffiErr
+	} else {
+		return FfiConverterStringINSTANCE.Lift(_uniffiRV), nil
+	}
+}
+
+func GetManifests(data Stream) (string, error) {
+	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
+		return GoRustBuffer{
+			inner: C.uniffi_iroh_streamplace_fn_func_get_manifests(FfiConverterStreamINSTANCE.Lower(data), _uniffiStatus),
 		}
 	})
 	if _uniffiErr != nil {
@@ -4737,10 +5646,18 @@ func NodeIdFromTicket(ticketStr string) (*PublicKey, error) {
 	}
 }
 
-func Sign(manifest string, data []byte, certs []byte, gosigner GoSigner) ([]byte, error) {
+func Resign(segsToSign ManySegmentsToSign, signedConcatData Stream) error {
+	_, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_iroh_streamplace_fn_func_resign(FfiConverterManySegmentsToSignINSTANCE.Lower(segsToSign), FfiConverterStreamINSTANCE.Lower(signedConcatData), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
+}
+
+func Sign(manifest string, data Stream, certsStr string, gosigner GoSigner) ([]byte, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
-			inner: C.uniffi_iroh_streamplace_fn_func_sign(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterBytesINSTANCE.Lower(data), FfiConverterBytesINSTANCE.Lower(certs), FfiConverterGoSignerINSTANCE.Lower(gosigner), _uniffiStatus),
+			inner: C.uniffi_iroh_streamplace_fn_func_sign(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterStreamINSTANCE.Lower(data), FfiConverterStringINSTANCE.Lower(certsStr), FfiConverterGoSignerINSTANCE.Lower(gosigner), _uniffiStatus),
 		}
 	})
 	if _uniffiErr != nil {
@@ -4749,6 +5666,14 @@ func Sign(manifest string, data []byte, certs []byte, gosigner GoSigner) ([]byte
 	} else {
 		return FfiConverterBytesINSTANCE.Lift(_uniffiRV), nil
 	}
+}
+
+func SignWithIngredients(manifest string, data Stream, certsStr string, ingredients ManyStreams, gosigner GoSigner, output Stream) error {
+	_, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) bool {
+		C.uniffi_iroh_streamplace_fn_func_sign_with_ingredients(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterStreamINSTANCE.Lower(data), FfiConverterStringINSTANCE.Lower(certsStr), FfiConverterManyStreamsINSTANCE.Lower(ingredients), FfiConverterGoSignerINSTANCE.Lower(gosigner), FfiConverterStreamINSTANCE.Lower(output), _uniffiStatus)
+		return false
+	})
+	return _uniffiErr.AsError()
 }
 
 func SubscribeItemDebug(item SubscribeItem) string {

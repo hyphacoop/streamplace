@@ -406,6 +406,146 @@ static void call_UniffiCallbackInterfaceGoSignerMethod0(
 
 
 #endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_MANY_SEGMENTS_TO_SIGN_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_MANY_SEGMENTS_TO_SIGN_METHOD0
+typedef void (*UniffiCallbackInterfaceManySegmentsToSignMethod0)(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceManySegmentsToSignMethod0(
+				UniffiCallbackInterfaceManySegmentsToSignMethod0 cb, uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_MANY_STREAMS_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_MANY_STREAMS_METHOD0
+typedef void (*UniffiCallbackInterfaceManyStreamsMethod0)(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceManyStreamsMethod0(
+				UniffiCallbackInterfaceManyStreamsMethod0 cb, uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD0
+typedef void (*UniffiCallbackInterfaceSegmentToSignMethod0)(uint64_t uniffi_handle, void** uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceSegmentToSignMethod0(
+				UniffiCallbackInterfaceSegmentToSignMethod0 cb, uint64_t uniffi_handle, void** uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD1
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD1
+typedef void (*UniffiCallbackInterfaceSegmentToSignMethod1)(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceSegmentToSignMethod1(
+				UniffiCallbackInterfaceSegmentToSignMethod1 cb, uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD2
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD2
+typedef void (*UniffiCallbackInterfaceSegmentToSignMethod2)(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceSegmentToSignMethod2(
+				UniffiCallbackInterfaceSegmentToSignMethod2 cb, uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD3
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD3
+typedef void (*UniffiCallbackInterfaceSegmentToSignMethod3)(uint64_t uniffi_handle, void** uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceSegmentToSignMethod3(
+				UniffiCallbackInterfaceSegmentToSignMethod3 cb, uint64_t uniffi_handle, void** uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD4
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_SEGMENT_TO_SIGN_METHOD4
+typedef void (*UniffiCallbackInterfaceSegmentToSignMethod4)(uint64_t uniffi_handle, void* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceSegmentToSignMethod4(
+				UniffiCallbackInterfaceSegmentToSignMethod4 cb, uint64_t uniffi_handle, void* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_STREAM_METHOD0
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_STREAM_METHOD0
+typedef void (*UniffiCallbackInterfaceStreamMethod0)(uint64_t uniffi_handle, uint64_t length, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceStreamMethod0(
+				UniffiCallbackInterfaceStreamMethod0 cb, uint64_t uniffi_handle, uint64_t length, RustBuffer* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, length, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_STREAM_METHOD1
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_STREAM_METHOD1
+typedef void (*UniffiCallbackInterfaceStreamMethod1)(uint64_t uniffi_handle, int64_t pos, uint64_t mode, uint64_t* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceStreamMethod1(
+				UniffiCallbackInterfaceStreamMethod1 cb, uint64_t uniffi_handle, int64_t pos, uint64_t mode, uint64_t* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, pos, mode, uniffi_out_return, callStatus );
+}
+
+
+#endif
+#ifndef UNIFFI_FFIDEF_CALLBACK_INTERFACE_STREAM_METHOD2
+#define UNIFFI_FFIDEF_CALLBACK_INTERFACE_STREAM_METHOD2
+typedef void (*UniffiCallbackInterfaceStreamMethod2)(uint64_t uniffi_handle, RustBuffer data, uint64_t* uniffi_out_return, RustCallStatus* callStatus );
+
+// Making function static works arround:
+// https://github.com/golang/go/issues/11263
+static void call_UniffiCallbackInterfaceStreamMethod2(
+				UniffiCallbackInterfaceStreamMethod2 cb, uint64_t uniffi_handle, RustBuffer data, uint64_t* uniffi_out_return, RustCallStatus* callStatus )
+{
+	return cb(uniffi_handle, data, uniffi_out_return, callStatus );
+}
+
+
+#endif
 #ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_DATA_HANDLER
 #define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_DATA_HANDLER
 typedef struct UniffiVTableCallbackInterfaceDataHandler {
@@ -420,6 +560,44 @@ typedef struct UniffiVTableCallbackInterfaceGoSigner {
     UniffiCallbackInterfaceGoSignerMethod0 sign;
     UniffiCallbackInterfaceFree uniffiFree;
 } UniffiVTableCallbackInterfaceGoSigner;
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_MANY_SEGMENTS_TO_SIGN
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_MANY_SEGMENTS_TO_SIGN
+typedef struct UniffiVTableCallbackInterfaceManySegmentsToSign {
+    UniffiCallbackInterfaceManySegmentsToSignMethod0 next;
+    UniffiCallbackInterfaceFree uniffiFree;
+} UniffiVTableCallbackInterfaceManySegmentsToSign;
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_MANY_STREAMS
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_MANY_STREAMS
+typedef struct UniffiVTableCallbackInterfaceManyStreams {
+    UniffiCallbackInterfaceManyStreamsMethod0 next;
+    UniffiCallbackInterfaceFree uniffiFree;
+} UniffiVTableCallbackInterfaceManyStreams;
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_SEGMENT_TO_SIGN
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_SEGMENT_TO_SIGN
+typedef struct UniffiVTableCallbackInterfaceSegmentToSign {
+    UniffiCallbackInterfaceSegmentToSignMethod0 unsignedSegStream;
+    UniffiCallbackInterfaceSegmentToSignMethod1 manifestId;
+    UniffiCallbackInterfaceSegmentToSignMethod2 cert;
+    UniffiCallbackInterfaceSegmentToSignMethod3 outputSegStream;
+    UniffiCallbackInterfaceSegmentToSignMethod4 close;
+    UniffiCallbackInterfaceFree uniffiFree;
+} UniffiVTableCallbackInterfaceSegmentToSign;
+
+#endif
+#ifndef UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_STREAM
+#define UNIFFI_FFIDEF_V_TABLE_CALLBACK_INTERFACE_STREAM
+typedef struct UniffiVTableCallbackInterfaceStream {
+    UniffiCallbackInterfaceStreamMethod0 readStream;
+    UniffiCallbackInterfaceStreamMethod1 seekStream;
+    UniffiCallbackInterfaceStreamMethod2 writeStream;
+    UniffiCallbackInterfaceFree uniffiFree;
+} UniffiVTableCallbackInterfaceStream;
 
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_DATAHANDLER
@@ -546,6 +724,46 @@ void uniffi_iroh_streamplace_fn_init_callback_vtable_gosigner(UniffiVTableCallba
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_GOSIGNER_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_GOSIGNER_SIGN
 RustBuffer uniffi_iroh_streamplace_fn_method_gosigner_sign(void* ptr, RustBuffer data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_MANYSEGMENTSTOSIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_MANYSEGMENTSTOSIGN
+void* uniffi_iroh_streamplace_fn_clone_manysegmentstosign(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_MANYSEGMENTSTOSIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_MANYSEGMENTSTOSIGN
+void uniffi_iroh_streamplace_fn_free_manysegmentstosign(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_MANYSEGMENTSTOSIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_MANYSEGMENTSTOSIGN
+void uniffi_iroh_streamplace_fn_init_callback_vtable_manysegmentstosign(UniffiVTableCallbackInterfaceManySegmentsToSign* vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_MANYSEGMENTSTOSIGN_NEXT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_MANYSEGMENTSTOSIGN_NEXT
+RustBuffer uniffi_iroh_streamplace_fn_method_manysegmentstosign_next(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_MANYSTREAMS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_MANYSTREAMS
+void* uniffi_iroh_streamplace_fn_clone_manystreams(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_MANYSTREAMS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_MANYSTREAMS
+void uniffi_iroh_streamplace_fn_free_manystreams(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_MANYSTREAMS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_MANYSTREAMS
+void uniffi_iroh_streamplace_fn_init_callback_vtable_manystreams(UniffiVTableCallbackInterfaceManyStreams* vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_MANYSTREAMS_NEXT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_MANYSTREAMS_NEXT
+RustBuffer uniffi_iroh_streamplace_fn_method_manystreams_next(void* ptr, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_NODE
@@ -698,6 +916,76 @@ RustBuffer uniffi_iroh_streamplace_fn_method_publickey_fmt_short(void* ptr, Rust
 RustBuffer uniffi_iroh_streamplace_fn_method_publickey_uniffi_trait_display(void* ptr, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SEGMENTTOSIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SEGMENTTOSIGN
+void* uniffi_iroh_streamplace_fn_clone_segmenttosign(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_SEGMENTTOSIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_SEGMENTTOSIGN
+void uniffi_iroh_streamplace_fn_free_segmenttosign(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_SEGMENTTOSIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_SEGMENTTOSIGN
+void uniffi_iroh_streamplace_fn_init_callback_vtable_segmenttosign(UniffiVTableCallbackInterfaceSegmentToSign* vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_UNSIGNED_SEG_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_UNSIGNED_SEG_STREAM
+void* uniffi_iroh_streamplace_fn_method_segmenttosign_unsigned_seg_stream(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_MANIFEST_ID
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_MANIFEST_ID
+RustBuffer uniffi_iroh_streamplace_fn_method_segmenttosign_manifest_id(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_CERT
+RustBuffer uniffi_iroh_streamplace_fn_method_segmenttosign_cert(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_OUTPUT_SEG_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_OUTPUT_SEG_STREAM
+void* uniffi_iroh_streamplace_fn_method_segmenttosign_output_seg_stream(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_CLOSE
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_SEGMENTTOSIGN_CLOSE
+void uniffi_iroh_streamplace_fn_method_segmenttosign_close(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_STREAM
+void* uniffi_iroh_streamplace_fn_clone_stream(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FREE_STREAM
+void uniffi_iroh_streamplace_fn_free_stream(void* ptr, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_INIT_CALLBACK_VTABLE_STREAM
+void uniffi_iroh_streamplace_fn_init_callback_vtable_stream(UniffiVTableCallbackInterfaceStream* vtable
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_STREAM_READ_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_STREAM_READ_STREAM
+RustBuffer uniffi_iroh_streamplace_fn_method_stream_read_stream(void* ptr, uint64_t length, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_STREAM_SEEK_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_STREAM_SEEK_STREAM
+uint64_t uniffi_iroh_streamplace_fn_method_stream_seek_stream(void* ptr, int64_t pos, uint64_t mode, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_STREAM_WRITE_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_METHOD_STREAM_WRITE_STREAM
+uint64_t uniffi_iroh_streamplace_fn_method_stream_write_stream(void* ptr, RustBuffer data, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SUBSCRIBERESPONSE
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_CLONE_SUBSCRIBERESPONSE
 void* uniffi_iroh_streamplace_fn_clone_subscriberesponse(void* ptr, RustCallStatus *out_status
@@ -735,7 +1023,12 @@ uint64_t uniffi_iroh_streamplace_fn_method_writescope_put(void* ptr, RustBuffer 
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST_AND_CERT
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFEST_AND_CERT
-RustBuffer uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(RustBuffer data, RustCallStatus *out_status
+RustBuffer uniffi_iroh_streamplace_fn_func_get_manifest_and_cert(void* data, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFESTS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_GET_MANIFESTS
+RustBuffer uniffi_iroh_streamplace_fn_func_get_manifests(void* data, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_INIT_LOGGING
@@ -754,9 +1047,19 @@ void uniffi_iroh_streamplace_fn_func_init_logging_with_level(RustBuffer level, R
 void* uniffi_iroh_streamplace_fn_func_node_id_from_ticket(RustBuffer ticket_str, RustCallStatus *out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_RESIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_RESIGN
+void uniffi_iroh_streamplace_fn_func_resign(void* segs_to_sign, void* signed_concat_data, RustCallStatus *out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
-RustBuffer uniffi_iroh_streamplace_fn_func_sign(RustBuffer manifest, RustBuffer data, RustBuffer certs, void* gosigner, RustCallStatus *out_status
+RustBuffer uniffi_iroh_streamplace_fn_func_sign(RustBuffer manifest, void* data, RustBuffer certs_str, void* gosigner, RustCallStatus *out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN_WITH_INGREDIENTS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN_WITH_INGREDIENTS
+void uniffi_iroh_streamplace_fn_func_sign_with_ingredients(RustBuffer manifest, void* data, RustBuffer certs_str, void* ingredients, void* gosigner, void* output, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SUBSCRIBE_ITEM_DEBUG
@@ -1050,6 +1353,12 @@ uint16_t uniffi_iroh_streamplace_checksum_func_get_manifest_and_cert(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFESTS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_GET_MANIFESTS
+uint16_t uniffi_iroh_streamplace_checksum_func_get_manifests(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_INIT_LOGGING
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_INIT_LOGGING
 uint16_t uniffi_iroh_streamplace_checksum_func_init_logging(void
@@ -1068,9 +1377,21 @@ uint16_t uniffi_iroh_streamplace_checksum_func_node_id_from_ticket(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_RESIGN
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_RESIGN
+uint16_t uniffi_iroh_streamplace_checksum_func_resign(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_SIGN
 uint16_t uniffi_iroh_streamplace_checksum_func_sign(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_SIGN_WITH_INGREDIENTS
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_FUNC_SIGN_WITH_INGREDIENTS
+uint16_t uniffi_iroh_streamplace_checksum_func_sign_with_ingredients(void
     
 );
 #endif
@@ -1161,6 +1482,18 @@ uint16_t uniffi_iroh_streamplace_checksum_method_filter_timestamps(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_GOSIGNER_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_GOSIGNER_SIGN
 uint16_t uniffi_iroh_streamplace_checksum_method_gosigner_sign(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_MANYSEGMENTSTOSIGN_NEXT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_MANYSEGMENTSTOSIGN_NEXT
+uint16_t uniffi_iroh_streamplace_checksum_method_manysegmentstosign_next(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_MANYSTREAMS_NEXT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_MANYSTREAMS_NEXT
+uint16_t uniffi_iroh_streamplace_checksum_method_manystreams_next(void
     
 );
 #endif
@@ -1266,6 +1599,54 @@ uint16_t uniffi_iroh_streamplace_checksum_method_publickey_fmt_short(void
     
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_UNSIGNED_SEG_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_UNSIGNED_SEG_STREAM
+uint16_t uniffi_iroh_streamplace_checksum_method_segmenttosign_unsigned_seg_stream(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_MANIFEST_ID
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_MANIFEST_ID
+uint16_t uniffi_iroh_streamplace_checksum_method_segmenttosign_manifest_id(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_CERT
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_CERT
+uint16_t uniffi_iroh_streamplace_checksum_method_segmenttosign_cert(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_OUTPUT_SEG_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_OUTPUT_SEG_STREAM
+uint16_t uniffi_iroh_streamplace_checksum_method_segmenttosign_output_seg_stream(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_CLOSE
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SEGMENTTOSIGN_CLOSE
+uint16_t uniffi_iroh_streamplace_checksum_method_segmenttosign_close(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_STREAM_READ_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_STREAM_READ_STREAM
+uint16_t uniffi_iroh_streamplace_checksum_method_stream_read_stream(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_STREAM_SEEK_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_STREAM_SEEK_STREAM
+uint16_t uniffi_iroh_streamplace_checksum_method_stream_seek_stream(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_STREAM_WRITE_STREAM
+#define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_STREAM_WRITE_STREAM
+uint16_t uniffi_iroh_streamplace_checksum_method_stream_write_stream(void
+    
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SUBSCRIBERESPONSE_NEXT_RAW
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_CHECKSUM_METHOD_SUBSCRIBERESPONSE_NEXT_RAW
 uint16_t uniffi_iroh_streamplace_checksum_method_subscriberesponse_next_raw(void
@@ -1331,6 +1712,20 @@ uint32_t ffi_iroh_streamplace_uniffi_contract_version(void
  void iroh_streamplace_cgo_dispatchCallbackInterfaceDataHandlerFree(uint64_t handle);
  void iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerMethod0(uint64_t uniffi_handle, RustBuffer data, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
  void iroh_streamplace_cgo_dispatchCallbackInterfaceGoSignerFree(uint64_t handle);
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignMethod0(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceManySegmentsToSignFree(uint64_t handle);
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsMethod0(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceManyStreamsFree(uint64_t handle);
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod0(uint64_t uniffi_handle, void** uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod1(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod2(uint64_t uniffi_handle, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod3(uint64_t uniffi_handle, void** uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignMethod4(uint64_t uniffi_handle, void* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceSegmentToSignFree(uint64_t handle);
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod0(uint64_t uniffi_handle, uint64_t length, RustBuffer* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod1(uint64_t uniffi_handle, int64_t pos, uint64_t mode, uint64_t* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceStreamMethod2(uint64_t uniffi_handle, RustBuffer data, uint64_t* uniffi_out_return, RustCallStatus* callStatus );
+ void iroh_streamplace_cgo_dispatchCallbackInterfaceStreamFree(uint64_t handle);
 
 void iroh_streamplace_uniffiFutureContinuationCallback(uint64_t, int8_t);
 void iroh_streamplace_uniffiFreeGorutine(uint64_t);

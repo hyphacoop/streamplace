@@ -73,7 +73,7 @@ func (mm *MediaManager) WebRTCPlayback(ctx context.Context, user string, renditi
 		}
 	}()
 
-	concatBin, err := ConcatBin(ctx, segCh)
+	concatBin, err := ConcatBin(ctx, segCh, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create concat bin: %w", err)
 	}

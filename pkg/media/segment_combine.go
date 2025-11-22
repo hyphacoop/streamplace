@@ -1,51 +1,53 @@
 package media
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/go-gst/go-gst/gst"
 	"github.com/go-gst/go-gst/gst/app"
-	"github.com/google/uuid"
+	"stream.place/streamplace/pkg/aqio"
 	"stream.place/streamplace/pkg/bus"
 	"stream.place/streamplace/pkg/log"
 )
 
-func readFile(ctx context.Context, source string) (*bus.Seg, error) {
-	fd, err := os.Open(source)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open source file: %w", err)
-	}
-	defer fd.Close()
-	bs, err := io.ReadAll(fd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read source file: %w", err)
-	}
-	seg := &bus.Seg{
-		Filepath: source,
-		Data:     bs,
-	}
-	return seg, nil
-}
-
-// This function remains in scope for the duration of a single users' playback
-func Clip(ctx context.Context, sources []string, w io.Writer) error {
-	uu, err := uuid.NewV7()
+// CombineSegments combines a list of segments into a single segment that maintains all of the manifests
+func CombineSegments(ctx context.Context, inputFds []io.ReadSeeker, ms MediaSigner, output io.ReadWriteSeeker) error {
+	rws := aqio.NewReadWriteSeeker([]byte{})
+	err := CombineSegmentsUnsigned(ctx, inputFds, rws, true)
 	if err != nil {
 		return err
 	}
-	ctx = log.WithLogValues(ctx, "webrtcID", uu.String())
-	ctx = log.WithLogValues(ctx, "mediafunc", "Clip")
+	// rewind all the inputs for the signer
+	for _, fd := range inputFds {
+		_, err := fd.Seek(0, io.SeekStart)
+		if err != nil {
+			return err
+		}
+	}
+	bs, err := rws.Bytes()
+	if err != nil {
+		return err
+	}
+	err = ms.SignConcatMP4(context.Background(), bytes.NewReader(bs), inputFds, output)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.Writer, doH264Parse bool) error {
+	ctx = log.WithLogValues(ctx, "mediafunc", "CombineSegmentsUnsigned")
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	pipelineSlice := []string{
-		"mp4mux faststart=true name=muxer ! appsink sync=false name=mp4sink",
-		"h264parse name=videoparse ! h264timestamper ! muxer.video_0",
-		"opusparse name=audioparse ! muxer.audio_0",
+		fmt.Sprintf("mp4mux name=muxer faststart=true interleave-bytes=%d interleave-time=%d movie-timescale=60000 trak-timescale=60000 ! appsink sync=false name=mp4sink", InterleaveBytes, InterleaveTime),
+		"capsfilter caps=video/x-h264,parsed=true name=videoqueue ! queue ! muxer.",
+		"capsfilter caps=audio/x-opus,framed=true name=audioparse ! queue ! muxer.",
 	}
 
 	pipeline, err := gst.NewPipelineFromString(strings.Join(pipelineSlice, "\n"))
@@ -56,20 +58,21 @@ func Clip(ctx context.Context, sources []string, w io.Writer) error {
 	segCh := make(chan *bus.Seg)
 	go func() {
 		for _, source := range sources {
-			log.Log(ctx, "reading file", "source", source)
-			seg, err := readFile(ctx, source)
+			bs, err := io.ReadAll(source)
 			if err != nil {
 				err = fmt.Errorf("failed to read file: %w", err)
 				pipeline.Error(err.Error(), err)
 				return
 			}
-
-			segCh <- seg
+			segCh <- &bus.Seg{
+				Filepath: "ignored",
+				Data:     bs,
+			}
 		}
 		close(segCh)
 	}()
 
-	concatBin, err := ConcatBin(ctx, segCh)
+	concatBin, err := ConcatBin(ctx, segCh, doH264Parse)
 	if err != nil {
 		return fmt.Errorf("failed to create concat bin: %w", err)
 	}
@@ -90,7 +93,7 @@ func Clip(ctx context.Context, sources []string, w io.Writer) error {
 	}
 
 	// Get the videoparse and audioparse elements from the pipeline
-	videoParse, err := pipeline.GetElementByName("videoparse")
+	videoQueue, err := pipeline.GetElementByName("videoqueue")
 	if err != nil {
 		return fmt.Errorf("failed to get video parse element: %w", err)
 	}
@@ -101,7 +104,7 @@ func Clip(ctx context.Context, sources []string, w io.Writer) error {
 	}
 
 	// Link the concat bin pads to the parse element sink pads
-	linked := videoPad.Link(videoParse.GetStaticPad("sink"))
+	linked := videoPad.Link(videoQueue.GetStaticPad("sink"))
 	if linked != gst.PadLinkOK {
 		return fmt.Errorf("failed to link video pad to video parse element: %v", linked)
 	}
@@ -117,14 +120,9 @@ func Clip(ctx context.Context, sources []string, w io.Writer) error {
 		return fmt.Errorf("failed to get mp4sink element: %w", err)
 	}
 
-	eos := make(chan struct{})
-
 	appSink := app.SinkFromElement(mp4Sink)
 	appSink.SetCallbacks(&app.SinkCallbacks{
 		NewSampleFunc: WriterNewSample(ctx, w),
-		EOSFunc: func(sink *app.Sink) {
-			close(eos)
-		},
 	})
 
 	// Start the pipeline
@@ -141,8 +139,9 @@ func Clip(ctx context.Context, sources []string, w io.Writer) error {
 
 	// Handle bus messages
 	err = HandleBusMessages(ctx, pipeline)
-
-	<-eos
+	if err != nil {
+		return fmt.Errorf("failed to handle bus messages: %w", err)
+	}
 
 	if err != nil {
 		return fmt.Errorf("pipeline error: %w", err)
