@@ -84,6 +84,7 @@ finish = Finalizar
 
 ## Categorías de Navegación
 about = Acerca de
+account = Cuenta
 advanced = Avanzado
 danmu = Danmu
 developer = Desarrollador
@@ -99,6 +100,12 @@ refresh = Actualizar
 save-button = Guardar
 sign-in = Iniciar Sesión
 update = Actualizar
+log-out = Cerrar sesión
+
+## Configuración de Cuenta
+account-greeting = Hola, @{ $handle }.
+edit-profile-bluesky = Editar perfil (en Bluesky)
+change-name-color = Cambiar color de nombre
 
 ## Gestión de Claves
 key-management = Gestión de Claves

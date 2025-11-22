@@ -65,6 +65,7 @@ export interface BlueskySlice {
     profile: null | PlaceStreamChatProfile.Record;
   };
   serverSettings: null | PlaceStreamServerSettings.Record;
+  returnRoute: null | { name: string; params?: any };
   // actions
   loadOAuthClient: () => Promise<void>;
   oauthError: (error: string, description: string) => void;
@@ -76,6 +77,10 @@ export interface BlueskySlice {
   getProfile: (actor: string) => Promise<void>;
   getProfiles: (actors: string[]) => Promise<void>;
   oauthCallback: (url: string) => Promise<void>;
+  setReturnRoute: (route: { name: string; params?: any } | null) => void;
+  showLoginModal: boolean;
+  openLoginModal: (returnRoute?: { name: string; params?: any }) => void;
+  closeLoginModal: () => void;
   golivePost: (
     text: string,
     now: Date,
@@ -198,6 +203,31 @@ export const createBlueskySlice: StateCreator<
     profile: null,
   },
   serverSettings: null,
+  returnRoute: null,
+  showLoginModal: false,
+
+  setReturnRoute: async (route: { name: string; params?: any } | null) => {
+    console.log("setReturnRoute:", route);
+    if (route) {
+      await storage.setItem("returnRoute", JSON.stringify(route));
+    } else {
+      await storage.removeItem("returnRoute");
+    }
+    set({ returnRoute: route });
+  },
+
+  openLoginModal: async (returnRoute?: { name: string; params?: any }) => {
+    console.log("openLoginModal with returnRoute:", returnRoute);
+    if (returnRoute) {
+      await storage.setItem("returnRoute", JSON.stringify(returnRoute));
+    }
+    set({ showLoginModal: true, returnRoute: returnRoute || null });
+  },
+
+  closeLoginModal: () => {
+    console.log("closeLoginModal");
+    set({ showLoginModal: false });
+  },
 
   loadOAuthClient: async () => {
     set({ authStatus: "start" });

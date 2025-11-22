@@ -18,10 +18,11 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
 import emojiData from "assets/emoji-data.json";
 import { ArrowRight } from "lucide-react-native";
+import { useStore } from "store";
 const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
 export function DesktopChatPanel({
@@ -105,6 +106,16 @@ function ChatPanel() {
   let agent = usePDSAgent();
 
   const navigation = useNavigation();
+  const openLoginModal = useStore((state) => state.openLoginModal);
+
+  // get the deepest active route for nested navigators
+  const currentRoute = useNavigationState((state) => {
+    let route: any = state.routes[state.index];
+    while (route.state?.index !== undefined) {
+      route = route.state.routes[route.state.index];
+    }
+    return { name: route.name, params: route.params };
+  });
 
   return (
     <View
@@ -141,7 +152,7 @@ function ChatPanel() {
           </View>
         ) : (
           <Pressable
-            onPress={() => navigation.navigate("Login")}
+            onPress={() => openLoginModal(currentRoute as any)}
             style={[
               layout.flex.row,
               layout.flex.center,

@@ -1,3 +1,4 @@
+import { useRoute } from "@react-navigation/native";
 import {
   Body,
   Button,
@@ -8,7 +9,6 @@ import {
   useToast,
   View,
 } from "@streamplace/components";
-import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
 import { Clipboard, ClipboardCheck } from "lucide-react-native";
 import { useEffect, useState } from "react";
@@ -43,17 +43,24 @@ const Content = ({ children }: { children: React.ReactNode }) => {
 export function StreamKeyScreen() {
   const [protocol, setProtocol] = useState<"whip" | "rtmp">("rtmp");
   const isReady = useIsReady();
+  const userProfile = useUserProfile();
+  const openLoginModal = useStore((state) => state.openLoginModal);
+  const route = useRoute();
+  const url = useStore((state) => state.url);
+
+  useEffect(() => {
+    if (isReady && !userProfile) {
+      openLoginModal({ name: route.name, params: route.params });
+    }
+  }, [isReady, userProfile, openLoginModal, route.name, route.params]);
 
   if (!isReady) {
     return <Loading />;
   }
 
-  const userProfile = useUserProfile();
   if (!userProfile) {
-    return <Redirect to={{ screen: "Login" }} />;
+    return <Loading />;
   }
-
-  const url = useStore((state) => state.url);
 
   return (
     <ScrollView>

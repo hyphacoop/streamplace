@@ -73,14 +73,19 @@ export function SettingsRowItem({ children, onPress }: SettingsRowItemProps) {
 }
 
 interface SettingsExternalItemProps {
+  LeftIcon?: LucideIcon;
   title: string;
   link: string;
 }
 
 export function SettingsExternalItem({
+  LeftIcon,
   title,
   link,
 }: SettingsExternalItemProps) {
+  // Cast LeftIcon to any to avoid type incompatibilities with ForwardRefExoticComponent
+  const Left = LeftIcon as any;
+
   return (
     <Pressable onPress={() => Linking.openURL(link)}>
       {({ pressed }) => (
@@ -98,6 +103,7 @@ export function SettingsExternalItem({
           ]}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            {LeftIcon && <Left size={20} color="#999" />}
             <Text size="lg">{title}</Text>
           </View>
           <ExternalLink size={20} color="#666" />

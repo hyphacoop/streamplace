@@ -45,6 +45,7 @@ settings-title = Settings
 
 ## Navigation Categories
 about = About
+account = Account
 advanced = Advanced
 danmu = Danmu
 developer = Developer
@@ -60,6 +61,12 @@ refresh = Refresh
 save-button = Save
 sign-in = Sign In
 update = Update
+log-out = Log out
+
+## Account Settings
+account-greeting = Hey, @{ $handle }.
+edit-profile-bluesky = Edit profile (on Bluesky)
+change-name-color = Change name color
 
 ## Key Management
 key-management = Key Management

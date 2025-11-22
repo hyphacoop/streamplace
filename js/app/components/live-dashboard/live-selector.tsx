@@ -1,10 +1,10 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Button, Text, View, zero } from "@streamplace/components";
 import { flex } from "@streamplace/components/src/ui";
-import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
 import { Camera, FerrisWheel } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useStore } from "store";
 import { useIsReady, useUserProfile } from "store/hooks";
 import { StreamKeyScreen } from "./stream-key";
 
@@ -28,12 +28,26 @@ export default function StreamScreen({ route }) {
   const isReady = useIsReady();
   const userProfile = useUserProfile();
   const navigation = useNavigation();
+  const openLoginModal = useStore((state) => state.openLoginModal);
+  const currentRoute = useRoute();
+
+  useEffect(() => {
+    if (isReady && !userProfile) {
+      openLoginModal({ name: currentRoute.name, params: currentRoute.params });
+    }
+  }, [
+    isReady,
+    userProfile,
+    openLoginModal,
+    currentRoute.name,
+    currentRoute.params,
+  ]);
 
   if (!isReady) {
     return <Loading />;
   }
   if (!userProfile) {
-    return <Redirect to={{ screen: "Login" }} />;
+    return <Loading />;
   }
 
   if (selectedMode === "webcam") {
