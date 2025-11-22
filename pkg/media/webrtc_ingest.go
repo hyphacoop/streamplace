@@ -133,8 +133,8 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 			if err != nil {
 				log.Log(ctx, "pipeline error", "error", err)
 			}
-			busErrorChan <- err
 			cancel()
+			busErrorChan <- err
 		}()
 
 		defer cancel()
@@ -225,12 +225,12 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 					i, _, readErr := track.Read(buf)
 					if readErr != nil {
 						log.Log(ctx, "failed to read track", "error", readErr)
-						cancel()
+						videoSrc.EndStream()
 						return
 					}
-					if ctx.Err() != nil {
-						return
-					}
+					// if ctx.Err() != nil {
+					// 	return
+					// }
 					if !videoFirst {
 						videoFirst = true
 						log.Debug(ctx, "got video data", "len", len(buf[:i]))
@@ -264,12 +264,12 @@ func (mm *MediaManager) WebRTCIngest(ctx context.Context, offer *webrtc.SessionD
 					i, _, readErr := track.Read(buf)
 					if readErr != nil {
 						log.Log(ctx, "failed to read track", "error", readErr)
-						cancel()
+						audioSrc.EndStream()
 						return
 					}
-					if ctx.Err() != nil {
-						return
-					}
+					// if ctx.Err() != nil {
+					// 	return
+					// }
 					if !audioFirst {
 						audioFirst = true
 						log.Debug(ctx, "got audio data", "len", len(buf[:i]))
