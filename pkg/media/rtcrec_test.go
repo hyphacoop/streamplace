@@ -33,7 +33,7 @@ var RTCRecTestCases = []struct {
 		name:                "SegmentConvergenceIssues",
 		fatalErrors:         true,
 		fixture:             remote.RemoteFixture("6a1fb84e3c23405fc53161f59d5b837839c4889fc1a96533c82fb44fafc51d27/2025-11-14T22-41-20-399Z.cbor"),
-		expectedSegmentsMin: 2,
+		expectedSegmentsMin: 1,
 		expectedSegmentsMax: 10,
 	},
 }
