@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bluesky-social/indigo/atproto/crypto"
 	"go.opentelemetry.io/otel"
+	"stream.place/streamplace/pkg/aqio"
 	"stream.place/streamplace/pkg/aqtime"
 	c2patypes "stream.place/streamplace/pkg/c2patypes"
 	"stream.place/streamplace/pkg/constants"
@@ -21,8 +23,9 @@ import (
 )
 
 type ManifestAndCert struct {
-	Manifest c2patypes.Manifest `json:"manifest"`
-	Cert     string             `json:"cert"`
+	Manifest          c2patypes.Manifest          `json:"manifest"`
+	Cert              string                      `json:"cert"`
+	ValidationResults c2patypes.ValidationResults `json:"validation_results"`
 }
 
 func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local bool) error {
@@ -30,36 +33,30 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 	defer span.End()
 	buf, err := io.ReadAll(input)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read input: %w", err)
 	}
-	var maniCert ManifestAndCert
-	maniStr, err := iroh_streamplace.GetManifestAndCert(buf)
+
+	valid, err := ValidateMP4Media(ctx, buf)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to validate MP4 media: %w", err)
 	}
-	err = json.Unmarshal([]byte(maniStr), &maniCert)
-	if err != nil {
-		return err
-	}
-	label := maniCert.Manifest.Label
+	meta := valid.Meta
+	pub := valid.Pub
+	mediaData := valid.MediaData
+	manifest := valid.Manifest
+
+	label := manifest.Label
 	if label != nil && mm.model != nil {
 		oldSeg, err := mm.model.GetSegment(*label)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get old segment: %w", err)
 		}
 		if oldSeg != nil {
 			log.Warn(ctx, "segment already exists, skipping", "segmentID", *label)
 			return nil
 		}
 	}
-	pub, err := signers.ParseES256KCert([]byte(maniCert.Cert))
-	if err != nil {
-		return err
-	}
-	meta, err := ParseSegmentAssertions(ctx, &maniCert.Manifest)
-	if err != nil {
-		return err
-	}
+
 	if meta.MetadataConfiguration != nil {
 		if meta.MetadataConfiguration.DistributionPolicy != nil {
 			allowedBroadcasters := meta.MetadataConfiguration.DistributionPolicy.AllowedBroadcasters
@@ -70,13 +67,10 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 			}
 		}
 	}
-	mediaData, err := ParseSegmentMediaData(ctx, buf)
-	if err != nil {
-		return err
-	}
-	// special case for test signers that are only signed with a key
+
 	var repoDID string
 	var signingKeyDID string
+	// special case for test signers that are only signed with a key
 	if strings.HasPrefix(meta.Creator, constants.DID_KEY_PREFIX) {
 		signingKeyDID = meta.Creator
 		repoDID = meta.Creator
@@ -123,7 +117,7 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 		deleteAfter = meta.DistributionPolicy.ExpiresAt
 	}
 	seg := &model.Segment{
-		ID:                 *maniCert.Manifest.Label,
+		ID:                 *label,
 		SigningKeyDID:      signingKeyDID,
 		RepoDID:            repoDID,
 		StartTime:          meta.StartTime.Time(),
@@ -150,13 +144,13 @@ func (mm *MediaManager) ValidateMP4(ctx context.Context, input io.Reader, local 
 			case <-ctx.Done():
 				return
 			case <-time.After(1 * time.Minute):
-				log.Warn(ctx, "failed to send segment to channel, timing out", "streamer", repoDID, "signingKey", signingKeyDID, "segmentID", *maniCert.Manifest.Label)
+				log.Warn(ctx, "failed to send segment to channel, timing out", "streamer", repoDID, "signingKey", signingKeyDID, "segmentID", *label)
 				return
 			}
 		}()
 	}
 	aqt := aqtime.FromTime(meta.StartTime.Time())
-	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *maniCert.Manifest.Label)
+	log.Log(ctx, "successfully ingested segment", "user", repoDID, "signingKey", signingKeyDID, "timestamp", aqt.FileSafeString(), "segmentID", *label)
 	return nil
 }
 
@@ -204,4 +198,54 @@ func (mm *MediaManager) isWarningBlocked(warning string) bool {
 		}
 	}
 	return false
+}
+
+type ValidationResult struct {
+	Pub       *crypto.PublicKeyK256
+	Meta      *SegmentMetadata
+	MediaData *model.SegmentMediaData
+	Manifest  *c2patypes.Manifest
+	Cert      string
+}
+
+// validate a signed mp4 file unto itself, ignoring whether this user is allowed and whatnot
+func ValidateMP4Media(ctx context.Context, buf []byte) (*ValidationResult, error) {
+	var maniCert ManifestAndCert
+	maniStr, err := iroh_streamplace.GetManifestAndCert(c2patypes.NewReader(aqio.NewReadWriteSeeker(buf)))
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal([]byte(maniStr), &maniCert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal manifest and cert: %w", err)
+	}
+	activeManifest := maniCert.ValidationResults.ActiveManifest
+	if activeManifest != nil {
+		if activeManifest.Failure == nil {
+			return nil, fmt.Errorf("active manifest failure array not found?!")
+		}
+		if len(activeManifest.Failure) > 0 {
+			bs, _ := json.Marshal(activeManifest.Failure)
+			return nil, fmt.Errorf("active manifest has failures: %s", string(bs))
+		}
+	}
+	pub, err := signers.ParseES256KCert([]byte(maniCert.Cert))
+	if err != nil {
+		return nil, err
+	}
+	meta, err := ParseSegmentAssertions(ctx, &maniCert.Manifest)
+	if err != nil {
+		return nil, err
+	}
+	mediaData, err := ParseSegmentMediaData(ctx, buf)
+	if err != nil {
+		return nil, err
+	}
+	return &ValidationResult{
+		Pub:       pub,
+		Meta:      meta,
+		MediaData: mediaData,
+		Manifest:  &maniCert.Manifest,
+		Cert:      maniCert.Cert,
+	}, nil
 }
