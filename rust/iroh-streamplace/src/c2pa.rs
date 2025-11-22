@@ -16,6 +16,7 @@ use crate::streams::StreamAdapter;
 use serde_json;
 
 use crate::error::SPError;
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 #[uniffi::export]
 pub fn get_manifest_and_cert(data: &dyn Stream) -> Result<String, SPError> {
     let reader = Reader::from_stream("video/mp4", StreamAdapter::from(data))
@@ -111,10 +112,13 @@ enabled = true
 pub fn sign(
     manifest: String,
     data: &dyn Stream,
-    certs: Vec<u8>,
+    certs_str: String,
     gosigner: Arc<dyn GoSigner>,
 ) -> Result<Vec<u8>, SPError> {
     Settings::from_toml(TOML_SETTINGS).map_err(|e| SPError::C2paError(e.to_string()))?;
+    let certs = STANDARD
+        .decode(certs_str)
+        .map_err(|e| SPError::C2paError(e.to_string()))?;
     let callback_signer = CallbackSigner::new(
         move |_context: *const (), data: &[u8]| {
             let signature = gosigner
@@ -242,11 +246,14 @@ pub fn resign(
 pub fn sign_with_ingredients(
     manifest: String,
     data: &dyn Stream,
-    certs: Vec<u8>,
+    certs_str: String,
     ingredients: &dyn ManyStreams,
     gosigner: Arc<dyn GoSigner>,
     output: &dyn Stream,
 ) -> Result<(), SPError> {
+    let certs = STANDARD
+        .decode(certs_str)
+        .map_err(|e| SPError::C2paError(e.to_string()))?;
     Settings::from_toml(TOML_SETTINGS).map_err(|e| SPError::C2paError(e.to_string()))?;
     let callback_signer = CallbackSigner::new(
         move |_context: *const (), data: &[u8]| {

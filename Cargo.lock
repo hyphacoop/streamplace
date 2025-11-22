@@ -2734,6 +2734,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "base64 0.22.1",
  "bytes",
  "c2pa 0.58.0 (git+https://github.com/streamplace/c2pa-rs.git?rev=544825abfaf9e588813e18dba70c8d5afd039d46)",
  "hex",

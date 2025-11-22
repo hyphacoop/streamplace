@@ -36,6 +36,7 @@ hex = "0.4.3"
 iroh-gossip = "0.93.1"
 ref-cast = "1.0.25"
 rand = "0.9"
+base64 = "0.22.1"
 
 [dev-dependencies]
 testresult = "0.4.1"

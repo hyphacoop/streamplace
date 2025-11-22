@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -160,7 +161,7 @@ func (ms *MediaSignerLocal) SignMP4(ctx context.Context, input io.ReadSeeker, st
 	rustCallbackSigner := &RustCallbackSigner{
 		Signer: ms.Signer,
 	}
-	bs, err = iroh_streamplace.Sign(string(manifestBs), c2patypes.NewReader(aqio.NewReadWriteSeeker(bs)), ms.Cert, rustCallbackSigner)
+	bs, err = iroh_streamplace.Sign(string(manifestBs), c2patypes.NewReader(aqio.NewReadWriteSeeker(bs)), base64.StdEncoding.EncodeToString(ms.Cert), rustCallbackSigner)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +233,7 @@ func (ms *MediaSignerLocal) SignConcatMP4(ctx context.Context, input io.ReadSeek
 	for _, ingredient := range ingredients {
 		many.AddStream(ingredient)
 	}
-	err = iroh_streamplace.SignWithIngredients(string(manifestBs), c2patypes.NewReader(input), ms.Cert, many, rustCallbackSigner, c2patypes.NewWriter(output))
+	err = iroh_streamplace.SignWithIngredients(string(manifestBs), c2patypes.NewReader(input), base64.StdEncoding.EncodeToString(ms.Cert), many, rustCallbackSigner, c2patypes.NewWriter(output))
 	if err != nil {
 		return err
 	}

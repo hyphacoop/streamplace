@@ -414,7 +414,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_sign()
 		})
-		if checksum != 50601 {
+		if checksum != 41179 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_sign: UniFFI API checksum mismatch")
 		}
@@ -423,7 +423,7 @@ func uniffiCheckChecksums() {
 		checksum := rustCall(func(_uniffiStatus *C.RustCallStatus) C.uint16_t {
 			return C.uniffi_iroh_streamplace_checksum_func_sign_with_ingredients()
 		})
-		if checksum != 52190 {
+		if checksum != 15411 {
 			// If this happens try cleaning and rebuilding your project
 			panic("iroh_streamplace: uniffi_iroh_streamplace_checksum_func_sign_with_ingredients: UniFFI API checksum mismatch")
 		}
@@ -5654,10 +5654,10 @@ func Resign(segsToSign ManySegmentsToSign, signedConcatData Stream) error {
 	return _uniffiErr.AsError()
 }
 
-func Sign(manifest string, data Stream, certs []byte, gosigner GoSigner) ([]byte, error) {
+func Sign(manifest string, data Stream, certsStr string, gosigner GoSigner) ([]byte, error) {
 	_uniffiRV, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) RustBufferI {
 		return GoRustBuffer{
-			inner: C.uniffi_iroh_streamplace_fn_func_sign(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterStreamINSTANCE.Lower(data), FfiConverterBytesINSTANCE.Lower(certs), FfiConverterGoSignerINSTANCE.Lower(gosigner), _uniffiStatus),
+			inner: C.uniffi_iroh_streamplace_fn_func_sign(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterStreamINSTANCE.Lower(data), FfiConverterStringINSTANCE.Lower(certsStr), FfiConverterGoSignerINSTANCE.Lower(gosigner), _uniffiStatus),
 		}
 	})
 	if _uniffiErr != nil {
@@ -5668,9 +5668,9 @@ func Sign(manifest string, data Stream, certs []byte, gosigner GoSigner) ([]byte
 	}
 }
 
-func SignWithIngredients(manifest string, data Stream, certs []byte, ingredients ManyStreams, gosigner GoSigner, output Stream) error {
+func SignWithIngredients(manifest string, data Stream, certsStr string, ingredients ManyStreams, gosigner GoSigner, output Stream) error {
 	_, _uniffiErr := rustCallWithError[SpError](FfiConverterSpError{}, func(_uniffiStatus *C.RustCallStatus) bool {
-		C.uniffi_iroh_streamplace_fn_func_sign_with_ingredients(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterStreamINSTANCE.Lower(data), FfiConverterBytesINSTANCE.Lower(certs), FfiConverterManyStreamsINSTANCE.Lower(ingredients), FfiConverterGoSignerINSTANCE.Lower(gosigner), FfiConverterStreamINSTANCE.Lower(output), _uniffiStatus)
+		C.uniffi_iroh_streamplace_fn_func_sign_with_ingredients(FfiConverterStringINSTANCE.Lower(manifest), FfiConverterStreamINSTANCE.Lower(data), FfiConverterStringINSTANCE.Lower(certsStr), FfiConverterManyStreamsINSTANCE.Lower(ingredients), FfiConverterGoSignerINSTANCE.Lower(gosigner), FfiConverterStreamINSTANCE.Lower(output), _uniffiStatus)
 		return false
 	})
 	return _uniffiErr.AsError()

@@ -1054,12 +1054,12 @@ void uniffi_iroh_streamplace_fn_func_resign(void* segs_to_sign, void* signed_con
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN
-RustBuffer uniffi_iroh_streamplace_fn_func_sign(RustBuffer manifest, void* data, RustBuffer certs, void* gosigner, RustCallStatus *out_status
+RustBuffer uniffi_iroh_streamplace_fn_func_sign(RustBuffer manifest, void* data, RustBuffer certs_str, void* gosigner, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN_WITH_INGREDIENTS
 #define UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SIGN_WITH_INGREDIENTS
-void uniffi_iroh_streamplace_fn_func_sign_with_ingredients(RustBuffer manifest, void* data, RustBuffer certs, void* ingredients, void* gosigner, void* output, RustCallStatus *out_status
+void uniffi_iroh_streamplace_fn_func_sign_with_ingredients(RustBuffer manifest, void* data, RustBuffer certs_str, void* ingredients, void* gosigner, void* output, RustCallStatus *out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_IROH_STREAMPLACE_FN_FUNC_SUBSCRIBE_ITEM_DEBUG
