@@ -2,7 +2,6 @@ import {
   MenuContainer,
   MenuGroup,
   MenuInfo,
-  MenuItem,
   MenuSeparator,
   Text,
   useDanmuUnlocked,
@@ -10,7 +9,10 @@ import {
   View,
   zero,
 } from "@streamplace/components";
-import { SettingsNavigationItem } from "components/settings/components/settings-navigation-item";
+import {
+  SettingsNavigationItem,
+  SettingsRowItem,
+} from "components/settings/components/settings-navigation-item";
 import {
   Globe,
   Info,
@@ -22,7 +24,7 @@ import {
 } from "lucide-react-native";
 import { ImageBackground, ScrollView } from "react-native";
 
-import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { useNavigationState } from "@react-navigation/native";
 import Mu from "components/mobile/desktop-ui/mu";
 import { useStore } from "store";
 import { useUserProfile } from "store/hooks";
@@ -32,7 +34,6 @@ export function Settings() {
   const loggedIn = useStore((state) => state.authStatus === "loggedIn");
   const userProfile = useUserProfile();
   const danmuUnlocked = useDanmuUnlocked();
-  const navigation = useNavigation();
   const openLoginModal = useStore((state) => state.openLoginModal);
 
   // get the deepest active route for nested navigators
@@ -53,7 +54,7 @@ export function Settings() {
           <MenuContainer>
             <MenuGroup>
               {loggedIn && userProfile ? (
-                <MenuItem>
+                <SettingsRowItem>
                   <View
                     style={[
                       zero.layout.flex.row,
@@ -77,9 +78,9 @@ export function Settings() {
                       </Text>
                     </View>
                   </View>
-                </MenuItem>
+                </SettingsRowItem>
               ) : (
-                <MenuItem>
+                <SettingsRowItem onPress={() => openLoginModal()}>
                   <View
                     style={[
                       zero.layout.flex.row,
@@ -106,7 +107,7 @@ export function Settings() {
                       </Text>
                     </View>
                   </View>
-                </MenuItem>
+                </SettingsRowItem>
               )}
             </MenuGroup>
 
