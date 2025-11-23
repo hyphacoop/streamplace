@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bluesky-social/indigo/atproto/crypto"
+	"github.com/bluesky-social/indigo/atproto/atcrypto"
 	"go.opentelemetry.io/otel"
 	"stream.place/streamplace/pkg/aqio"
 	"stream.place/streamplace/pkg/aqtime"
@@ -201,7 +201,7 @@ func (mm *MediaManager) isWarningBlocked(warning string) bool {
 }
 
 type ValidationResult struct {
-	Pub       *crypto.PublicKeyK256
+	Pub       *atcrypto.PublicKeyK256
 	Meta      *SegmentMetadata
 	MediaData *model.SegmentMediaData
 	Manifest  *c2patypes.Manifest

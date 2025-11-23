@@ -4,7 +4,7 @@ import (
 	"crypto"
 	"fmt"
 
-	atcrypto "github.com/bluesky-social/indigo/atproto/crypto"
+	"github.com/bluesky-social/indigo/atproto/atcrypto"
 	"github.com/decred/dcrd/dcrec/secp256k1"
 	"github.com/mr-tron/base58"
 )

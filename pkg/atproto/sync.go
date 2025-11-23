@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/bluesky-social/indigo/api/bsky"
-	"github.com/bluesky-social/indigo/atproto/data"
+	"github.com/bluesky-social/indigo/atproto/atdata"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"stream.place/streamplace/pkg/aqtime"
 	"stream.place/streamplace/pkg/log"
@@ -31,7 +31,7 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 	if err != nil {
 		return fmt.Errorf("failed to parse ATURI: %w", err)
 	}
-	d, err := data.UnmarshalCBOR(*recCBOR)
+	d, err := atdata.UnmarshalCBOR(*recCBOR)
 	if err != nil {
 		return fmt.Errorf("failed to unmarhsal record CBOR: %w", err)
 	}

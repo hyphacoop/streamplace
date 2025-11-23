@@ -9,7 +9,7 @@ import (
 	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
-	"github.com/bluesky-social/indigo/atproto/label"
+	"github.com/bluesky-social/indigo/atproto/labeling"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/events"
 	"github.com/bluesky-social/indigo/events/schedulers/parallel"
@@ -115,7 +115,7 @@ func (atsync *ATProtoSynchronizer) StartLabelerFirehoseRetry(ctx context.Context
 				log.Error(ctx, "failed to update labeler cursor", "err", err)
 			}
 			for _, labelLex := range evt.Labels {
-				l := label.FromLexicon(labelLex)
+				l := labeling.FromLexicon(labelLex)
 				err = l.VerifySignature(pub)
 				if err != nil {
 					log.Error(ctx, "failed to verify label signature", "err", err)
