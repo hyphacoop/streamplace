@@ -32,6 +32,11 @@ info = Informação
 search-placeholder = Pesquisar...
 message-input = Digite sua mensagem...
 
+## Authentication & Access
+please-log-in-to-access-this-page = Por favor, faça login para acessar esta página
+go-to-settings = Ir para Configurações
+go-back = Voltar
+
 ## Demo and Testing
 welcome-user = Bem-vindo, { $username }!
 notification-count = { $count ->

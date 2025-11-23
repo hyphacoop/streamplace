@@ -1,4 +1,6 @@
+import { useNavigation } from "@react-navigation/native";
 import {
+  Button,
   MenuContainer,
   MenuGroup,
   MenuSeparator,
@@ -9,7 +11,7 @@ import {
   zero,
 } from "@streamplace/components";
 import { useNameColorPicker } from "components/name-color-picker/name-color-picker";
-import { Edit3, LogOut, Palette } from "lucide-react-native";
+import { Edit3, LogOut, Palette, X } from "lucide-react-native";
 import { Image, ScrollView } from "react-native";
 import { useStore } from "store";
 import { useChatProfile, useUserProfile } from "store/hooks";
@@ -19,15 +21,46 @@ import {
 } from "./components/settings-navigation-item";
 
 export function AccountCategorySettings() {
-  const { theme } = useTheme();
+  const { theme, zero: z } = useTheme();
   const { t } = useTranslation("settings");
+  const { t: tn } = useTranslation();
   const logout = useStore((state) => state.logout);
   const chatProfile = useChatProfile();
   const userProfile = useUserProfile();
   const { currentColor, openModal, modal } = useNameColorPicker();
 
+  const navigation = useNavigation();
+
   if (!userProfile) {
-    return null;
+    // do a "log in to access this page, or go back to settings"
+    return (
+      <View
+        style={[
+          zero.layout.flex.align.center,
+          zero.px[2],
+          zero.gap.all[4],
+          zero.mt[8],
+        ]}
+      >
+        <View style={[zero.p[4], zero.r.full, z.bg.destructive]}>
+          <X size={48} color={theme.colors.destructiveForeground} />
+        </View>
+        <Text size="lg">{tn("please-log-in-to-access-this-page")}</Text>
+        <View>
+          <Button
+            width="min"
+            variant="secondary"
+            onPress={() =>
+              navigation.canGoBack()
+                ? navigation.goBack()
+                : navigation.navigate("Settings", { screen: "MainSettings" })
+            }
+          >
+            {tn("go-back")}
+          </Button>
+        </View>
+      </View>
+    );
   }
 
   let rgb =
@@ -93,7 +126,15 @@ export function AccountCategorySettings() {
                 </View>
               </SettingsRowItem>
               <MenuSeparator />
-              <SettingsRowItem onPress={() => logout()}>
+              <SettingsRowItem
+                onPress={() => {
+                  logout();
+                  // wait a bit to debounce
+                  setTimeout(() => {
+                    navigation.navigate("Settings", { screen: "MainSettings" });
+                  }, 100);
+                }}
+              >
                 <View
                   style={{
                     flexDirection: "row",
