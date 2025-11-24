@@ -22,8 +22,8 @@ import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
 import emojiData from "assets/emoji-data.json";
 import { ArrowRight } from "lucide-react-native";
-import { useStore } from "store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useStore } from "store";
 const { borderRadius, gap, layout, flex, px, position, bottom } = zero;
 
 export function DesktopChatPanel({ chatVisible, chatPanelWidth }) {
