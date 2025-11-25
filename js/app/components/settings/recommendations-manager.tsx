@@ -1,14 +1,14 @@
 import {
   Button,
-  Dialog,
   Input,
   MenuContainer,
-  MenuDraggableGroup,
   MenuGroup,
   MenuInfo,
   MenuItem,
   MenuSeparator,
+  ResponsiveDialog,
   Text,
+  useToast,
   zero,
 } from "@streamplace/components";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
@@ -24,7 +24,9 @@ import {
 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
+import Sortable from "react-native-sortables";
+import { SettingsRowItem } from "./components/settings-navigation-item";
 
 const { text, mt, mb, px, py, w, layout, gap, r, p } = zero;
 
@@ -46,6 +48,10 @@ export default function RecommendationsManager() {
   const [errors, setErrors] = useState<Record<number, string>>({});
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
+
+  const a = useToast();
+
+  const [activeDrag, setActiveDrag] = useState("");
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,10 +102,7 @@ export default function RecommendationsManager() {
     } catch (error: any) {
       console.error("Failed to load recommendations:", error);
       if (error.status !== 404) {
-        Alert.alert(
-          "Error",
-          "Failed to load recommendations. Please try again.",
-        );
+        a.show("Error", "Failed to load recommendations. Please try again.");
       }
       setStreamers([]);
     } finally {
@@ -130,7 +133,7 @@ export default function RecommendationsManager() {
       setStreamers(newStreamers);
     } catch (error: any) {
       console.error("Failed to save recommendations:", error);
-      Alert.alert(
+      a.show(
         "Error",
         error.message || "Failed to save recommendations. Please try again.",
       );
@@ -192,15 +195,12 @@ export default function RecommendationsManager() {
 
   const handleSelectActor = async (actor: ActorSearchResult) => {
     if (streamers.length >= 8) {
-      Alert.alert(
-        "Maximum Reached",
-        "You can only add up to 8 recommendations.",
-      );
+      a.show("Maximum Reached", "You can only add up to 8 recommendations.");
       return;
     }
 
     if (streamers.includes(actor.did)) {
-      Alert.alert(
+      a.show(
         "Already Added",
         "This streamer is already in your recommendations.",
       );
@@ -271,13 +271,13 @@ export default function RecommendationsManager() {
 
   const handleAddRecommendation = () => {
     if (streamers.length >= 8) {
-      Alert.alert(
-        "Maximum Reached",
-        "You can only add up to 8 recommendations.",
-      );
+      a.show("Maximum Reached", "You can only add up to 8 recommendations.");
       return;
     }
+    const newIndex = streamers.length;
     setStreamers([...streamers, ""]);
+    setEditingIndex(newIndex);
+    setEditValue("");
   };
 
   const handleDelete = (index: number) => {
@@ -291,28 +291,6 @@ export default function RecommendationsManager() {
     await saveRecommendations(newStreamers);
     setDeleteDialog({ isVisible: false, index: null });
   };
-
-  const moveItem = useCallback(
-    (fromIndex: number, toIndex: number) => {
-      const newStreamers = [...streamers];
-      const [movedItem] = newStreamers.splice(fromIndex, 1);
-      newStreamers.splice(toIndex, 0, movedItem);
-      setStreamers(newStreamers);
-    },
-    [streamers],
-  );
-
-  const handleDragEnd = useCallback(
-    async (fromIndex: number, toIndex: number) => {
-      if (fromIndex !== toIndex) {
-        const newStreamers = [...streamers];
-        const [movedItem] = newStreamers.splice(fromIndex, 1);
-        newStreamers.splice(toIndex, 0, movedItem);
-        await saveRecommendations(newStreamers);
-      }
-    },
-    [streamers, saveRecommendations],
-  );
 
   useEffect(() => {
     if (!agent) return;
@@ -477,196 +455,227 @@ export default function RecommendationsManager() {
               <Loading />
             ) : (
               <MenuContainer>
-                {streamers.length === 0 ? (
-                  <MenuGroup>
+                <MenuGroup>
+                  {streamers.length === 0 ? (
                     <View style={[py[4], layout.flex.center]}>
                       <Text size="sm" style={{ color: theme.colors.textMuted }}>
                         {t("no-recommendations-yet")}
                       </Text>
                     </View>
-                  </MenuGroup>
-                ) : (
-                  <MenuDraggableGroup
-                    onMove={moveItem}
-                    onDragEnd={handleDragEnd}
-                    dragHandle={
-                      <View style={{ padding: 4 }}>
-                        <GripVertical
-                          size={20}
-                          color={theme.colors.textMuted}
-                        />
-                      </View>
-                    }
-                  >
-                    {streamers.map((streamer, index) => (
-                      <>
-                        {index > 0 && <MenuSeparator key={`sep-${index}`} />}
-                        <MenuItem key={index}>
-                          {editingIndex === index ? (
-                            <>
-                              <View style={{ flex: 1 }}>
-                                <Input
-                                  value={editValue}
-                                  onChangeText={setEditValue}
-                                  placeholder="did:plc:..."
-                                  autoFocus
-                                />
-                                {errors[index] && (
-                                  <Text
-                                    size="xs"
-                                    style={{
-                                      color: theme.colors.destructive,
-                                      marginTop: 4,
-                                    }}
+                  ) : (
+                    <Sortable.Grid
+                      columns={1}
+                      activeItemOpacity={90}
+                      activeItemScale={1}
+                      onActiveItemDropped={() => {
+                        saveRecommendations(streamers);
+                      }}
+                      data={streamers}
+                      keyExtractor={(item: string) => `item-${item}`}
+                      overDrag="vertical"
+                      onDragStart={(e) => {
+                        console.log("dragging", e.key);
+                        setActiveDrag(e.key);
+                      }}
+                      onDragEnd={() => setActiveDrag("")}
+                      renderItem={(params: any) => {
+                        const streamer: string = params.item;
+                        const index: number = params.index ?? 0;
+                        const beforeSeparator =
+                          index > 0 && "item-" + params.item !== activeDrag ? (
+                            <MenuSeparator key={`sep-${index}`} />
+                          ) : null;
+
+                        return (
+                          <>
+                            {beforeSeparator}
+                            <MenuItem key={`item-${index}`}>
+                              <GripVertical
+                                color={theme.colors.mutedForeground + "a0"}
+                                size={18}
+                                style={{
+                                  marginLeft: -4,
+                                  marginRight: 4,
+                                }}
+                              />
+                              {editingIndex === index ? (
+                                <>
+                                  <View style={{ flex: 1 }}>
+                                    <Input
+                                      value={editValue}
+                                      onChangeText={setEditValue}
+                                      placeholder="did:plc:..."
+                                      autoFocus
+                                    />
+                                    {errors[index] && (
+                                      <Text
+                                        size="xs"
+                                        style={{
+                                          color: theme.colors.destructive,
+                                          marginTop: 4,
+                                        }}
+                                      >
+                                        {errors[index]}
+                                      </Text>
+                                    )}
+                                  </View>
+
+                                  <Pressable
+                                    onPress={handleSaveEdit}
+                                    style={({ pressed }) => [
+                                      {
+                                        padding: 8,
+                                        borderRadius: 6,
+                                        backgroundColor: pressed
+                                          ? "#ffffff08"
+                                          : "transparent",
+                                      },
+                                    ]}
                                   >
-                                    {errors[index]}
-                                  </Text>
-                                )}
-                              </View>
+                                    <Check
+                                      size={18}
+                                      color={theme.colors.text}
+                                    />
+                                  </Pressable>
 
-                              <Pressable
-                                onPress={handleSaveEdit}
-                                style={({ pressed }) => [
-                                  {
-                                    padding: 8,
-                                    borderRadius: 6,
-                                    backgroundColor: pressed
-                                      ? "#ffffff08"
-                                      : "transparent",
-                                  },
-                                ]}
-                              >
-                                <Check size={18} color={theme.colors.text} />
-                              </Pressable>
+                                  <Pressable
+                                    onPress={handleCancelEdit}
+                                    style={({ pressed }) => [
+                                      {
+                                        padding: 8,
+                                        borderRadius: 6,
+                                        backgroundColor: pressed
+                                          ? "#ffffff08"
+                                          : "transparent",
+                                      },
+                                    ]}
+                                  >
+                                    <X
+                                      size={18}
+                                      color={theme.colors.textMuted}
+                                    />
+                                  </Pressable>
+                                </>
+                              ) : (
+                                <>
+                                  <View style={{ flex: 1 }}>
+                                    <Text
+                                      numberOfLines={1}
+                                      ellipsizeMode="middle"
+                                    >
+                                      {streamer || "(empty)"}
+                                    </Text>
+                                  </View>
 
-                              <Pressable
-                                onPress={handleCancelEdit}
-                                style={({ pressed }) => [
-                                  {
-                                    padding: 8,
-                                    borderRadius: 6,
-                                    backgroundColor: pressed
-                                      ? "#ffffff08"
-                                      : "transparent",
-                                  },
-                                ]}
-                              >
-                                <X size={18} color={theme.colors.textMuted} />
-                              </Pressable>
-                            </>
-                          ) : (
-                            <>
-                              <View style={{ flex: 1 }}>
-                                <Text numberOfLines={1} ellipsizeMode="middle">
-                                  {streamer}
-                                </Text>
-                              </View>
+                                  <Pressable
+                                    onPress={() => handleEdit(index)}
+                                    style={({ pressed }) => [
+                                      {
+                                        padding: 8,
+                                        borderRadius: 6,
+                                        backgroundColor: pressed
+                                          ? "#ffffff08"
+                                          : "transparent",
+                                      },
+                                    ]}
+                                  >
+                                    <Pencil
+                                      size={18}
+                                      color={theme.colors.textMuted}
+                                    />
+                                  </Pressable>
 
-                              <Pressable
-                                onPress={() => handleEdit(index)}
-                                style={({ pressed }) => [
-                                  {
-                                    padding: 8,
-                                    borderRadius: 6,
-                                    backgroundColor: pressed
-                                      ? "#ffffff08"
-                                      : "transparent",
-                                  },
-                                ]}
-                              >
-                                <Pencil
-                                  size={18}
-                                  color={theme.colors.textMuted}
-                                />
-                              </Pressable>
+                                  <Pressable
+                                    onPress={() => handleDelete(index)}
+                                    style={({ pressed }) => [
+                                      {
+                                        padding: 8,
+                                        borderRadius: 6,
+                                        backgroundColor: pressed
+                                          ? "#ffffff08"
+                                          : "transparent",
+                                      },
+                                    ]}
+                                  >
+                                    <X
+                                      size={18}
+                                      color={theme.colors.destructive}
+                                    />
+                                  </Pressable>
+                                </>
+                              )}
+                            </MenuItem>
+                          </>
+                        );
+                      }}
+                      onOrderChange={(params) => {
+                        console.log(params);
+                        // calculate new order from params
+                        // duplicate streamers array
+                        const newData = [...streamers];
+                        const movedItem = newData.splice(
+                          params.fromIndex,
+                          1,
+                        )[0];
+                        newData.splice(params.toIndex, 0, movedItem);
+                        setStreamers(newData);
+                      }}
+                      rowGap={0}
+                      columnGap={0}
+                    />
+                  )}
 
-                              <Pressable
-                                onPress={() => handleDelete(index)}
-                                style={({ pressed }) => [
-                                  {
-                                    padding: 8,
-                                    borderRadius: 6,
-                                    backgroundColor: pressed
-                                      ? "#ffffff08"
-                                      : "transparent",
-                                  },
-                                ]}
-                              >
-                                <X size={18} color={theme.colors.destructive} />
-                              </Pressable>
-                            </>
-                          )}
-                        </MenuItem>
-                      </>
-                    ))}
-                  </MenuDraggableGroup>
-                )}
+                  {streamers.length > 0 && streamers.length < 8 && (
+                    <MenuSeparator />
+                  )}
 
-                {streamers.length > 0 && streamers.length < 8 && (
-                  <MenuSeparator />
-                )}
+                  {streamers.length < 8 && (
+                    <SettingsRowItem onPress={handleAddRecommendation}>
+                      <View
+                        style={[
+                          layout.flex.row,
+                          layout.flex.alignCenter,
+                          gap.all[2],
+                        ]}
+                      >
+                        <Plus color={theme.colors.text} />
+                        <Text>Add DID manually</Text>
+                      </View>
+                    </SettingsRowItem>
+                  )}
 
-                {streamers.length < 8 && (
-                  <MenuGroup>
-                    <Pressable onPress={handleAddRecommendation}>
-                      {({ pressed }) => (
-                        <View
-                          style={[
-                            px[3],
-                            py[2],
-                            layout.flex.row,
-                            layout.flex.alignCenter,
-                            gap.all[2],
-                            r.md,
-                            {
-                              backgroundColor: pressed
-                                ? "#ffffff08"
-                                : "transparent",
-                            },
-                          ]}
-                        >
-                          <Plus size={20} color={theme.colors.text} />
-                          <Text size="lg">Add DID manually</Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  </MenuGroup>
-                )}
-
-                {saving && (
-                  <View style={[mt[2], layout.flex.center]}>
-                    <Text size="sm" style={{ color: theme.colors.textMuted }}>
-                      {t("saving")}
-                    </Text>
-                  </View>
-                )}
+                  {saving && (
+                    <View style={[mt[2], layout.flex.center]}>
+                      <Text size="sm" style={{ color: theme.colors.textMuted }}>
+                        {t("saving")}
+                      </Text>
+                    </View>
+                  )}
+                </MenuGroup>
               </MenuContainer>
             )}
           </View>
         </View>
       </ScrollView>
 
-      <Dialog
+      <ResponsiveDialog
         open={deleteDialog.isVisible}
         onOpenChange={(open) =>
           !open && setDeleteDialog({ isVisible: false, index: null })
         }
         title={t("delete")}
-        dismissible={false}
+        dismissible={true}
+        size="sm"
       >
-        <View style={[w.percent[100], mb[8], mt[2]]}>
-          <Text style={[{ fontSize: 24 }]}>{t("confirm-delete")}</Text>
-          <Text
-            style={[text.gray[400], mt[4], { fontSize: 18, fontWeight: "700" }]}
-          >
-            {t("action-cannot-be-undone")}
-          </Text>
+        <View style={[w.percent[100], gap.all[2], mb[4]]}>
+          <Text size="2xl">{t("confirm-delete")}</Text>
+          <Text>{t("action-cannot-be-undone")}</Text>
         </View>
 
         <View style={[layout.flex.row, layout.flex.justify.end, gap.all[3]]}>
           <Button
             variant="secondary"
-            width="full"
+            width="min"
             onPress={() => setDeleteDialog({ isVisible: false, index: null })}
             disabled={saving}
           >
@@ -674,16 +683,14 @@ export default function RecommendationsManager() {
           </Button>
           <Button
             variant="destructive"
-            width="full"
+            width="min"
             onPress={confirmDelete}
             disabled={saving}
           >
-            <Text style={[text.white, { fontSize: 14, fontWeight: "500" }]}>
-              {saving ? t("deleting") : t("delete")}
-            </Text>
+            <Text>{saving ? t("deleting") : t("delete")}</Text>
           </Button>
         </View>
-      </Dialog>
+      </ResponsiveDialog>
     </>
   );
 }
