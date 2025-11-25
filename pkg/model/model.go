@@ -48,6 +48,7 @@ type Model interface {
 	GetRepoByHandleOrDID(arg string) (*Repo, error)
 	GetRepoBySigningKey(signingKey string) (*Repo, error)
 	GetAllRepos() ([]Repo, error)
+	SearchReposByHandle(query string, limit int) ([]Repo, error)
 	UpdateRepo(repo *Repo) error
 
 	UpdateSigningKey(key *SigningKey) error

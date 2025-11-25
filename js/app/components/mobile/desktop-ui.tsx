@@ -18,13 +18,13 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BottomControlBar,
   MuteOverlay,
   TopControlBar,
 } from "./desktop-ui/index";
 import { useResponsiveLayout } from "./useResponsiveLayout";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { h, layout, position, w, px, py, r, p } = zero;
 
@@ -220,7 +220,6 @@ export function DesktopUi({
             ingest={ingest}
             isChatOpen={isChatOpen || false}
             onToggleChat={toggleChat}
-            safeAreaInsets={safeAreaInsets}
             embedded={embedded}
           />
         </Animated.View>

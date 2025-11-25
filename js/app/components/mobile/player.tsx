@@ -13,7 +13,6 @@ import {
   usePlayerDimensions,
   usePlayerStore,
   useSegment,
-  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
@@ -27,7 +26,7 @@ import Reanimated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useAppSelector } from "store/hooks";
+import { useUserProfile } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
 import { DesktopUi } from "./desktop-ui";
@@ -35,11 +34,8 @@ import { OfflineCounter } from "./offline-counter";
 import { MobileUi } from "./ui";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 
-import {
-  setSidebarHidden,
-  setSidebarUnhidden,
-} from "features/base/sidebarSlice";
-import { useDispatch } from "react-redux";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useStore } from "store";
 import { UserOffline } from "./user-offline";
 
 const SEGMENT_TIMEOUT = 500; // half a sec
@@ -225,6 +221,10 @@ export function PlayerInner(
     showChatSidePanelOnLandscape: props.showChat,
   });
 
+  const safeAreaInsets = useSafeAreaInsets();
+  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
+  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
+
   // auto-collapse chat once when going offline
   const hasCollapsedChat = useRef(false);
   useEffect(() => {
@@ -251,9 +251,6 @@ export function PlayerInner(
       heightMultiplier.value = withTiming(1, { duration: 500 });
     }
   }, [props.showUnavailable]);
-
-  // for hiding sidebar
-  const dispatch = useDispatch();
 
   // content info
   const { width, height } = usePlayerDimensions();
@@ -290,6 +287,8 @@ export function PlayerInner(
 
   const showFullDesktopMode = aspectRatio > 1 && screenWidth > 1200;
   const isLandscape = aspectRatio > 1;
+
+  const isPlayerRatioGreater = aspectRatio >= 16 / 9;
 
   // animated style for offline height transition
   const animatedHeightStyle = useAnimatedStyle(() => {

@@ -161,6 +161,7 @@ var CollectionFilter = []string{
 	constants.APP_BSKY_GRAPH_FOLLOW,
 	constants.APP_BSKY_FEED_POST,
 	constants.APP_BSKY_GRAPH_BLOCK,
+	"place.stream.live.recommendations",
 }
 
 func (atsync *ATProtoSynchronizer) handleCommitEventOps(ctx context.Context, evt *comatproto.SyncSubscribeRepos_Commit) {

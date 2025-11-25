@@ -153,3 +153,28 @@ func (s *Server) handlePlaceStreamLiveSubscribeSegments(c echo.Context) error {
 		log.Debug(c.Request().Context(), "received message", "message", string(msg))
 	}
 }
+
+func (s *Server) handlePlaceStreamLiveGetRecommendations(ctx context.Context, userDID string) (*placestreamtypes.LiveGetRecommendations_Output, error) {
+	if userDID == "" {
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "userDID is required")
+	}
+
+	rec, err := s.statefulDB.GetRecommendation(userDID)
+	if err != nil {
+		// If not found, return empty array
+		return &placestreamtypes.LiveGetRecommendations_Output{
+			Streamers: []string{},
+			UserDID:   &userDID,
+		}, nil
+	}
+
+	streamers, err := rec.GetStreamersArray()
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Failed to parse recommendations")
+	}
+
+	return &placestreamtypes.LiveGetRecommendations_Output{
+		Streamers: streamers,
+		UserDID:   &userDID,
+	}, nil
+}
