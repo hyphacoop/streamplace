@@ -145,68 +145,17 @@ export const I18NEXT_CONFIG = {
   debug: process.env.NODE_ENV === "development",
 };
 
-// Translation loading function that loads compiled JSON files per namespace
+// Import platform-specific translation loader
+// Metro will use i18n-loader.native.ts for React Native, i18n-loader.ts for web
+import { loadTranslationData as platformLoadTranslationData } from "./i18n-loader";
+
+// Translation loading function with error handling
 async function loadTranslationData(
   locale: string,
   namespace: string,
 ): Promise<any> {
   try {
-    let translations: any = {};
-
-    try {
-      // For web environments, load from public directory
-      if (typeof window !== "undefined") {
-        const response = await fetch(`/locales/${locale}/${namespace}.json`);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        translations = await response.json();
-      } else {
-        // For React Native, use static requires for bundler compatibility
-        // Map base language codes to full locales
-        const fullLocale = locale.includes("-")
-          ? locale
-          : {
-              en: "en-US",
-              pt: "pt-BR",
-              es: "es-ES",
-              zh: "zh-Hant",
-              fr: "fr-FR",
-            }[locale] || locale;
-
-        // Static requires for React Native bundler
-        const localeNamespaceKey = `${fullLocale}/${namespace}`;
-        const translationMap: Record<string, any> = {
-          "en-US/common": require("../../public/locales/en-US/common.json"),
-          "pt-BR/common": require("../../public/locales/pt-BR/common.json"),
-          "es-ES/common": require("../../public/locales/es-ES/common.json"),
-          "zh-Hant/common": require("../../public/locales/zh-Hant/common.json"),
-          "fr-FR/common": require("../../public/locales/fr-FR/common.json"),
-          "en-US/settings": require("../../public/locales/en-US/settings.json"),
-          "pt-BR/settings": require("../../public/locales/pt-BR/settings.json"),
-          "es-ES/settings": require("../../public/locales/es-ES/settings.json"),
-          "zh-Hant/settings": require("../../public/locales/zh-Hant/settings.json"),
-          "fr-FR/settings": require("../../public/locales/fr-FR/settings.json"),
-        };
-
-        translations = translationMap[localeNamespaceKey];
-
-        if (!translations) {
-          throw new Error(
-            `No static translation mapping for ${localeNamespaceKey}`,
-          );
-        }
-      }
-    } catch (loadError: any) {
-      throw new Error(
-        `Failed to load ${namespace} translations for ${locale}: ${loadError.message}`,
-      );
-    }
-
-    if (!translations || Object.keys(translations).length === 0) {
-      throw new Error("No translations found in file");
-    }
-
+    const translations = await platformLoadTranslationData(locale, namespace);
     return translations;
   } catch (error: any) {
     console.error(
