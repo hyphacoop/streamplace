@@ -3,6 +3,8 @@ title: Danmu Overlay
 description: Add flying bullet-style chat comments to the player, or your stream
 ---
 
+:::note This feature is experimental and may change in future releases. :::
+
 [Danmu (or Danmaku)](https://en.wikipedia.org/wiki/Danmaku_subtitling) (弹幕,
 "bullet curtain") is a comment style where messages fly across the video
 horizontally. Originating from Niconico and Bilibili, it's a fun way to display
@@ -20,9 +22,10 @@ overlay is transparent so you can layer it over your video in OBS.
 In-player danmu is currently an experimental feature. To unlock it:
 
 1. Open Settings in Streamplace
-2. Tap the version number 5 times
-3. You'll see "You are now a developer". congrats!
-4. Scroll down to see the Danmu settings
+2. Enter the "About" section
+3. Tap the version number 5 times
+4. You'll see "You are now a developer". congrats!
+5. Go back to Settings, you should now see a "Danmu" section!
 
 From there you can:
 

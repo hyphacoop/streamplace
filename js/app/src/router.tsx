@@ -85,6 +85,7 @@ import {
   useNotificationToken,
   useUserProfile,
 } from "store/hooks";
+import DanmuOBSScreen from "./screens/danmu-obs";
 import MobileGoLive from "./screens/mobile-go-live";
 import MobileStream from "./screens/mobile-stream";
 
@@ -135,6 +136,7 @@ type RootStackParamList = {
   Embed: { user: string };
   InfoWidgetEmbed: undefined;
   LegacyStream: { user: string };
+  DanmuOBS: { user: string };
   MobileGoLive: undefined;
 };
 
@@ -182,6 +184,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
       Embed: "embed/:user",
       InfoWidgetEmbed: "info-widget",
       LegacyStream: "legacy/:user",
+      DanmuOBS: "widgets/:user/danmu",
       MobileGoLive: "mobile-golive",
     },
   },
@@ -619,6 +622,15 @@ export function StreamplaceDrawer() {
         <Drawer.Screen
           name="InfoWidgetEmbed"
           component={InfoWidgetEmbed}
+          options={{
+            drawerLabel: () => null,
+            drawerItemStyle: { display: "none" },
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="DanmuOBS"
+          component={DanmuOBSScreen}
           options={{
             drawerLabel: () => null,
             drawerItemStyle: { display: "none" },
