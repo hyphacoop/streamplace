@@ -3,15 +3,25 @@ import {
   Dialog,
   Input,
   MenuContainer,
+  MenuDraggableGroup,
   MenuGroup,
   MenuInfo,
+  MenuItem,
   MenuSeparator,
   Text,
   zero,
 } from "@streamplace/components";
 import { usePDSAgent } from "@streamplace/components/src/streamplace-store/xrpc";
 import Loading from "components/loading/loading";
-import { Plus, RefreshCw, Search, X } from "lucide-react-native";
+import {
+  Check,
+  GripVertical,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, ScrollView, View } from "react-native";
@@ -34,6 +44,8 @@ export default function RecommendationsManager() {
     index: number | null;
   }>({ isVisible: false, index: null });
   const [errors, setErrors] = useState<Record<number, string>>({});
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,7 +74,24 @@ export default function RecommendationsManager() {
         rkey: "self",
       });
 
-      const record = response.data.value as any;
+      // todo: type this right
+      let record = response.data.value as any;
+
+      if (!response.success) {
+        // Create a new empty record if not found
+        const res = await agent.com.atproto.repo.createRecord({
+          repo: userDID,
+          collection: "place.stream.live.recommendations",
+          record: {
+            streamers: [],
+            createdAt: new Date().toISOString(),
+          },
+        });
+        if (!res.success) {
+          throw new Error("Failed to create recommendations record");
+        }
+        record = res.data;
+      }
       setStreamers(record.streamers || []);
     } catch (error: any) {
       console.error("Failed to load recommendations:", error);
@@ -83,19 +112,20 @@ export default function RecommendationsManager() {
 
     try {
       if (!agent.did) {
-        throw new Error("Agent DID is not available");
+        throw new Error("User DID not found");
       }
       setSaving(true);
 
-      await agent.place.stream.live.recommendations.create(
-        {
-          repo: agent.did,
-        },
-        {
-          createdAt: new Date().toISOString(),
+      // Use putRecord to create or update the record
+      await agent.com.atproto.repo.putRecord({
+        repo: agent.did,
+        collection: "place.stream.live.recommendations",
+        rkey: "self",
+        record: {
           streamers: newStreamers,
+          createdAt: new Date().toISOString(),
         },
-      );
+      });
 
       setStreamers(newStreamers);
     } catch (error: any) {
@@ -206,24 +236,37 @@ export default function RecommendationsManager() {
     return true;
   };
 
-  const handleStreamerChange = async (index: number, value: string) => {
-    const newStreamers = [...streamers];
-    newStreamers[index] = value;
-    setStreamers(newStreamers);
+  const handleEdit = (index: number) => {
+    setEditingIndex(index);
+    setEditValue(streamers[index]);
+    setErrors({});
   };
 
-  const handleStreamerBlur = async (index: number) => {
-    const value = streamers[index].trim();
-    if (!value) {
-      // Empty field, just remove it
-      const newStreamers = streamers.filter((_, i) => i !== index);
-      await saveRecommendations(newStreamers);
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditValue("");
+    setErrors({});
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingIndex === null) return;
+
+    const trimmed = editValue.trim();
+    if (!trimmed) {
+      setErrors({ [editingIndex]: "DID is required" });
+      return;
+    }
+    if (!trimmed.startsWith("did:")) {
+      setErrors({ [editingIndex]: "DID must start with 'did:'" });
       return;
     }
 
-    if (validateDID(value, index)) {
-      await saveRecommendations(streamers);
-    }
+    const newStreamers = [...streamers];
+    newStreamers[editingIndex] = trimmed;
+    await saveRecommendations(newStreamers);
+    setEditingIndex(null);
+    setEditValue("");
+    setErrors({});
   };
 
   const handleAddRecommendation = () => {
@@ -248,6 +291,28 @@ export default function RecommendationsManager() {
     await saveRecommendations(newStreamers);
     setDeleteDialog({ isVisible: false, index: null });
   };
+
+  const moveItem = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      const newStreamers = [...streamers];
+      const [movedItem] = newStreamers.splice(fromIndex, 1);
+      newStreamers.splice(toIndex, 0, movedItem);
+      setStreamers(newStreamers);
+    },
+    [streamers],
+  );
+
+  const handleDragEnd = useCallback(
+    async (fromIndex: number, toIndex: number) => {
+      if (fromIndex !== toIndex) {
+        const newStreamers = [...streamers];
+        const [movedItem] = newStreamers.splice(fromIndex, 1);
+        newStreamers.splice(toIndex, 0, movedItem);
+        await saveRecommendations(newStreamers);
+      }
+    },
+    [streamers, saveRecommendations],
+  );
 
   useEffect(() => {
     if (!agent) return;
@@ -412,80 +477,137 @@ export default function RecommendationsManager() {
               <Loading />
             ) : (
               <MenuContainer>
-                <MenuGroup>
-                  {streamers.length === 0 ? (
+                {streamers.length === 0 ? (
+                  <MenuGroup>
                     <View style={[py[4], layout.flex.center]}>
                       <Text size="sm" style={{ color: theme.colors.textMuted }}>
                         {t("no-recommendations-yet")}
                       </Text>
                     </View>
-                  ) : (
-                    streamers.map((streamer, index) => (
-                      <View key={index}>
-                        {index > 0 && <MenuSeparator />}
-                        <View
-                          style={[
-                            px[3],
-                            py[2],
-                            layout.flex.row,
-                            layout.flex.alignCenter,
-                            gap.all[2],
-                          ]}
-                        >
-                          <Text
-                            size="sm"
-                            style={{
-                              color: theme.colors.textMuted,
-                              minWidth: 24,
-                            }}
-                          >
-                            #{index + 1}
-                          </Text>
-                          <View style={{ flex: 1 }}>
-                            <Input
-                              value={streamer}
-                              onChangeText={(value) =>
-                                handleStreamerChange(index, value)
-                              }
-                              onBlur={() => handleStreamerBlur(index)}
-                              placeholder="did:plc:..."
-                            />
-                            {errors[index] && (
-                              <Text
-                                size="xs"
-                                style={{
-                                  color: theme.colors.destructive,
-                                  marginTop: 4,
-                                }}
-                              >
-                                {errors[index]}
-                              </Text>
-                            )}
-                          </View>
-                          <Pressable
-                            onPress={() => handleDelete(index)}
-                            style={({ pressed }) => [
-                              {
-                                padding: 8,
-                                borderRadius: 6,
-                                backgroundColor: pressed
-                                  ? "#ffffff08"
-                                  : "transparent",
-                              },
-                            ]}
-                          >
-                            <X size={18} color={theme.colors.destructive} />
-                          </Pressable>
-                        </View>
+                  </MenuGroup>
+                ) : (
+                  <MenuDraggableGroup
+                    onMove={moveItem}
+                    onDragEnd={handleDragEnd}
+                    dragHandle={
+                      <View style={{ padding: 4 }}>
+                        <GripVertical
+                          size={20}
+                          color={theme.colors.textMuted}
+                        />
                       </View>
-                    ))
-                  )}
+                    }
+                  >
+                    {streamers.map((streamer, index) => (
+                      <>
+                        {index > 0 && <MenuSeparator key={`sep-${index}`} />}
+                        <MenuItem key={index}>
+                          {editingIndex === index ? (
+                            <>
+                              <View style={{ flex: 1 }}>
+                                <Input
+                                  value={editValue}
+                                  onChangeText={setEditValue}
+                                  placeholder="did:plc:..."
+                                  autoFocus
+                                />
+                                {errors[index] && (
+                                  <Text
+                                    size="xs"
+                                    style={{
+                                      color: theme.colors.destructive,
+                                      marginTop: 4,
+                                    }}
+                                  >
+                                    {errors[index]}
+                                  </Text>
+                                )}
+                              </View>
 
-                  {streamers.length > 0 && streamers.length < 8 && (
-                    <MenuSeparator />
-                  )}
+                              <Pressable
+                                onPress={handleSaveEdit}
+                                style={({ pressed }) => [
+                                  {
+                                    padding: 8,
+                                    borderRadius: 6,
+                                    backgroundColor: pressed
+                                      ? "#ffffff08"
+                                      : "transparent",
+                                  },
+                                ]}
+                              >
+                                <Check size={18} color={theme.colors.text} />
+                              </Pressable>
 
-                  {streamers.length < 8 && (
+                              <Pressable
+                                onPress={handleCancelEdit}
+                                style={({ pressed }) => [
+                                  {
+                                    padding: 8,
+                                    borderRadius: 6,
+                                    backgroundColor: pressed
+                                      ? "#ffffff08"
+                                      : "transparent",
+                                  },
+                                ]}
+                              >
+                                <X size={18} color={theme.colors.textMuted} />
+                              </Pressable>
+                            </>
+                          ) : (
+                            <>
+                              <View style={{ flex: 1 }}>
+                                <Text numberOfLines={1} ellipsizeMode="middle">
+                                  {streamer}
+                                </Text>
+                              </View>
+
+                              <Pressable
+                                onPress={() => handleEdit(index)}
+                                style={({ pressed }) => [
+                                  {
+                                    padding: 8,
+                                    borderRadius: 6,
+                                    backgroundColor: pressed
+                                      ? "#ffffff08"
+                                      : "transparent",
+                                  },
+                                ]}
+                              >
+                                <Pencil
+                                  size={18}
+                                  color={theme.colors.textMuted}
+                                />
+                              </Pressable>
+
+                              <Pressable
+                                onPress={() => handleDelete(index)}
+                                style={({ pressed }) => [
+                                  {
+                                    padding: 8,
+                                    borderRadius: 6,
+                                    backgroundColor: pressed
+                                      ? "#ffffff08"
+                                      : "transparent",
+                                  },
+                                ]}
+                              >
+                                <X size={18} color={theme.colors.destructive} />
+                              </Pressable>
+                            </>
+                          )}
+                        </MenuItem>
+                      </>
+                    ))}
+                  </MenuDraggableGroup>
+                )}
+
+                {streamers.length > 0 && streamers.length < 8 && (
+                  <MenuSeparator />
+                )}
+
+                {streamers.length < 8 && (
+                  <MenuGroup>
                     <Pressable onPress={handleAddRecommendation}>
                       {({ pressed }) => (
                         <View
@@ -508,8 +630,8 @@ export default function RecommendationsManager() {
                         </View>
                       )}
                     </Pressable>
-                  )}
-                </MenuGroup>
+                  </MenuGroup>
+                )}
 
                 {saving && (
                   <View style={[mt[2], layout.flex.center]}>
