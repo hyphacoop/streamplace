@@ -353,7 +353,7 @@ export const createBlueskySlice: StateCreator<
     }
     await state.oauthSession.signOut();
     set({
-      oauthSession: undefined,
+      oauthSession: null,
       pdsAgent: null,
       authStatus: "loggedOut",
     });
