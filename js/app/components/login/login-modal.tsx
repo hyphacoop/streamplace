@@ -2,7 +2,6 @@ import { Button, Text, useTheme, zero } from "@streamplace/components";
 import { Info, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Modal,
@@ -175,14 +174,9 @@ export default function LoginModal({ visible, onClose }: LoginModalProps) {
               disabled={loginState.loading}
               style={[zero.px[6]]}
               width="min"
+              loading={loginState.loading}
             >
-              <Text style={[{ color: "white" }]}>
-                {loginState.loading ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  "Log in"
-                )}
-              </Text>
+              <Text style={[{ color: "white" }]}>Log in</Text>
             </Button>
           </View>
         </Pressable>
