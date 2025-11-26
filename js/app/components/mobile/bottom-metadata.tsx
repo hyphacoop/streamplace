@@ -2,6 +2,8 @@ import {
   Button,
   ContentRights,
   ContentWarnings,
+  formatHandle,
+  formatHandleWithAt,
   layout,
   PlayerUI,
   ShareSheet,
@@ -90,13 +92,13 @@ export function BottomMetadata({
               <Pressable
                 onPress={() => {
                   if (profile?.handle) {
-                    const url = `https://bsky.app/profile/${profile.handle}`;
+                    const url = `https://bsky.app/profile/${formatHandle(profile)}`;
                     Linking.openURL(url);
                   }
                 }}
               >
                 <Text style={{ color: "white", fontWeight: "600" }}>
-                  @{profile?.handle || "user"}
+                  {profile ? formatHandleWithAt(profile) : "@user"}
                 </Text>
               </Pressable>
               {did && profile && (

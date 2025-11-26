@@ -1,4 +1,4 @@
-import { zero } from "@streamplace/components";
+import { formatHandleWithAt, zero } from "@streamplace/components";
 import ThumbnailSelector from "components/thumbnail-selector";
 import { useCaptureVideoFrame } from "hooks/useCaptureVideoFrame";
 import { useLiveUser } from "hooks/useLiveUser";
@@ -123,7 +123,7 @@ export default function CreateLivestream() {
               Streamer
             </Text>
             <Text style={[{ paddingBottom: 8, fontWeight: "bold" }]}>
-              @{profile?.handle}
+              {profile && formatHandleWithAt(profile)}
             </Text>
           </View>
 
