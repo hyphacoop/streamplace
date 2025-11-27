@@ -13,12 +13,21 @@ import { overflow } from "@streamplace/components/src/lib/theme/atoms";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Image, Platform, Pressable, useWindowDimensions } from "react-native";
+import { useStore } from "../../store";
 import { DesktopUi } from "./desktop-ui";
 
 const { bg, borders, flex, gap, h, layout, mt, position, px, py, r, text, w } =
   zero;
 
-const DEFAULT_SOURCE = "justinmakaila.com";
+interface SourceType {
+  did: string;
+  source: string;
+}
+
+const DEFAULT_SOURCE: SourceType = {
+  did: "justinmakaila.com",
+  source: "default",
+};
 
 export function UserOffline() {
   const navigation = useNavigation();
@@ -29,11 +38,60 @@ export function UserOffline() {
   const useCompactLayout = isSmallScreen && !isLandscape;
 
   const [guestViewerCount, getViewerCount] = useState(null);
+  const [recommendedSource, setRecommendedSource] = useState<SourceType | null>(
+    null,
+  );
+  const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
+  const getRecommendations = useStore((state) => state.getRecommendations);
 
   const pfp = useAvatars(profile ? [profile?.did] : []);
+  const recommendedPfp = useAvatars(
+    recommendedSource ? [recommendedSource.did] : [],
+  );
 
   // use the detailed profile from useAvatars
   const detailedProfile = profile ? pfp[profile?.did] : null;
+  const recommendedProfile = recommendedSource
+    ? recommendedPfp[recommendedSource.did]
+    : null;
+
+  useEffect(() => {
+    if (!profile?.did) return;
+
+    const fetchRecommendation = async () => {
+      setIsLoadingRecommendation(true);
+      try {
+        const result = await getRecommendations(profile.did);
+        if (result.recommendations && result.recommendations.length > 0) {
+          // Get the first livestream recommendation
+          const firstLivestream = result.recommendations.find(
+            (rec) =>
+              rec.$type ===
+              "place.stream.live.getRecommendations#livestreamRecommendation",
+          );
+          if (firstLivestream?.did) {
+            setRecommendedSource({
+              did: firstLivestream.did,
+              source: firstLivestream.source || "default",
+            });
+          } else {
+            setRecommendedSource(DEFAULT_SOURCE);
+          }
+        } else {
+          setRecommendedSource(DEFAULT_SOURCE);
+        }
+      } catch (err) {
+        console.error("failed to get recommendations", err);
+        setRecommendedSource(DEFAULT_SOURCE);
+      } finally {
+        setIsLoadingRecommendation(false);
+      }
+    };
+
+    fetchRecommendation();
+  }, [profile?.did, getRecommendations]);
+
+  const sourceToShow = recommendedSource || DEFAULT_SOURCE;
 
   if (!profile) {
     return (
@@ -163,11 +221,26 @@ export function UserOffline() {
             >
               offline
             </Text>
-            , but we recommend checking out:
+            , but {sourceToShow.source === "streamer" ? "they" : "we"} recommend
+            checking out:
           </Text>
-          <View>
-            <Text style={[text.gray[300]]}>@{DEFAULT_SOURCE}</Text>
-            <Text style={[text.gray[300]]}>{guestViewerCount} viewers</Text>
+          <View style={[gap.all[1]]}>
+            {isLoadingRecommendation ? (
+              <Text style={[text.gray[300]]}>loading...</Text>
+            ) : (
+              <>
+                <Image
+                  source={{ uri: recommendedProfile?.avatar }}
+                  style={[
+                    { width: 48, height: 48, borderRadius: 999 },
+                    borders.width.thin,
+                    borders.color.gray[700],
+                  ]}
+                />
+                <Text>@{recommendedProfile?.handle}</Text>
+                <Text style={[text.gray[300]]}>{guestViewerCount} viewers</Text>
+              </>
+            )}
           </View>
         </View>
         <View
@@ -193,14 +266,16 @@ export function UserOffline() {
             gap.row[2],
           ]}
         >
-          <LivestreamProvider src={DEFAULT_SOURCE} ignoreOuterContext>
-            <PlayerProvider>
-              <Player src={DEFAULT_SOURCE} embedded={true}>
-                <DesktopUi setIsChatOpen={undefined} />
-                <GetViewerCount setViewerCount={getViewerCount} />
-              </Player>
-            </PlayerProvider>
-          </LivestreamProvider>
+          {!isLoadingRecommendation && (
+            <LivestreamProvider src={sourceToShow.did} ignoreOuterContext>
+              <PlayerProvider>
+                <Player src={sourceToShow.did} embedded={true}>
+                  <DesktopUi setIsChatOpen={undefined} />
+                  <GetViewerCount setViewerCount={getViewerCount} />
+                </Player>
+              </PlayerProvider>
+            </LivestreamProvider>
+          )}
         </View>
       </View>
     </View>

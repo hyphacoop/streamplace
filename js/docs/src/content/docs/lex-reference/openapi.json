@@ -632,21 +632,24 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "streamers": {
+                    "recommendations": {
                       "type": "array",
-                      "description": "Ordered list of recommended streamer DIDs",
+                      "description": "Ordered list of recommendations",
                       "items": {
-                        "type": "string",
-                        "format": "did"
+                        "oneOf": [
+                          {
+                            "$ref": "#/components/schemas/place.stream.live.getRecommendations_livestreamRecommendation"
+                          }
+                        ]
                       }
                     },
                     "userDID": {
                       "type": "string",
-                      "description": "The user who created this recommendation list",
+                      "description": "The user DID this recommendation is for",
                       "format": "did"
                     }
                   },
-                  "required": ["streamers"]
+                  "required": ["recommendations"]
                 }
               }
             }
@@ -2242,6 +2245,22 @@
           }
         },
         "required": ["count"]
+      },
+      "place.stream.live.getRecommendations_livestreamRecommendation": {
+        "type": "object",
+        "properties": {
+          "did": {
+            "type": "string",
+            "description": "The DID of the recommended streamer",
+            "format": "did"
+          },
+          "source": {
+            "type": "string",
+            "description": "Source of the recommendation",
+            "enum": ["streamer", "follows", "host"]
+          }
+        },
+        "required": ["did", "source"]
       },
       "place.stream.segment_segmentView": {
         "type": "object",

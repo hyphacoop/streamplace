@@ -28,10 +28,25 @@ Get the list of streamers recommended by a user
 
 **Schema Type:** `object`
 
-| Name        | Type              | Req'd | Description                                   | Constraints   |
-| ----------- | ----------------- | ----- | --------------------------------------------- | ------------- |
-| `streamers` | Array of `string` | ✅    | Ordered list of recommended streamer DIDs     |               |
-| `userDID`   | `string`          | ❌    | The user who created this recommendation list | Format: `did` |
+| Name              | Type                                                                                        | Req'd | Description                             | Constraints   |
+| ----------------- | ------------------------------------------------------------------------------------------- | ----- | --------------------------------------- | ------------- |
+| `recommendations` | Array of Union of:<br/>&nbsp;&nbsp;[`#livestreamRecommendation`](#livestreamrecommendation) | ✅    | Ordered list of recommendations         |               |
+| `userDID`         | `string`                                                                                    | ❌    | The user DID this recommendation is for | Format: `did` |
+
+---
+
+<a name="livestreamrecommendation"></a>
+
+### `livestreamRecommendation`
+
+**Type:** `object`
+
+**Properties:**
+
+| Name     | Type     | Req'd | Description                         | Constraints                         |
+| -------- | -------- | ----- | ----------------------------------- | ----------------------------------- |
+| `did`    | `string` | ✅    | The DID of the recommended streamer | Format: `did`                       |
+| `source` | `string` | ✅    | Source of the recommendation        | Enum: `streamer`, `follows`, `host` |
 
 ---
 
@@ -60,22 +75,38 @@ Get the list of streamers recommended by a user
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": ["streamers"],
+          "required": ["recommendations"],
           "properties": {
-            "streamers": {
+            "recommendations": {
               "type": "array",
-              "description": "Ordered list of recommended streamer DIDs",
+              "description": "Ordered list of recommendations",
               "items": {
-                "type": "string",
-                "format": "did"
+                "type": "union",
+                "refs": ["#livestreamRecommendation"]
               }
             },
             "userDID": {
               "type": "string",
               "format": "did",
-              "description": "The user who created this recommendation list"
+              "description": "The user DID this recommendation is for"
             }
           }
+        }
+      }
+    },
+    "livestreamRecommendation": {
+      "type": "object",
+      "required": ["did", "source"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "The DID of the recommended streamer"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["streamer", "follows", "host"],
+          "description": "Source of the recommendation"
         }
       }
     }

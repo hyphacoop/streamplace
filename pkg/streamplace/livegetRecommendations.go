@@ -6,16 +6,56 @@ package streamplace
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/bluesky-social/indigo/lex/util"
 )
 
+// LiveGetRecommendations_LivestreamRecommendation is a "livestreamRecommendation" in the place.stream.live.getRecommendations schema.
+//
+// RECORDTYPE: LiveGetRecommendations_LivestreamRecommendation
+type LiveGetRecommendations_LivestreamRecommendation struct {
+	LexiconTypeID string `json:"$type,const=place.stream.live.getRecommendations#livestreamRecommendation" cborgen:"$type,const=place.stream.live.getRecommendations#livestreamRecommendation"`
+	// did: The DID of the recommended streamer
+	Did string `json:"did" cborgen:"did"`
+	// source: Source of the recommendation
+	Source string `json:"source" cborgen:"source"`
+}
+
 // LiveGetRecommendations_Output is the output of a place.stream.live.getRecommendations call.
 type LiveGetRecommendations_Output struct {
-	// streamers: Ordered list of recommended streamer DIDs
-	Streamers []string `json:"streamers" cborgen:"streamers"`
-	// userDID: The user who created this recommendation list
+	// recommendations: Ordered list of recommendations
+	Recommendations []*LiveGetRecommendations_Output_Recommendations_Elem `json:"recommendations" cborgen:"recommendations"`
+	// userDID: The user DID this recommendation is for
 	UserDID *string `json:"userDID,omitempty" cborgen:"userDID,omitempty"`
+}
+
+type LiveGetRecommendations_Output_Recommendations_Elem struct {
+	LiveGetRecommendations_LivestreamRecommendation *LiveGetRecommendations_LivestreamRecommendation
+}
+
+func (t *LiveGetRecommendations_Output_Recommendations_Elem) MarshalJSON() ([]byte, error) {
+	if t.LiveGetRecommendations_LivestreamRecommendation != nil {
+		t.LiveGetRecommendations_LivestreamRecommendation.LexiconTypeID = "place.stream.live.getRecommendations#livestreamRecommendation"
+		return json.Marshal(t.LiveGetRecommendations_LivestreamRecommendation)
+	}
+	return nil, fmt.Errorf("cannot marshal empty enum")
+}
+func (t *LiveGetRecommendations_Output_Recommendations_Elem) UnmarshalJSON(b []byte) error {
+	typ, err := util.TypeExtract(b)
+	if err != nil {
+		return err
+	}
+
+	switch typ {
+	case "place.stream.live.getRecommendations#livestreamRecommendation":
+		t.LiveGetRecommendations_LivestreamRecommendation = new(LiveGetRecommendations_LivestreamRecommendation)
+		return json.Unmarshal(b, t.LiveGetRecommendations_LivestreamRecommendation)
+
+	default:
+		return nil
+	}
 }
 
 // LiveGetRecommendations calls the XRPC method "place.stream.live.getRecommendations".

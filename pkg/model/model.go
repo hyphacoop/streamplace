@@ -32,6 +32,7 @@ type Model interface {
 	MostRecentSegments() ([]Segment, error)
 	LatestSegmentForUser(user string) (*Segment, error)
 	LatestSegmentsForUser(user string, limit int, before *time.Time, after *time.Time) ([]Segment, error)
+	FilterLiveRepoDIDs(repoDIDs []string) ([]string, error)
 	CreateThumbnail(thumb *Thumbnail) error
 	LatestThumbnailForUser(user string) (*Thumbnail, error)
 	GetSegment(id string) (*Segment, error)

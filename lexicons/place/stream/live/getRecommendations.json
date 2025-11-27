@@ -20,22 +20,38 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": ["streamers"],
+          "required": ["recommendations"],
           "properties": {
-            "streamers": {
+            "recommendations": {
               "type": "array",
-              "description": "Ordered list of recommended streamer DIDs",
+              "description": "Ordered list of recommendations",
               "items": {
-                "type": "string",
-                "format": "did"
+                "type": "union",
+                "refs": ["#livestreamRecommendation"]
               }
             },
             "userDID": {
               "type": "string",
               "format": "did",
-              "description": "The user who created this recommendation list"
+              "description": "The user DID this recommendation is for"
             }
           }
+        }
+      }
+    },
+    "livestreamRecommendation": {
+      "type": "object",
+      "required": ["did", "source"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "The DID of the recommended streamer"
+        },
+        "source": {
+          "type": "string",
+          "enum": ["streamer", "follows", "host"],
+          "description": "Source of the recommendation"
         }
       }
     }
