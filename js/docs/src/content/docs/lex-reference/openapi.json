@@ -197,6 +197,33 @@
         }
       }
     },
+    "/xrpc/place.stream.server.getServerTime": {
+      "get": {
+        "summary": "Get the current server time for client clock synchronization",
+        "operationId": "place.stream.server.getServerTime",
+        "tags": ["place.stream.server"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "serverTime": {
+                      "type": "string",
+                      "description": "Current server time in RFC3339 format",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": ["serverTime"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/xrpc/place.stream.server.getWebhook": {
       "get": {
         "summary": "Get details for a specific webhook.",

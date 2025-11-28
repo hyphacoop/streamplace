@@ -269,6 +269,7 @@ func (s *Server) RegisterHandlersPlaceStream(e *echo.Echo) error {
 	e.GET("/xrpc/place.stream.live.getSegments", s.HandlePlaceStreamLiveGetSegments)
 	e.POST("/xrpc/place.stream.server.createWebhook", s.HandlePlaceStreamServerCreateWebhook)
 	e.POST("/xrpc/place.stream.server.deleteWebhook", s.HandlePlaceStreamServerDeleteWebhook)
+	e.GET("/xrpc/place.stream.server.getServerTime", s.HandlePlaceStreamServerGetServerTime)
 	e.GET("/xrpc/place.stream.server.getWebhook", s.HandlePlaceStreamServerGetWebhook)
 	e.GET("/xrpc/place.stream.server.listWebhooks", s.HandlePlaceStreamServerListWebhooks)
 	e.POST("/xrpc/place.stream.server.updateWebhook", s.HandlePlaceStreamServerUpdateWebhook)
@@ -398,6 +399,19 @@ func (s *Server) HandlePlaceStreamServerDeleteWebhook(c echo.Context) error {
 	var handleErr error
 	// func (s *Server) handlePlaceStreamServerDeleteWebhook(ctx context.Context,body *placestreamtypes.ServerDeleteWebhook_Input) (*placestreamtypes.ServerDeleteWebhook_Output, error)
 	out, handleErr = s.handlePlaceStreamServerDeleteWebhook(ctx, &body)
+	if handleErr != nil {
+		return handleErr
+	}
+	return c.JSON(200, out)
+}
+
+func (s *Server) HandlePlaceStreamServerGetServerTime(c echo.Context) error {
+	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamServerGetServerTime")
+	defer span.End()
+	var out *placestreamtypes.ServerGetServerTime_Output
+	var handleErr error
+	// func (s *Server) handlePlaceStreamServerGetServerTime(ctx context.Context) (*placestreamtypes.ServerGetServerTime_Output, error)
+	out, handleErr = s.handlePlaceStreamServerGetServerTime(ctx)
 	if handleErr != nil {
 		return handleErr
 	}
