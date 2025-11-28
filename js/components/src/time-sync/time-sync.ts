@@ -19,7 +19,6 @@ export function checkClockDrift(serverTime: string): {
   driftMs: number;
   driftSeconds: number;
 } {
-  console.log("checking drift");
   const serverDate = new Date(serverTime);
   const clientDate = new Date();
   const drift = Math.abs(serverDate.getTime() - clientDate.getTime());
