@@ -18,11 +18,13 @@ export function useTimeSync() {
       }
       try {
         const agent = new StreamplaceAgent(url);
+        const start = Date.getTime();
         const response = await agent.place.stream.server.getServerTime();
+        const roundTripLatency = Date.getTime() - start;
         const serverTime = response.data.serverTime;
 
         // always sync with server time
-        syncTimeWithServer(serverTime);
+        syncTimeWithServer(serverTime, roundTripLatency / 2);
 
         const driftInfo = checkClockDrift(serverTime);
 

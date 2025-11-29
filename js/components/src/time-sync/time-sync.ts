@@ -44,8 +44,8 @@ export function checkClockDrift(serverTime: string): {
 }
 
 export function syncTimeWithServer(serverTime: string): void {
-  const serverDate = new Date(serverTime);
-  const clientDate = new Date();
+  const serverDate = new OriginalDate(serverTime);
+  const clientDate = new OriginalDate();
   const offset = serverDate.getTime() - clientDate.getTime();
 
   setTimeOffset(offset);
