@@ -83,6 +83,7 @@ finish = 完成
 
 ## 導航類別
 about = 關於
+account = 帳戶
 advanced = 進階
 danmu = 彈幕
 developer = 開發者
@@ -98,6 +99,12 @@ refresh = 重新整理
 save-button = 儲存
 sign-in = 登入
 update = 更新
+log-out = 登出
+
+## 帳戶設定
+account-greeting = 嗨，@{ $handle }。
+edit-profile-bluesky = 編輯個人資料（在 Bluesky）
+change-name-color = 變更名稱顏色
 
 ## 金鑰管理
 key-management = 金鑰管理

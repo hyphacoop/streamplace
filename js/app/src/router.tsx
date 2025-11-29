@@ -19,7 +19,9 @@ import { Text, useTheme, useToast } from "@streamplace/components";
 import { Provider, Settings } from "components";
 import AQLink from "components/aqlink";
 import Login from "components/login/login";
+import LoginModal from "components/login/login-modal";
 import { AboutCategorySettings } from "components/settings/about-category-settings";
+import { AccountCategorySettings } from "components/settings/account-category-settings";
 import { AdvancedCategorySettings } from "components/settings/advanced-category-settings";
 import { DanmuCategorySettings } from "components/settings/danmu-category-settings";
 import { PrivacyCategorySettings } from "components/settings/privacy-category-settings";
@@ -109,6 +111,7 @@ type HomeStackParamList = {
 type SettingsStackParamList = {
   MainSettings: undefined;
   AboutCategory: undefined;
+  AccountCategory: undefined;
   StreamingCategory: undefined;
   WebhooksSettings: undefined;
   PrivacyCategory: undefined;
@@ -164,6 +167,7 @@ const linking: LinkingOptions<ReactNavigation.RootParamList> = {
         screens: {
           MainSettings: "settings",
           AboutCategory: "settings/about",
+          AccountCategory: "settings/account",
           StreamingCategory: "settings/streaming",
           WebhooksSettings: "settings/streaming/webhooks",
           PrivacyCategory: "settings/privacy",
@@ -273,12 +277,16 @@ const AvatarButton = () => {
   const userProfile = useUserProfile();
   let source: ImageSourcePropType | undefined = undefined;
   let opacity = 1;
+  const targetScreen: any = userProfile
+    ? { screen: "Settings", params: { screen: "AccountCategory" } }
+    : { screen: "Login", params: {} };
+
   if (userProfile) {
     source = { uri: userProfile.avatar };
     opacity = 0;
   }
   return (
-    <AQLink to={{ screen: "Login", params: {} }}>
+    <AQLink to={targetScreen}>
       <ImageBackground
         // defeat cursed-ass caching on ios; image sticks around when source is undefined
         key={source?.uri ?? "default"}
@@ -380,6 +388,8 @@ export function StreamplaceDrawer() {
   );
   const clearNotification = useStore((state) => state.clearNotification);
   const pollMySegments = useStore((state) => state.pollMySegments);
+  const showLoginModal = useStore((state) => state.showLoginModal);
+  const closeLoginModal = useStore((state) => state.closeLoginModal);
   const [livePopup, setLivePopup] = useState(false);
 
   const sidebar = useSidebarControl();
@@ -650,6 +660,7 @@ export function StreamplaceDrawer() {
           }}
         />
       </Drawer.Navigator>
+      <LoginModal visible={showLoginModal} onClose={closeLoginModal} />
     </>
   );
 }
@@ -723,6 +734,11 @@ const SettingsStack = () => {
         name="AboutCategory"
         component={AboutCategorySettings}
         options={{ headerTitle: "About", title: "About" }}
+      />
+      <Stack.Screen
+        name="AccountCategory"
+        component={AccountCategorySettings}
+        options={{ headerTitle: "Account", title: "Account" }}
       />
       <Stack.Screen
         name="StreamingCategory"

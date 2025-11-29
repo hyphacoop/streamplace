@@ -32,6 +32,11 @@ info = 資訊
 search-placeholder = 搜尋...
 message-input = 輸入您的訊息...
 
+## Authentication & Access
+please-log-in-to-access-this-page = 請登入以存取此頁面
+go-to-settings = 前往設定
+go-back = 返回
+
 ## Demo and Testing
 welcome-user = 歡迎，{ $username }！
 notification-count = { $count ->

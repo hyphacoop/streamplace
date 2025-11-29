@@ -2,7 +2,6 @@ import {
   MenuContainer,
   MenuGroup,
   MenuInfo,
-  MenuItem,
   MenuSeparator,
   Text,
   useDanmuUnlocked,
@@ -10,11 +9,22 @@ import {
   View,
   zero,
 } from "@streamplace/components";
-import AQLink from "components/aqlink";
-import { SettingsNavigationItem } from "components/settings/components/settings-navigation-item";
-import { Globe, Info, Lock, LogIn, Shield, Video } from "lucide-react-native";
-import { ImageBackground, Pressable, ScrollView } from "react-native";
+import {
+  SettingsNavigationItem,
+  SettingsRowItem,
+} from "components/settings/components/settings-navigation-item";
+import {
+  Globe,
+  Info,
+  Lock,
+  LogIn,
+  Shield,
+  User2,
+  Video,
+} from "lucide-react-native";
+import { ImageBackground, ScrollView } from "react-native";
 
+import { useNavigationState } from "@react-navigation/native";
 import Mu from "components/mobile/desktop-ui/mu";
 import { useStore } from "store";
 import { useUserProfile } from "store/hooks";
@@ -24,6 +34,17 @@ export function Settings() {
   const loggedIn = useStore((state) => state.authStatus === "loggedIn");
   const userProfile = useUserProfile();
   const danmuUnlocked = useDanmuUnlocked();
+  const openLoginModal = useStore((state) => state.openLoginModal);
+
+  // get the deepest active route for nested navigators
+  const currentRoute = useNavigationState((state) => {
+    let route: any = state.routes[state.index];
+    while (route.state?.index !== undefined) {
+      route = route.state.routes[route.state.index];
+    }
+    return { name: route.name, params: route.params };
+  });
+
   const { t } = useTranslation("settings");
 
   return (
@@ -33,7 +54,7 @@ export function Settings() {
           <MenuContainer>
             <MenuGroup>
               {loggedIn && userProfile ? (
-                <MenuItem>
+                <SettingsRowItem>
                   <View
                     style={[
                       zero.layout.flex.row,
@@ -57,47 +78,47 @@ export function Settings() {
                       </Text>
                     </View>
                   </View>
-                </MenuItem>
+                </SettingsRowItem>
               ) : (
-                <AQLink to={{ screen: "Login" }}>
-                  <Pressable>
-                    {({ pressed }) => (
-                      <MenuItem>
-                        <View
-                          style={[
-                            zero.layout.flex.row,
-                            zero.layout.flex.align.center,
-                            zero.gap.all[4],
-                            zero.py[2],
-                          ]}
-                        >
-                          <View
-                            style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 24,
-                              backgroundColor: "#333",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <LogIn size={24} color="#999" />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text size="xl" style={{ fontWeight: "600" }}>
-                              {t("sign-in")}
-                            </Text>
-                          </View>
-                        </View>
-                      </MenuItem>
-                    )}
-                  </Pressable>
-                </AQLink>
+                <SettingsRowItem onPress={() => openLoginModal()}>
+                  <View
+                    style={[
+                      zero.layout.flex.row,
+                      zero.layout.flex.align.center,
+                      zero.gap.all[4],
+                      zero.py[2],
+                    ]}
+                  >
+                    <View
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 24,
+                        backgroundColor: "#333",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <LogIn size={24} color="#999" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text size="xl" style={{ fontWeight: "600" }}>
+                        {t("sign-in")}
+                      </Text>
+                    </View>
+                  </View>
+                </SettingsRowItem>
               )}
             </MenuGroup>
 
             {loggedIn && (
               <MenuGroup>
+                <SettingsNavigationItem
+                  title={t("account")}
+                  screen="AccountCategory"
+                  icon={User2}
+                />
+                <MenuSeparator />
                 <SettingsNavigationItem
                   title={t("streaming")}
                   screen="StreamingCategory"
