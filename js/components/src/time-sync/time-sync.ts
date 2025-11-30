@@ -43,10 +43,13 @@ export function checkClockDrift(serverTime: string): {
   }
 }
 
-export function syncTimeWithServer(serverTime: string): void {
+export function syncTimeWithServer(
+  serverTime: string,
+  networkLatencyMs: number,
+): void {
   const serverDate = new OriginalDate(serverTime);
   const clientDate = new OriginalDate();
-  const offset = serverDate.getTime() - clientDate.getTime();
+  const offset = serverDate.getTime() - clientDate.getTime() - networkLatencyMs;
 
   setTimeOffset(offset);
 }

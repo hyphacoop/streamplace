@@ -18,9 +18,9 @@ export function useTimeSync() {
       }
       try {
         const agent = new StreamplaceAgent(url);
-        const start = Date.getTime();
+        const start = new Date().getTime();
         const response = await agent.place.stream.server.getServerTime();
-        const roundTripLatency = Date.getTime() - start;
+        const roundTripLatency = new Date().getTime() - start;
         const serverTime = response.data.serverTime;
 
         // always sync with server time
