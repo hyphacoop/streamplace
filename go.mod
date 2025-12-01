@@ -10,6 +10,8 @@ replace github.com/AxisCommunications/go-dpop => github.com/streamplace/go-dpop 
 
 tool github.com/bluesky-social/indigo/cmd/lexgen
 
+replace github.com/streamplace/oatproxy => github.com/streamplace/oatproxy v0.0.0-20251201231246-9e9aa13c659d
+
 require (
 	firebase.google.com/go/v4 v4.14.1
 	github.com/99designs/gqlgen v0.17.64
