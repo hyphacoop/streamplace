@@ -4,6 +4,8 @@ import { Image, Linking, Platform, Pressable, View } from "react-native";
 import {
   ContentRights,
   ContentWarnings,
+  formatHandle,
+  formatHandleWithAt,
   useAvatars,
   useLivestreamInfo,
   zero,
@@ -113,12 +115,12 @@ export function ContextMenu({
                     <Pressable
                       onPress={() => {
                         if (profile?.handle) {
-                          const url = `https://bsky.app/profile/${profile.handle}`;
+                          const url = `https://bsky.app/profile/${formatHandle(profile)}`;
                           Linking.openURL(url);
                         }
                       }}
                     >
-                      <Text>@{profile?.handle || "user"}</Text>
+                      <Text>{profile && formatHandleWithAt(profile)}</Text>
                     </Pressable>
                     {/*{did && profile && (
                     <FollowButton streamerDID={profile?.did} currentUserDID={did} />
@@ -163,7 +165,7 @@ export function ContextMenu({
               <DropdownMenuItem
                 onPress={() => {
                   if (profile?.handle) {
-                    const url = `https://bsky.app/profile/${profile.handle}`;
+                    const url = `https://bsky.app/profile/${formatHandle(profile)}`;
                     Linking.openURL(url);
                   }
                 }}

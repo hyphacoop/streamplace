@@ -12,6 +12,7 @@ import { Linking } from "react-native";
 import { ChatMessageViewHydrated } from "streamplace";
 import { useDeleteChatMessage } from "../../livestream-store";
 import { useStreamplaceStore } from "../../streamplace-store";
+import { formatHandle, formatHandleWithAt } from "../../utils/format-handle";
 import {
   atoms,
   DropdownMenu,
@@ -113,7 +114,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
                       minute: "2-digit",
                       hour12: false,
                     })}{" "}
-                    @{message.author.handle}: {message.record.text}
+                    {formatHandleWithAt(message.author)}: {message.record.text}
                   </Text>
                 </View>
               </DropdownMenuItem>
@@ -159,7 +160,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
                     <Text color="destructive">
                       {isBlockLoading
                         ? "Blocking..."
-                        : `Block user @${message.author.handle} from this channel`}
+                        : `Block user ${formatHandleWithAt(message.author)} from this channel`}
                     </Text>
                   )}
                 </DropdownMenuItem>
@@ -170,7 +171,7 @@ export const ModView = forwardRef<ModViewRef, ModViewProps>(() => {
               <DropdownMenuItem
                 onPress={() => {
                   Linking.openURL(
-                    `https://${BSKY_FRONTEND_DOMAIN}/profile/${message.author.handle}`,
+                    `https://${BSKY_FRONTEND_DOMAIN}/profile/${formatHandle(message.author)}`,
                   );
                 }}
               >
