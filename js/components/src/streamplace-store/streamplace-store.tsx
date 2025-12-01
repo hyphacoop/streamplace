@@ -54,6 +54,20 @@ export interface StreamplaceState {
   muted: boolean;
   setVolume: (volume: number) => void;
   setMuted: (muted: boolean) => void;
+
+  // Danmu settings
+  danmuUnlocked: boolean;
+  danmuEnabled: boolean;
+  danmuOpacity: number;
+  danmuSpeed: number;
+  danmuLaneCount: number;
+  danmuMaxMessages: number;
+  setDanmuUnlocked: (unlocked: boolean) => void;
+  setDanmuEnabled: (enabled: boolean) => void;
+  setDanmuOpacity: (opacity: number) => void;
+  setDanmuSpeed: (speed: number) => void;
+  setDanmuLaneCount: (laneCount: number) => void;
+  setDanmuMaxMessages: (maxMessages: number) => void;
 }
 
 export type StreamplaceStore = StoreApi<StreamplaceState>;
@@ -65,6 +79,12 @@ export const makeStreamplaceStore = ({
 }): StoreApi<StreamplaceState> => {
   const VOLUME_STORAGE_KEY = "globalVolume";
   const MUTED_STORAGE_KEY = "globalMuted";
+  const DANMU_UNLOCKED_KEY = "danmuUnlocked";
+  const DANMU_ENABLED_KEY = "danmuEnabled";
+  const DANMU_OPACITY_KEY = "danmuOpacity";
+  const DANMU_SPEED_KEY = "danmuSpeed";
+  const DANMU_LANE_COUNT_KEY = "danmuLaneCount";
+  const DANMU_MAX_MESSAGES_KEY = "danmuMaxMessages";
 
   const store = createStore<StreamplaceState>()((set) => ({
     url,
@@ -125,16 +145,82 @@ export const makeStreamplaceStore = ({
       set({ muted });
       storage.setItem(MUTED_STORAGE_KEY, muted.toString()).catch(console.error);
     },
+
+    // Danmu settings - start with defaults
+    danmuUnlocked: false,
+    danmuEnabled: false,
+    danmuOpacity: 80,
+    danmuSpeed: 1,
+    danmuLaneCount: 12,
+    danmuMaxMessages: 50,
+
+    setDanmuUnlocked: (unlocked: boolean) => {
+      set({ danmuUnlocked: unlocked });
+      storage
+        .setItem(DANMU_UNLOCKED_KEY, unlocked.toString())
+        .catch(console.error);
+    },
+
+    setDanmuEnabled: (enabled: boolean) => {
+      set({ danmuEnabled: enabled });
+      storage
+        .setItem(DANMU_ENABLED_KEY, enabled.toString())
+        .catch(console.error);
+    },
+
+    setDanmuOpacity: (opacity: number) => {
+      const clamped = Math.max(0, Math.min(100, opacity));
+      set({ danmuOpacity: clamped });
+      storage
+        .setItem(DANMU_OPACITY_KEY, clamped.toString())
+        .catch(console.error);
+    },
+
+    setDanmuSpeed: (speed: number) => {
+      const clamped = Math.max(0.1, Math.min(3, speed));
+      set({ danmuSpeed: clamped });
+      storage.setItem(DANMU_SPEED_KEY, clamped.toString()).catch(console.error);
+    },
+
+    setDanmuLaneCount: (laneCount: number) => {
+      const clamped = Math.max(4, Math.min(20, laneCount));
+      set({ danmuLaneCount: clamped });
+      storage
+        .setItem(DANMU_LANE_COUNT_KEY, clamped.toString())
+        .catch(console.error);
+    },
+
+    setDanmuMaxMessages: (maxMessages: number) => {
+      const clamped = Math.max(5, Math.min(200, maxMessages));
+      set({ danmuMaxMessages: clamped });
+      storage
+        .setItem(DANMU_MAX_MESSAGES_KEY, clamped.toString())
+        .catch(console.error);
+    },
   }));
 
-  // Load initial volume state from storage asynchronously
+  // Load initial volume and danmu state from storage asynchronously
   (async () => {
     try {
       const storedVolume = await storage.getItem(VOLUME_STORAGE_KEY);
       const storedMuted = await storage.getItem(MUTED_STORAGE_KEY);
+      const storedDanmuUnlocked = await storage.getItem(DANMU_UNLOCKED_KEY);
+      const storedDanmuEnabled = await storage.getItem(DANMU_ENABLED_KEY);
+      const storedDanmuOpacity = await storage.getItem(DANMU_OPACITY_KEY);
+      const storedDanmuSpeed = await storage.getItem(DANMU_SPEED_KEY);
+      const storedDanmuLaneCount = await storage.getItem(DANMU_LANE_COUNT_KEY);
+      const storedDanmuMaxMessages = await storage.getItem(
+        DANMU_MAX_MESSAGES_KEY,
+      );
 
       let initialVolume = 1.0;
       let initialMuted = false;
+      let initialDanmuUnlocked = false;
+      let initialDanmuEnabled = false;
+      let initialDanmuOpacity = 80;
+      let initialDanmuSpeed = 1;
+      let initialDanmuLaneCount = 12;
+      let initialDanmuMaxMessages = 50;
 
       if (storedVolume) {
         const parsedVolume = parseFloat(storedVolume);
@@ -151,12 +237,54 @@ export const makeStreamplaceStore = ({
         initialMuted = storedMuted === "true";
       }
 
+      if (storedDanmuUnlocked) {
+        initialDanmuUnlocked = storedDanmuUnlocked === "true";
+      }
+
+      if (storedDanmuEnabled) {
+        initialDanmuEnabled = storedDanmuEnabled === "true";
+      }
+
+      if (storedDanmuOpacity) {
+        const parsed = parseInt(storedDanmuOpacity);
+        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) {
+          initialDanmuOpacity = parsed;
+        }
+      }
+
+      if (storedDanmuSpeed) {
+        const parsed = parseFloat(storedDanmuSpeed);
+        if (Number.isFinite(parsed) && parsed >= 0.1 && parsed <= 3) {
+          initialDanmuSpeed = parsed;
+        }
+      }
+
+      if (storedDanmuLaneCount) {
+        const parsed = parseInt(storedDanmuLaneCount);
+        if (Number.isFinite(parsed) && parsed >= 4 && parsed <= 20) {
+          initialDanmuLaneCount = parsed;
+        }
+      }
+
+      if (storedDanmuMaxMessages) {
+        const parsed = parseInt(storedDanmuMaxMessages);
+        if (Number.isFinite(parsed) && parsed >= 5 && parsed <= 200) {
+          initialDanmuMaxMessages = parsed;
+        }
+      }
+
       store.setState({
         volume: initialVolume,
         muted: initialMuted,
+        danmuUnlocked: initialDanmuUnlocked,
+        danmuEnabled: initialDanmuEnabled,
+        danmuOpacity: initialDanmuOpacity,
+        danmuSpeed: initialDanmuSpeed,
+        danmuLaneCount: initialDanmuLaneCount,
+        danmuMaxMessages: initialDanmuMaxMessages,
       });
     } catch (error) {
-      console.error("Failed to load volume state from storage:", error);
+      console.error("Failed to load state from storage:", error);
     }
   })();
 
@@ -212,5 +340,59 @@ export const useEffectiveVolume = () =>
     // Ensure we always return a finite number for HTMLMediaElement.volume
     return Number.isFinite(effectiveVolume) ? effectiveVolume : 1.0;
   });
+
+// Danmu convenience hooks
+export const useDanmuUnlocked = () =>
+  useStreamplaceStore((x) => x.danmuUnlocked);
+export const useDanmuEnabled = () => useStreamplaceStore((x) => x.danmuEnabled);
+export const useDanmuOpacity = () => useStreamplaceStore((x) => x.danmuOpacity);
+export const useDanmuSpeed = () => useStreamplaceStore((x) => x.danmuSpeed);
+export const useDanmuLaneCount = () =>
+  useStreamplaceStore((x) => x.danmuLaneCount);
+export const useDanmuMaxMessages = () =>
+  useStreamplaceStore((x) => x.danmuMaxMessages);
+export const useSetDanmuUnlocked = () =>
+  useStreamplaceStore((x) => x.setDanmuUnlocked);
+export const useSetDanmuEnabled = () =>
+  useStreamplaceStore((x) => x.setDanmuEnabled);
+export const useSetDanmuOpacity = () =>
+  useStreamplaceStore((x) => x.setDanmuOpacity);
+export const useSetDanmuSpeed = () =>
+  useStreamplaceStore((x) => x.setDanmuSpeed);
+export const useSetDanmuLaneCount = () =>
+  useStreamplaceStore((x) => x.setDanmuLaneCount);
+export const useSetDanmuMaxMessages = () =>
+  useStreamplaceStore((x) => x.setDanmuMaxMessages);
+
+// Composite hook that calls all individual hooks
+export const useDanmuSettings = () => {
+  const danmuUnlocked = useDanmuUnlocked();
+  const danmuEnabled = useDanmuEnabled();
+  const danmuOpacity = useDanmuOpacity();
+  const danmuSpeed = useDanmuSpeed();
+  const danmuLaneCount = useDanmuLaneCount();
+  const danmuMaxMessages = useDanmuMaxMessages();
+  const setDanmuUnlocked = useSetDanmuUnlocked();
+  const setDanmuEnabled = useSetDanmuEnabled();
+  const setDanmuOpacity = useSetDanmuOpacity();
+  const setDanmuSpeed = useSetDanmuSpeed();
+  const setDanmuLaneCount = useSetDanmuLaneCount();
+  const setDanmuMaxMessages = useSetDanmuMaxMessages();
+
+  return {
+    danmuUnlocked,
+    danmuEnabled,
+    danmuOpacity,
+    danmuSpeed,
+    danmuLaneCount,
+    danmuMaxMessages,
+    setDanmuUnlocked,
+    setDanmuEnabled,
+    setDanmuOpacity,
+    setDanmuSpeed,
+    setDanmuLaneCount,
+    setDanmuMaxMessages,
+  };
+};
 
 export { useCreateStreamRecord, useUpdateStreamRecord } from "./stream";

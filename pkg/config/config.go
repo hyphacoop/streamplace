@@ -134,6 +134,7 @@ type CLI struct {
 	Replicators                []string
 	WebsocketURL               string
 	BehindHTTPSProxy           bool
+	SegmentDebugDir            string
 }
 
 // ContentFilters represents the content filtering configuration
@@ -195,14 +196,12 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.PrintChat, "print-chat", false, "print chat messages to stdout")
 	fs.StringVar(&cli.WHIPTest, "whip-test", "", "run a WHIP self-test with the given parameters")
 	fs.StringVar(&cli.RelayHost, "relay-host", "wss://bsky.network", "websocket url for relay firehose")
-	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
 	fs.StringVar(&cli.Color, "color", "", "'true' to enable colorized logging, 'false' to disable")
 	fs.StringVar(&cli.BroadcasterHost, "broadcaster-host", "", "public host for the broadcaster group that this node is a part of (excluding https:// e.g. stream.place)")
 	fs.StringVar(&cli.XXDeprecatedPublicHost, "public-host", "", "deprecated, use broadcaster-host or server-host instead as appropriate")
 	fs.StringVar(&cli.ServerHost, "server-host", "", "public host for this particular physical streamplace node. defaults to broadcaster-host and only must be set for multi-node broadcasters")
 	fs.BoolVar(&cli.Thumbnail, "thumbnail", true, "enable thumbnail generation")
 	fs.BoolVar(&cli.SmearAudio, "smear-audio", false, "enable audio smearing to create 'perfect' segment timestamps")
-	fs.BoolVar(&cli.ExternalSigning, "external-signing", false, "enable external signing via exec (prevents potential memory leak)")
 	fs.StringVar(&cli.TracingEndpoint, "tracing-endpoint", "", "gRPC endpoint to send traces to")
 	fs.IntVar(&cli.RateLimitPerSecond, "rate-limit-per-second", 0, "rate limit for requests per second per ip")
 	fs.IntVar(&cli.RateLimitBurst, "rate-limit-burst", 0, "rate limit burst for requests per ip")
@@ -221,6 +220,7 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	fs.BoolVar(&cli.SQLLogging, "sql-logging", false, "enable sql logging")
 	fs.StringVar(&cli.SentryDSN, "sentry-dsn", "", "sentry dsn for error reporting")
 	fs.BoolVar(&cli.LivepeerDebug, "livepeer-debug", false, "log livepeer segments to $SP_DATA_DIR/livepeer-debug")
+	fs.StringVar(&cli.SegmentDebugDir, "segment-debug-dir", "", "directory to log segment validation to")
 	cli.StringSliceFlag(fs, &cli.Tickets, "tickets", []string{}, "tickets to join the swarm with")
 	fs.StringVar(&cli.IrohTopic, "iroh-topic", "", "topic to use for the iroh swarm (must be 32 bytes in hex)")
 	fs.BoolVar(&cli.DisableIrohRelay, "disable-iroh-relay", false, "disable the iroh relay")
@@ -229,6 +229,9 @@ func (cli *CLI) NewFlagSet(name string) *flag.FlagSet {
 	cli.StringSliceFlag(fs, &cli.Replicators, "replicators", []string{ReplicatorWebsocket}, "list of replication protocols to use (http, iroh)")
 	fs.StringVar(&cli.WebsocketURL, "websocket-url", "", "override the websocket (ws:// or wss://) url to use for replication (normally not necessary, used for testing)")
 	fs.BoolVar(&cli.BehindHTTPSProxy, "behind-https-proxy", false, "set to true if this node is behind an https proxy and we should report https URLs even though the node isn't serving HTTPS")
+
+	fs.Bool("external-signing", true, "DEPRECATED, does nothing.")
+	fs.Bool("insecure", false, "DEPRECATED, does nothing.")
 
 	lpFlags := flag.NewFlagSet("livepeer", flag.ContinueOnError)
 	_ = starter.NewLivepeerConfig(lpFlags)
@@ -643,4 +646,31 @@ func (cli *CLI) MyDID() string {
 
 func (cli *CLI) HasHTTPS() bool {
 	return cli.Secure || cli.BehindHTTPSProxy
+}
+
+func (cli *CLI) DumpDebugSegment(ctx context.Context, name string, r io.Reader) {
+	if cli.SegmentDebugDir == "" {
+		return
+	}
+	go func() {
+		err := os.MkdirAll(cli.SegmentDebugDir, 0755)
+		if err != nil {
+			log.Error(ctx, "failed to create debug directory", "error", err)
+			return
+		}
+		now := aqtime.FromTime(time.Now())
+		outFile := filepath.Join(cli.SegmentDebugDir, fmt.Sprintf("%s-%s", now.FileSafeString(), strings.ReplaceAll(name, ":", "-")))
+		fd, err := os.Create(outFile)
+		if err != nil {
+			log.Error(ctx, "failed to create debug file", "error", err)
+			return
+		}
+		defer fd.Close()
+		_, err = io.Copy(fd, r)
+		if err != nil {
+			log.Error(ctx, "failed to copy debug file", "error", err)
+			return
+		}
+		log.Log(ctx, "wrote debug file", "path", outFile)
+	}()
 }

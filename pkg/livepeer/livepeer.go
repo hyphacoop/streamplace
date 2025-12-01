@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
@@ -136,7 +135,7 @@ func (ls *LivepeerSession) PostSegmentToGateway(ctx context.Context, buf []byte,
 		log.Log(ctx, "wrote debug file", "file", debugFile)
 	}
 
-	resp, err := ctxhttp.Do(ctx, &aqhttp.Client, req)
+	resp, err := aqhttp.DoTrusted(ctx, req)
 	if err != nil {
 		<-ls.Guard
 		return nil, fmt.Errorf("failed to send segment to gateway (config %s): %w", string(bs), err)

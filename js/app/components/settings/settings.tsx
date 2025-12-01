@@ -1,241 +1,171 @@
-import { useNavigation } from "@react-navigation/native";
 import {
-  Button,
-  Input,
+  MenuContainer,
+  MenuGroup,
+  MenuInfo,
+  MenuSeparator,
   Text,
-  useToast,
+  useDanmuUnlocked,
+  useTranslation,
   View,
   zero,
 } from "@streamplace/components";
-import AQLink from "components/aqlink";
 import {
-  createServerSettingsRecord,
-  getServerSettingsFromPDS,
-  selectIsReady,
-  selectServerSettings,
-} from "features/bluesky/blueskySlice";
-import { DEFAULT_URL, setURL } from "features/streamplace/streamplaceSlice";
-import useStreamplaceNode from "hooks/useStreamplaceNode";
-import { useEffect, useState } from "react";
-import { ScrollView, Switch } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
-import { Updates } from "./updates";
-import WebhookManager from "./webhook-manager";
+  SettingsNavigationItem,
+  SettingsRowItem,
+} from "components/settings/components/settings-navigation-item";
+import {
+  Globe,
+  Info,
+  Lock,
+  LogIn,
+  Shield,
+  User2,
+  Video,
+} from "lucide-react-native";
+import { ImageBackground, ScrollView } from "react-native";
+
+import { useNavigationState } from "@react-navigation/native";
+import Mu from "components/mobile/desktop-ui/mu";
+import { useStore } from "store";
+import { useUserProfile } from "store/hooks";
+import pkg from "../../package.json";
 
 export function Settings() {
-  const dispatch = useAppDispatch();
-  const { url } = useStreamplaceNode();
-  const defaultUrl = DEFAULT_URL;
-  const [newUrl, setNewUrl] = useState("");
-  const [overrideEnabled, setOverrideEnabled] = useState(false);
-  const t = useToast();
+  const loggedIn = useStore((state) => state.authStatus === "loggedIn");
+  const userProfile = useUserProfile();
+  const danmuUnlocked = useDanmuUnlocked();
+  const openLoginModal = useStore((state) => state.openLoginModal);
 
-  // are we logged in?
-  const loggedIn = useAppSelector(
-    (state) => state.bluesky.status === "loggedIn",
-  );
-
-  const navigate = useNavigation();
-
-  // Initialize the override state based on current URL
-  useEffect(() => {
-    setOverrideEnabled(url !== defaultUrl);
-  }, [url, defaultUrl]);
-
-  const onSubmitUrl = () => {
-    if (newUrl) {
-      let trimmedUrl = newUrl.endsWith("/") ? newUrl.slice(0, -1) : newUrl;
-      dispatch(setURL(trimmedUrl));
-      setNewUrl("");
+  // get the deepest active route for nested navigators
+  const currentRoute = useNavigationState((state) => {
+    let route: any = state.routes[state.index];
+    while (route.state?.index !== undefined) {
+      route = route.state.routes[route.state.index];
     }
-  };
+    return { name: route.name, params: route.params };
+  });
 
-  const handleToggleOverride = (enabled: boolean) => {
-    setOverrideEnabled(enabled);
-    if (!enabled) {
-      dispatch(setURL(defaultUrl));
-    }
-  };
+  const { t } = useTranslation("settings");
 
   return (
     <ScrollView>
-      <View style={[zero.layout.flex.align.center, zero.px[16], zero.py[24]]}>
-        <View
-          style={[
-            zero.gap.all[12],
-            { paddingVertical: 24, maxWidth: 500, width: "100%" },
-          ]}
-        >
-          <View>
-            <Updates />
-          </View>
-
-          <View
-            style={[
-              { alignItems: "stretch" },
-              zero.layout.flex.justify.center,
-              zero.gap.all[8],
-            ]}
-          >
-            <View
-              style={[
-                { alignItems: "stretch" },
-                zero.layout.flex.justify.start,
-                zero.w.percent[100],
-                zero.gap.all[4],
-              ]}
-            >
-              <View
-                style={[
-                  { flexDirection: "row" },
-                  { alignItems: "flex-start" },
-                  { justifyContent: "flex-start" },
-                ]}
-              >
-                <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-                  <Text size="xl">Use Custom Node</Text>
-                  <Text size="lg" color="muted">
-                    Default: {defaultUrl}
-                  </Text>
-                </View>
-                <Switch
-                  value={overrideEnabled}
-                  onValueChange={handleToggleOverride}
-                />
-              </View>
-              <View
-                style={[
-                  {
-                    opacity: overrideEnabled ? 1 : 0,
-                    height: overrideEnabled ? "auto" : 0,
-                  },
-                  zero.gap.all[2],
-                  zero.layout.flex.align.center,
-                  zero.layout.flex.row,
-                ]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Input
-                    value={newUrl}
-                    containerStyle={[
-                      { flex: 1, flexGrow: 1, width: "100%" },
-                      zero.flex.grow[1],
+      <View style={[zero.layout.flex.align.center, zero.px[2], zero.py[2]]}>
+        <View style={{ maxWidth: 500, width: "100%" }}>
+          <MenuContainer>
+            <MenuGroup>
+              {loggedIn && userProfile ? (
+                <SettingsRowItem>
+                  <View
+                    style={[
+                      zero.layout.flex.row,
+                      zero.layout.flex.align.center,
+                      zero.gap.all[4],
+                      zero.py[2],
                     ]}
-                    variant="default"
-                    numberOfLines={1}
-                    multiline={false}
-                    placeholder={url || "Enter custom node URL"}
-                    placeholderTextColor="#999"
-                    onChangeText={setNewUrl}
-                    onSubmitEditing={onSubmitUrl}
-                    textContentType="URL"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="url"
-                  />
-                </View>
-                <Button size="md" variant="secondary" onPress={onSubmitUrl}>
-                  <Text size="lg">Save</Text>
-                </Button>
-              </View>
-            </View>
-          </View>
+                  >
+                    <ImageBackground
+                      source={{ uri: userProfile.avatar }}
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 24,
+                        overflow: "hidden",
+                      }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text size="2xl" leading="tight">
+                        @{userProfile.handle}
+                      </Text>
+                    </View>
+                  </View>
+                </SettingsRowItem>
+              ) : (
+                <SettingsRowItem onPress={() => openLoginModal()}>
+                  <View
+                    style={[
+                      zero.layout.flex.row,
+                      zero.layout.flex.align.center,
+                      zero.gap.all[4],
+                      zero.py[2],
+                    ]}
+                  >
+                    <View
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 24,
+                        backgroundColor: "#333",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <LogIn size={24} color="#999" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text size="xl" style={{ fontWeight: "600" }}>
+                        {t("sign-in")}
+                      </Text>
+                    </View>
+                  </View>
+                </SettingsRowItem>
+              )}
+            </MenuGroup>
 
-          {loggedIn && (
-            <>
-              <DebugRecording />
-              <AQLink
-                to={{
-                  screen: "KeyManagement",
-                }}
-              >
-                <View
-                  style={[
-                    {
-                      flexDirection: "row",
-                      gap: 8,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: 1,
-                      borderColor: "#333",
-                      padding: 8,
-                      borderRadius: 16,
-                      backgroundColor: "#1a1a1a",
-                    },
-                  ]}
-                >
-                  <Text>Manage Keys</Text>
-                  <Text style={[{ fontSize: 16 }]}>→</Text>
-                </View>
-              </AQLink>
-              <WebhookManager />
-            </>
-          )}
+            {loggedIn && (
+              <MenuGroup>
+                <SettingsNavigationItem
+                  title={t("account")}
+                  screen="AccountCategory"
+                  icon={User2}
+                />
+                <MenuSeparator />
+                <SettingsNavigationItem
+                  title={t("streaming")}
+                  screen="StreamingCategory"
+                  icon={Video}
+                />
+                <MenuSeparator />
+                <SettingsNavigationItem
+                  title={t("privacy-security")}
+                  screen="PrivacyCategory"
+                  icon={Shield}
+                />
+              </MenuGroup>
+            )}
+            {danmuUnlocked && (
+              <MenuGroup>
+                <SettingsNavigationItem
+                  title={t("danmu")}
+                  screen="DanmuCategory"
+                  icon={Mu as any}
+                />
+              </MenuGroup>
+            )}
+            <MenuGroup>
+              <SettingsNavigationItem
+                title={t("languages")}
+                screen="LanguagesCategory"
+                icon={Globe}
+              />
+              <MenuSeparator />
+              <SettingsNavigationItem
+                title={t("advanced")}
+                screen="AdvancedCategory"
+                icon={Lock}
+              />
+              <MenuSeparator />
+              <SettingsNavigationItem
+                title={t("about")}
+                screen="AboutCategory"
+                icon={Info}
+              />
+            </MenuGroup>
+            <MenuInfo
+              description={t("app-version", { version: pkg.version })}
+            />
+          </MenuContainer>
         </View>
       </View>
     </ScrollView>
   );
 }
-
-const DebugRecording = () => {
-  const dispatch = useAppDispatch();
-  const isReady = useAppSelector(selectIsReady);
-  const serverSettings = useAppSelector(selectServerSettings);
-  const { url } = useStreamplaceNode();
-  const debugRecordingOn = serverSettings?.debugRecording === true;
-
-  useEffect(() => {
-    if (isReady) {
-      dispatch(getServerSettingsFromPDS());
-    }
-  }, [isReady]);
-
-  const u = new URL(url);
-  return (
-    <View
-      style={[
-        { alignItems: "center" },
-        { justifyContent: "center" },
-        { gap: 16 },
-      ]}
-    >
-      <View
-        style={[
-          { alignItems: "center" },
-          { justifyContent: "space-between" },
-          { width: "100%", flexDirection: "row" },
-        ]}
-      >
-        <View style={[{ flex: 1 }, { paddingRight: 12 }]}>
-          <Text size="xl">
-            Allow {u.host} to record your livestream for debugging and improving
-            the service
-          </Text>
-          <Text size="lg" color="muted">
-            Optional
-          </Text>
-        </View>
-        <Switch
-          value={debugRecordingOn}
-          onValueChange={(value) => {
-            if (value === true) {
-              dispatch(
-                createServerSettingsRecord({
-                  ...serverSettings,
-                  debugRecording: true,
-                }),
-              );
-            } else {
-              dispatch(
-                createServerSettingsRecord({
-                  ...serverSettings,
-                  debugRecording: false,
-                }),
-              );
-            }
-          }}
-        />
-      </View>
-    </View>
-  );
-};
