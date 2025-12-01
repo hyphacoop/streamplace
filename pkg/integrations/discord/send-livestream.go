@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/bluesky-social/indigo/api/bsky"
 	"stream.place/streamplace/pkg/aqhttp"
 	"stream.place/streamplace/pkg/integrations/discord/discordtypes"
 	"stream.place/streamplace/pkg/log"
@@ -19,7 +19,8 @@ import (
 	"stream.place/streamplace/pkg/streamplace"
 )
 
-func SendLivestream(ctx context.Context, w *discordtypes.Webhook, pdsURL string, lsv *streamplace.Livestream_LivestreamView, spcp *streamplace.ChatProfile) error {
+func SendLivestream(ctx context.Context, w *discordtypes.Webhook, pdsURL string, lsv *streamplace.Livestream_LivestreamView, postView *bsky.FeedDefs_PostView, spcp *streamplace.ChatProfile) error {
+
 	ctx = log.WithLogValues(ctx, "func", "SendLivestream")
 	ls, ok := lsv.Record.Val.(*streamplace.Livestream)
 	if !ok {
@@ -100,7 +101,7 @@ func SendLivestream(ctx context.Context, w *discordtypes.Webhook, pdsURL string,
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := ctxhttp.Do(ctx, &aqhttp.Client, req)
+	resp, err := aqhttp.Do(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}

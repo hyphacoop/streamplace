@@ -22,10 +22,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { selectUserProfile } from "../../features/bluesky/blueskySlice";
+import { useUserProfile } from "store/hooks";
 import { useCaptureVideoFrame } from "../../hooks/useCaptureVideoFrame";
 import { useLiveUser } from "../../hooks/useLiveUser";
-import { useAppSelector } from "../../store/hooks";
 
 const { flex, p, px, py, gap, layout, bg, borders, text, r, w, typography } =
   zero;
@@ -51,6 +50,7 @@ const ButtonSelector = ({
         key={value}
         variant={selectedValue === value ? "primary" : "secondary"}
         size="pill"
+        width="min"
         disabled={disabledValues.includes(value)}
         onPress={() => setSelectedValue(value)}
         style={[
@@ -161,11 +161,11 @@ const ImageUploadComponent = ({
   );
 };
 
-function LivestreamPanel() {
+function LivestreamPanel({ scrollable = true }: { scrollable?: boolean }) {
   const toast = useToast();
   const userIsLive = useLiveUser();
   const captureFrame = useCaptureVideoFrame();
-  const profile = useAppSelector(selectUserProfile);
+  const profile = useUserProfile();
   const livestream = useLivestream();
   const createStreamRecord = useCreateStreamRecord();
   const updateStreamRecord = useUpdateStreamRecord();
@@ -327,14 +327,19 @@ function LivestreamPanel() {
     return mode === "create" ? "Announce Livestream!" : "Update Livestream!";
   }, [loading, userIsLive, mode]);
 
+  const Wrapper = scrollable ? ScrollView : View;
+  const wrapperProps = scrollable
+    ? {
+        contentContainerStyle: {
+          flexGrow: 1,
+        },
+        showsVerticalScrollIndicator: false,
+      }
+    : {};
+
   return (
     <>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
+      <Wrapper {...wrapperProps}>
         <View
           style={[
             flex.values[1],
@@ -574,7 +579,7 @@ function LivestreamPanel() {
             </View>
           )}
         </View>
-      </ScrollView>
+      </Wrapper>
     </>
   );
 }

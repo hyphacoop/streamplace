@@ -1,24 +1,20 @@
+import { useRoute } from "@react-navigation/native";
 import {
   Body,
   Button,
   Code,
   Row,
-  View,
+  Text,
   useTheme,
   useToast,
+  View,
 } from "@streamplace/components";
-import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
-import {
-  clearStreamKeyRecord,
-  createStreamKeyRecord,
-  selectIsReady,
-  selectUserProfile,
-} from "features/bluesky/blueskySlice";
 import { Clipboard, ClipboardCheck } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { ScrollView, TextInput } from "react-native";
-import { useAppDispatch, useAppSelector } from "store/hooks";
+import { useStore } from "store";
+import { useIsReady, useUserProfile } from "store/hooks";
 
 const FormRow = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -46,18 +42,25 @@ const Content = ({ children }: { children: React.ReactNode }) => {
 
 export function StreamKeyScreen() {
   const [protocol, setProtocol] = useState<"whip" | "rtmp">("rtmp");
-  const isReady = useAppSelector(selectIsReady);
+  const isReady = useIsReady();
+  const userProfile = useUserProfile();
+  const openLoginModal = useStore((state) => state.openLoginModal);
+  const route = useRoute();
+  const url = useStore((state) => state.url);
+
+  useEffect(() => {
+    if (isReady && !userProfile) {
+      openLoginModal({ name: route.name, params: route.params });
+    }
+  }, [isReady, userProfile, openLoginModal, route.name, route.params]);
 
   if (!isReady) {
     return <Loading />;
   }
 
-  const userProfile = useAppSelector(selectUserProfile);
   if (!userProfile) {
-    return <Redirect to={{ screen: "Login" }} />;
+    return <Loading />;
   }
-
-  const url = useAppSelector((state) => state.streamplace.url);
 
   return (
     <ScrollView>
@@ -90,13 +93,13 @@ export function StreamKeyScreen() {
           <FormRow>
             <Label>Output Settings</Label>
             <Content>
-              <Body>
-                Output mode: Advanced
-                <br />
+              <Text>Output mode: Advanced</Text>
+              <Text>
                 Keyframe Interval: <Code>1s</Code>
-                <br />
+              </Text>
+              <Text>
                 x264 Options: <Code>bframes=0</Code>
-              </Body>
+              </Text>
             </Content>
           </FormRow>
         </View>
@@ -190,11 +193,14 @@ export function StreamKey() {
   const theme = useTheme();
   const toast = useToast();
 
-  const dispatch = useAppDispatch();
+  const createStreamKeyRecord = useStore(
+    (state) => state.createStreamKeyRecord,
+  );
+  const clearStreamKeyRecord = useStore((state) => state.clearStreamKeyRecord);
   const [generating, setGenerating] = useState(false);
   const [hidekey, setHidekey] = useState(true);
   const [didcopy, setDidcopy] = useState(false);
-  const newKey = useAppSelector((state) => state.bluesky.newKey);
+  const newKey = useStore((state) => state.newKey);
 
   let foregroundColor = theme.theme.colors.text || "#fff";
 
@@ -204,9 +210,9 @@ export function StreamKey() {
     }
 
     return () => {
-      dispatch(clearStreamKeyRecord());
+      clearStreamKeyRecord();
     };
-  }, [newKey, dispatch]);
+  }, [newKey]);
 
   const handleCopy = async () => {
     if (!newKey) {
@@ -287,7 +293,7 @@ export function StreamKey() {
         try {
           setGenerating(true);
           setDidcopy(false);
-          await dispatch(createStreamKeyRecord({ store: false }));
+          await createStreamKeyRecord(false);
         } catch (e) {
           console.error("failed to generate stream key", e);
         } finally {

@@ -2,7 +2,10 @@ import {
   Button,
   PlayerUI,
   View,
+  useDanmuEnabled,
+  useDanmuUnlocked,
   usePlayerStore,
+  useSetDanmuEnabled,
   useTheme,
   zero,
 } from "@streamplace/components";
@@ -16,7 +19,9 @@ import {
 import { Platform, Pressable } from "react-native";
 import { VolumeSlider } from "./volume-slider";
 
-const { gap, layout, p, r } = zero;
+import { Mu } from "./mu";
+
+const { gap, layout, p, r, py, px } = zero;
 
 interface BottomControlBarProps {
   ingest: string | null;
@@ -40,6 +45,9 @@ export function BottomControlBar({
   let { theme } = useTheme();
   const fullscreen = usePlayerStore((state) => state.fullscreen);
   const setFullscreen = usePlayerStore((state) => state.setFullscreen);
+  const danmuUnlocked = useDanmuUnlocked();
+  const danmuEnabled = useDanmuEnabled();
+  const setDanmuEnabled = useSetDanmuEnabled();
 
   return (
     <View
@@ -61,10 +69,19 @@ export function BottomControlBar({
             </View>
           </Pressable>
         )}
-        {ingest === null && (
-          <PlayerUI.ContextMenu
-            dropdownPortalContainer={dropdownPortalContainer}
-          />
+        {danmuUnlocked && (
+          <Pressable
+            onPress={() => {
+              setDanmuEnabled(!danmuEnabled);
+            }}
+            style={[px[0], r[1]]}
+          >
+            <Mu
+              size={22}
+              color={theme.colors.text}
+              style={{ opacity: danmuEnabled ? 1 : 0.5 }}
+            />
+          </Pressable>
         )}
         {Platform.OS === "web" && (
           <Pressable
@@ -79,6 +96,11 @@ export function BottomControlBar({
               <Fullscreen color={theme.colors.text} />
             )}
           </Pressable>
+        )}
+        {ingest === null && (
+          <PlayerUI.ContextMenu
+            dropdownPortalContainer={dropdownPortalContainer}
+          />
         )}
         {/* if not web, then add the collapse chat controls here */}
         {Platform.OS !== "web" && (

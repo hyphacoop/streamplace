@@ -21,6 +21,7 @@ import {
   View,
   zero,
 } from "@streamplace/components";
+import { px, py } from "@streamplace/components/src/ui";
 import {
   ChevronLeft,
   ChevronRight,
@@ -40,6 +41,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MobileChatPanel } from "./chat";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 
@@ -77,20 +79,10 @@ export function MobileUi({
   const muted = useMuted();
   const setMuted = useSetMuted();
 
-  const {
-    shouldShowFloatingMetrics,
-    shouldShowChatSidePanel,
-    chatPanelWidth,
-    safeAreaInsets,
-  } = useResponsiveLayout();
+  const { shouldShowFloatingMetrics, shouldShowChatSidePanel, chatPanelWidth } =
+    useResponsiveLayout();
 
   const [showLoading, setShowLoading] = useState(false);
-
-  // get width/height
-  // showchat is a proxy for if we're in landscape or not :-(
-  if (showChat != undefined) {
-    safeAreaInsets.top = 0;
-  }
 
   useEffect(() => {
     return () => {
@@ -165,62 +157,68 @@ export function MobileUi({
             ]}
           >
             {/* Main UI Overlay */}
-            <View
-              style={[layout.position.absolute, h.percent[100], w.percent[100]]}
-            >
-              {/* Left Controls Column */}
-              <LeftControlsPanel
-                navigation={navigation}
-                profile={profile}
-                avatars={avatars}
-                safeAreaInsets={safeAreaInsets}
-                muted={muted}
-                setMuted={setMuted}
-                muteWasForced={muteWasForced}
-                setMuteWasForced={setMuteWasForced}
-              />
-
-              {/* Right Controls Column */}
-              <View
+            <View style={[h.percent[100], w.percent[100]]}>
+              <SafeAreaView
+                edges={["top"]}
                 style={[
-                  layout.position.absolute,
-                  position.right[2],
-                  { top: safeAreaInsets.top + 12 },
+                  px[2],
+                  py[2],
                   layout.flex.row,
-                  gap.all[2],
+                  layout.flex.spaceBetween,
+                  w.percent[100],
                 ]}
               >
-                {shouldShowFloatingMetrics && (
-                  <View>
-                    <View
-                      style={[
-                        {
-                          padding: 9,
-                          backgroundColor: "rgba(90,90,90, 0.3)",
-                          borderRadius: 12,
-                        },
-                        r[2],
-                      ]}
-                    >
-                      <PlayerUI.Viewers />
-                    </View>
-                  </View>
-                )}
+                {/* Left Controls Column */}
+                <View
+                  style={[layout.flex.column, gap.all[2], { maxWidth: "70%" }]}
+                >
+                  <LeftControlsPanel
+                    navigation={navigation}
+                    profile={profile}
+                    avatars={avatars}
+                    muted={muted}
+                    setMuted={setMuted}
+                    muteWasForced={muteWasForced}
+                    setMuteWasForced={setMuteWasForced}
+                  />
+                </View>
 
-                <RightControlsPanel
-                  ingest={ingest}
-                  doSetIngestCamera={doSetIngestCamera}
-                  shouldShowChatSidePanel={shouldShowChatSidePanel}
-                  showChat={showChat}
-                  setShowChat={setShowChat}
-                />
-              </View>
+                {/* Right Controls Column */}
+                <View
+                  style={[layout.flex.row, gap.all[2], layout.flex.align.start]}
+                >
+                  {shouldShowFloatingMetrics && (
+                    <View>
+                      <View
+                        style={[
+                          {
+                            padding: 9,
+                            backgroundColor: "rgba(90,90,90, 0.3)",
+                            borderRadius: 12,
+                          },
+                          r[2],
+                        ]}
+                      >
+                        <PlayerUI.Viewers />
+                      </View>
+                    </View>
+                  )}
+
+                  <RightControlsPanel
+                    ingest={ingest}
+                    doSetIngestCamera={doSetIngestCamera}
+                    shouldShowChatSidePanel={shouldShowChatSidePanel}
+                    showChat={showChat}
+                    setShowChat={setShowChat}
+                  />
+                </View>
+              </SafeAreaView>
 
               {shouldShowFloatingMetrics && isLive && (
                 <View
                   style={[
                     layout.position.absolute,
-                    { top: safeAreaInsets.top + 112 },
+                    position.top[28],
                     position.left[0],
                     position.right[0],
                     layout.flex.column,
@@ -271,7 +269,7 @@ export function MobileUi({
           <PlayerUI.AutoplayButton />
         </View>
       </GestureDetector>
-      {showChat === undefined && (
+      {showChat === undefined && ingest !== "new" && (
         <MobileChatPanel isPlayerRatioGreater={isPlayerRatioGreater} />
       )}
     </>
@@ -282,7 +280,6 @@ function LeftControlsPanel({
   navigation,
   profile,
   avatars,
-  safeAreaInsets,
   muted,
   setMuted,
   muteWasForced,
@@ -291,7 +288,6 @@ function LeftControlsPanel({
   navigation: any;
   profile: any;
   avatars: any;
-  safeAreaInsets: { top: number; bottom: number; left: number; right: number };
   muted: boolean;
   setMuted: (muted: boolean) => void;
   muteWasForced: boolean;
@@ -303,16 +299,7 @@ function LeftControlsPanel({
     (segment?.contentWarnings?.warnings as string[]) || [];
 
   return (
-    <View
-      style={[
-        layout.position.absolute,
-        position.left[2],
-        { top: safeAreaInsets.top + 12 },
-        layout.flex.column,
-        gap.all[2],
-        { maxWidth: "70%" },
-      ]}
-    >
+    <>
       {/* Back Button and Profile */}
       <View
         style={[
@@ -401,7 +388,7 @@ function LeftControlsPanel({
       <View>
         <ContentWarningBadge warnings={contentWarnings} />
       </View>
-    </View>
+    </>
   );
 }
 
@@ -458,6 +445,7 @@ function RightControlsPanel({
           {
             backgroundColor: "rgba(90,90,90, 0.3)",
             borderRadius: 12,
+            paddingVertical: 2.25 * 4,
           },
           zero.r[2],
           showChat === undefined
@@ -465,7 +453,6 @@ function RightControlsPanel({
             : zero.layout.flex.row,
           zero.layout.flex.center,
           zero.gap.all[4],
-          zero.py[3],
           showChat === undefined ? zero.px[2] : zero.px[3],
           zero.layout.position.relative,
         ]}

@@ -95,7 +95,7 @@ func innerTestConcatBin(t *testing.T) error {
 		close(segCh)
 	}()
 
-	concatBin, err := ConcatBin(ctx, segCh)
+	concatBin, err := ConcatBin(ctx, segCh, true)
 	if err != nil {
 		return fmt.Errorf("failed to create concat bin: %w", err)
 	}

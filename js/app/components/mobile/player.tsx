@@ -11,17 +11,17 @@ import {
   Text,
   usePlayerDimensions,
   usePlayerStore,
-  useSegmentDimensions,
   View,
 } from "@streamplace/components";
 import { gap, h, pt, w } from "@streamplace/components/src/lib/theme/atoms";
-import { selectUserProfile } from "features/bluesky/blueskySlice";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useSidebarControl } from "hooks/useSidebarControl";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { ComponentRef, useEffect, useRef, useState } from "react";
 import { Animated, Platform, ScrollView, StatusBar } from "react-native";
-import { useAppSelector } from "store/hooks";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useStore } from "store";
+import { useUserProfile } from "store/hooks";
 import { BottomMetadata } from "./bottom-metadata";
 import { DesktopChatPanel } from "./chat";
 import { DesktopUi } from "./desktop-ui";
@@ -29,20 +29,13 @@ import { OfflineCounter } from "./offline-counter";
 import { MobileUi } from "./ui";
 import { useResponsiveLayout } from "./useResponsiveLayout";
 
-import {
-  setSidebarHidden,
-  setSidebarUnhidden,
-} from "features/base/sidebarSlice";
-import { useDispatch } from "react-redux";
-
 export function Player(
   props: Partial<PlayerProps> & {
     setFullscreen?: (fullscreen: boolean) => void;
   },
 ) {
   const [showChat, setShowChat] = useState(true);
-  const { shouldShowChatSidePanel, chatPanelWidth, safeAreaInsets } =
-    useResponsiveLayout();
+  const { shouldShowChatSidePanel, chatPanelWidth } = useResponsiveLayout();
   const chatVisible = shouldShowChatSidePanel && showChat;
 
   const [isStreamingElsewhere, setIsStreamingElsewhere] = useState<
@@ -50,7 +43,7 @@ export function Player(
   >(null);
   // are we currently streaming on another device?
   const userIsLive = useLiveUser();
-  const userProfile = useAppSelector(selectUserProfile);
+  const userProfile = useUserProfile();
 
   useEffect(() => {
     if (props.ingest && userIsLive && isStreamingElsewhere === null) {
@@ -138,8 +131,6 @@ export function Player(
               flex: 1,
               width: "100%",
               height: "100%",
-              paddingLeft: safeAreaInsets.left,
-              paddingRight: safeAreaInsets.right,
             }}
           >
             <PlayerInner
@@ -151,7 +142,6 @@ export function Player(
               <DesktopChatPanel
                 chatVisible={chatVisible}
                 chatPanelWidth={chatPanelWidth}
-                safeAreaInsets={safeAreaInsets}
               />
             ) : (
               <MobileUi />
@@ -178,20 +168,17 @@ export function PlayerInner(
     screenWidth,
     contentWidth,
     availableHeight,
-    safeAreaInsets,
   } = useResponsiveLayout({
     sidebarWidth: sb.animatedWidth,
     sidebarHidden: !sb.isActive,
     showChatSidePanelOnLandscape: props.showChat,
   });
 
-  // for hiding sidebar
-  const dispatch = useDispatch();
+  const setSidebarHidden = useStore((state) => state.setSidebarHidden);
+  const setSidebarUnhidden = useStore((state) => state.setSidebarUnhidden);
 
   // content info
   const { width, height } = usePlayerDimensions();
-
-  const { isPlayerRatioGreater } = useSegmentDimensions();
 
   // Calculate aspect ratio and determine if we're in desktop mode
   const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
@@ -200,12 +187,12 @@ export function PlayerInner(
   useEffect(() => {
     if (Platform.OS !== "web" && width > height) {
       console.log("hiding sb");
-      dispatch(setSidebarHidden());
+      setSidebarHidden();
     } else {
-      dispatch(setSidebarUnhidden());
+      setSidebarUnhidden();
     }
     return () => {
-      dispatch(setSidebarUnhidden());
+      setSidebarUnhidden();
     };
   }, [width, height]);
   // should cover full width on mobile?
@@ -259,36 +246,38 @@ export function PlayerInner(
                 maxHeight: "auto",
               },
           {
-            paddingTop:
-              isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
+            // paddingTop:
+            //   isPlayerRatioGreater && !isLandscape ? safeAreaInsets.top : 0,
           },
         ]}
       >
-        <PlayerInnerInner {...props}>
-          {showFullDesktopMode || fullscreen ? (
-            <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
-          ) : (
-            isLandscape && (
-              <MobileUi
-                setShowChat={props.setShowChat}
-                showChat={props.showChat}
-              />
-            )
-          )}
-          <PlayerUI.ViewerLoadingOverlay />
-          <OfflineCounter isMobile={true} />
-          <View
-            ref={dropdownPortalRef}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              pointerEvents: "none",
-            }}
-          />
-        </PlayerInnerInner>
+        <SafeAreaView edges={["left", "top"]} style={{ flex: 1 }}>
+          <PlayerInnerInner {...props}>
+            {showFullDesktopMode || fullscreen ? (
+              <DesktopUi dropdownPortalContainer={dropdownPortalRef.current} />
+            ) : (
+              isLandscape && (
+                <MobileUi
+                  setShowChat={props.setShowChat}
+                  showChat={props.showChat}
+                />
+              )
+            )}
+            <PlayerUI.ViewerLoadingOverlay />
+            <OfflineCounter isMobile={true} />
+            <View
+              ref={dropdownPortalRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: "none",
+              }}
+            />
+          </PlayerInnerInner>
+        </SafeAreaView>
       </Animated.View>
       {showFullDesktopMode && (
         <BottomMetadata

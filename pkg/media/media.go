@@ -196,6 +196,7 @@ type SegmentMetadata struct {
 	Livestream            *streamplace.Livestream
 }
 
+var ErrMissingMetadata = errors.New("missing segment metadata")
 var ErrInvalidMetadata = errors.New("invalid segment metadata")
 
 func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*SegmentMetadata, error) {
@@ -209,7 +210,7 @@ func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*Seg
 		}
 	}
 	if ass == nil {
-		return nil, fmt.Errorf("couldn't find %s assertions", StreamplaceMetadata)
+		return nil, ErrMissingMetadata
 	}
 	proc := ld.NewJsonLdProcessor()
 	options := ld.NewJsonLdOptions("")

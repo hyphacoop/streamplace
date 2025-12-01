@@ -239,37 +239,25 @@ func MPEGTSToMP4(ctx context.Context, input io.Reader, output io.Writer) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Handle bus messages in a separate goroutine
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		if err := HandleBusMessages(ctx, pipeline); err != nil {
-			log.Log(ctx, "pipeline error", "error", err)
-		}
-		cancel()
-		return nil
-	})
+	busErr := make(chan error)
+	go func() {
+		err := HandleBusMessages(ctx, pipeline)
+		busErr <- err
+	}()
 
-	// Start the pipeline
 	err = pipeline.SetState(gst.StatePlaying)
 	if err != nil {
 		return fmt.Errorf("failed to set pipeline state to playing: %w", err)
 	}
 
-	// Wait for the pipeline to finish or context to be canceled
-	<-ctx.Done()
+	defer func() {
+		err = pipeline.SetState(gst.StateNull)
+		if err != nil {
+			log.Error(ctx, "failed to set pipeline state to null", "error", err)
+		}
+	}()
 
-	// durOk, dur := pipeline.QueryDuration(gst.FormatTime)
-	// if !durOk {
-	// 	return fmt.Errorf("failed to query duration")
-	// }
-
-	// Clean up
-	err = pipeline.SetState(gst.StateNull)
-	if err != nil {
-		return fmt.Errorf("failed to set pipeline state to null: %w", err)
-	}
-
-	return nil
+	return <-busErr
 }
 
 // Splits out video into MPEG-TS and audio into MP4 (to be recombined after transcoding)

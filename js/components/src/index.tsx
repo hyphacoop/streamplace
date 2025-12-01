@@ -24,6 +24,10 @@ export * as zero from "./ui";
 
 export * from "./hooks";
 
+// Internationalization system exports
+export * from "./i18n";
+export * as I18n from "./i18n";
+
 // Theme system exports
 export * from "./lib/theme";
 
@@ -32,6 +36,9 @@ export * from "./components/chat/chat-box";
 export * from "./components/chat/system-message";
 export { default as VideoRetry } from "./components/mobile-player/video-retry";
 export * from "./lib/system-messages";
+
+export { DanmuOverlay } from "./components/danmu/danmu-overlay";
+export { DanmuOverlayOBS } from "./components/danmu/danmu-overlay-obs";
 
 // Rotation lock system exports
 export {

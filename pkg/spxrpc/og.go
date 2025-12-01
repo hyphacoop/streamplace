@@ -19,7 +19,6 @@ import (
 	imagedraw "image/draw"
 
 	"golang.org/x/image/draw"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/bluesky-social/indigo/api/bsky"
 	"github.com/bluesky-social/indigo/xrpc"
@@ -208,7 +207,7 @@ func downloadImage(ctx context.Context, url string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	resp, err := ctxhttp.Do(ctx, &aqhttp.Client, req)
+	resp, err := aqhttp.Do(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %w", err)
 	}

@@ -12,6 +12,7 @@ import {
   useLivestream,
   useReplyToMessage,
   useSetReplyToMessage,
+  useTheme,
   View,
 } from "../../";
 import {
@@ -62,6 +63,8 @@ export function ChatBox({
   const [filteredEmojis, setFilteredEmojis] = useState<any[]>([]);
 
   let linfo = useLivestream();
+
+  const { theme } = useTheme();
 
   const chat = useChat();
   const createChatMessage = useCreateChatMessage();
@@ -354,6 +357,19 @@ export function ChatBox({
                 k.preventDefault();
                 submit();
               }
+            } else if (k.nativeEvent.key === "Tab") {
+              if (showSuggestions) {
+                k.preventDefault();
+                const handles = Array.from(filteredAuthors.keys());
+                if (handles.length > 0) {
+                  handleMentionSelect(handles[highlightedIndex]);
+                }
+              } else if (showEmojiSuggestions) {
+                k.preventDefault();
+                if (filteredEmojis.length > 0) {
+                  handleEmojiSelect(filteredEmojis[highlightedIndex]);
+                }
+              }
             } else if (k.nativeEvent.key === "ArrowUp") {
               if (showSuggestions || showEmojiSuggestions) {
                 k.preventDefault();
@@ -387,14 +403,17 @@ export function ChatBox({
           submitBehavior="submit"
           placeholder="Type a message..."
         />
-        <Button
-          disabled={submitting}
-          variant="secondary"
-          style={{ borderRadius: 16, height: 36, minWidth: 80 }}
-          onPress={submit}
-        >
-          {submitting ? <Loader /> : "Send"}
-        </Button>
+        <View>
+          <Button
+            disabled={submitting}
+            variant="secondary"
+            width="min"
+            style={{ borderRadius: 16, height: 43 }}
+            onPress={submit}
+          >
+            {submitting ? <Loader /> : "Send"}
+          </Button>
+        </View>
       </View>
       {showSuggestions && (
         <MentionSuggestions
@@ -466,7 +485,7 @@ export function ChatBox({
                 setIsChatVisible?.(false);
               }}
             >
-              <ExternalLink size={16} />
+              <ExternalLink color={theme.colors.primaryForeground} size={16} />
             </Button>
           )}
         </View>
