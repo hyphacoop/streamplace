@@ -1,3 +1,8 @@
+import type { OAuthAuthorizationServerMetadata } from "@atproto/oauth-client";
+import {
+  OAuthResolver,
+  ResolveOAuthOptions,
+} from "@atproto/oauth-client/dist/oauth-resolver";
 import {
   ClientMetadata,
   clientMetadataSchema,
@@ -5,6 +10,41 @@ import {
 } from "@streamplace/atproto-oauth-client-react-native";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+
+class StreamplaceOAuthResolver extends OAuthResolver {
+  private currentResourceServer: string | null = null;
+
+  constructor(
+    private streamplaceUrl: string,
+    ...args: ConstructorParameters<typeof OAuthResolver>
+  ) {
+    super(...args);
+  }
+
+  async resolveFromService(
+    input: string,
+    options?: ResolveOAuthOptions,
+  ): Promise<{
+    metadata: OAuthAuthorizationServerMetadata;
+  }> {
+    // Input is the resource server URL (e.g., https://selfhosted.social)
+    // Store it for use in login_hint
+    this.currentResourceServer = input;
+
+    // Always fetch metadata from our backend
+    // The issuer will be our backend, not the resource server
+    const metadata = await this.getResourceServerMetadata(
+      this.streamplaceUrl,
+      options,
+    );
+
+    return { metadata };
+  }
+
+  getCurrentResourceServer(): string | null {
+    return this.currentResourceServer;
+  }
+}
 
 export type StreamplaceOAuthClient = Omit<
   ReactNativeOAuthClient,
@@ -17,6 +57,10 @@ export default async function createOAuthClient(
   if (!streamplaceUrl) {
     throw new Error("streamplaceUrl is required");
   }
+
+  // Will be set after we create the custom resolver
+  let customResolver: StreamplaceOAuthResolver | null = null;
+
   let meta: ClientMetadata;
   if (
     streamplaceUrl.startsWith("http://localhost") ||
@@ -75,7 +119,7 @@ export default async function createOAuthClient(
     console.error("error parsing client metadata", e, meta);
     throw e;
   }
-  return new ReactNativeOAuthClient({
+  const client = new ReactNativeOAuthClient({
     fetch: async (input, init) => {
       // Normalize input to a Request object
       let request: Request;
@@ -84,6 +128,27 @@ export default async function createOAuthClient(
       } else {
         request = input;
       }
+
+      // Add login_hint parameter to PAR requests
+      if (
+        customResolver &&
+        request.url.includes("/oauth/par") &&
+        request.method === "POST"
+      ) {
+        const resourceServer = customResolver.getCurrentResourceServer();
+        if (resourceServer) {
+          const clonedRequest = request.clone();
+          const body = await clonedRequest.text();
+          const params = new URLSearchParams(body);
+          params.set("login_hint", resourceServer);
+          request = new Request(request.url, {
+            method: request.method,
+            headers: request.headers,
+            body: params.toString(),
+          });
+        }
+      }
+
       if (streamplaceUrl.startsWith("http://127.0.0.1")) {
         // everything other than PDS resolution gets rewritten to the host
         if (
@@ -148,4 +213,15 @@ export default async function createOAuthClient(
     // "client_id" endpoint (except when using a loopback client)
     clientMetadata: meta,
   });
+
+  // Replace the default OAuth resolver with our custom one
+  customResolver = new StreamplaceOAuthResolver(
+    streamplaceUrl,
+    (client as any).oauthResolver.identityResolver,
+    (client as any).oauthResolver.protectedResourceMetadataResolver,
+    (client as any).oauthResolver.authorizationServerMetadataResolver,
+  );
+  (client as any).oauthResolver = customResolver;
+
+  return client;
 }

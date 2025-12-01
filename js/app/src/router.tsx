@@ -74,6 +74,7 @@ import HomeScreen from "./screens/home";
 import { useUrl } from "@streamplace/components";
 import { LanguagesCategorySettings } from "components/settings/languages-category-settings";
 import Constants from "expo-constants";
+import { useBlueskyNotifications } from "hooks/useBlueskyNotifications";
 import { SystemBars } from "react-native-edge-to-edge";
 import {
   configureReanimatedLogger,
@@ -440,7 +441,7 @@ export function StreamplaceDrawer() {
   }, []);
 
   const userIsLive = useLiveUser();
-  // Note: Toast functionality removed, would need simple alert replacement
+  useBlueskyNotifications();
 
   let foregroundColor = theme.theme.colors.text || "#fff";
 

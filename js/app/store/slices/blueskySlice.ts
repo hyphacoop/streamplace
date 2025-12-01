@@ -66,7 +66,12 @@ export interface BlueskySlice {
   };
   serverSettings: null | PlaceStreamServerSettings.Record;
   returnRoute: null | { name: string; params?: any };
+  notification: {
+    message: string;
+    type: "error" | "success" | "info";
+  } | null;
   // actions
+  clearNotification: () => void;
   loadOAuthClient: () => Promise<void>;
   oauthError: (error: string, description: string) => void;
   login: (
@@ -205,6 +210,11 @@ export const createBlueskySlice: StateCreator<
   serverSettings: null,
   returnRoute: null,
   showLoginModal: false,
+  notification: null,
+
+  clearNotification: () => {
+    set({ notification: null });
+  },
 
   setReturnRoute: async (route: { name: string; params?: any } | null) => {
     console.log("setReturnRoute:", route);
@@ -286,12 +296,17 @@ export const createBlueskySlice: StateCreator<
   },
 
   oauthError: (error: string, description: string) => {
+    const message = description || error || "authentication failed";
     set({
       loginState: {
         loading: false,
-        error: description || error,
+        error: message,
       },
       authStatus: "loggedOut",
+      notification: {
+        message,
+        type: "error",
+      },
     });
   },
 
@@ -443,11 +458,25 @@ export const createBlueskySlice: StateCreator<
           e = e.cause;
         }
         console.error("oauthCallback error", message);
+        set({
+          authStatus: "loggedOut",
+          notification: {
+            message,
+            type: "error",
+          },
+        });
         throw e;
       }
     } catch (error) {
       console.error("oauthCallback rejected", error);
-      set({ authStatus: "loggedOut" });
+      const message = error?.message || "authentication failed";
+      set({
+        authStatus: "loggedOut",
+        notification: {
+          message,
+          type: "error",
+        },
+      });
     }
   },
 
