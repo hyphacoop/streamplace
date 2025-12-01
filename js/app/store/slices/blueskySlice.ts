@@ -355,6 +355,10 @@ export const createBlueskySlice: StateCreator<
           loading: false,
           error: error?.message ?? null,
         },
+        notification: {
+          message: error?.message || "unknown error",
+          type: "error",
+        },
       });
     }
   },
