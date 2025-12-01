@@ -217,11 +217,12 @@ export default async function createOAuthClient(
   // Replace the default OAuth resolver with our custom one
   customResolver = new StreamplaceOAuthResolver(
     streamplaceUrl,
-    (client as any).oauthResolver.identityResolver,
-    (client as any).oauthResolver.protectedResourceMetadataResolver,
-    (client as any).oauthResolver.authorizationServerMetadataResolver,
+    client.oauthResolver.identityResolver,
+    client.oauthResolver.protectedResourceMetadataResolver,
+    client.oauthResolver.authorizationServerMetadataResolver,
   );
-  (client as any).oauthResolver = customResolver;
+  // @ts-ignore override readonly property
+  client.oauthResolver = customResolver;
 
   return client;
 }
