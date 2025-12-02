@@ -120,12 +120,12 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, doH264Pa
 				// ))
 				// defer span.End()
 				now := time.Now().UnixMilli()
-				resetTimer <- struct{}{}
 				bs := buf.Bytes()
 
 				if previousSegCh != nil {
 					<-previousSegCh
 				}
+				resetTimer <- struct{}{}
 				err := func() error {
 					bs, err := ConvergeSegment(ctx, cli, bs, now, streamer, doH264Parse)
 					if err != nil {
