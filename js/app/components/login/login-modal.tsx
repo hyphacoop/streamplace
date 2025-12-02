@@ -1,8 +1,10 @@
 import { Button, Text, useTheme, zero } from "@streamplace/components";
+import useActorTypeahead from "hooks/useActorTypeahead";
 import { Info, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   Linking,
   Modal,
   Pressable,
@@ -24,11 +26,19 @@ export default function LoginModal({ visible, onClose }: LoginModalProps) {
   const openLoginLink = useStore((state) => state.openLoginLink);
   const loginState = useLogin();
   const [handle, setHandle] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const { actors, loading: typeaheadLoading } = useActorTypeahead(handle);
 
   const submit = () => {
     let clean = handle;
     if (handle.startsWith("@")) clean = handle.slice(1);
+    setShowSuggestions(false);
     loginAction(clean, openLoginLink);
+  };
+
+  const selectActor = (actorHandle: string) => {
+    setHandle(actorHandle);
+    setShowSuggestions(false);
   };
 
   const onSignup = () => {
@@ -130,18 +140,23 @@ export default function LoginModal({ visible, onClose }: LoginModalProps) {
             </Text>
           </View>
 
-          <View style={[zero.mb[4]]}>
+          <View style={[zero.mb[4], { position: "relative" }]}>
             <Text style={[{ color: "#aaa", marginBottom: 8 }]}>Handle</Text>
             <TextInput
               value={handle}
-              onChangeText={(text) =>
+              onChangeText={(text) => {
                 setHandle(
                   text
                     .toLowerCase()
                     .replace(/[\u202A\u202C\u200E\u200F\u2066-\u2069]/g, "")
                     .trim(),
-                )
-              }
+                );
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
               style={[
                 {
                   backgroundColor: "#1a1a1a",
@@ -158,11 +173,68 @@ export default function LoginModal({ visible, onClose }: LoginModalProps) {
               keyboardType="url"
               placeholderTextColor="#666"
             />
+            {showSuggestions && actors.length > 0 && (
+              <View
+                style={[
+                  {
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    backgroundColor: "#1a1a1a",
+                    borderWidth: 1,
+                    borderColor: "#333",
+                    borderRadius: 8,
+                    marginTop: 4,
+                    maxHeight: 200,
+                    zIndex: 1000,
+                  },
+                ]}
+              >
+                {actors.map((actor) => (
+                  <TouchableOpacity
+                    key={actor.did}
+                    onPress={() => selectActor(actor.handle)}
+                    style={[
+                      {
+                        flexDirection: "row",
+                        alignItems: "center",
+                        padding: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#222",
+                      },
+                    ]}
+                  >
+                    {actor.avatar && (
+                      <Image
+                        source={{ uri: actor.avatar }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          marginRight: 12,
+                        }}
+                      />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      {actor.displayName && (
+                        <Text style={{ color: "white", fontWeight: "500" }}>
+                          {actor.displayName}
+                        </Text>
+                      )}
+                      <Text style={{ color: "#888", fontSize: 12 }}>
+                        @{actor.handle}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           <View
             style={[
-              { flexDirection: "row", justifyContent: "flex-end" },
+              { flexDirection: "row", justifyContent: "flex-end", zIndex: -32 },
               zero.gap.all[3],
             ]}
           >
