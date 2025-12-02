@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"slices"
@@ -20,6 +21,9 @@ var MaxSegmentTries = 10
 // run this segment through the segmenter/splitter until it comes out the
 // same, meaning we can cleanly get it in and out of a concatenated mp4 file
 func ConvergeSegment(ctx context.Context, cli *config.CLI, bs []byte, now int64, streamer string, doH264Parse bool) ([]byte, error) {
+	if rand.Float64() < 0.2 {
+		select {}
+	}
 	cli.DumpDebugSegment(ctx, fmt.Sprintf("converge-segment-%s.mp4", streamer), bytes.NewReader(bs))
 
 	log.Debug(ctx, "parsing segment media data", "size", len(bs))

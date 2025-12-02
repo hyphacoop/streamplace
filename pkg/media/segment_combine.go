@@ -125,6 +125,12 @@ func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.
 		NewSampleFunc: WriterNewSample(ctx, w),
 	})
 
+	errCh := make(chan error)
+	go func() {
+		err := HandleBusMessages(ctx, pipeline)
+		errCh <- err
+	}()
+
 	// Start the pipeline
 	err = pipeline.SetState(gst.StatePlaying)
 	if err != nil {
@@ -137,12 +143,7 @@ func CombineSegmentsUnsigned(ctx context.Context, sources []io.ReadSeeker, w io.
 		}
 	}()
 
-	// Handle bus messages
-	err = HandleBusMessages(ctx, pipeline)
-	if err != nil {
-		return fmt.Errorf("failed to handle bus messages: %w", err)
-	}
-
+	err = <-errCh
 	if err != nil {
 		return fmt.Errorf("pipeline error: %w", err)
 	}
