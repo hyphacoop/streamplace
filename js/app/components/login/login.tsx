@@ -8,14 +8,12 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Linking,
   Platform,
   Pressable,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useStore } from "store";
@@ -31,9 +29,17 @@ export default function Login() {
   const loginState = useLogin();
   const navigation = useNavigation();
   const [handle, setHandle] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const isReady = useIsReady();
-  const { actors, loading: typeaheadLoading } = useActorTypeahead(handle);
+  const { actors } = useActorTypeahead(handle);
+
+  const suggestion =
+    actors.length > 0 &&
+    handle.length >= 3 &&
+    actors[0].handle.startsWith(handle)
+      ? actors[0].handle
+      : null;
+
+  const completionText = suggestion ? suggestion.slice(handle.length) : null;
   // null: no return route, undefined: hasn't checked yet
   const [localReturnRoute, setLocalReturnRoute] = useState<
     | {
@@ -68,20 +74,31 @@ export default function Login() {
   const submit = () => {
     let clean = handle;
     if (handle.startsWith("@")) clean = handle.slice(1);
-    setShowSuggestions(false);
     loginAction(clean, openLoginLink);
   };
 
-  const selectActor = (actorHandle: string) => {
-    setHandle(actorHandle);
-    setShowSuggestions(false);
+  const acceptSuggestion = () => {
+    if (suggestion) {
+      setHandle(suggestion);
+    }
   };
+
   const onSignup = () => {
     loginAction("https://bsky.social", openLoginLink);
   };
-  const onEnterPress = (e: any) => {
+
+  const onKeyPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {
       submit();
+    } else if (e.nativeEvent.key === "Tab" && completionText) {
+      e.preventDefault();
+      acceptSuggestion();
+    } else if (e.nativeEvent.key === "ArrowRight" && completionText) {
+      const input = e.target;
+      if (input.selectionStart === handle.length) {
+        e.preventDefault();
+        acceptSuggestion();
+      }
     }
   };
 
@@ -178,95 +195,53 @@ export default function Login() {
             </View>
             <View style={[zero.pb[2], { position: "relative" }]}>
               <Text style={[{ color: "#aaa" }]}>Handle</Text>
-              <TextInput
-                value={handle}
-                onChangeText={(text) => {
-                  setHandle(
-                    text
-                      .toLowerCase()
-                      // copying from bsky.app often includes some RTL/LTR characters
-                      .replace(/[\u202A\u202C\u200E\u200F\u2066-\u2069]/g, "")
-                      .trim(),
-                  );
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => {
-                  setTimeout(() => setShowSuggestions(false), 200);
-                }}
-                style={[
-                  {
-                    backgroundColor: "#1a1a1a",
-                    borderWidth: 1,
-                    borderColor: "#333",
-                    borderRadius: 8,
-                    padding: 12,
-                    color: "white",
-                  },
-                ]}
-                onSubmitEditing={onEnterPress}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                placeholderTextColor="#666"
-              />
-              {showSuggestions && actors.length > 0 && (
-                <View
+              <View style={{ position: "relative" }}>
+                {completionText && (
+                  <Text
+                    style={[
+                      {
+                        position: "absolute",
+                        left: 12,
+                        top: 12,
+                        color: "#555",
+                        pointerEvents: "none",
+                        zIndex: 1,
+                      },
+                    ]}
+                  >
+                    <Text style={{ opacity: 0 }}>{handle}</Text>
+                    {completionText}
+                  </Text>
+                )}
+                <TextInput
+                  value={handle}
+                  onChangeText={(text) =>
+                    setHandle(
+                      text
+                        .toLowerCase()
+                        .replace(/[\u202A\u202C\u200E\u200F\u2066-\u2069]/g, "")
+                        .trim(),
+                    )
+                  }
+                  onKeyPress={onKeyPress}
                   style={[
                     {
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
                       backgroundColor: "#1a1a1a",
                       borderWidth: 1,
                       borderColor: "#333",
                       borderRadius: 8,
-                      marginTop: 4,
-                      maxHeight: 200,
-                      zIndex: 1000,
+                      padding: 12,
+                      color: "white",
+                      position: "relative",
+                      zIndex: 2,
                     },
                   ]}
-                >
-                  {actors.map((actor) => (
-                    <TouchableOpacity
-                      key={actor.did}
-                      onPress={() => selectActor(actor.handle)}
-                      style={[
-                        {
-                          flexDirection: "row",
-                          alignItems: "center",
-                          padding: 12,
-                          borderBottomWidth: 1,
-                          borderBottomColor: "#222",
-                        },
-                      ]}
-                    >
-                      {actor.avatar && (
-                        <Image
-                          source={{ uri: actor.avatar }}
-                          style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 16,
-                            marginRight: 12,
-                          }}
-                        />
-                      )}
-                      <View style={{ flex: 1 }}>
-                        {actor.displayName && (
-                          <Text style={{ color: "white", fontWeight: "500" }}>
-                            {actor.displayName}
-                          </Text>
-                        )}
-                        <Text style={{ color: "#888", fontSize: 12 }}>
-                          @{actor.handle}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  placeholderTextColor="#666"
+                />
+              </View>
             </View>
             <View
               style={[
