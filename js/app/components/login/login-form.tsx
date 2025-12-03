@@ -10,7 +10,7 @@ import useActorTypeahead from "hooks/useActorTypeahead";
 import {
   ArrowRightToLine,
   AtSign,
-  CornerDownRight,
+  CornerDownLeft,
   Info,
 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
@@ -57,6 +57,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const avatarUri = useMemo(() => suggestion?.avatar, [suggestion?.avatar]);
 
   const submit = () => {
+    if (completionText && isMobile) {
+      acceptSuggestion();
+      return;
+    }
     let clean = handle;
     if (handle.startsWith("@")) clean = handle.slice(1);
     loginAction(clean, openLoginLink);
@@ -76,12 +80,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
   const onKeyPress = (e: any) => {
     if (e.nativeEvent.key === "Enter") {
-      if (completionText && isMobile) {
-        e.preventDefault();
-        acceptSuggestion();
-      } else if (!completionText) {
-        submit();
-      }
+      submit();
     } else if (e.nativeEvent.key === "Tab" && completionText) {
       e.preventDefault();
       acceptSuggestion();
@@ -139,13 +138,13 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
               style={[
                 {
                   position: "absolute",
-                  left: 13 + 28 + 8,
-                  top: 12,
+                  left: 13 + 28 + 6,
+                  top: isMobile ? 15.25 : 12,
                   zIndex: 1000000,
                   pointerEvents: "none",
                 },
                 zero.layout.flex.row,
-                zero.layout.flex.alignCenter,
+                zero.layout.flex.align.center,
                 zero.gap.all[1],
               ]}
             >
@@ -170,11 +169,11 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                 {completionText}
               </Text>
               {isMobile ? (
-                <CornerDownRight
+                <CornerDownLeft
                   height={18}
                   color="#555"
                   style={{
-                    paddingBottom: 1,
+                    bottom: 2,
                   }}
                 />
               ) : (
@@ -194,7 +193,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             style={[
               zero.layout.position.absolute,
               zero.layout.flex.row,
-              { zIndex: 32, top: 8 },
+              { zIndex: 32, top: 8, left: 10 },
             ]}
           >
             {avatarUri ? (
@@ -223,8 +222,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                   style={{
                     width: 32,
                     height: 32,
-                    borderRadius: 900,
-                    opacity: suggestion?.handle === handle ? 1 : 0.5,
+                    borderRadius: 999,
+                    opacity: suggestion?.handle === handle ? 1 : 0.7,
                   }}
                   onLayout={() => setImageLoading(true)}
                   onLoad={() => setImageLoading(false)}
@@ -255,13 +254,15 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                   .trim(),
               )
             }
+            placeholder="jcsalterego.bsky.social"
             onKeyPress={onKeyPress}
+            onSubmitEditing={submit}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="url"
             placeholderTextColor="#666"
             containerStyle={{
-              marginLeft: 28 + 8,
+              paddingLeft: 46,
             }}
           />
         </View>

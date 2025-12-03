@@ -9,7 +9,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ visible, onClose }: LoginModalProps) {
-  const { theme } = useTheme();
+  const { theme, zero: z } = useTheme();
 
   return (
     <Modal
@@ -38,10 +38,10 @@ export default function LoginModal({ visible, onClose }: LoginModalProps) {
       >
         <Pressable
           style={[
-            zero.bg.gray[900],
+            z.bg.card,
             zero.r.xl,
             zero.p[6],
-            { width: 600, maxWidth: "90%", maxHeight: "85%" },
+            { width: 600, maxWidth: "95%", maxHeight: "85%" },
           ]}
           onPress={(e) => e.stopPropagation()}
         >
@@ -50,14 +50,13 @@ export default function LoginModal({ visible, onClose }: LoginModalProps) {
               zero.layout.flex.row,
               zero.layout.flex.spaceBetween,
               zero.layout.flex.alignCenter,
-              zero.mb[5],
+              zero.mb[4],
             ]}
           >
-            <Text style={[{ fontSize: 36, fontWeight: "200", color: "white" }]}>
+            <Text size="4xl" leading="snug">
               Log in
             </Text>
             <TouchableOpacity
-              style={[zero.p[1]]}
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
