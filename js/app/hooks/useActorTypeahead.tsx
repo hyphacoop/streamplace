@@ -26,6 +26,7 @@ export default function useActorTypeahead(query: string): TypeaheadResult {
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastRequestTimeRef = useRef<number>(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const actorsRef = useRef<Actor[]>([]);
 
   useEffect(() => {
     if (debounceTimerRef.current) {
@@ -78,7 +79,24 @@ export default function useActorTypeahead(query: string): TypeaheadResult {
         const data = await response.json();
 
         if (!controller.signal.aborted) {
-          setActors(data.actors || []);
+          const newActors = data.actors || [];
+
+          // check if actors actually changed
+          const actorsChanged =
+            newActors.length !== actorsRef.current.length ||
+            newActors.some(
+              (actor: Actor, i: number) =>
+                actor.did !== actorsRef.current[i]?.did ||
+                actor.avatar !== actorsRef.current[i]?.avatar,
+            );
+
+          if (actorsChanged) {
+            actorsRef.current = newActors;
+            setActors(newActors);
+          } else {
+            // keep the same reference to prevent re-renders
+            setActors(actorsRef.current);
+          }
           setLoading(false);
         }
       } catch (err: any) {

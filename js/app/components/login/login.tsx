@@ -1,46 +1,20 @@
 import { useNavigation } from "@react-navigation/native";
-import { Button, storage, Text, useTheme, zero } from "@streamplace/components";
+import { storage, Text, useTheme, zero } from "@streamplace/components";
 import { Redirect } from "components/aqlink";
 import Loading from "components/loading/loading";
-import useActorTypeahead from "hooks/useActorTypeahead";
-import { Info } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useStore } from "store";
-import { useIsReady, useLogin, useUserProfile } from "store/hooks";
+import { useIsReady, useUserProfile } from "store/hooks";
 import { navigateToRoute } from "../../utils/navigation";
+import LoginForm from "./login-form";
 
 export default function Login() {
   const { theme } = useTheme();
-  const loginAction = useStore((state) => state.login);
-  const openLoginLink = useStore((state) => state.openLoginLink);
   const closeLoginModal = useStore((state) => state.closeLoginModal);
   const userProfile = useUserProfile();
-  const loginState = useLogin();
   const navigation = useNavigation();
-  const [handle, setHandle] = useState("");
   const isReady = useIsReady();
-  const { actors } = useActorTypeahead(handle);
-
-  const suggestion =
-    actors.length > 0 &&
-    handle.length >= 3 &&
-    actors[0].handle.startsWith(handle)
-      ? actors[0].handle
-      : null;
-
-  const completionText = suggestion ? suggestion.slice(handle.length) : null;
-  // null: no return route, undefined: hasn't checked yet
   const [localReturnRoute, setLocalReturnRoute] = useState<
     | {
         name: string;
@@ -70,43 +44,6 @@ export default function Login() {
       }
     });
   }, [navigation, closeLoginModal]);
-
-  const submit = () => {
-    let clean = handle;
-    if (handle.startsWith("@")) clean = handle.slice(1);
-    loginAction(clean, openLoginLink);
-  };
-
-  const acceptSuggestion = () => {
-    if (suggestion) {
-      setHandle(suggestion);
-    }
-  };
-
-  const onSignup = () => {
-    loginAction("https://bsky.social", openLoginLink);
-  };
-
-  const onKeyPress = (e: any) => {
-    if (e.nativeEvent.key === "Enter") {
-      submit();
-    } else if (e.nativeEvent.key === "Tab" && completionText) {
-      e.preventDefault();
-      acceptSuggestion();
-    } else if (e.nativeEvent.key === "ArrowRight" && completionText) {
-      const input = e.target;
-      if (input.selectionStart === handle.length) {
-        e.preventDefault();
-        acceptSuggestion();
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (loginState?.error) {
-      Alert.alert("Login error", loginState.error);
-    }
-  }, [loginState?.error]);
 
   if (!isReady || localReturnRoute === undefined) {
     return (
@@ -166,107 +103,7 @@ export default function Login() {
             <Text style={[{ fontSize: 36, fontWeight: "200", color: "white" }]}>
               Log in
             </Text>
-            <View
-              style={[
-                { flexWrap: "wrap", flexDirection: "row" },
-                zero.gap.all[1],
-              ]}
-            >
-              <Text style={[{ color: theme.colors.textMuted }]}>
-                Sign in using your handle on the AT Protocol
-              </Text>
-              <Pressable
-                onPress={() => {
-                  const u = new URL(
-                    "https://atproto.academy/docs/Authentication/why",
-                  );
-                  Linking.openURL(u.toString());
-                }}
-              >
-                <Info
-                  size={16}
-                  style={{ paddingTop: 4 }}
-                  color={theme.colors.ring}
-                />
-              </Pressable>
-              <Text style={[{ color: theme.colors.textMuted }]}>
-                (e.g. your Bluesky handle)
-              </Text>
-            </View>
-            <View style={[zero.pb[2], { position: "relative" }]}>
-              <Text style={[{ color: "#aaa" }]}>Handle</Text>
-              <View style={{ position: "relative" }}>
-                {completionText && (
-                  <Text
-                    style={[
-                      {
-                        position: "absolute",
-                        left: 12,
-                        top: 12,
-                        color: "#555",
-                        pointerEvents: "none",
-                        zIndex: 1,
-                      },
-                    ]}
-                  >
-                    <Text style={{ opacity: 0 }}>{handle}</Text>
-                    {completionText}
-                  </Text>
-                )}
-                <TextInput
-                  value={handle}
-                  onChangeText={(text) =>
-                    setHandle(
-                      text
-                        .toLowerCase()
-                        .replace(/[\u202A\u202C\u200E\u200F\u2066-\u2069]/g, "")
-                        .trim(),
-                    )
-                  }
-                  onKeyPress={onKeyPress}
-                  style={[
-                    {
-                      backgroundColor: "#1a1a1a",
-                      borderWidth: 1,
-                      borderColor: "#333",
-                      borderRadius: 8,
-                      padding: 12,
-                      color: "white",
-                      position: "relative",
-                      zIndex: 2,
-                    },
-                  ]}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="url"
-                  placeholderTextColor="#666"
-                />
-              </View>
-            </View>
-            <View
-              style={[
-                { flexDirection: "row", justifyContent: "flex-end" },
-                zero.gap.all[3],
-              ]}
-            >
-              <Button width="min" onPress={() => onSignup()} variant="ghost">
-                <Text style={[{ color: "white" }]}>Sign Up on Bluesky</Text>
-              </Button>
-              <Button
-                onPress={submit}
-                disabled={loginState.loading}
-                style={[zero.px[6]]}
-                width="min"
-              >
-                <Text style={[{ color: "white" }]}>
-                  {loginState.loading ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    "Log in"
-                  )}
-                </Text>
-              </Button>
-            </View>
+            <LoginForm />
           </View>
         </View>
       </ScrollView>
