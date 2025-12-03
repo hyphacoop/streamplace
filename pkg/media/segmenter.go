@@ -120,13 +120,13 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, doH264Pa
 				// ))
 				// defer span.End()
 				now := time.Now().UnixMilli()
-				resetTimer <- struct{}{}
 				bs := buf.Bytes()
 
 				if previousSegCh != nil {
 					<-previousSegCh
 				}
-				err := func() error {
+				resetTimer <- struct{}{}
+				convergeAndSign := func() error {
 					bs, err := ConvergeSegment(ctx, cli, bs, now, streamer, doH264Parse)
 					if err != nil {
 						return fmt.Errorf("error converging segment: %w", err)
@@ -137,6 +137,26 @@ func SegmentElem(ctx context.Context, cli *config.CLI, streamer string, doH264Pa
 						return fmt.Errorf("error signing segment: %w", err)
 					}
 					return nil
+				}
+				err := func() error {
+					convergeDone := make(chan error)
+					go func() {
+						convergeDone <- convergeAndSign()
+					}()
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case err := <-convergeDone:
+						return err
+					case <-time.After(time.Second * 3):
+						go func() {
+							err = cli.DataFileWrite([]string{"debug-recordings", streamer, fmt.Sprintf("converge-timeout-%d.mp4", now)}, bytes.NewReader(bs), true)
+							if err != nil {
+								log.Error(ctx, "error writing debug recording", "error", err)
+							}
+						}()
+						return fmt.Errorf("timeout converging segment")
+					}
 				}()
 				close(mySegCh)
 				if err != nil {

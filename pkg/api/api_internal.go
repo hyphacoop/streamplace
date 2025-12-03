@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/juju/ratelimit"
 	"github.com/julienschmidt/httprouter"
 	"github.com/pion/webrtc/v4"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -211,8 +212,19 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 		os.Exit(1)
 	})
 
-	handleIncomingStream := func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	handleIncomingStream := func(w http.ResponseWriter, httpReq *http.Request, p httprouter.Params) {
+		var r io.Reader = httpReq.Body
 		key := p.ByName("key")
+		limitStr := httpReq.URL.Query().Get("ratelimit")
+		if limitStr != "" {
+			limit, err := strconv.Atoi(limitStr)
+			if err != nil {
+				errors.WriteHTTPBadRequest(w, "invalid ratelimit", err)
+				return
+			}
+			bucket := ratelimit.NewBucketWithRate(float64(limit), int64(limit)) // 2 Mbps
+			r = ratelimit.Reader(r, bucket)
+		}
 		log.Log(ctx, "stream start")
 
 		var mediaSigner media.MediaSigner
@@ -245,14 +257,14 @@ func (a *StreamplaceAPI) InternalHandler(ctx context.Context) (http.Handler, err
 			return
 		}
 
-		err = a.MediaManager.MKVIngest(ctx, r.Body, mediaSigner)
+		err = a.MediaManager.MKVIngest(context.Background(), r, mediaSigner)
 
 		if err != nil {
 			log.Log(ctx, "stream error", "error", err)
 			errors.WriteHTTPInternalServerError(w, "stream error", err)
 			return
 		}
-		log.Log(ctx, "stream success", "url", r.URL.String())
+		log.Log(ctx, "stream success", "url", httpReq.URL.String())
 	}
 
 	// route to accept an incoming mkv stream from OBS, segment it, and push the segments back to this HTTP handler

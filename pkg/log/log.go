@@ -14,8 +14,8 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
-	"time"
 
+	"github.com/bluesky-social/indigo/util"
 	"github.com/golang/glog"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
@@ -65,8 +65,18 @@ func SetColorLogger(color string) {
 	// set global logger with custom options
 	slog.SetDefault(slog.New(
 		tint.NewHandler(realStderr, &tint.Options{
-			Level:      slog.LevelDebug,
-			TimeFormat: time.RFC3339,
+			Level: slog.LevelDebug,
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				if a.Key != "time" {
+					return a
+				}
+				t := a.Value.Time().UTC()
+				return slog.Attr{
+					Key:   "time",
+					Value: slog.TimeValue(t),
+				}
+			},
+			TimeFormat: util.ISO8601,
 			NoColor:    noColor,
 		}),
 	))

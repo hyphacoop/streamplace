@@ -83,7 +83,6 @@ func (mm *MediaManager) MKVIngest(ctx context.Context, input io.Reader, ms Media
 	busErr := make(chan error)
 	go func() {
 		err := HandleBusMessages(ctx, pipeline)
-		cancel()
 		busErr <- err
 	}()
 
@@ -101,9 +100,9 @@ func (mm *MediaManager) MKVIngest(ctx context.Context, input io.Reader, ms Media
 		}
 	}()
 
-	<-busErr
+	err = <-busErr
 
-	return nil
+	return err
 }
 
 func (mm *MediaManager) dumpToFile(ctx context.Context, r io.Reader, user string, filesuffix string) error {
