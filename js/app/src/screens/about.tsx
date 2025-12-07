@@ -1,5 +1,5 @@
-import { Text, View, zero } from "@streamplace/components";
-import { Linking, Pressable } from "react-native";
+import { Text, zero } from "@streamplace/components";
+import { Linking, Pressable, ScrollView } from "react-native";
 
 const Anchor = ({
   href,
@@ -18,7 +18,7 @@ const Anchor = ({
 
 export default function AboutScreen() {
   return (
-    <View style={[{ maxWidth: 500, marginHorizontal: "auto" }]}>
+    <ScrollView style={[{ maxWidth: 500, marginHorizontal: "auto" }]}>
       <Text variant="h4" size="2xl" style={[zero.mt[4]]}>
         What is Streamplace?
       </Text>
@@ -78,6 +78,6 @@ export default function AboutScreen() {
         Join our <Anchor href="https://discord.stream.place">Discord</Anchor> to
         learn more about Streamplace and how you can get involved.
       </Text>
-    </View>
+    </ScrollView>
   );
 }
