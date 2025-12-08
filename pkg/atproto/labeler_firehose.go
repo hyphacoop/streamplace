@@ -110,8 +110,8 @@ func (atsync *ATProtoSynchronizer) StartLabelerFirehoseRetry(ctx context.Context
 	if err != nil {
 		return fmt.Errorf("subscribing to firehose failed (dialing): %w", err)
 	}
-	spmetrics.LabelerFirehosesConnected.WithLabelValues(did).Set(1)
-	defer spmetrics.LabelerFirehosesConnected.WithLabelValues(did).Set(0)
+	spmetrics.LabelerFirehosesConnected.WithLabelValues(did).Inc()
+	defer spmetrics.LabelerFirehosesConnected.WithLabelValues(did).Dec()
 	rsc := &events.RepoStreamCallbacks{
 		LabelLabels: func(evt *comatproto.LabelSubscribeLabels_Labels) error {
 			err = atsync.Model.UpdateLabelerCursor(did, evt.Seq)
