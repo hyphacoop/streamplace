@@ -88,6 +88,11 @@ var SegmentSubscriptionsOpen = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "number of open new segment subscriptions",
 }, []string{"streamer", "rendition"})
 
+var LabelerFirehosesConnected = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "streamplace_labeler_firehoses_connected",
+	Help: "number of currently connected labeler firehoses",
+}, []string{"labeler"})
+
 func ViewerInc(user string, protocol string) {
 	go func() {
 		viewersLock.Lock()
