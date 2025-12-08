@@ -216,6 +216,7 @@ export function DeleteButton({
   const toast = useToast();
   return (
     <DropdownMenuItem
+      closeOnPress={false}
       onPress={() => {
         if (!message) return;
         if (!confirming) {
