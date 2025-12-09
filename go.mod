@@ -58,7 +58,7 @@ require (
 	github.com/slok/go-http-metrics v0.13.0
 	github.com/starttoaster/prometheus-exporter-scraper v0.0.1
 	github.com/streamplace/atproto-oauth-golang v0.0.0-20250619231223-a9c04fb888ac
-	github.com/streamplace/oatproxy v0.0.0-20251022224044-56ff4e867807
+	github.com/streamplace/oatproxy v0.0.0-20251207230012-236e9bd6dae6
 	github.com/stretchr/testify v1.10.0
 	github.com/tdewolff/canvas v0.0.0-20250728095813-50d4cb1eee71
 	github.com/whyrusleeping/cbor-gen v0.3.1
