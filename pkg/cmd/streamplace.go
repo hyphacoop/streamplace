@@ -448,6 +448,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	})
 
 	group.Go(func() error {
+		return media.StartRTMPServer(ctx)
+	})
+
+	group.Go(func() error {
 		return replicator.Start(ctx, &cli)
 	})
 
