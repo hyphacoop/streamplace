@@ -502,9 +502,32 @@ func MPEGTSVideoMP4AudioToMP4(ctx context.Context, videoInput io.Reader, audioIn
 		},
 	})
 
+	wroteAnything := false
+
 	// Set up sink callbacks
 	sink.SetCallbacks(&app.SinkCallbacks{
-		NewSampleFunc: WriterNewSample(ctx, output),
+		NewSampleFunc: func(sink *app.Sink) gst.FlowReturn {
+			sample := sink.PullSample()
+			if sample == nil {
+				return gst.FlowOK
+			}
+
+			// Retrieve the buffer from the sample.
+			buffer := sample.GetBuffer()
+			bs := buffer.Map(gst.MapRead).Bytes()
+			defer buffer.Unmap()
+
+			_, err := output.Write(bs)
+
+			if err != nil {
+				log.Error(ctx, "error writing to output", "error", err)
+				return gst.FlowError
+			}
+
+			wroteAnything = true
+
+			return gst.FlowOK
+		},
 		NewPrerollFunc: func(self *app.Sink) gst.FlowReturn {
 			return gst.FlowOK
 		},
@@ -547,5 +570,14 @@ func MPEGTSVideoMP4AudioToMP4(ctx context.Context, videoInput io.Reader, audioIn
 		videoParseSinkPad = nil
 	}()
 
-	return <-errCh
+	err = <-errCh
+	if err != nil {
+		return fmt.Errorf("pipeline error: %w", err)
+	}
+
+	if !wroteAnything {
+		return fmt.Errorf("no data written to output")
+	}
+
+	return nil
 }
