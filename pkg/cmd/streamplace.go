@@ -413,6 +413,10 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 			group.Go(func() error {
 				return rtmps.ServeRTMPSAddon(ctx, &cli)
 			})
+		} else {
+			group.Go(func() error {
+				return a.ServeRTMPS(ctx, &cli)
+			})
 		}
 	} else {
 		group.Go(func() error {

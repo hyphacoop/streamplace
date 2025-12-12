@@ -3,6 +3,7 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/bluenviron/gortmplib"
 	"github.com/bluenviron/gortsplib/v5/pkg/format"
 	"golang.org/x/sync/errgroup"
+	"stream.place/streamplace/pkg/config"
 	"stream.place/streamplace/pkg/log"
 	"stream.place/streamplace/pkg/media"
 )
@@ -233,6 +235,11 @@ func (a *StreamplaceAPI) ServeRTMP(ctx context.Context) error {
 	}
 	defer ln.Close()
 
+	go func() {
+		<-ctx.Done()
+		ln.Close()
+	}()
+
 	log.Log(ctx, "rtmp server starting", "addr", a.CLI.RTMPAddr)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -257,13 +264,6 @@ func (a *StreamplaceAPI) ServeRTMP(ctx context.Context) error {
 		}
 	})
 
-	<-ctx.Done()
-
-	err = ln.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close RTMP listener: %w", err)
-	}
-
 	return g.Wait()
 }
 
@@ -281,35 +281,78 @@ func (a *StreamplaceAPI) ServeRTMPInternalPlayback(ctx context.Context) error {
 		return fmt.Errorf("failed to split host and port: %w", err)
 	}
 
+	go func() {
+		<-ctx.Done()
+		ln.Close()
+	}()
+
 	a.rtmpInternalPlaybackAddr = fmt.Sprintf("127.0.0.1:%s", port)
 
 	log.Log(ctx, "rtmp internal playback server starting", "addr", a.rtmpInternalPlaybackAddr)
 
 	// Accept loop in a goroutine so we can select on context.Done
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		conn, err := ln.Accept()
+		if err != nil {
+			return fmt.Errorf("error accepting RTMP connection: %w", err)
+		}
+
+		go func() {
+			err := a.HandleRTMPPlaybackConn(ctx, conn)
+			if err != nil {
+				log.Error(ctx, "error handling RTMP internal playback connection", "error", err)
+			}
+		}()
+	}
+}
+
+func (a *StreamplaceAPI) ServeRTMPS(ctx context.Context, cli *config.CLI) error {
+	cert, err := tls.LoadX509KeyPair(cli.TLSCertPath, cli.TLSKeyPath)
+	if err != nil {
+		return fmt.Errorf("failed to load TLS certificate: %w", err)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+
+	ln, err := tls.Listen("tcp", cli.RTMPSAddr, tlsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create RTMPS listener: %w", err)
+	}
+
+	log.Log(ctx, "rtmps server starting", "addr", cli.RTMPAddr)
+
 	go func() {
+		<-ctx.Done()
+		ln.Close()
+	}()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return a.ServeRTMPInternalPlayback(ctx)
+	})
+	g.Go(func() error {
 		for {
 			if ctx.Err() != nil {
-				return
+				return ctx.Err()
 			}
 			conn, err := ln.Accept()
 			if err != nil {
-				if ctx.Err() != nil {
-					return
-				}
-				log.Error(ctx, "error accepting RTMP connection", "error", err)
-				continue
+				return fmt.Errorf("error accepting RTMP connection: %w", err)
 			}
-
 			go func() {
-				err := a.HandleRTMPPlaybackConn(ctx, conn)
+				err := a.HandleRTMPPublishConn(ctx, conn)
 				if err != nil {
-					log.Error(ctx, "error handling RTMP internal playback connection", "error", err)
+					log.Error(ctx, "error handling RTMP publish connection", "error", err)
 				}
 			}()
 		}
-	}()
+	})
 
-	<-ctx.Done()
-
-	return ln.Close()
+	return g.Wait()
 }
