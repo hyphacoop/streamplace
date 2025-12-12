@@ -27,10 +27,15 @@ import (
 // 	readers   []*gortmplib.Writer
 // )
 
+var RTMPTimeout = 10 * time.Second
+
 const RTMPPrefix = "/live/"
 
 func (a *StreamplaceAPI) HandleRTMPPublisher(ctx context.Context, sc *gortmplib.ServerConn) error {
-	sc.RW.(net.Conn).SetReadDeadline(time.Now().Add(10 * time.Second))
+	err := sc.RW.(net.Conn).SetReadDeadline(time.Now().Add(RTMPTimeout))
+	if err != nil {
+		return err
+	}
 
 	if !strings.HasPrefix(sc.URL.Path, RTMPPrefix) {
 		return fmt.Errorf("RTMP publisher is not allowed to publish to %s (must start with %s)", sc.URL.String(), RTMPPrefix)
@@ -41,12 +46,27 @@ func (a *StreamplaceAPI) HandleRTMPPublisher(ctx context.Context, sc *gortmplib.
 		return fmt.Errorf("failed to make media signer: %w", err)
 	}
 
-	ctx = log.WithLogValues(ctx, "streamer", mediaSigner.Streamer())
+	streamer := mediaSigner.Streamer()
+	ctx = log.WithLogValues(ctx, "streamer", streamer)
+	session := &media.RTMPSession{
+		EventChan:   make(chan any, 1024),
+		MediaSigner: mediaSigner,
+	}
+	a.rtmpSessionsLock.Lock()
+	a.rtmpSessions[streamer] = session
+	a.rtmpSessionsLock.Unlock()
 
-	videoInput := make(chan *media.RTMPH264Data, 1024)
-	defer close(videoInput)
-	audioInput := make(chan *media.RTMPAACData, 1024)
-	defer close(audioInput)
+	defer func() {
+		a.rtmpSessionsLock.Lock()
+		delete(a.rtmpSessions, streamer)
+		a.rtmpSessionsLock.Unlock()
+		close(session.EventChan)
+	}()
+
+	// videoInput := make(chan *media.RTMPH264Data, 1024)
+	// defer close(videoInput)
+	// audioInput := make(chan *media.RTMPAACData, 1024)
+	// defer close(audioInput)
 
 	r := &gortmplib.Reader{
 		Conn: sc,
@@ -61,18 +81,21 @@ func (a *StreamplaceAPI) HandleRTMPPublisher(ctx context.Context, sc *gortmplib.
 
 		switch track := track.(type) {
 		case *format.H264:
+			session.VideoTrack = track
 			r.OnDataH264(track, func(pts time.Duration, dts time.Duration, au [][]byte) {
-				log.Log(ctx, "got H264", "len", len(au), "pts", pts, "dts", dts)
-				videoInput <- &media.RTMPH264Data{
+				// log.Log(ctx, "got H264", "len", len(au), "pts", pts, "dts", dts)
+				session.EventChan <- &media.RTMPH264Data{
 					AU:  au,
 					PTS: pts,
+					DTS: dts,
 				}
 			})
 
 		case *format.MPEG4Audio:
+			session.AudioTrack = track
 			r.OnDataMPEG4Audio(track, func(pts time.Duration, au []byte) {
-				log.Log(ctx, "got MPEG4Au", "len", len(au), "pts", pts)
-				audioInput <- &media.RTMPAACData{
+				// log.Log(ctx, "got MPEG4Au", "len", len(au), "pts", pts)
+				session.EventChan <- &media.RTMPAACData{
 					AU:  au,
 					PTS: pts,
 				}
@@ -89,7 +112,10 @@ func (a *StreamplaceAPI) HandleRTMPPublisher(ctx context.Context, sc *gortmplib.
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			sc.RW.(net.Conn).SetReadDeadline(time.Now().Add(10 * time.Second))
+			err = sc.RW.(net.Conn).SetReadDeadline(time.Now().Add(RTMPTimeout))
+			if err != nil {
+				return err
+			}
 			err = r.Read()
 			if err != nil {
 				return err
@@ -98,19 +124,68 @@ func (a *StreamplaceAPI) HandleRTMPPublisher(ctx context.Context, sc *gortmplib.
 	})
 
 	g.Go(func() error {
-		return a.MediaManager.RTMPIngest(ctx, videoInput, audioInput, mediaSigner)
+		return a.MediaManager.RTMPIngest(ctx, fmt.Sprintf("rtmp://%s/live/%s", a.rtmpInternalPlaybackAddr, streamer), mediaSigner)
 	})
 
 	return g.Wait()
 }
 
-func (a *StreamplaceAPI) HandleRTMPConnInner(ctx context.Context, conn net.Conn) error {
-	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+func (a *StreamplaceAPI) HandleRTMPPlayback(ctx context.Context, sc *gortmplib.ServerConn) error {
+	if !strings.HasPrefix(sc.URL.Path, RTMPPrefix) {
+		return fmt.Errorf("RTMP publisher is not allowed to publish to %s (must start with %s)", sc.URL.String(), RTMPPrefix)
+	}
+	streamer := strings.TrimPrefix(sc.URL.Path, RTMPPrefix)
+	a.rtmpSessionsLock.Lock()
+	session, ok := a.rtmpSessions[streamer]
+	a.rtmpSessionsLock.Unlock()
+	if !ok {
+		return fmt.Errorf("RTMP session not found for streamer %s", streamer)
+	}
+
+	w := &gortmplib.Writer{
+		Conn:   sc,
+		Tracks: []format.Format{session.VideoTrack, session.AudioTrack},
+	}
+	err := w.Initialize()
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case event := <-session.EventChan:
+			if event == nil {
+				return fmt.Errorf("RTMP session closed")
+			}
+			switch event := event.(type) {
+			case *media.RTMPH264Data:
+				err := w.WriteH264(session.VideoTrack, event.PTS, event.DTS, event.AU)
+				if err != nil {
+					return fmt.Errorf("error writing H264: %w", err)
+				}
+			case *media.RTMPAACData:
+				err := w.WriteMPEG4Audio(session.AudioTrack, event.PTS, event.AU)
+				if err != nil {
+					return fmt.Errorf("error writing MPEG4Audio: %w", err)
+				}
+			default:
+				return fmt.Errorf("unsupported event type: %T", event)
+			}
+		}
+	}
+}
+
+func (a *StreamplaceAPI) HandleRTMPPublishConn(ctx context.Context, conn net.Conn) error {
+	err := conn.SetReadDeadline(time.Now().Add(RTMPTimeout))
+	if err != nil {
+		return err
+	}
 
 	sc := &gortmplib.ServerConn{
 		RW: conn,
 	}
-	err := sc.Initialize()
+	err = sc.Initialize()
 	if err != nil {
 		return err
 	}
@@ -123,35 +198,114 @@ func (a *StreamplaceAPI) HandleRTMPConnInner(ctx context.Context, conn net.Conn)
 	if sc.Publish {
 		return a.HandleRTMPPublisher(ctx, sc)
 	}
-	return fmt.Errorf("RTMP playback is not supported")
+	return fmt.Errorf("RTMP playback is not allowed")
 }
 
-func (a *StreamplaceAPI) HandleRTMPConn(ctx context.Context, conn net.Conn) {
-	defer conn.Close()
+func (a *StreamplaceAPI) HandleRTMPPlaybackConn(ctx context.Context, conn net.Conn) error {
+	err := conn.SetReadDeadline(time.Now().Add(RTMPTimeout))
+	if err != nil {
+		return err
+	}
 
-	log.Log(ctx, "connection opened", "remoteAddr", conn.RemoteAddr())
-	err := a.HandleRTMPConnInner(ctx, conn)
-	log.Log(ctx, "connection closed", "remoteAddr", conn.RemoteAddr(), "error", err)
+	sc := &gortmplib.ServerConn{
+		RW: conn,
+	}
+	err = sc.Initialize()
+	if err != nil {
+		return err
+	}
+
+	err = sc.Accept()
+	if err != nil {
+		return err
+	}
+
+	if !sc.Publish {
+		return a.HandleRTMPPlayback(ctx, sc)
+	}
+	return fmt.Errorf("RTMP playback is not allowed")
 }
 
-func (a *StreamplaceAPI) StartRTMPServer(ctx context.Context) error {
-	ln, err := net.Listen("tcp", ":1935")
+func (a *StreamplaceAPI) ServeRTMP(ctx context.Context) error {
+	ln, err := net.Listen("tcp", a.CLI.RTMPAddr)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 	defer ln.Close()
 
-	log.Log(ctx, "listening on :1935")
+	log.Log(ctx, "rtmp server starting", "addr", a.CLI.RTMPAddr)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return a.ServeRTMPInternalPlayback(ctx)
+	})
+	g.Go(func() error {
+		for {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			conn, err := ln.Accept()
+			if err != nil {
+				return fmt.Errorf("error accepting RTMP connection: %w", err)
+			}
+			go func() {
+				err := a.HandleRTMPPublishConn(ctx, conn)
+				if err != nil {
+					log.Error(ctx, "error handling RTMP publish connection", "error", err)
+				}
+			}()
+		}
+	})
+
+	<-ctx.Done()
+
+	err = ln.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close RTMP listener: %w", err)
+	}
+
+	return g.Wait()
+}
+
+// Serve RTMP internal playback server for gstreamer to pull from
+func (a *StreamplaceAPI) ServeRTMPInternalPlayback(ctx context.Context) error {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+	addr := ln.Addr().String()
+	defer ln.Close()
+
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("failed to split host and port: %w", err)
+	}
+
+	a.rtmpInternalPlaybackAddr = fmt.Sprintf("127.0.0.1:%s", port)
+
+	log.Log(ctx, "rtmp internal playback server starting", "addr", a.rtmpInternalPlaybackAddr)
 
 	// Accept loop in a goroutine so we can select on context.Done
 	go func() {
 		for {
+			if ctx.Err() != nil {
+				return
+			}
 			conn, err := ln.Accept()
 			if err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				log.Error(ctx, "error accepting RTMP connection", "error", err)
+				continue
 			}
 
-			go a.HandleRTMPConn(ctx, conn)
+			go func() {
+				err := a.HandleRTMPPlaybackConn(ctx, conn)
+				if err != nil {
+					log.Error(ctx, "error handling RTMP internal playback connection", "error", err)
+				}
+			}()
 		}
 	}()
 

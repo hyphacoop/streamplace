@@ -411,12 +411,15 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 		})
 		if cli.RTMPServerAddon != "" {
 			group.Go(func() error {
-				return rtmps.ServeRTMPS(ctx, &cli)
+				return rtmps.ServeRTMPSAddon(ctx, &cli)
 			})
 		}
 	} else {
 		group.Go(func() error {
 			return a.ServeHTTP(ctx)
+		})
+		group.Go(func() error {
+			return a.ServeRTMP(ctx)
 		})
 	}
 
@@ -445,10 +448,6 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 
 	group.Go(func() error {
 		return mod.StartSegmentCleaner(ctx)
-	})
-
-	group.Go(func() error {
-		return a.StartRTMPServer(ctx)
 	})
 
 	group.Go(func() error {
