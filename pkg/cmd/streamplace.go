@@ -448,7 +448,7 @@ func start(build *config.BuildFlags, platformJobs []jobFunc) error {
 	})
 
 	group.Go(func() error {
-		return media.StartRTMPServer(ctx)
+		return a.StartRTMPServer(ctx)
 	})
 
 	group.Go(func() error {
