@@ -445,13 +445,13 @@ func (atsync *ATProtoSynchronizer) handleCreateUpdate(ctx context.Context, userD
 			return fmt.Errorf("failed to parse createdAt: %w", err)
 		}
 
-		recommendation := &statedb.Recommendation{
+		recommendation := &model.Recommendation{
 			UserDID:   userDID,
 			Streamers: json.RawMessage(streamersJSON),
 			CreatedAt: createdAt,
 		}
 
-		err = atsync.StatefulDB.UpsertRecommendation(recommendation)
+		err = atsync.Model.UpsertRecommendation(recommendation)
 		if err != nil {
 			return fmt.Errorf("failed to upsert recommendation: %w", err)
 		}

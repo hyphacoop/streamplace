@@ -160,7 +160,7 @@ func (s *Server) handlePlaceStreamLiveGetRecommendations(ctx context.Context, us
 	}
 
 	// Try to get streamer's recommendation list
-	rec, err := s.statefulDB.GetRecommendation(userDID)
+	rec, err := s.model.GetRecommendation(userDID)
 	if err == nil {
 		streamers, err := rec.GetStreamersArray()
 		if err != nil {

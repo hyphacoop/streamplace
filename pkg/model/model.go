@@ -109,6 +109,9 @@ type Model interface {
 	CreateMetadataConfiguration(ctx context.Context, metadata *MetadataConfiguration) error
 	GetMetadataConfiguration(ctx context.Context, repoDID string) (*MetadataConfiguration, error)
 	DeleteMetadataConfiguration(ctx context.Context, repoDID string) error
+
+	GetRecommendation(userDID string) (*Recommendation, error)
+	UpsertRecommendation(rec *Recommendation) error
 }
 
 var DBRevision = 2
@@ -177,6 +180,7 @@ func MakeDB(dbURL string) (Model, error) {
 		Label{},
 		BroadcastOrigin{},
 		MetadataConfiguration{},
+		Recommendation{},
 	} {
 		err = db.AutoMigrate(model)
 		if err != nil {

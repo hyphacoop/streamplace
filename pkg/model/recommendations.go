@@ -1,4 +1,4 @@
-package statedb
+package model
 
 import (
 	"encoding/json"
@@ -29,7 +29,7 @@ func (r *Recommendation) GetStreamersArray() ([]string, error) {
 }
 
 // UpsertRecommendation creates or updates recommendations for a user
-func (state *StatefulDB) UpsertRecommendation(rec *Recommendation) error {
+func (m *DBModel) UpsertRecommendation(rec *Recommendation) error {
 	if rec.UserDID == "" {
 		return fmt.Errorf("user DID cannot be empty")
 	}
@@ -50,7 +50,7 @@ func (state *StatefulDB) UpsertRecommendation(rec *Recommendation) error {
 	rec.UpdatedAt = now
 
 	// Use GORM's upsert (On Conflict Do Update)
-	result := state.DB.Save(rec)
+	result := m.DB.Save(rec)
 	if result.Error != nil {
 		return fmt.Errorf("database upsert failed: %w", result.Error)
 	}
@@ -59,13 +59,13 @@ func (state *StatefulDB) UpsertRecommendation(rec *Recommendation) error {
 }
 
 // GetRecommendation retrieves a valid recommendation from a user
-func (state *StatefulDB) GetRecommendation(userDID string) (*Recommendation, error) {
+func (m *DBModel) GetRecommendation(userDID string) (*Recommendation, error) {
 	if userDID == "" {
 		return nil, fmt.Errorf("user DID cannot be empty")
 	}
 
 	var rec Recommendation
-	err := state.DB.Where("user_did = ?", userDID).First(&rec).Error
+	err := m.DB.Where("user_did = ?", userDID).First(&rec).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
