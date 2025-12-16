@@ -83,6 +83,10 @@ func (r *WebsocketReplicator) handleOriginMessage(ctx context.Context, view *str
 	if origin.WebsocketURL == nil {
 		return fmt.Errorf("origin has no websocket URL author=%s", view.Author.Did)
 	}
+	if !r.cli.ShouldSyndicate(origin.Streamer) {
+		log.Debug(ctx, "not replicating streamer", "streamer", origin.Streamer)
+		return nil
+	}
 	if r.hasConnection(origin.Streamer) {
 		log.Debug(ctx, "already has connection")
 		return nil

@@ -2,6 +2,8 @@ import {
   Button,
   Checkbox,
   ContentMetadataForm,
+  formatHandle,
+  formatHandleWithAt,
   Input,
   Textarea,
   Tooltip,
@@ -184,7 +186,7 @@ function LivestreamPanel({ scrollable = true }: { scrollable?: boolean }) {
     livestream?.record.canonicalUrl || "",
   );
   const defaultCanonicalUrl = useMemo(() => {
-    return `${url}/${profile?.handle}`;
+    return `${url}/${profile && formatHandle(profile)}`;
   }, [url, profile?.handle]);
 
   useEffect(() => {
@@ -418,7 +420,7 @@ function LivestreamPanel({ scrollable = true }: { scrollable?: boolean }) {
                       { fontWeight: "bold", paddingBottom: 8 },
                     ]}
                   >
-                    @{profile?.handle || "streamer"}
+                    {profile && formatHandleWithAt(profile)}
                   </Text>
                 </View>
                 <View

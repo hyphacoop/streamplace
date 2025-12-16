@@ -4,11 +4,11 @@ import (
 	"io"
 	"strconv"
 
-	comatprototypes "github.com/bluesky-social/indigo/api/atproto"
-	appbskytypes "github.com/bluesky-social/indigo/api/bsky"
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
+	appbsky "github.com/bluesky-social/indigo/api/bsky"
 	"github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel"
-	placestreamtypes "stream.place/streamplace/pkg/streamplace"
+	placestream "stream.place/streamplace/pkg/streamplace"
 )
 
 func (s *Server) RegisterHandlersAppBsky(e *echo.Echo) error {
@@ -21,9 +21,9 @@ func (s *Server) HandleAppBskyActorGetProfile(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleAppBskyActorGetProfile")
 	defer span.End()
 	actor := c.QueryParam("actor")
-	var out *appbskytypes.ActorDefs_ProfileViewDetailed
+	var out *appbsky.ActorDefs_ProfileViewDetailed
 	var handleErr error
-	// func (s *Server) handleAppBskyActorGetProfile(ctx context.Context,actor string) (*appbskytypes.ActorDefs_ProfileViewDetailed, error)
+	// func (s *Server) handleAppBskyActorGetProfile(ctx context.Context,actor string) (*appbsky.ActorDefs_ProfileViewDetailed, error)
 	out, handleErr = s.handleAppBskyActorGetProfile(ctx, actor)
 	if handleErr != nil {
 		return handleErr
@@ -47,9 +47,9 @@ func (s *Server) HandleAppBskyFeedGetFeedSkeleton(c echo.Context) error {
 	} else {
 		limit = 50
 	}
-	var out *appbskytypes.FeedGetFeedSkeleton_Output
+	var out *appbsky.FeedGetFeedSkeleton_Output
 	var handleErr error
-	// func (s *Server) handleAppBskyFeedGetFeedSkeleton(ctx context.Context,cursor string,feed string,limit int) (*appbskytypes.FeedGetFeedSkeleton_Output, error)
+	// func (s *Server) handleAppBskyFeedGetFeedSkeleton(ctx context.Context,cursor string,feed string,limit int) (*appbsky.FeedGetFeedSkeleton_Output, error)
 	out, handleErr = s.handleAppBskyFeedGetFeedSkeleton(ctx, cursor, feed, limit)
 	if handleErr != nil {
 		return handleErr
@@ -79,13 +79,13 @@ func (s *Server) HandleComAtprotoIdentityRefreshIdentity(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleComAtprotoIdentityRefreshIdentity")
 	defer span.End()
 
-	var body comatprototypes.IdentityRefreshIdentity_Input
+	var body comatproto.IdentityRefreshIdentity_Input
 	if err := c.Bind(&body); err != nil {
 		return err
 	}
-	var out *comatprototypes.IdentityDefs_IdentityInfo
+	var out *comatproto.IdentityDefs_IdentityInfo
 	var handleErr error
-	// func (s *Server) handleComAtprotoIdentityRefreshIdentity(ctx context.Context,body *comatprototypes.IdentityRefreshIdentity_Input) (*comatprototypes.IdentityDefs_IdentityInfo, error)
+	// func (s *Server) handleComAtprotoIdentityRefreshIdentity(ctx context.Context,body *comatproto.IdentityRefreshIdentity_Input) (*comatproto.IdentityDefs_IdentityInfo, error)
 	out, handleErr = s.handleComAtprotoIdentityRefreshIdentity(ctx, &body)
 	if handleErr != nil {
 		return handleErr
@@ -97,9 +97,9 @@ func (s *Server) HandleComAtprotoIdentityResolveHandle(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleComAtprotoIdentityResolveHandle")
 	defer span.End()
 	handle := c.QueryParam("handle")
-	var out *comatprototypes.IdentityResolveHandle_Output
+	var out *comatproto.IdentityResolveHandle_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoIdentityResolveHandle(ctx context.Context,handle string) (*comatprototypes.IdentityResolveHandle_Output, error)
+	// func (s *Server) handleComAtprotoIdentityResolveHandle(ctx context.Context,handle string) (*comatproto.IdentityResolveHandle_Output, error)
 	out, handleErr = s.handleComAtprotoIdentityResolveHandle(ctx, handle)
 	if handleErr != nil {
 		return handleErr
@@ -111,13 +111,13 @@ func (s *Server) HandleComAtprotoModerationCreateReport(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleComAtprotoModerationCreateReport")
 	defer span.End()
 
-	var body comatprototypes.ModerationCreateReport_Input
+	var body comatproto.ModerationCreateReport_Input
 	if err := c.Bind(&body); err != nil {
 		return err
 	}
-	var out *comatprototypes.ModerationCreateReport_Output
+	var out *comatproto.ModerationCreateReport_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoModerationCreateReport(ctx context.Context,body *comatprototypes.ModerationCreateReport_Input) (*comatprototypes.ModerationCreateReport_Output, error)
+	// func (s *Server) handleComAtprotoModerationCreateReport(ctx context.Context,body *comatproto.ModerationCreateReport_Input) (*comatproto.ModerationCreateReport_Output, error)
 	out, handleErr = s.handleComAtprotoModerationCreateReport(ctx, &body)
 	if handleErr != nil {
 		return handleErr
@@ -129,9 +129,9 @@ func (s *Server) HandleComAtprotoRepoDescribeRepo(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleComAtprotoRepoDescribeRepo")
 	defer span.End()
 	repo := c.QueryParam("repo")
-	var out *comatprototypes.RepoDescribeRepo_Output
+	var out *comatproto.RepoDescribeRepo_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context,repo string) (*comatprototypes.RepoDescribeRepo_Output, error)
+	// func (s *Server) handleComAtprotoRepoDescribeRepo(ctx context.Context,repo string) (*comatproto.RepoDescribeRepo_Output, error)
 	out, handleErr = s.handleComAtprotoRepoDescribeRepo(ctx, repo)
 	if handleErr != nil {
 		return handleErr
@@ -146,9 +146,9 @@ func (s *Server) HandleComAtprotoRepoGetRecord(c echo.Context) error {
 	collection := c.QueryParam("collection")
 	repo := c.QueryParam("repo")
 	rkey := c.QueryParam("rkey")
-	var out *comatprototypes.RepoGetRecord_Output
+	var out *comatproto.RepoGetRecord_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoRepoGetRecord(ctx context.Context,cid string,collection string,repo string,rkey string) (*comatprototypes.RepoGetRecord_Output, error)
+	// func (s *Server) handleComAtprotoRepoGetRecord(ctx context.Context,cid string,collection string,repo string,rkey string) (*comatproto.RepoGetRecord_Output, error)
 	out, handleErr = s.handleComAtprotoRepoGetRecord(ctx, cid, collection, repo, rkey)
 	if handleErr != nil {
 		return handleErr
@@ -182,9 +182,9 @@ func (s *Server) HandleComAtprotoRepoListRecords(c echo.Context) error {
 		}
 		reverse = &reverse_val
 	}
-	var out *comatprototypes.RepoListRecords_Output
+	var out *comatproto.RepoListRecords_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context,collection string,cursor string,limit int,repo string,reverse *bool) (*comatprototypes.RepoListRecords_Output, error)
+	// func (s *Server) handleComAtprotoRepoListRecords(ctx context.Context,collection string,cursor string,limit int,repo string,reverse *bool) (*comatproto.RepoListRecords_Output, error)
 	out, handleErr = s.handleComAtprotoRepoListRecords(ctx, collection, cursor, limit, repo, reverse)
 	if handleErr != nil {
 		return handleErr
@@ -197,9 +197,9 @@ func (s *Server) HandleComAtprotoRepoUploadBlob(c echo.Context) error {
 	defer span.End()
 	body := c.Request().Body
 	contentType := c.Request().Header.Get("Content-Type")
-	var out *comatprototypes.RepoUploadBlob_Output
+	var out *comatproto.RepoUploadBlob_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context,r io.Reader,contentType string) (*comatprototypes.RepoUploadBlob_Output, error)
+	// func (s *Server) handleComAtprotoRepoUploadBlob(ctx context.Context,r io.Reader,contentType string) (*comatproto.RepoUploadBlob_Output, error)
 	out, handleErr = s.handleComAtprotoRepoUploadBlob(ctx, body, contentType)
 	if handleErr != nil {
 		return handleErr
@@ -210,9 +210,9 @@ func (s *Server) HandleComAtprotoRepoUploadBlob(c echo.Context) error {
 func (s *Server) HandleComAtprotoServerDescribeServer(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandleComAtprotoServerDescribeServer")
 	defer span.End()
-	var out *comatprototypes.ServerDescribeServer_Output
+	var out *comatproto.ServerDescribeServer_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoServerDescribeServer(ctx context.Context) (*comatprototypes.ServerDescribeServer_Output, error)
+	// func (s *Server) handleComAtprotoServerDescribeServer(ctx context.Context) (*comatproto.ServerDescribeServer_Output, error)
 	out, handleErr = s.handleComAtprotoServerDescribeServer(ctx)
 	if handleErr != nil {
 		return handleErr
@@ -251,9 +251,9 @@ func (s *Server) HandleComAtprotoSyncListRepos(c echo.Context) error {
 	} else {
 		limit = 500
 	}
-	var out *comatprototypes.SyncListRepos_Output
+	var out *comatproto.SyncListRepos_Output
 	var handleErr error
-	// func (s *Server) handleComAtprotoSyncListRepos(ctx context.Context,cursor string,limit int) (*comatprototypes.SyncListRepos_Output, error)
+	// func (s *Server) handleComAtprotoSyncListRepos(ctx context.Context,cursor string,limit int) (*comatproto.SyncListRepos_Output, error)
 	out, handleErr = s.handleComAtprotoSyncListRepos(ctx, cursor, limit)
 	if handleErr != nil {
 		return handleErr
@@ -269,6 +269,7 @@ func (s *Server) RegisterHandlersPlaceStream(e *echo.Echo) error {
 	e.GET("/xrpc/place.stream.live.getSegments", s.HandlePlaceStreamLiveGetSegments)
 	e.POST("/xrpc/place.stream.server.createWebhook", s.HandlePlaceStreamServerCreateWebhook)
 	e.POST("/xrpc/place.stream.server.deleteWebhook", s.HandlePlaceStreamServerDeleteWebhook)
+	e.GET("/xrpc/place.stream.server.getServerTime", s.HandlePlaceStreamServerGetServerTime)
 	e.GET("/xrpc/place.stream.server.getWebhook", s.HandlePlaceStreamServerGetWebhook)
 	e.GET("/xrpc/place.stream.server.listWebhooks", s.HandlePlaceStreamServerListWebhooks)
 	e.POST("/xrpc/place.stream.server.updateWebhook", s.HandlePlaceStreamServerUpdateWebhook)
@@ -278,9 +279,9 @@ func (s *Server) RegisterHandlersPlaceStream(e *echo.Echo) error {
 func (s *Server) HandlePlaceStreamBroadcastGetBroadcaster(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamBroadcastGetBroadcaster")
 	defer span.End()
-	var out *placestreamtypes.BroadcastGetBroadcaster_Output
+	var out *placestream.BroadcastGetBroadcaster_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamBroadcastGetBroadcaster(ctx context.Context) (*placestreamtypes.BroadcastGetBroadcaster_Output, error)
+	// func (s *Server) handlePlaceStreamBroadcastGetBroadcaster(ctx context.Context) (*placestream.BroadcastGetBroadcaster_Output, error)
 	out, handleErr = s.handlePlaceStreamBroadcastGetBroadcaster(ctx)
 	if handleErr != nil {
 		return handleErr
@@ -293,9 +294,9 @@ func (s *Server) HandlePlaceStreamGraphGetFollowingUser(c echo.Context) error {
 	defer span.End()
 	subjectDID := c.QueryParam("subjectDID")
 	userDID := c.QueryParam("userDID")
-	var out *placestreamtypes.GraphGetFollowingUser_Output
+	var out *placestream.GraphGetFollowingUser_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamGraphGetFollowingUser(ctx context.Context,subjectDID string,userDID string) (*placestreamtypes.GraphGetFollowingUser_Output, error)
+	// func (s *Server) handlePlaceStreamGraphGetFollowingUser(ctx context.Context,subjectDID string,userDID string) (*placestream.GraphGetFollowingUser_Output, error)
 	out, handleErr = s.handlePlaceStreamGraphGetFollowingUser(ctx, subjectDID, userDID)
 	if handleErr != nil {
 		return handleErr
@@ -318,9 +319,9 @@ func (s *Server) HandlePlaceStreamLiveGetLiveUsers(c echo.Context) error {
 	} else {
 		limit = 50
 	}
-	var out *placestreamtypes.LiveGetLiveUsers_Output
+	var out *placestream.LiveGetLiveUsers_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamLiveGetLiveUsers(ctx context.Context,before string,limit int) (*placestreamtypes.LiveGetLiveUsers_Output, error)
+	// func (s *Server) handlePlaceStreamLiveGetLiveUsers(ctx context.Context,before string,limit int) (*placestream.LiveGetLiveUsers_Output, error)
 	out, handleErr = s.handlePlaceStreamLiveGetLiveUsers(ctx, before, limit)
 	if handleErr != nil {
 		return handleErr
@@ -358,9 +359,9 @@ func (s *Server) HandlePlaceStreamLiveGetSegments(c echo.Context) error {
 		limit = 50
 	}
 	userDID := c.QueryParam("userDID")
-	var out *placestreamtypes.LiveGetSegments_Output
+	var out *placestream.LiveGetSegments_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamLiveGetSegments(ctx context.Context,before string,limit int,userDID string) (*placestreamtypes.LiveGetSegments_Output, error)
+	// func (s *Server) handlePlaceStreamLiveGetSegments(ctx context.Context,before string,limit int,userDID string) (*placestream.LiveGetSegments_Output, error)
 	out, handleErr = s.handlePlaceStreamLiveGetSegments(ctx, before, limit, userDID)
 	if handleErr != nil {
 		return handleErr
@@ -372,13 +373,13 @@ func (s *Server) HandlePlaceStreamServerCreateWebhook(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamServerCreateWebhook")
 	defer span.End()
 
-	var body placestreamtypes.ServerCreateWebhook_Input
+	var body placestream.ServerCreateWebhook_Input
 	if err := c.Bind(&body); err != nil {
 		return err
 	}
-	var out *placestreamtypes.ServerCreateWebhook_Output
+	var out *placestream.ServerCreateWebhook_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamServerCreateWebhook(ctx context.Context,body *placestreamtypes.ServerCreateWebhook_Input) (*placestreamtypes.ServerCreateWebhook_Output, error)
+	// func (s *Server) handlePlaceStreamServerCreateWebhook(ctx context.Context,body *placestream.ServerCreateWebhook_Input) (*placestream.ServerCreateWebhook_Output, error)
 	out, handleErr = s.handlePlaceStreamServerCreateWebhook(ctx, &body)
 	if handleErr != nil {
 		return handleErr
@@ -390,14 +391,27 @@ func (s *Server) HandlePlaceStreamServerDeleteWebhook(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamServerDeleteWebhook")
 	defer span.End()
 
-	var body placestreamtypes.ServerDeleteWebhook_Input
+	var body placestream.ServerDeleteWebhook_Input
 	if err := c.Bind(&body); err != nil {
 		return err
 	}
-	var out *placestreamtypes.ServerDeleteWebhook_Output
+	var out *placestream.ServerDeleteWebhook_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamServerDeleteWebhook(ctx context.Context,body *placestreamtypes.ServerDeleteWebhook_Input) (*placestreamtypes.ServerDeleteWebhook_Output, error)
+	// func (s *Server) handlePlaceStreamServerDeleteWebhook(ctx context.Context,body *placestream.ServerDeleteWebhook_Input) (*placestream.ServerDeleteWebhook_Output, error)
 	out, handleErr = s.handlePlaceStreamServerDeleteWebhook(ctx, &body)
+	if handleErr != nil {
+		return handleErr
+	}
+	return c.JSON(200, out)
+}
+
+func (s *Server) HandlePlaceStreamServerGetServerTime(c echo.Context) error {
+	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamServerGetServerTime")
+	defer span.End()
+	var out *placestream.ServerGetServerTime_Output
+	var handleErr error
+	// func (s *Server) handlePlaceStreamServerGetServerTime(ctx context.Context) (*placestream.ServerGetServerTime_Output, error)
+	out, handleErr = s.handlePlaceStreamServerGetServerTime(ctx)
 	if handleErr != nil {
 		return handleErr
 	}
@@ -408,9 +422,9 @@ func (s *Server) HandlePlaceStreamServerGetWebhook(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamServerGetWebhook")
 	defer span.End()
 	id := c.QueryParam("id")
-	var out *placestreamtypes.ServerGetWebhook_Output
+	var out *placestream.ServerGetWebhook_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamServerGetWebhook(ctx context.Context,id string) (*placestreamtypes.ServerGetWebhook_Output, error)
+	// func (s *Server) handlePlaceStreamServerGetWebhook(ctx context.Context,id string) (*placestream.ServerGetWebhook_Output, error)
 	out, handleErr = s.handlePlaceStreamServerGetWebhook(ctx, id)
 	if handleErr != nil {
 		return handleErr
@@ -443,9 +457,9 @@ func (s *Server) HandlePlaceStreamServerListWebhooks(c echo.Context) error {
 	} else {
 		limit = 50
 	}
-	var out *placestreamtypes.ServerListWebhooks_Output
+	var out *placestream.ServerListWebhooks_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamServerListWebhooks(ctx context.Context,active *bool,cursor string,event string,limit int) (*placestreamtypes.ServerListWebhooks_Output, error)
+	// func (s *Server) handlePlaceStreamServerListWebhooks(ctx context.Context,active *bool,cursor string,event string,limit int) (*placestream.ServerListWebhooks_Output, error)
 	out, handleErr = s.handlePlaceStreamServerListWebhooks(ctx, active, cursor, event, limit)
 	if handleErr != nil {
 		return handleErr
@@ -457,13 +471,13 @@ func (s *Server) HandlePlaceStreamServerUpdateWebhook(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamServerUpdateWebhook")
 	defer span.End()
 
-	var body placestreamtypes.ServerUpdateWebhook_Input
+	var body placestream.ServerUpdateWebhook_Input
 	if err := c.Bind(&body); err != nil {
 		return err
 	}
-	var out *placestreamtypes.ServerUpdateWebhook_Output
+	var out *placestream.ServerUpdateWebhook_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamServerUpdateWebhook(ctx context.Context,body *placestreamtypes.ServerUpdateWebhook_Input) (*placestreamtypes.ServerUpdateWebhook_Output, error)
+	// func (s *Server) handlePlaceStreamServerUpdateWebhook(ctx context.Context,body *placestream.ServerUpdateWebhook_Input) (*placestream.ServerUpdateWebhook_Output, error)
 	out, handleErr = s.handlePlaceStreamServerUpdateWebhook(ctx, &body)
 	if handleErr != nil {
 		return handleErr

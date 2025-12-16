@@ -16,6 +16,7 @@ import {
   View,
   ViewProps,
 } from "react-native";
+import { tokens } from "../../../ui";
 
 // Base input primitive interface
 export interface InputPrimitiveProps extends Omit<TextInputProps, "onChange"> {
@@ -329,7 +330,8 @@ const primitiveStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 8,
-    backgroundColor: "white",
+    boxShadow: "none",
+    fontFamily: tokens.fontFamilies.regular,
     ...Platform.select({
       ios: {
         paddingVertical: 12,

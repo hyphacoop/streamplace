@@ -215,7 +215,13 @@ export const reduceChatIncremental = (
   for (const msg of newMessages) {
     if (msg.deleted) {
       hasChanges = true;
-      removedKeys.add(msg.uri);
+      // find and remove the message from the index
+      for (const [key, message] of Object.entries(newChatIndex)) {
+        if (message.uri === msg.uri) {
+          delete newChatIndex[key];
+          removedKeys.add(key);
+        }
+      }
     }
   }
   newMessages = newMessages.filter((msg) => msg.deleted !== true);

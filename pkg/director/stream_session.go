@@ -221,7 +221,7 @@ func (ss *StreamSession) NewSegment(ctx context.Context, notif *media.NewSegment
 				return fmt.Errorf("failed to convert livestream to streamplace livestream: %w", err)
 			}
 			if !shouldNotify(lsv) {
-				log.Warn(ctx, "is not set to notify", "repoDID", spseg.Creator)
+				log.Debug(ctx, "is not set to notify", "repoDID", spseg.Creator)
 				return nil
 			}
 			task := &statedb.NotificationTask{

@@ -1,4 +1,9 @@
-import { Text, useLivestream, zero } from "@streamplace/components";
+import {
+  formatHandleWithAt,
+  Text,
+  useLivestream,
+  zero,
+} from "@streamplace/components";
 import { useLiveUser } from "hooks/useLiveUser";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
@@ -86,7 +91,7 @@ export default function UpdateLivestream() {
               Streamer
             </Text>
             <Text style={[{ paddingBottom: 8, fontWeight: "bold" }]}>
-              @{profile?.handle}
+              {profile && formatHandleWithAt(profile)}
             </Text>
           </View>
 

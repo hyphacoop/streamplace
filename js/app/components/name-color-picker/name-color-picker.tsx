@@ -1,4 +1,4 @@
-import { Button, zero } from "@streamplace/components";
+import { Button, formatHandleWithAt, zero } from "@streamplace/components";
 import { Palette, SwatchBook, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
@@ -381,7 +381,7 @@ export default function NameColorPicker({
                 ]}
               >
                 <Text style={[{ color: tempColor, fontWeight: "600" }]}>
-                  @{profile.handle}
+                  {formatHandleWithAt(profile)}
                 </Text>
                 <Text
                   style={[
