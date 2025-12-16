@@ -163,6 +163,7 @@ func MakeDB(dbURL string) (Model, error) {
 		Identity{},
 		Repo{},
 		SigningKey{},
+		PublisherKey{},
 		Follow{},
 		FeedPost{},
 		Livestream{},
