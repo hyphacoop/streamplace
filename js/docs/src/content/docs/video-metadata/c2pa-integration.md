@@ -101,9 +101,7 @@ manifest, extracted from the MP4 segment using
             "xmpRights:UsageTerms": "All rights reserved",
             "dc:creator": "did:plc:2j2ounbiyi3ftihronlw5qhj",
             "dc:date": "2025-11-13T20:41:30.499Z",
-            "Iptc4xmpExt:ContentWarning": [
-              "cwarn:flashingLights"
-            ],
+            "Iptc4xmpExt:ContentWarning": ["cwarn:flashingLights"],
             "dc:title": "Test"
           },
           "kind": "Json"
@@ -116,9 +114,7 @@ manifest, extracted from the MP4 segment using
               "license": "place.stream.metadata.contentRights#all-rights-reserved"
             },
             "contentWarnings": {
-              "warnings": [
-                "cwarn:flashingLights"
-              ]
+              "warnings": ["cwarn:flashingLights"]
             },
             "distributionPolicy": {
               "deleteAfter": 300

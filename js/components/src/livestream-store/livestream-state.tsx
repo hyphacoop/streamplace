@@ -21,6 +21,8 @@ export interface LivestreamState {
   replyToMessage: ChatMessageViewHydrated | null;
   streamKey: string | null;
   setStreamKey: (key: string | null) => void;
+  publisherKey: string | null;
+  setPublisherKey: (key: string | null) => void;
 }
 
 export interface LivestreamProblem {
