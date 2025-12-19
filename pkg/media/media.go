@@ -208,6 +208,11 @@ func ParseSegmentAssertions(ctx context.Context, mani *c2patypes.Manifest) (*Seg
 			ass = &a
 			break
 		}
+		if a.Label == "place.stream.metadata" {
+			// backwards compatibility for old manifests
+			ass = &a
+			break
+		}
 	}
 	if ass == nil {
 		return nil, ErrMissingMetadata

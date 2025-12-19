@@ -46,11 +46,11 @@ func TestSegmentRoundtrip(t *testing.T) {
 	}{
 		{
 			name:    "OneMinute",
-			fixture: remote.RemoteArchive("23ad0f876dd7913f6ec96e5460a75e23aa6fb74c7e92811cdc5a2c07c233f331/1-minute-of-signed-segments-v2.tar.gz"),
+			fixture: remote.RemoteArchive("4563c7b48c0ca02c3fc87bbe6f1e63a743656e465a82bec0af75ef7eead04a23/1-minute-of-signed-segments.tar.gz"),
 		},
 		{
 			name:    "ThreeSegs",
-			fixture: remote.RemoteArchive("b533da03e79933c12bc6e1070cad1b560fa9734afa69b2202a908fc382627b6b/threesegs-v2.tar.gz"),
+			fixture: remote.RemoteArchive("c21e9352e72ca0729c66af2fcabec1b8997b509601241e8d38d5728f9687386b/threesegs.tar.gz"),
 		},
 	}
 	for _, testCase := range testCases {
