@@ -22,13 +22,6 @@ import (
 // 2. accept a stream from a reader.
 // 3. broadcast the stream to readers.
 
-// var (
-// 	mutex     sync.Mutex
-// 	publisher *gortmplib.ServerConn
-// 	tracks    []format.Format
-// 	readers   []*gortmplib.Writer
-// )
-
 var RTMPTimeout = 10 * time.Second
 
 const RTMPPrefix = "/live/"
@@ -64,11 +57,6 @@ func (a *StreamplaceAPI) HandleRTMPPublisher(ctx context.Context, sc *gortmplib.
 		a.rtmpSessionsLock.Unlock()
 		close(session.EventChan)
 	}()
-
-	// videoInput := make(chan *media.RTMPH264Data, 1024)
-	// defer close(videoInput)
-	// audioInput := make(chan *media.RTMPAACData, 1024)
-	// defer close(audioInput)
 
 	r := &gortmplib.Reader{
 		Conn: sc,
