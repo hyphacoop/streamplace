@@ -220,7 +220,7 @@ export const UserOffline = memo(() => {
               r.lg,
               borders.color.neutral[800],
               borders.width.thin,
-              gap.row[isLandscape && isSmallScreen ? 3 : 6],
+              gap.row[isLandscape && isSmallScreen ? 3 : 4],
               layout.flex.justify.center,
             ]}
           >
