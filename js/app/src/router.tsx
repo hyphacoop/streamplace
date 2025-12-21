@@ -517,7 +517,7 @@ export function StreamplaceDrawer() {
           options={{
             drawerIcon: () => <Home color={foregroundColor} size={24} />,
             drawerLabel: () => <Text variant="h5">Home</Text>,
-            headerTitle: "Streamplace",
+            headerTitle: isWeb ? "Home" : "Streamplace",
             headerShown: isWeb,
             title: "Streamplace",
           }}
@@ -569,6 +569,21 @@ export function StreamplaceDrawer() {
             ),
             drawerLabel: () => <Text variant="h5">Settings</Text>,
             headerShown: false,
+          }}
+          listeners={{
+            drawerItemPress: (e) => {
+              e.preventDefault();
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: "Settings",
+                    },
+                  ],
+                }),
+              );
+            },
           }}
         />
 
