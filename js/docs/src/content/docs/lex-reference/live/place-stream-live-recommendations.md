@@ -15,7 +15,7 @@ description: Reference for the place.stream.live.recommendations lexicon
 
 A list of recommended streamers, in order of preference
 
-**Record Key:** `self`
+**Record Key:** `literal:self`
 
 **Record Properties:**
 
@@ -36,7 +36,7 @@ A list of recommended streamers, in order of preference
     "main": {
       "type": "record",
       "description": "A list of recommended streamers, in order of preference",
-      "key": "self",
+      "key": "literal:self",
       "record": {
         "type": "object",
         "required": ["streamers", "createdAt"],

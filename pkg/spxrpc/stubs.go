@@ -349,9 +349,9 @@ func (s *Server) HandlePlaceStreamLiveGetRecommendations(c echo.Context) error {
 	ctx, span := otel.Tracer("server").Start(c.Request().Context(), "HandlePlaceStreamLiveGetRecommendations")
 	defer span.End()
 	userDID := c.QueryParam("userDID")
-	var out *placestreamtypes.LiveGetRecommendations_Output
+	var out *placestream.LiveGetRecommendations_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamLiveGetRecommendations(ctx context.Context,userDID string) (*placestreamtypes.LiveGetRecommendations_Output, error)
+	// func (s *Server) handlePlaceStreamLiveGetRecommendations(ctx context.Context,userDID string) (*placestream.LiveGetRecommendations_Output, error)
 	out, handleErr = s.handlePlaceStreamLiveGetRecommendations(ctx, userDID)
 	if handleErr != nil {
 		return handleErr
@@ -400,9 +400,9 @@ func (s *Server) HandlePlaceStreamLiveSearchActorsTypeahead(c echo.Context) erro
 		limit = 10
 	}
 	q := c.QueryParam("q")
-	var out *placestreamtypes.LiveSearchActorsTypeahead_Output
+	var out *placestream.LiveSearchActorsTypeahead_Output
 	var handleErr error
-	// func (s *Server) handlePlaceStreamLiveSearchActorsTypeahead(ctx context.Context,limit int,q string) (*placestreamtypes.LiveSearchActorsTypeahead_Output, error)
+	// func (s *Server) handlePlaceStreamLiveSearchActorsTypeahead(ctx context.Context,limit int,q string) (*placestream.LiveSearchActorsTypeahead_Output, error)
 	out, handleErr = s.handlePlaceStreamLiveSearchActorsTypeahead(ctx, limit, q)
 	if handleErr != nil {
 		return handleErr
