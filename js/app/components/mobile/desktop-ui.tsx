@@ -159,38 +159,6 @@ export function DesktopUi({
     if (pipAction) pipAction();
   }, [pipAction]);
 
-  // Live timer for offline overlay
-  const [timeSinceLastSeen, setTimeSinceLastSeen] = useState("Unknown");
-
-  useEffect(() => {
-    if (!offline || !segment?.startTime) {
-      setTimeSinceLastSeen("Unknown");
-      return;
-    }
-
-    const updateTimer = () => {
-      const now = new Date();
-      const lastSeen = new Date(segment.startTime);
-      const diffMs = now.getTime() - lastSeen.getTime();
-      const diffMinutes = Math.floor(diffMs / 60000);
-      const diffSeconds = Math.floor((diffMs % 60000) / 1000);
-
-      if (diffMinutes > 0) {
-        setTimeSinceLastSeen(`${diffMinutes}m ${diffSeconds}s ago`);
-      } else {
-        setTimeSinceLastSeen(`${diffSeconds}s ago`);
-      }
-    };
-
-    // Update immediately
-    updateTimer();
-
-    // Update every second while offline
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [offline, segment?.startTime]);
-
   const hover = Gesture.Hover().onChange((_) => runOnJS(onPlayerHover)());
 
   return (

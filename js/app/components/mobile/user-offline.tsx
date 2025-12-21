@@ -11,7 +11,7 @@ import {
 } from "@streamplace/components";
 import { overflow } from "@streamplace/components/src/lib/theme/atoms";
 import { ChevronLeft } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Image, Platform, Pressable, useWindowDimensions } from "react-native";
 import { useStore } from "../../store";
 import { DesktopUi } from "./desktop-ui";
@@ -29,15 +29,23 @@ const DEFAULT_SOURCE: SourceType = {
   source: "default",
 };
 
-export function UserOffline() {
+export const UserOffline = memo(() => {
+  console.log("rendering offline");
   const navigation = useNavigation();
   const profile = useLivestreamStore((x) => x.profile);
   const { width, height } = useWindowDimensions();
-  const isSmallScreen = width < 1250;
-  const isLandscape = width > height;
-  const useCompactLayout = isSmallScreen && !isLandscape;
+  // get atp client
 
-  const [guestViewerCount, getViewerCount] = useState(null);
+  const { isSmallScreen, isLandscape, useCompactLayout } = useMemo(() => {
+    const isSmall = width < 1250;
+    const isLand = width > height;
+    return {
+      isSmallScreen: isSmall,
+      isLandscape: isLand,
+      useCompactLayout: isSmall && !isLand,
+    };
+  }, [width, height]);
+
   const [recommendedSource, setRecommendedSource] = useState<SourceType | null>(
     null,
   );
@@ -45,23 +53,21 @@ export function UserOffline() {
   const getRecommendations = useStore((state) => state.getRecommendations);
 
   const pfp = useAvatars(profile ? [profile?.did] : []);
-  const recommendedPfp = useAvatars(
-    recommendedSource ? [recommendedSource.did] : [],
-  );
 
   // use the detailed profile from useAvatars
   const detailedProfile = profile ? pfp[profile?.did] : null;
-  const recommendedProfile = recommendedSource
-    ? recommendedPfp[recommendedSource.did]
-    : null;
 
   useEffect(() => {
     if (!profile?.did) return;
 
+    let mounted = true;
+
     const fetchRecommendation = async () => {
       setIsLoadingRecommendation(true);
       try {
+        console.log("fetching recommendations for", profile.did);
         const result = await getRecommendations(profile.did);
+        if (!mounted) return;
         if (result.recommendations && result.recommendations.length > 0) {
           // Get the first livestream recommendation
           const firstLivestream = result.recommendations.find(
@@ -82,13 +88,16 @@ export function UserOffline() {
         }
       } catch (err) {
         console.error("failed to get recommendations", err);
-        setRecommendedSource(DEFAULT_SOURCE);
+        if (mounted) setRecommendedSource(DEFAULT_SOURCE);
       } finally {
-        setIsLoadingRecommendation(false);
+        if (mounted) setIsLoadingRecommendation(false);
       }
     };
 
     fetchRecommendation();
+    return () => {
+      mounted = false;
+    };
   }, [profile?.did, getRecommendations]);
 
   const sourceToShow = recommendedSource || DEFAULT_SOURCE;
@@ -186,108 +195,109 @@ export function UserOffline() {
         />
       )}
 
-      <View
-        style={[
-          useCompactLayout ? mt[20] : layout.flex.row,
-          gap.all[isLandscape && isSmallScreen ? 3 : 6],
-          layout.flex.center,
-          px[4],
-        ]}
-      >
+      <LivestreamProvider src={sourceToShow.did} ignoreOuterContext>
         <View
           style={[
-            isLandscape && isSmallScreen ? { width: 280 } : w.percent[100],
-            useCompactLayout ? h.auto : h.percent[100],
-            useCompactLayout
-              ? { maxWidth: "100%" }
-              : isLandscape && isSmallScreen
-                ? { maxWidth: 280 }
-                : { maxWidth: 400 },
-            isLandscape && isSmallScreen ? px[4] : px[8],
-            isLandscape && isSmallScreen ? py[3] : py[6],
-            bg.neutral[900],
-            r.lg,
-            borders.color.neutral[800],
-            borders.width.thin,
-            gap.row[isLandscape && isSmallScreen ? 3 : 6],
-            layout.flex.justify.center,
+            useCompactLayout ? mt[20] : layout.flex.row,
+            gap.all[isLandscape && isSmallScreen ? 3 : 6],
+            layout.flex.center,
+            px[4],
           ]}
         >
-          <Text size={isLandscape && isSmallScreen ? "base" : "xl"}>
-            @{profile.handle} is{" "}
-            <Text
-              size={isLandscape && isSmallScreen ? "base" : "xl"}
-              style={[text.gray[400]]}
-            >
-              offline
+          <View
+            style={[
+              isLandscape && isSmallScreen ? { width: 280 } : w.percent[100],
+              useCompactLayout ? h.auto : h.percent[100],
+              useCompactLayout
+                ? { maxWidth: "100%" }
+                : isLandscape && isSmallScreen
+                  ? { maxWidth: 280 }
+                  : { maxWidth: 400 },
+              isLandscape && isSmallScreen ? px[4] : px[8],
+              isLandscape && isSmallScreen ? py[3] : py[6],
+              bg.neutral[900],
+              r.lg,
+              borders.color.neutral[800],
+              borders.width.thin,
+              gap.row[isLandscape && isSmallScreen ? 3 : 6],
+              layout.flex.justify.center,
+            ]}
+          >
+            <Text size={isLandscape && isSmallScreen ? "base" : "xl"}>
+              @{profile.handle} is{" "}
+              <Text
+                size={isLandscape && isSmallScreen ? "base" : "xl"}
+                style={[text.gray[400]]}
+              >
+                offline
+              </Text>
+              , but {sourceToShow.source === "streamer" ? "they" : "we"}{" "}
+              recommend checking out:
             </Text>
-            , but {sourceToShow.source === "streamer" ? "they" : "we"} recommend
-            checking out:
-          </Text>
-          <View style={[gap.all[1]]}>
-            {isLoadingRecommendation ? (
-              <Text style={[text.gray[300]]}>loading...</Text>
-            ) : (
-              <>
-                <Image
-                  source={{ uri: recommendedProfile?.avatar }}
-                  style={[
-                    { width: 48, height: 48, borderRadius: 999 },
-                    borders.width.thin,
-                    borders.color.gray[700],
-                  ]}
-                />
-                <Text>@{recommendedProfile?.handle}</Text>
-                <Text style={[text.gray[300]]}>{guestViewerCount} viewers</Text>
-              </>
-            )}
+            <View style={[gap.all[1]]}>
+              {isLoadingRecommendation ? (
+                <Text style={[text.gray[300]]}>loading...</Text>
+              ) : (
+                <RecommendedSourceInfo />
+              )}
+            </View>
           </View>
-        </View>
-        <View
-          style={[
-            useCompactLayout
-              ? [w.percent[100], { maxWidth: "100%", aspectRatio: 16 / 9 }]
-              : [
-                  flex.values[1],
-                  {
-                    aspectRatio: 16 / 9,
-                    ...(!(isLandscape && isSmallScreen) && {
-                      maxWidth: 650,
-                      minWidth: 650,
-                    }),
-                  },
-                ],
-            overflow.hidden,
-            r.lg,
-            overflow.hidden,
-            borders.color.neutral[800],
-            borders.width.thin,
-            bg.black,
-            gap.row[2],
-          ]}
-        >
-          {!isLoadingRecommendation && (
-            <LivestreamProvider src={sourceToShow.did} ignoreOuterContext>
+          <View
+            style={[
+              useCompactLayout
+                ? [w.percent[100], { maxWidth: "100%", aspectRatio: 16 / 9 }]
+                : [
+                    flex.values[1],
+                    {
+                      aspectRatio: 16 / 9,
+                      ...(!(isLandscape && isSmallScreen) && {
+                        maxWidth: 650,
+                        minWidth: 650,
+                      }),
+                    },
+                  ],
+              overflow.hidden,
+              r.lg,
+              overflow.hidden,
+              borders.color.neutral[800],
+              borders.width.thin,
+              bg.black,
+              gap.row[2],
+            ]}
+          >
+            {!isLoadingRecommendation && (
               <PlayerProvider>
                 <Player src={sourceToShow.did} embedded={true}>
                   <DesktopUi setIsChatOpen={undefined} />
-                  <GetViewerCount setViewerCount={getViewerCount} />
                 </Player>
               </PlayerProvider>
-            </LivestreamProvider>
-          )}
+            )}
+          </View>
         </View>
-      </View>
+      </LivestreamProvider>
     </View>
   );
-}
+});
 
-const GetViewerCount = ({ setViewerCount }) => {
+const RecommendedSourceInfo = memo(() => {
+  const profile = useLivestreamStore((x) => x.profile);
   const viewers = useLivestreamStore((x) => x.viewers);
 
-  useEffect(() => {
-    setViewerCount(viewers);
-  }, [viewers]);
+  const pfp = useAvatars(profile?.did ? [profile.did] : []);
+  const detailedProfile = profile?.did ? pfp[profile.did] : null;
 
-  return null;
-};
+  return (
+    <>
+      <Image
+        source={{ uri: detailedProfile?.avatar || profile?.avatar }}
+        style={[
+          { width: 48, height: 48, borderRadius: 999 },
+          borders.width.thin,
+          borders.color.gray[700],
+        ]}
+      />
+      <Text>@{detailedProfile?.handle || profile?.handle}</Text>
+      <Text style={[text.gray[300]]}>{viewers} viewers</Text>
+    </>
+  );
+});
