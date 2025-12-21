@@ -14,6 +14,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { memo, useEffect, useMemo, useState } from "react";
 import { Image, Platform, Pressable, useWindowDimensions } from "react-native";
 import { useStore } from "../../store";
+import FollowButton from "../follow-button";
 import { DesktopUi } from "./desktop-ui";
 
 const { bg, borders, flex, gap, h, layout, mt, position, px, py, r, text, w } =
@@ -282,22 +283,44 @@ export const UserOffline = memo(() => {
 const RecommendedSourceInfo = memo(() => {
   const profile = useLivestreamStore((x) => x.profile);
   const viewers = useLivestreamStore((x) => x.viewers);
+  const currentUserDID = useStore((state) => state.oauthSession?.did);
 
   const pfp = useAvatars(profile?.did ? [profile.did] : []);
   const detailedProfile = profile?.did ? pfp[profile.did] : null;
 
   return (
-    <>
-      <Image
-        source={{ uri: detailedProfile?.avatar || profile?.avatar }}
-        style={[
-          { width: 48, height: 48, borderRadius: 999 },
-          borders.width.thin,
-          borders.color.gray[700],
-        ]}
-      />
-      <Text>@{detailedProfile?.handle || profile?.handle}</Text>
-      <Text style={[text.gray[300]]}>{viewers} viewers</Text>
-    </>
+    <View
+      style={[
+        layout.flex.column,
+        layout.flex.justifyCenter,
+        gap.all[4],
+        w.percent[100],
+      ]}
+    >
+      <View style={[layout.flex.row, gap.all[4], layout.flex.alignCenter]}>
+        <Image
+          source={{ uri: detailedProfile?.avatar || profile?.avatar }}
+          style={[
+            { width: 48, height: 48, borderRadius: 999 },
+            borders.width.thin,
+            borders.color.gray[700],
+          ]}
+        />
+        <View style={[flex.values[1]]}>
+          <Text weight="bold">
+            @{detailedProfile?.handle || profile?.handle}
+          </Text>
+          <Text style={[text.gray[300]]} size="sm">
+            {viewers} viewers
+          </Text>
+        </View>
+      </View>
+      {profile?.did && (
+        <FollowButton
+          streamerDID={profile.did}
+          currentUserDID={currentUserDID}
+        />
+      )}
+    </View>
   );
 });
