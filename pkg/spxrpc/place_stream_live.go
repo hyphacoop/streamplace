@@ -161,6 +161,7 @@ func (s *Server) handlePlaceStreamLiveGetRecommendations(ctx context.Context, us
 
 	// Try to get streamer's recommendation list
 	rec, err := s.model.GetRecommendation(userDID)
+	// If we have a recommendation list, filter for live streamers
 	if err == nil {
 		streamers, err := rec.GetStreamersArray()
 		if err != nil {
@@ -188,6 +189,9 @@ func (s *Server) handlePlaceStreamLiveGetRecommendations(ctx context.Context, us
 				UserDID:         &userDID,
 			}, nil
 		}
+	} else {
+		// not a big issue but we should log anyways
+		log.Log(ctx, "no recommendations found for user", "userDID", userDID)
 	}
 
 	// get user's follows and check which are live
