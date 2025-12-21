@@ -5,7 +5,7 @@
     "main": {
       "type": "record",
       "description": "A list of recommended streamers, in order of preference",
-      "key": "self",
+      "key": "literal:self",
       "record": {
         "type": "object",
         "required": ["streamers", "createdAt"],
