@@ -44,3 +44,16 @@ notification-count = { $count ->
     [1] 一則通知
    *[other] { $count } 則通知
 }
+
+## Offline User
+user-offline = 使用者離線
+user-offline-message = { $source ->
+    [streamer] @{ $handle } <1>離線</1>，但他們推薦觀看：
+   *[default] @{ $handle } <1>離線</1>，但我們推薦觀看：
+}
+streaming-title = 正在直播 { $title }
+viewer-count = { $count ->
+    [0] 0 位觀眾
+    [1] 1 位觀眾
+   *[other] { $count } 位觀眾
+}

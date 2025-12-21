@@ -44,3 +44,16 @@ notification-count = { $count ->
     [1] Una notificación
    *[other] { $count } notificaciones
 }
+
+## Offline User
+user-offline = usuario desconectado
+user-offline-message = { $source ->
+    [streamer] @{ $handle } está <1>desconectado</1>, pero ellos recomiendan ver:
+   *[default] @{ $handle } está <1>desconectado</1>, pero te recomendamos ver:
+}
+streaming-title = transmitiendo { $title }
+viewer-count = { $count ->
+    [0] 0 espectadores
+    [1] 1 espectador
+   *[other] { $count } espectadores
+}

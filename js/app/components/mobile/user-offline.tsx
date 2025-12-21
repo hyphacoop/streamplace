@@ -4,8 +4,10 @@ import {
   Player,
   PlayerProvider,
   Text,
+  Trans,
   useAvatars,
   useLivestreamStore,
+  useTranslation,
   View,
   zero,
 } from "@streamplace/components";
@@ -32,10 +34,10 @@ const DEFAULT_SOURCE: SourceType = {
 
 export const UserOffline = memo(() => {
   console.log("rendering offline");
+  const { t } = useTranslation("common");
   const navigation = useNavigation();
   const profile = useLivestreamStore((x) => x.profile);
   const { width, height } = useWindowDimensions();
-  // get atp client
 
   const { isSmallScreen, isLandscape, useCompactLayout } = useMemo(() => {
     const isSmall = width < 1250;
@@ -107,7 +109,7 @@ export const UserOffline = memo(() => {
     return (
       <View style={[flex.values[1], bg.gray[900], layout.flex.center]}>
         <Text size="2xl" color="muted">
-          user is offline
+          {t("user-offline")}
         </Text>
       </View>
     );
@@ -220,24 +222,28 @@ export const UserOffline = memo(() => {
               r.lg,
               borders.color.neutral[800],
               borders.width.thin,
-              gap.row[isLandscape && isSmallScreen ? 3 : 4],
+              gap.row[isLandscape && isSmallScreen ? 1 : 2],
               layout.flex.justify.center,
             ]}
           >
             <Text size={isLandscape && isSmallScreen ? "base" : "xl"}>
-              @{profile.handle} is{" "}
-              <Text
-                size={isLandscape && isSmallScreen ? "base" : "xl"}
-                style={[text.gray[400]]}
-              >
-                offline
-              </Text>
-              , but {sourceToShow.source === "streamer" ? "they" : "we"}{" "}
-              recommend checking out:
+              <Trans
+                i18nKey="user-offline-message"
+                ns="common"
+                values={{ handle: profile.handle, source: sourceToShow.source }}
+                components={{
+                  1: (
+                    <Text
+                      size={isLandscape && isSmallScreen ? "base" : "xl"}
+                      style={[text.gray[400]]}
+                    />
+                  ),
+                }}
+              />
             </Text>
             <View style={[gap.all[1]]}>
               {isLoadingRecommendation ? (
-                <Text style={[text.gray[300]]}>loading...</Text>
+                <Text style={[text.gray[300]]}>{t("loading")}</Text>
               ) : (
                 <RecommendedSourceInfo />
               )}
@@ -281,6 +287,7 @@ export const UserOffline = memo(() => {
 });
 
 const RecommendedSourceInfo = memo(() => {
+  const { t } = useTranslation("common");
   const profile = useLivestreamStore((x) => x.profile);
   const viewers = useLivestreamStore((x) => x.viewers);
   const currentUserDID = useStore((state) => state.oauthSession?.did);
@@ -297,22 +304,24 @@ const RecommendedSourceInfo = memo(() => {
         w.percent[100],
       ]}
     >
-      <View style={[layout.flex.row, gap.all[4], layout.flex.alignCenter]}>
-        <Image
-          source={{ uri: detailedProfile?.avatar || profile?.avatar }}
-          style={[
-            { width: 48, height: 48, borderRadius: 999 },
-            borders.width.thin,
-            borders.color.gray[700],
-          ]}
-        />
-        <View style={[flex.values[1]]}>
-          <Text weight="bold">
-            @{detailedProfile?.handle || profile?.handle}
-          </Text>
-          <Text style={[text.gray[300]]} size="sm">
-            {viewers} viewers
-          </Text>
+      <View style={[layout.flex.column, gap.all[2]]}>
+        <View style={[layout.flex.row, gap.all[4], layout.flex.alignCenter]}>
+          <Image
+            source={{ uri: detailedProfile?.avatar || profile?.avatar }}
+            style={[
+              { width: 48, height: 48, borderRadius: 999 },
+              borders.width.thin,
+              borders.color.gray[700],
+            ]}
+          />
+          <View style={[flex.values[1]]}>
+            <Text weight="bold">
+              @{detailedProfile?.handle || profile?.handle}
+            </Text>
+            <Text style={[text.gray[300]]} size="base">
+              {t("viewer-count", { count: viewers || 0 })}
+            </Text>
+          </View>
         </View>
       </View>
       {profile?.did && (
