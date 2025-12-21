@@ -182,6 +182,7 @@ export const UserOffline = memo(() => {
       {/* Banner Background */}
       {detailedProfile?.banner && (
         <Image
+          blurRadius={10}
           source={{ uri: detailedProfile.banner }}
           style={[
             {
@@ -290,6 +291,7 @@ const RecommendedSourceInfo = memo(() => {
   const { t } = useTranslation("common");
   const profile = useLivestreamStore((x) => x.profile);
   const viewers = useLivestreamStore((x) => x.viewers);
+  const lsInfo = useLivestreamStore((x) => x.livestream);
   const currentUserDID = useStore((state) => state.oauthSession?.did);
 
   const pfp = useAvatars(profile?.did ? [profile.did] : []);
@@ -304,7 +306,7 @@ const RecommendedSourceInfo = memo(() => {
         w.percent[100],
       ]}
     >
-      <View style={[layout.flex.column, gap.all[2]]}>
+      <View style={[layout.flex.column, gap.all[4]]}>
         <View style={[layout.flex.row, gap.all[4], layout.flex.alignCenter]}>
           <Image
             source={{ uri: detailedProfile?.avatar || profile?.avatar }}
