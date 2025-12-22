@@ -48,9 +48,12 @@ notification-count = { $count ->
 ## Offline User
 user-offline = utilisateur hors ligne
 user-offline-message = { $source ->
-    [streamer] @{ $handle } est <1>hors ligne</1>, mais ils recommandent de regarder :
-   *[default] @{ $handle } est <1>hors ligne</1>, mais nous recommandons de regarder :
+    [streamer] On dirait que <1>@{ $handle } est hors ligne</1>, mais ils recommandent de regarder :
+   *[default] On dirait que <1>@{ $handle } est hors ligne</1>, mais nous recommandons de regarder :
 }
+user-offline-no-recommendations = 
+  On dirait que <1>@{ $handle } est hors ligne</1> maintenant.
+  Revenez plus tard.
 streaming-title = diffusion de { $title }
 viewer-count = { $count ->
     [0] 0 spectateurs

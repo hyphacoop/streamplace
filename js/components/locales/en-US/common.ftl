@@ -48,9 +48,12 @@ notification-count = { $count ->
 ## Offline User
 user-offline = user is offline
 user-offline-message = { $source ->
-    [streamer] @{ $handle } is <1>offline</1>, but they recommend checking out:
-   *[default] @{ $handle } is <1>offline</1>, but we recommend checking out:
+    [streamer] Looks like <1>@{ $handle } is offline</1>, but they recommend checking out:
+   *[default] Looks like <1>@{ $handle } is offline</1>, but we recommend checking out:
 }
+user-offline-no-recommendations = 
+  Looks like <1>@{ $handle } is offline</1> right now.
+  Check back later.
 streaming-title = streaming { $title }
 viewer-count = { $count ->
     [0] 0 viewers
