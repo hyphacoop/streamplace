@@ -15,9 +15,6 @@ var PLACE_STREAM_DEFAULT_METADATA = "place.stream.metadata.configuration" //noli
 const DID_KEY_PREFIX = "did:key" //nolint:all
 const ADDRESS_KEY_PREFIX = "0x"  //nolint:all
 
-// Streamplace metadata constant
-const StreamplaceMetadata = "place.stream.metadata" //nolint:all
-
 // Streamplace metadata license values
 const (
 	LicenseCC0_1_0           = "place.stream.metadata.contentRights#cc0_1__0"

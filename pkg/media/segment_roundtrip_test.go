@@ -57,6 +57,7 @@ func TestSegmentRoundtrip(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			withNoGSTLeaks(t, func() {
 				tempDir, err := os.MkdirTemp("", "ingredient_test")
+				t.Logf("tempDir: %s", tempDir)
 				require.NoError(t, err)
 				getTestVids := func() []io.ReadSeeker {
 					testVids := []io.ReadSeeker{}
