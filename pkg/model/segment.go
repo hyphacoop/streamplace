@@ -279,6 +279,27 @@ func (m *DBModel) LatestSegmentForUser(user string) (*Segment, error) {
 	return &seg, nil
 }
 
+func (m *DBModel) FilterLiveRepoDIDs(repoDIDs []string) ([]string, error) {
+	if len(repoDIDs) == 0 {
+		return []string{}, nil
+	}
+
+	thirtySecondsAgo := time.Now().Add(-30 * time.Second)
+
+	var liveDIDs []string
+
+	err := m.DB.Table("segments").
+		Select("DISTINCT repo_did").
+		Where("repo_did IN ? AND start_time > ?", repoDIDs, thirtySecondsAgo.UTC()).
+		Pluck("repo_did", &liveDIDs).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return liveDIDs, nil
+}
+
 func (m *DBModel) LatestSegmentsForUser(user string, limit int, before *time.Time, after *time.Time) ([]Segment, error) {
 	var segs []Segment
 	if before == nil {
